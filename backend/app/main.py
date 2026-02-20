@@ -1,5 +1,12 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi import FastAPI
 from app.api.router import api_router
+from app.modules.salary import models as salary_models # Force load models
+from app.modules.feedback import models as feedback_models # Force load models
+from app.modules.incentives import models as incentives_models # Force load models
 
 app = FastAPI(title="CRM AI SETU API")
 
@@ -15,3 +22,7 @@ async def root():
         "timestamp": str(datetime.now()),
         "status": "active"
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="127.0.0.1", port=8123, reload=True)

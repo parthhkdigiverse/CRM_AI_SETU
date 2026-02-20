@@ -7,8 +7,7 @@ pydantic-settings
 python-dotenv
 pytest
 httpx
-python_jose[cryptography]
-passlib[bcrypt]
+bcrypt
 pyjwt[crypto]
 python-multipart
 email-validator
