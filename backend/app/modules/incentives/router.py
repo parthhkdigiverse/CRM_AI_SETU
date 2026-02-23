@@ -68,9 +68,19 @@ def calculate_incentive(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_checker)
 ) -> Any:
+    from sqlalchemy import extract
+    from app.modules.clients.models import Client
+    
     employee = db.query(Employee).filter(Employee.id == calc_in.employee_id).first()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
+
+    existing_slip = db.query(IncentiveSlip).filter(
+        IncentiveSlip.employee_id == calc_in.employee_id,
+        IncentiveSlip.period == calc_in.period
+    ).first()
+    if existing_slip:
+        raise HTTPException(status_code=400, detail="Incentive slip for this period already exists")
 
     user = db.query(User).filter(User.id == employee.user_id).first()
     
@@ -88,7 +98,24 @@ def calculate_incentive(
     if target == 0:
         raise HTTPException(status_code=400, detail="Target not set for employee or role")
 
-    achieved = calc_in.closed_units
+    if calc_in.closed_units is not None:
+        achieved = calc_in.closed_units
+    else:
+        year, month = map(int, calc_in.period.split('-'))
+        achieved = 0
+        if user.role in [UserRole.SALES, UserRole.TELESALES, UserRole.PROJECT_MANAGER_AND_SALES]:
+            achieved += db.query(Client).filter(
+                Client.owner_id == user.id,
+                extract('year', Client.created_at) == year,
+                extract('month', Client.created_at) == month
+            ).count()
+        if user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
+            achieved += db.query(Client).filter(
+                Client.pm_id == user.id,
+                extract('year', Client.created_at) == year,
+                extract('month', Client.created_at) == month
+            ).count()
+            
     percentage = (achieved / target) * 100
     
     # Find Slab

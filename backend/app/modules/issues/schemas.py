@@ -6,7 +6,7 @@ class IssueBase(BaseModel):
     title: str
     description: Optional[str] = None
     status: IssueStatus = IssueStatus.OPEN
-    project_id: int
+    client_id: int
     reporter_id: Optional[int] = None
 
 class IssueCreate(BaseModel):

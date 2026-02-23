@@ -95,3 +95,5 @@ async def delete_client(
     service = ClientService(db)
     await service.delete_client(client_id, current_user, request)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+

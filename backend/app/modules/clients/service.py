@@ -14,8 +14,10 @@ class ClientService:
     def get_client(self, client_id: int):
         return self.db.query(Client).filter(Client.id == client_id).first()
 
-    def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc"):
+    def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc", include_inactive: bool = False):
         query = self.db.query(Client)
+        if not include_inactive:
+            query = query.filter(Client.is_active == True)
         if search:
             search_pattern = f"%{search}%"
             query = query.filter(
@@ -91,7 +93,8 @@ class ClientService:
             "organization": db_client.organization
         }
 
-        self.db.delete(db_client)
+        db_client.is_active = False
+        self.db.add(db_client)
         self.db.commit()
 
         await self.activity_logger.log_activity(
@@ -106,3 +109,4 @@ class ClientService:
         )
 
         return {"detail": "Client deleted"}
+

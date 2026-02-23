@@ -18,6 +18,6 @@ class MeetingSummary(Base):
     date = Column(DateTime, default=datetime.utcnow)
     status = Column(Enum(MeetingStatus), default=MeetingStatus.SCHEDULED)
     cancellation_reason = Column(Text, nullable=True)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
 
-    project = relationship("app.modules.projects.models.Project", back_populates="meeting_summaries")
+    client = relationship("app.modules.clients.models.Client", backref="meeting_summaries")

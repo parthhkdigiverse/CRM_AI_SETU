@@ -34,7 +34,7 @@ class IncentiveSlabRead(IncentiveSlabBase):
 class IncentiveCalculationRequest(BaseModel):
     employee_id: int
     period: str # YYYY-MM
-    closed_units: int
+    closed_units: Optional[int] = None
 
 class IncentiveSlipRead(BaseModel):
     id: int

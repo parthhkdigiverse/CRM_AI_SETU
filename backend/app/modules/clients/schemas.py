@@ -23,13 +23,17 @@ class ClientBase(BaseModel):
 
 class ClientCreate(ClientBase):
     referral_code: Optional[str] = None
+    owner_id: Optional[int] = None
 
 class ClientUpdate(ClientBase):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
+    owner_id: Optional[int] = None
+
 
 class ClientRead(ClientBase):
     id: int
+    owner_id: Optional[int] = None
 
     class Config:
         from_attributes = True

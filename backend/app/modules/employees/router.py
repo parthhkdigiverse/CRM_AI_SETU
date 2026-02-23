@@ -74,6 +74,9 @@ def generate_referral_code(
             status_code=400, 
             detail=f"Referral codes can only be generated for roles: {allowed_roles}"
         )
+        
+    if user.referral_code:
+        return {"employee_id": employee.id, "code": user.referral_code}
 
     code = referral_in.code
     if not code:
@@ -109,3 +112,26 @@ def get_referral_code(
     return {"employee_id": employee.id, "code": user.referral_code}
 
     return {"employee_id": employee.id, "code": user.referral_code}
+
+@router.get("/{employee_id}/id-card")
+def generate_id_card(
+    employee_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+) -> Any:
+    """
+    Generate and return an ID card for the employee.
+    """
+    employee = db.query(Employee).filter(Employee.id == employee_id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    user = db.query(User).filter(User.id == employee.user_id).first()
+    
+    # Mocking ID Card generation details. In production, this would return a FileResponse of a PDF.
+    return {
+        "employee_id": employee.id,
+        "name": user.name if hasattr(user, 'name') else "Employee Name",
+        "role": user.role,
+        "id_card_url": f"https://api.crm.demo/static/id_cards/emp_{employee_id}_card.pdf"
+    }

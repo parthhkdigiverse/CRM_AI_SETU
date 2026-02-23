@@ -15,10 +15,10 @@ class Issue(Base):
     title = Column(String, index=True, nullable=False)
     description = Column(Text)
     status = Column(Enum(IssueStatus), default=IssueStatus.OPEN, nullable=False)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
     reporter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
-    project = relationship("app.modules.projects.models.Project", back_populates="issues")
+    client = relationship("app.modules.clients.models.Client", backref="issues")
     reporter = relationship("app.modules.users.models.User", foreign_keys=[reporter_id], backref="reported_issues")
     assigned_to = relationship("app.modules.users.models.User", foreign_keys=[assigned_to_id], backref="assigned_issues")

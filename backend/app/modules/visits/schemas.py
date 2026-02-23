@@ -4,7 +4,7 @@ from datetime import datetime
 from app.modules.visits.models import VisitStatus
 
 class VisitBase(BaseModel):
-    lead_id: int
+    shop_id: int
     visit_date: Optional[datetime] = None
     notes: Optional[str] = None
     status: Optional[VisitStatus] = VisitStatus.SCHEDULED

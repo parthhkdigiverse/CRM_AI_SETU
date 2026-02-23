@@ -5,7 +5,7 @@ from app.modules.issues.schemas import IssueCreate, IssueUpdate
 from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
 from app.modules.users.models import User
-from app.modules.projects.models import Project
+from app.modules.clients.models import Client
 from app.modules.notifications.service import EmailService
 from fastapi import BackgroundTasks
 
@@ -20,8 +20,8 @@ class IssueService:
     def get_issues(self, skip: int = 0, limit: int = 100):
         return self.db.query(Issue).offset(skip).limit(limit).all()
 
-    async def create_issue(self, issue: IssueCreate, project_id: int, current_user: User, request: Request, background_tasks: BackgroundTasks = None):
-        db_issue = Issue(**issue.dict(), project_id=project_id, reporter_id=current_user.id)
+    async def create_issue(self, issue: IssueCreate, client_id: int, current_user: User, request: Request, background_tasks: BackgroundTasks = None):
+        db_issue = Issue(**issue.dict(), client_id=client_id, reporter_id=current_user.id)
         self.db.add(db_issue)
         self.db.commit()
         self.db.refresh(db_issue)
@@ -40,23 +40,23 @@ class IssueService:
         # Trigger Email Notification
         try:
             email_service = EmailService()
-            project = self.db.query(Project).filter(Project.id == db_issue.project_id).first()
-            if project and project.pm and background_tasks:
+            client = self.db.query(Client).filter(Client.id == db_issue.client_id).first()
+            if client and client.pm and background_tasks:
                 background_tasks.add_task(
                     email_service.send_issue_notification,
-                    pm_email=project.pm.email,
-                    pm_name=project.pm.name,
-                    project_name=project.name,
+                    pm_email=client.pm.email,
+                    pm_name=client.pm.name,
+                    project_name=client.name, # Using client name as context
                     issue_title=db_issue.title,
                     issue_description=db_issue.description,
                     reporter_role=current_user.role
                 )
-            elif project and project.pm:
+            elif client and client.pm:
                 # Fallback if no background_tasks provided (e.g. tests)
                 email_service.send_issue_notification(
-                    pm_email=project.pm.email,
-                    pm_name=project.pm.name,
-                    project_name=project.name,
+                    pm_email=client.pm.email,
+                    pm_name=client.pm.name,
+                    project_name=client.name, # Using client name as context
                     issue_title=db_issue.title,
                     issue_description=db_issue.description,
                     reporter_role=current_user.role

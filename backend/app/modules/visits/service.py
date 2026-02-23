@@ -7,7 +7,7 @@ from datetime import datetime
 from app.modules.visits.models import Visit, VisitStatus
 from app.modules.visits.schemas import VisitCreate, VisitUpdate
 from app.modules.users.models import User
-from app.modules.leads.models import Lead
+from app.modules.shops.models import Shop
 from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
 
@@ -22,19 +22,19 @@ class VisitService:
     def get_visit(self, visit_id: int):
         return self.db.query(Visit).filter(Visit.id == visit_id).first()
 
-    def get_visits(self, skip: int = 0, limit: int = 100, user_id: int = None, lead_id: int = None):
+    def get_visits(self, skip: int = 0, limit: int = 100, user_id: int = None, shop_id: int = None):
         query = self.db.query(Visit)
         if user_id:
             query = query.filter(Visit.user_id == user_id)
-        if lead_id:
-            query = query.filter(Visit.lead_id == lead_id)
+        if shop_id:
+            query = query.filter(Visit.shop_id == shop_id)
         return query.order_by(Visit.visit_date.desc()).offset(skip).limit(limit).all()
 
     async def create_visit(self, visit_in: VisitCreate, current_user: User, request: Request, photo: UploadFile = None):
-        # Validation: Check Lead Exists
-        lead = self.db.query(Lead).filter(Lead.id == visit_in.lead_id).first()
-        if not lead:
-            raise HTTPException(status_code=404, detail="Lead not found")
+        # Validation: Check Shop Exists
+        shop = self.db.query(Shop).filter(Shop.id == visit_in.shop_id).first()
+        if not shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
             
         visit_data = visit_in.model_dump()
         
@@ -44,7 +44,7 @@ class VisitService:
         end_of_day = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
         
         existing_visit = self.db.query(Visit).filter(
-            Visit.lead_id == visit_in.lead_id,
+            Visit.shop_id == visit_in.shop_id,
             Visit.user_id == current_user.id,
             Visit.visit_date >= start_of_day,
             Visit.visit_date <= end_of_day
@@ -60,7 +60,7 @@ class VisitService:
             try:
                 # Validate file extension if needed, for now accept images
                 file_ext = photo.filename.split(".")[-1]
-                filename = f"visit_{visit_in.lead_id}_{current_user.id}_{int(datetime.utcnow().timestamp())}.{file_ext}"
+                filename = f"visit_{visit_in.shop_id}_{current_user.id}_{int(datetime.utcnow().timestamp())}.{file_ext}"
                 file_path = UPLOAD_DIR / filename
                 
                 with file_path.open("wb") as buffer:

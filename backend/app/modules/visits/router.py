@@ -17,7 +17,7 @@ read_access = RoleChecker([UserRole.SALES, UserRole.TELESALES, UserRole.ADMIN, U
 @router.post("/", response_model=VisitRead, status_code=status.HTTP_201_CREATED)
 async def create_visit(
     request: Request,
-    lead_id: int = Form(...),
+    shop_id: int = Form(...),
     visit_date: Optional[str] = Form(None), # Parse string to datetime
     notes: Optional[str] = Form(None),
     status: VisitStatus = Form(VisitStatus.SCHEDULED),
@@ -39,7 +39,7 @@ async def create_visit(
             parsed_date = datetime.utcnow() # Fallback or error?
             
     visit_in = VisitCreate(
-        lead_id=lead_id,
+        shop_id=shop_id,
         visit_date=parsed_date,
         notes=notes,
         status=status
@@ -52,13 +52,13 @@ async def create_visit(
 def read_visits(
     skip: int = 0,
     limit: int = 100,
-    lead_id: Optional[int] = None,
+    shop_id: Optional[int] = None,
     user_id: Optional[int] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(read_access) 
 ) -> Any:
     service = VisitService(db)
-    return service.get_visits(skip, limit, user_id=user_id, lead_id=lead_id)
+    return service.get_visits(skip, limit, user_id=user_id, shop_id=shop_id)
 
 @router.patch("/{visit_id}", response_model=VisitRead)
 async def update_visit(

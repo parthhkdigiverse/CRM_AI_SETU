@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
 from app.modules.users.models import User, UserRole
-from app.modules.projects.models import Project
+from app.modules.clients.models import Client
 from app.modules.issues.models import Issue
 from app.modules.issues.schemas import IssueCreate, IssueRead, IssueUpdate
 from app.modules.issues.service import IssueService
@@ -21,9 +21,9 @@ staff_checker = RoleChecker([
     UserRole.PROJECT_MANAGER_AND_SALES
 ])
 
-@router.post("/{project_id}/issues", response_model=IssueRead)
+@router.post("/{client_id}/issues", response_model=IssueRead)
 async def create_issue(
-    project_id: int,
+    client_id: int,
     issue_in: IssueCreate,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
@@ -31,32 +31,32 @@ async def create_issue(
 ) -> Any:
     """
     Create an issue. Reporter is automatically set to current user.
-    PMs can only report issues on their own projects.
+    PMs can only report issues on their assigned clients.
     """
-    db_project = db.query(Project).filter(Project.id == project_id).first()
-    if not db_project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    db_client = db.query(Client).filter(Client.id == client_id).first()
+    if not db_client:
+        raise HTTPException(status_code=404, detail="Client not found")
     
-    if current_user.role == UserRole.PROJECT_MANAGER and db_project.pm_id != current_user.id:
-        raise HTTPException(status_code=403, detail="You can only report issues for your assigned projects")
+    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only report issues for your assigned clients")
 
     service = IssueService(db)
-    return await service.create_issue(issue_in, project_id, current_user, request=None, background_tasks=background_tasks)
+    return await service.create_issue(issue_in, client_id, current_user, request=None, background_tasks=background_tasks)
 
-@router.get("/{project_id}/issues", response_model=List[IssueRead])
-def read_project_issues(
-    project_id: int,
+@router.get("/{client_id}/issues", response_model=List[IssueRead])
+def read_client_issues(
+    client_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
 ) -> Any:
-    db_project = db.query(Project).filter(Project.id == project_id).first()
-    if not db_project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    db_client = db.query(Client).filter(Client.id == client_id).first()
+    if not db_client:
+        raise HTTPException(status_code=404, detail="Client not found")
         
-    if current_user.role == UserRole.PROJECT_MANAGER and db_project.pm_id != current_user.id:
+    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    return db.query(Issue).filter(Issue.project_id == project_id).all()
+    return db.query(Issue).filter(Issue.client_id == client_id).all()
 
 @router.patch("/issues/{issue_id}", response_model=IssueRead)
 def update_issue(
@@ -69,9 +69,9 @@ def update_issue(
     if not db_issue:
         raise HTTPException(status_code=404, detail="Issue not found")
     
-    # Check project ownership if PM
-    db_project = db.query(Project).filter(Project.id == db_issue.project_id).first()
-    if current_user.role == UserRole.PROJECT_MANAGER and db_project.pm_id != current_user.id:
+    # Check client ownership if PM
+    db_client = db.query(Client).filter(Client.id == db_issue.client_id).first()
+    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     update_data = issue_in.model_dump(exclude_unset=True)
@@ -101,8 +101,8 @@ def get_issue_details(
         raise HTTPException(status_code=404, detail="Issue not found")
     
     # Check access (PM check)
-    db_project = db.query(Project).filter(Project.id == db_issue.project_id).first()
-    if current_user.role == UserRole.PROJECT_MANAGER and db_project.pm_id != current_user.id:
+    db_client = db.query(Client).filter(Client.id == db_issue.client_id).first()
+    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
         
     return db_issue
@@ -122,10 +122,10 @@ def assign_issue(
     
     # Check access (PM or Admin only usually, or maybe Reporter? Restricting to PM/Admin for assignment)
     # staff_checker allows many roles. Let's refine if needed.
-    # Logic: Only PM of the project or Admin can assign?
+    # Logic: Only PM assigned to the client or Admin can assign?
     
-    db_project = db.query(Project).filter(Project.id == db_issue.project_id).first()
-    if current_user.role == UserRole.PROJECT_MANAGER and db_project.pm_id != current_user.id:
+    db_client = db.query(Client).filter(Client.id == db_issue.client_id).first()
+    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     # Verify assignee

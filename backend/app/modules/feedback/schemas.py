@@ -13,7 +13,7 @@ class FeedbackCreate(FeedbackBase):
 
 class FeedbackRead(FeedbackBase):
     id: int
-    project_id: int
+    client_id: int
     created_at: datetime
 
     class Config:

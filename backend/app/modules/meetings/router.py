@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
 from app.modules.users.models import User, UserRole
-from app.modules.projects.models import Project
+from app.modules.clients.models import Client
 from app.modules.meetings.models import MeetingSummary
 from app.modules.meetings.schemas import MeetingSummaryCreate, MeetingSummaryRead, MeetingSummaryUpdate
 
@@ -25,43 +25,43 @@ pm_checker = RoleChecker([
     UserRole.PROJECT_MANAGER_AND_SALES
 ])
 
-@router.post("/{project_id}/meetings", response_model=MeetingSummaryRead)
+@router.post("/{client_id}/meetings", response_model=MeetingSummaryRead)
 def create_meeting(
-    project_id: int,
+    client_id: int,
     meeting_in: MeetingSummaryCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(pm_checker)
 ) -> Any:
     """
-    PMs or Admins only. PMs can only add to their own projects.
+    PMs or Admins only. PMs can only add to their own assigned clients.
     """
-    db_project = db.query(Project).filter(Project.id == project_id).first()
-    if not db_project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    db_client = db.query(Client).filter(Client.id == client_id).first()
+    if not db_client:
+        raise HTTPException(status_code=404, detail="Client not found")
     
-    if current_user.role == UserRole.PROJECT_MANAGER and db_project.pm_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied to this project")
+    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied to this client")
 
-    db_meeting = MeetingSummary(**meeting_in.model_dump(), project_id=project_id)
+    db_meeting = MeetingSummary(**meeting_in.model_dump(), client_id=client_id)
     db.add(db_meeting)
     db.commit()
     db.refresh(db_meeting)
     return db_meeting
 
-@router.get("/{project_id}/meetings", response_model=List[MeetingSummaryRead])
-def read_project_meetings(
-    project_id: int,
+@router.get("/{client_id}/meetings", response_model=List[MeetingSummaryRead])
+def read_client_meetings(
+    client_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
 ) -> Any:
-    db_project = db.query(Project).filter(Project.id == project_id).first()
-    if not db_project:
-        raise HTTPException(status_code=404, detail="Project not found")
+    db_client = db.query(Client).filter(Client.id == client_id).first()
+    if not db_client:
+        raise HTTPException(status_code=404, detail="Client not found")
         
-    if current_user.role == UserRole.PROJECT_MANAGER and db_project.pm_id != current_user.id:
+    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    return db.query(MeetingSummary).filter(MeetingSummary.project_id == project_id).all()
+    return db.query(MeetingSummary).filter(MeetingSummary.client_id == client_id).all()
 
 @router.patch("/meetings/{meeting_id}", response_model=MeetingSummaryRead)
 def update_meeting(
@@ -74,8 +74,8 @@ def update_meeting(
     if not db_meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
     
-    db_project = db.query(Project).filter(Project.id == db_meeting.project_id).first()
-    if current_user.role == UserRole.PROJECT_MANAGER and db_project.pm_id != current_user.id:
+    db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
+    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     update_data = meeting_in.model_dump(exclude_unset=True)
@@ -91,12 +91,17 @@ def update_meeting(
 def delete_meeting(
     meeting_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(admin_checker)
+    current_user: User = Depends(pm_checker)
 ):
     db_meeting = db.query(MeetingSummary).filter(MeetingSummary.id == meeting_id).first()
     if not db_meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
-    db.delete(db_meeting)
+
+    if current_user.role != UserRole.ADMIN:
+        db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
+        if not db_client or db_client.pm_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+
     db.delete(db_meeting)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -115,8 +120,8 @@ def cancel_meeting(
     if not db_meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
     
-    db_project = db.query(Project).filter(Project.id == db_meeting.project_id).first()
-    if current_user.role == UserRole.PROJECT_MANAGER and db_project.pm_id != current_user.id:
+    db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
+    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     db_meeting.status = MeetingStatus.CANCELLED
@@ -138,8 +143,8 @@ def reschedule_meeting(
     if not db_meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
     
-    db_project = db.query(Project).filter(Project.id == db_meeting.project_id).first()
-    if current_user.role == UserRole.PROJECT_MANAGER and db_project.pm_id != current_user.id:
+    db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
+    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     # Auto reschedule logic (Placeholder: Move to next day same time)
@@ -148,6 +153,31 @@ def reschedule_meeting(
     
     db_meeting.status = MeetingStatus.SCHEDULED
     db_meeting.cancellation_reason = None # Clear reason
+    
+    db.commit()
+    db.refresh(db_meeting)
+    return db_meeting
+
+@router.post("/meetings/{meeting_id}/import-summary", response_model=MeetingSummaryRead)
+def import_meeting_summary(
+    meeting_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(pm_checker)
+) -> Any:
+    """
+    Import meeting summary from Google Meet.
+    """
+    db_meeting = db.query(MeetingSummary).filter(MeetingSummary.id == meeting_id).first()
+    if not db_meeting:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    
+    db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
+    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # Mock import from Google Meet
+    db_meeting.content = f"Imported Google Meet Summary for Meeting {meeting_id}:\n- Discussed project timeline.\n- Agreed on next steps."
+    db_meeting.status = MeetingStatus.COMPLETED
     
     db.commit()
     db.refresh(db_meeting)

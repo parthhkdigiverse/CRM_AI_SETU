@@ -6,7 +6,7 @@ class MeetingSummaryBase(BaseModel):
     title: str
     content: str
     date: Optional[datetime] = None
-    project_id: int
+    client_id: int
 
 class MeetingSummaryCreate(BaseModel):
     title: str

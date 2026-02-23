@@ -14,7 +14,7 @@ class Visit(Base):
     __tablename__ = "visits"
 
     id = Column(Integer, primary_key=True, index=True)
-    lead_id = Column(Integer, ForeignKey("leads.id"), nullable=False)
+    shop_id = Column(Integer, ForeignKey("shops.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     
     status = Column(Enum(VisitStatus), default=VisitStatus.SCHEDULED)
@@ -27,5 +27,5 @@ class Visit(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    lead = relationship("app.modules.leads.models.Lead", backref="visits")
+    shop = relationship("app.modules.shops.models.Shop", backref="visits")
     user = relationship("app.modules.users.models.User", backref="visits")
