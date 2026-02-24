@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Feedback — CRM AI SETU</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+
+<body class="bg-light">
+    <div class="d-flex">
+        <div id="sidebar"></div>
+        <div class="flex-grow-1 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-0">Client Feedback</h2><small class="text-muted">Select a client to view their
+                        feedback</small>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <select id="fb-client" class="form-select">
+                        <option value="">-- Select Client --</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary" onclick="loadFeedback()"><i class="bi bi-search me-1"></i>Load
+                        Feedback</button>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addFeedbackModal">
+                        <i class="bi bi-plus-lg me-1"></i>Add Feedback
+                    </button>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Rating</th>
+                                <th>Comment</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feedback-table">
+                            <tr>
+                                <td colspan="3" class="text-center py-5 text-muted">Select a client above to view
+                                    feedback.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Feedback Modal -->
+    <div class="modal fade" id="addFeedbackModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Add Client Feedback</h5><button class="btn-close"
+                        data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">Client *</label>
+                        <select id="fb-client-m" class="form-select">
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Rating (1-5) *</label>
+                        <div class="d-flex gap-2" id="star-rating">
+                            ${[1,2,3,4,5].map(n => `<i class="bi bi-star fs-4 text-muted" data-val="${n}"
+                                style="cursor:pointer;" onclick="setRating(${n})"></i>`).join('')}
+                        </div>
+                        <input type="hidden" id="fb-rating" value="0">
+                    </div>
+                    <div class="mb-3"><label class="form-label">Comment</label>
+                        <textarea id="fb-comment" class="form-control" rows="3"
+                            placeholder="Customer feedback..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-success" id="save-feedback-btn">Save Feedback</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        requireAuth();
+        document.getElementById('sidebar').innerHTML = renderSidebar('feedback');
+
+        // Star rating
+        window.setRating = (val) => {
+            document.getElementById('fb-rating').value = val;
+            document.querySelectorAll('#star-rating i').forEach((el, i) => {
+                el.className = `bi ${i < val ? 'bi-star-fill text-warning' : 'bi-star text-muted'} fs-4`;
+            });
+        };
+
+        // Load clients
+        apiGet('/clients/').then(clients => {
+            const opts = clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            document.getElementById('fb-client').innerHTML = '<option value="">-- Select Client --</option>' + opts;
+            document.getElementById('fb-client-m').innerHTML = '<option value="">-- Select Client --</option>' + opts;
+        });
+
+        window.loadFeedback = async () => {
+            const cid = document.getElementById('fb-client').value;
+            if (!cid) return showToast('Select a client first', 'error');
+            const tbody = document.getElementById('feedback-table');
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-3 text-muted">Loading...</td></tr>';
+            try {
+                const feedbacks = await apiGet(`/clients/${cid}/feedback`);
+                const stars = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+                tbody.innerHTML = feedbacks.length
+                    ? feedbacks.map(f => `
+                    <tr>
+                        <td class="text-warning fw-bold fs-5">${stars(f.rating)} <small class="text-muted fs-6">(${f.rating}/5)</small></td>
+                        <td>${f.comment || 'No comment'}</td>
+                        <td class="text-muted small">${f.created_at ? new Date(f.created_at).toLocaleString('en-IN') : '—'}</td>
+                    </tr>`).join('')
+                    : '<tr><td colspan="3" class="text-center py-5 text-muted">No feedback for this client yet.</td></tr>';
+            } catch (e) { tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4">${e.message}</td></tr>`; }
+        };
+
+        document.getElementById('save-feedback-btn').addEventListener('click', async () => {
+            const cid = document.getElementById('fb-client-m').value;
+            const rating = parseInt(document.getElementById('fb-rating').value);
+            if (!cid) return showToast('Select a client', 'error');
+            if (!rating) return showToast('Please set a rating', 'error');
+            const btn = document.getElementById('save-feedback-btn');
+            btn.disabled = true;
+            try {
+                await apiPost(`/clients/${cid}/feedback`, { rating, comment: document.getElementById('fb-comment').value });
+                bootstrap.Modal.getInstance(document.getElementById('addFeedbackModal')).hide();
+                showToast('Feedback saved!');
+            } catch (e) { showToast(e.message, 'error'); }
+            finally { btn.disabled = false; }
+        });
+    </script>
+</body>
+
+</html>

@@ -3,227 +3,132 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM AI SETU</title>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/global.css">
-    <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/components.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CRM AI SETU — Login</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            min-height: 100vh;
+        }
+
+        .login-card {
+            max-width: 420px;
+            width: 100%;
+            border-radius: 16px;
+        }
+
+        .brand-icon {
+            width: 56px;
+            height: 56px;
+            background: #4f46e5;
+            border-radius: 14px;
+        }
+    </style>
 </head>
 
-<body>
-    <!-- Login View (Hidden by default, toggled by app.js) -->
-    <div id="login-view" class="login-view hidden">
-        <div class="login-blob-1"></div>
-        <div class="login-blob-2"></div>
-
-        <div class="login-card">
-            <div class="login-header">
-                <div class="login-logo">
-                    <i class="fa-solid fa-chart-line"></i>
-                </div>
-                <h1>Welcome Back</h1>
-                <p class="text-muted">Enter your credentials to access the CRM</p>
+<body class="d-flex align-items-center justify-content-center p-3">
+    <div class="login-card bg-white shadow-lg p-5">
+        <div class="text-center mb-4">
+            <div class="brand-icon d-flex align-items-center justify-content-center mx-auto mb-3">
+                <i class="bi bi-diagram-3-fill text-white fs-3"></i>
             </div>
-
-            <form id="login-form">
-                <div class="form-group">
-                    <label class="form-label">Email Address</label>
-                    <input type="email" id="login-email" class="form-control" placeholder="admin@example.com"
-                        value="admin@example.com" required>
-                </div>
-                <div class="form-group mb-4">
-                    <label class="form-label">Password</label>
-                    <input type="password" id="login-password" class="form-control" placeholder="••••••••"
-                        value="password123" required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">
-                    <span>Sign In</span>
-                    <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </form>
-            <div id="login-error" class="hidden text-danger mt-4"
-                style="text-align: center; font-size: 13px; font-weight: 500;">
-                <i class="fa-solid fa-circle-exclamation"></i> Invalid credentials.
-            </div>
+            <h1 class="h4 fw-bold">CRM AI SETU</h1>
+            <p class="text-muted small">Sign in to your account</p>
         </div>
+
+        <div id="login-error" class="alert alert-danger d-none" role="alert"></div>
+
+        <form id="login-form">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Email</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                    <input type="email" id="email" class="form-control" placeholder="admin@example.com" required>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+                </div>
+            </div>
+            <button type="submit" id="login-btn" class="btn btn-primary w-100 fw-semibold py-2">
+                Sign In
+            </button>
+        </form>
+
+        <p class="text-center text-muted small mt-4 mb-0">
+            CRM AI SETU &copy; 2025. Internal use only.
+        </p>
     </div>
 
-    <!-- Application Shell (Hidden by default, toggled by app.js) -->
-    <div id="app-shell" class="app-container hidden">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo-icon" style="background: var(--primary); border-radius: 6px;">
-                    <i class="fa-solid fa-chart-simple"></i>
-                </div>
-                CRM AI SETU
-            </div>
-            <nav class="sidebar-nav">
-                <!-- Dashboard -->
-                <div class="sidebar-section" style="margin-bottom: 16px;">
-                    <div class="section-title">
-                        <span class="section-text">DASHBOARD</span>
-                    </div>
-                    <div class="nav-sub-items">
-                        <a class="nav-item active" data-view="dashboard">
-                            <i class="fa-solid fa-chart-simple nav-icon"></i> Overview
-                        </a>
-                    </div>
-                </div>
+    <script>
+        const API = 'http://127.0.0.1:8000/api';
 
-                <!-- Administration -->
-                <div class="sidebar-section">
-                    <div class="section-title toggle-section" style="cursor: pointer;">
-                        <span class="section-text">ADMINISTRATION</span>
-                        <i class="fa-solid fa-chevron-down section-arrow"></i>
-                    </div>
-                    <div class="nav-sub-items">
-                        <a class="nav-item" data-view="admin">
-                            <i class="fa-regular fa-user nav-icon"></i> Users & Roles
-                        </a>
-                    </div>
-                </div>
+        // If already logged in, redirect
+        if (localStorage.getItem('access_token')) {
+            window.location.href = 'dashboard.html';
+        }
 
-                <!-- Field Operations -->
-                <div class="sidebar-section">
-                    <div class="section-title toggle-section" style="cursor: pointer;">
-                        <span class="section-text">FIELD OPERATIONS</span>
-                        <i class="fa-solid fa-chevron-right section-arrow"></i>
-                    </div>
-                    <div class="nav-sub-items hidden">
-                        <a class="nav-item" data-view="leads">
-                            <i class="fa-solid fa-bullseye nav-icon"></i> Leads
-                        </a>
-                        <a class="nav-item" data-view="areas">
-                            <i class="fa-solid fa-store nav-icon"></i> Areas & Shops
-                        </a>
-                        <a class="nav-item" data-view="visits">
-                            <i class="fa-solid fa-clipboard-list nav-icon"></i> Visits
-                        </a>
-                    </div>
-                </div>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('login-btn');
+            const errEl = document.getElementById('login-error');
+            errEl.classList.add('d-none');
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Signing in...';
+            btn.disabled = true;
 
-                <!-- Project Management -->
-                <div class="sidebar-section">
-                    <div class="section-title toggle-section" style="cursor: pointer;">
-                        <span class="section-text">PROJECT MANAGEMENT</span>
-                        <i class="fa-solid fa-chevron-right section-arrow"></i>
-                    </div>
-                    <div class="nav-sub-items hidden">
-                        <a class="nav-item" data-view="projects">
-                            <i class="fa-regular fa-building nav-icon"></i> Projects
-                        </a>
-                        <a class="nav-item" data-view="meetings">
-                            <i class="fa-regular fa-calendar-check nav-icon"></i> Meetings
-                        </a>
-                        <a class="nav-item" data-view="issues">
-                            <i class="fa-solid fa-triangle-exclamation nav-icon"></i> Issues
-                        </a>
-                    </div>
-                </div>
+            const formData = new URLSearchParams();
+            formData.append('username', document.getElementById('email').value);
+            formData.append('password', document.getElementById('password').value);
 
-                <!-- Client Relations -->
-                <div class="sidebar-section">
-                    <div class="section-title toggle-section" style="cursor: pointer;">
-                        <span class="section-text">CLIENT RELATIONS</span>
-                        <i class="fa-solid fa-chevron-right section-arrow"></i>
-                    </div>
-                    <div class="nav-sub-items hidden">
-                        <a class="nav-item" data-view="clients">
-                            <i class="fa-solid fa-handshake nav-icon"></i> Clients
-                        </a>
-                        <a class="nav-item" data-view="feedback">
-                            <i class="fa-regular fa-comment-dots nav-icon"></i> Feedback
-                        </a>
-                    </div>
-                </div>
+            try {
+                const res = await fetch(`${API}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
 
-                <!-- HR & Payroll -->
-                <div class="sidebar-section">
-                    <div class="section-title toggle-section" style="cursor: pointer;">
-                        <span class="section-text">HR & PAYROLL</span>
-                        <i class="fa-solid fa-chevron-right section-arrow"></i>
-                    </div>
-                    <div class="nav-sub-items hidden">
-                        <a class="nav-item" data-view="employees">
-                            <i class="fa-solid fa-user-group nav-icon"></i> Employees
-                        </a>
-                        <a class="nav-item" data-view="salary">
-                            <i class="fa-solid fa-file-invoice-dollar nav-icon"></i> Salary & Leaves
-                        </a>
-                        <a class="nav-item" data-view="incentives">
-                            <i class="fa-solid fa-award nav-icon"></i> Incentives
-                        </a>
-                    </div>
-                </div>
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Invalid credentials');
+                }
 
-                <!-- Reports & Analytics -->
-                <div class="sidebar-section">
-                    <div class="section-title toggle-section" style="cursor: pointer;">
-                        <span class="section-text">REPORTS & ANALYTICS</span>
-                        <i class="fa-solid fa-chevron-right section-arrow"></i>
-                    </div>
-                    <div class="nav-sub-items hidden">
-                        <a class="nav-item" data-view="reports">
-                            <i class="fa-solid fa-chart-line nav-icon"></i> Analytics
-                        </a>
-                    </div>
-                </div>
-            </nav>
-            <div class="sidebar-footer">
-                <a class="nav-item" style="color: #64748B;">
-                    <i class="fa-solid fa-gear" style="margin-right: 8px;"></i> Settings
-                </a>
-                <a class="nav-item" id="logout-btn" style="cursor: pointer; color: #64748B;">
-                    <i class="fa-solid fa-arrow-right-from-bracket" style="margin-right: 8px;"></i> Logout
-                </a>
-            </div>
-        </aside>
+                const data = await res.json();
+                localStorage.setItem('access_token', data.access_token);
+                if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token);
 
-        <!-- Main Content -->
-        <div class="main-wrapper">
-            <!-- Topbar -->
-            <header class="topbar">
-                <div class="breadcrumb" id="topbar-breadcrumb">
-                    Dashboard
-                </div>
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" placeholder="Search anything...">
-                </div>
-                <div class="topbar-actions">
-                    <button class="btn btn-primary" id="global-add-btn" style="padding: 8px 16px;">
-                        <i class="fa-solid fa-plus"></i> Add New
-                    </button>
-                    <div class="notification-bell">
-                        <i class="fa-regular fa-bell"></i>
-                        <span class="bell-dot"></span>
-                    </div>
-                    <div class="profile-dropdown">
-                        <div class="avatar" style="color: var(--primary); background: #EEF2FF;">AD</div>
-                        <div style="font-weight: 600; font-size: 14px; margin-left:8px;">Admin</div>
-                    </div>
-                </div>
-            </header>
+                // Decode JWT to get user_id, then find employee info
+                try {
+                    const payload = JSON.parse(atob(data.access_token.split('.')[1]));
+                    const userId = payload.sub; // user_id is in 'sub'
+                    const empsRes = await fetch(`${API}/employees/`, {
+                        headers: { 'Authorization': `Bearer ${data.access_token}` }
+                    });
+                    let userName = 'User', userRole = '';
+                    if (empsRes.ok) {
+                        const emps = await empsRes.json();
+                        const me = emps.find(e => String(e.user_id) === String(userId));
+                        if (me) { userName = me.full_name || me.name || 'User'; userRole = me.role || ''; }
+                    }
+                    localStorage.setItem('crm_user', JSON.stringify({ id: userId, name: userName, role: userRole }));
+                } catch (ex) {
+                    localStorage.setItem('crm_user', JSON.stringify({ name: 'User', role: '' }));
+                }
 
-            <!-- Dynamic Body -->
-            <main class="page-content" id="main-content">
-                <!-- Views get injected here by app.js -->
-            </main>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/app.js"></script>
+                window.location.href = 'dashboard.html';
+            } catch (err) {
+                errEl.textContent = err.message || 'Login failed. Please try again.';
+                errEl.classList.remove('d-none');
+            } finally {
+                btn.innerHTML = 'Sign In';
+                btn.disabled = false;
+            }
+        });
+    </script>
 </body>
 
 </html>

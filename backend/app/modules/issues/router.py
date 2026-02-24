@@ -130,33 +130,3 @@ def get_issue_details(
         
     return db_issue
 
-from app.modules.issues.schemas import IssueAssign
-
-@router.patch("/issues/{issue_id}/assign", response_model=IssueRead)
-def assign_issue(
-    issue_id: int,
-    assign_in: IssueAssign,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(staff_checker)
-) -> Any:
-    db_issue = db.query(Issue).filter(Issue.id == issue_id).first()
-    if not db_issue:
-        raise HTTPException(status_code=404, detail="Issue not found")
-    
-    # Check access (PM or Admin only usually, or maybe Reporter? Restricting to PM/Admin for assignment)
-    # staff_checker allows many roles. Let's refine if needed.
-    # Logic: Only PM assigned to the client or Admin can assign?
-    
-    db_client = db.query(Client).filter(Client.id == db_issue.client_id).first()
-    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
-
-    # Verify assignee
-    assignee = db.query(User).filter(User.id == assign_in.assigned_to_id).first()
-    if not assignee:
-        raise HTTPException(status_code=404, detail="Assignee not found")
-
-    db_issue.assigned_to_id = assign_in.assigned_to_id
-    db.commit()
-    db.refresh(db_issue)
-    return db_issue

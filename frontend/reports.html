@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reports — CRM AI SETU</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+
+<body class="bg-light">
+    <div class="d-flex">
+        <div id="sidebar"></div>
+        <div class="flex-grow-1 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold mb-0">Reports & Analytics</h2><small class="text-muted">Summary of CRM
+                        data</small>
+                </div>
+                <button class="btn btn-outline-secondary" onclick="loadReports()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                </button>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm text-center p-3">
+                        <div class="fs-1 fw-bold text-primary" id="r-clients">—</div>
+                        <div class="text-muted small">Total Clients</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm text-center p-3">
+                        <div class="fs-1 fw-bold text-danger" id="r-open-issues">—</div>
+                        <div class="text-muted small">Open Issues</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm text-center p-3">
+                        <div class="fs-1 fw-bold text-success" id="r-visits">—</div>
+                        <div class="text-muted small">Total Visits</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm text-center p-3">
+                        <div class="fs-1 fw-bold text-warning" id="r-meetings">—</div>
+                        <div class="text-muted small">Total Meetings</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Breakdown Tables -->
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white fw-semibold border-0 pt-3">
+                            <i class="bi bi-people me-2 text-primary"></i>Issues by Severity
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Severity</th>
+                                        <th>Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sev-table">
+                                    <tr>
+                                        <td colspan="2" class="text-center py-3 text-muted">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white fw-semibold border-0 pt-3">
+                            <i class="bi bi-geo-alt me-2 text-success"></i>Visits by Status
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="visit-status-table">
+                                    <tr>
+                                        <td colspan="2" class="text-center py-3 text-muted">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        requireAuth();
+        document.getElementById('sidebar').innerHTML = renderSidebar('reports');
+
+        async function loadReports() {
+            // Try reports dashboard endpoint first, fall back to manual aggregation
+            try {
+                const stats = await apiGet('/reports/dashboard');
+                document.getElementById('r-clients').textContent = stats.total_clients ?? '—';
+                document.getElementById('r-open-issues').textContent = stats.open_issues_count ?? stats.open_issues ?? '—';
+                document.getElementById('r-visits').textContent = stats.total_visits ?? '—';
+                document.getElementById('r-meetings').textContent = stats.total_meetings ?? '—';
+            } catch (e) {
+                // Fallback: fetch each separately
+                try { const c = await apiGet('/clients/'); document.getElementById('r-clients').textContent = c.length; } catch (e2) { }
+                try { const i = await apiGet('/issues/?status=OPEN&limit=500'); document.getElementById('r-open-issues').textContent = i.length; } catch (e2) { }
+                try { const v = await apiGet('/visits/?limit=500'); document.getElementById('r-visits').textContent = v.length; } catch (e2) { }
+            }
+
+            // Issues by severity
+            try {
+                const issues = await apiGet('/issues/?limit=500');
+                const sev = { HIGH: 0, MEDIUM: 0, LOW: 0 };
+                issues.forEach(i => { if (sev[i.severity] !== undefined) sev[i.severity]++; });
+                const sevColor = { HIGH: 'danger', MEDIUM: 'warning', LOW: 'success' };
+                document.getElementById('sev-table').innerHTML = Object.entries(sev).map(([s, c]) =>
+                    `<tr><td><span class="badge bg-${sevColor[s]}">${s}</span></td><td class="fw-bold">${c}</td></tr>`
+                ).join('');
+            } catch (e) { }
+
+            // Visits by status
+            try {
+                const visits = await apiGet('/visits/?limit=500');
+                const st = { completed: 0, scheduled: 0, missed: 0 };
+                visits.forEach(v => { if (st[v.status] !== undefined) st[v.status]++; });
+                const stColor = { completed: 'success', scheduled: 'primary', missed: 'danger' };
+                document.getElementById('visit-status-table').innerHTML = Object.entries(st).map(([s, c]) =>
+                    `<tr><td><span class="badge bg-${stColor[s] || 'secondary'}">${s}</span></td><td class="fw-bold">${c}</td></tr>`
+                ).join('');
+            } catch (e) { }
+        }
+
+        loadReports();
+    </script>
+</body>
+
+</html>

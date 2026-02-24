@@ -18,7 +18,7 @@ def read_activity_logs(
 ):
     if current_user.role != UserRole.ADMIN:
          raise HTTPException(
-            status_code=status.HTTP_430_FORBIDDEN,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Only Admins can view activity logs"
         )
     

@@ -1,6 +1,8 @@
-const API_BASE_URL = 'http://127.0.0.1:8123/api';
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 class ApiClient {
+    static API_BASE_URL = API_BASE_URL;
+
     static getAccessToken() {
         return localStorage.getItem('access_token');
     }
@@ -19,6 +21,15 @@ class ApiClient {
     static clearTokens() {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
+        localStorage.removeItem('current_user');
+    }
+
+    static setCurrentUser(user) {
+        localStorage.setItem('current_user', JSON.stringify(user));
+    }
+
+    static getCurrentUser() {
+        try { return JSON.parse(localStorage.getItem('current_user')); } catch { return null; }
     }
 
     static async request(path, options = {}) {
@@ -118,17 +129,43 @@ class ApiClient {
         return data;
     }
 
+    static async logout() {
+        try { await this.request('/auth/logout', { method: 'POST' }); } catch (e) { }
+        this.clearTokens();
+    }
+
+    static async getMe() {
+        return this.request('/auth/me');
+    }
+
+    // ─── Users ───────────────────────────────────────────────
+    static async getUsers() {
+        return this.request('/employees/');
+    }
+    static async updateUserRole(userId, role) {
+        return this.request(`/users/${userId}/role`, { method: 'PATCH', body: { role } });
+    }
+
     // ─── Dashboard ───────────────────────────────────────────
     static async getDashboardStats() {
         return this.request('/reports/dashboard');
     }
 
     // ─── Clients ─────────────────────────────────────────────
-    static async getClients() {
-        return this.request('/clients/');
+    static async getClients(params = '') {
+        return this.request(`/clients/${params}`);
+    }
+    static async getClient(clientId) {
+        return this.request(`/clients/${clientId}`);
     }
     static async createClient(data) {
         return this.request('/clients/', { method: 'POST', body: data });
+    }
+    static async updateClient(clientId, data) {
+        return this.request(`/clients/${clientId}`, { method: 'PATCH', body: data });
+    }
+    static async deleteClient(clientId) {
+        return this.request(`/clients/${clientId}`, { method: 'DELETE' });
     }
     static async assignPM(clientId, pmId) {
         return this.request(`/clients/${clientId}/assign-pm`, { method: 'POST', body: { pm_id: pmId } });
@@ -141,13 +178,22 @@ class ApiClient {
     static async createArea(data) {
         return this.request('/areas/', { method: 'POST', body: data });
     }
+    static async assignAreaAgents(areaId, userId) {
+        return this.request(`/areas/${areaId}/assign`, { method: 'PATCH', body: { user_id: userId } });
+    }
 
     // ─── Shops ───────────────────────────────────────────────
-    static async getShops() {
-        return this.request('/shops/');
+    static async getShops(params = '') {
+        return this.request(`/shops/${params}`);
     }
     static async createShop(data) {
         return this.request('/shops/', { method: 'POST', body: data });
+    }
+    static async updateShop(shopId, data) {
+        return this.request(`/shops/${shopId}`, { method: 'PATCH', body: data });
+    }
+    static async deleteShop(shopId) {
+        return this.request(`/shops/${shopId}`, { method: 'DELETE' });
     }
     static async getShopsByArea(areaId) {
         return this.request(`/shops/?area_id=${areaId}&limit=200`);
@@ -160,10 +206,16 @@ class ApiClient {
     static async createVisit(data) {
         return this.request('/visits/', { method: 'POST', body: data });
     }
+    static async updateVisit(visitId, data) {
+        return this.request(`/visits/${visitId}`, { method: 'PATCH', body: data });
+    }
 
     // ─── Issues ──────────────────────────────────────────────
     static async getIssues(queryString = '') {
-        return this.request(`/issues/${queryString}`);
+        return this.request(`/clients/issues${queryString}`);
+    }
+    static async getClientIssues(clientId) {
+        return this.request(`/clients/${clientId}/issues`);
     }
     static async createIssue(clientId, data) {
         return this.request(`/clients/${clientId}/issues`, { method: 'POST', body: data });
@@ -179,21 +231,76 @@ class ApiClient {
     static async createMeeting(clientId, data) {
         return this.request(`/clients/${clientId}/meetings`, { method: 'POST', body: data });
     }
+    static async updateMeeting(meetingId, data) {
+        return this.request(`/clients/meetings/${meetingId}`, { method: 'PATCH', body: data });
+    }
+    static async cancelMeeting(meetingId, reason) {
+        return this.request(`/clients/meetings/${meetingId}/cancel`, { method: 'POST', body: { reason } });
+    }
+    static async deleteMeeting(meetingId) {
+        return this.request(`/clients/meetings/${meetingId}`, { method: 'DELETE' });
+    }
+    static async importMeetingSummary(meetingId) {
+        return this.request(`/clients/meetings/${meetingId}/import-summary`, { method: 'POST' });
+    }
 
     // ─── Feedback ────────────────────────────────────────────
     static async getClientFeedback(clientId) {
         return this.request(`/clients/${clientId}/feedback`);
+    }
+    static async createFeedback(clientId, data) {
+        return this.request(`/clients/${clientId}/feedback`, { method: 'POST', body: data });
     }
 
     // ─── Employees / HR ──────────────────────────────────────
     static async getEmployees() {
         return this.request('/employees/');
     }
-    static async getSalaryRecords() {
-        return this.request('/hrm/salary/');
+    static async getEmployee(employeeId) {
+        return this.request(`/employees/${employeeId}`);
     }
-    static async updateUserRole(userId, role) {
-        return this.request(`/users/${userId}/role`, { method: 'PATCH', body: { role } });
+    static async createEmployee(data) {
+        return this.request('/employees/', { method: 'POST', body: data });
+    }
+    static async updateEmployee(employeeId, data) {
+        return this.request(`/employees/${employeeId}`, { method: 'PATCH', body: data });
+    }
+
+    // ─── Salary ──────────────────────────────────────────────
+    static async getSalaryRecords(employeeId) {
+        return this.request(`/hrm/salary/${employeeId}`);
+    }
+    static async generateSalary(data) {
+        return this.request('/hrm/salary/generate', { method: 'POST', body: data });
+    }
+
+    // ─── Incentives ──────────────────────────────────────────
+    static async getIncentiveSlabs() {
+        return this.request('/incentives/slabs');
+    }
+    static async createIncentiveSlab(data) {
+        return this.request('/incentives/slabs', { method: 'POST', body: data });
+    }
+    static async calculateIncentive(data) {
+        return this.request('/incentives/calculate', { method: 'POST', body: data });
+    }
+
+    // ─── Payments ────────────────────────────────────────────
+    static async generatePaymentQR(clientId, amount) {
+        return this.request(`/clients/${clientId}/payments/generate-qr`, { method: 'POST', body: { amount } });
+    }
+    static async verifyPayment(paymentId) {
+        return this.request(`/payments/${paymentId}/verify`, { method: 'PATCH' });
+    }
+
+    // ─── Activity Logs ───────────────────────────────────────
+    static async getActivityLogs() {
+        return this.request('/activity-logs/');
+    }
+
+    // ─── Reports ─────────────────────────────────────────────
+    static async getReportsDashboard() {
+        return this.request('/reports/dashboard');
     }
 }
 

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Issues — CRM AI SETU</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+
+<body class="bg-light">
+    <div class="d-flex">
+        <div id="sidebar"></div>
+        <div class="flex-grow-1">
+            <!-- The top header is automatically injected here by js/auth.js -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold fs-3 mb-1">Issues</h2>
+                    <small class="text-muted" id="issue-count"></small>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addIssueModal">
+                    <i class="bi bi-plus-lg me-1"></i>Report Issue
+                </button>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Client</th>
+                                <th>Severity</th>
+                                <th>Status</th>
+                                <th>PM</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="issues-table">
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-arrow-clockwise" style="font-size:2rem;"></i>
+                                    <p class="mt-2">Loading...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Issue Modal -->
+    <div class="modal fade" id="addIssueModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Report Issue</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">Client *</label>
+                        <select id="i-client" class="form-select" required>
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Title *</label><input id="i-title" class="form-control"
+                            required></div>
+                    <div class="mb-3"><label class="form-label">Severity</label>
+                        <select id="i-sev" class="form-select">
+                            <option value="LOW">Low</option>
+                            <option value="MEDIUM" selected>Medium</option>
+                            <option value="HIGH">High</option>
+                        </select>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Description</label>
+                        <textarea id="i-desc" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger" id="save-issue-btn">Report Issue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        requireAuth();
+        document.getElementById('sidebar').innerHTML = renderSidebar('issues');
+
+        const sevColor = { HIGH: 'danger', MEDIUM: 'warning', LOW: 'success' };
+        const stColor = { OPEN: 'danger', IN_PROGRESS: 'primary', RESOLVED: 'success', CLOSED: 'secondary' };
+
+        async function loadIssues() {
+            const issues = await apiGet('/issues/?limit=200');
+            const open = issues.filter(i => i.status === 'OPEN').length;
+            document.getElementById('issue-count').textContent = `${open} open · ${issues.length} total`;
+            document.getElementById('issues-table').innerHTML = issues.length
+                ? issues.map(i => `
+                <tr>
+                    <td class="fw-semibold">${i.title}</td>
+                    <td>Client #${i.client_id}</td>
+                    <td><span class="badge bg-${sevColor[i.severity] || 'secondary'}">${i.severity || '?'}</span></td>
+                    <td><span class="badge bg-${stColor[i.status] || 'secondary'}">${(i.status || '?').replace('_', ' ')}</span></td>
+                    <td>${i.pm_id ? 'PM #' + i.pm_id : '—'}</td>
+                    <td class="small text-muted">${i.created_at ? new Date(i.created_at).toLocaleDateString('en-IN') : '—'}</td>
+                    <td>${i.status !== 'RESOLVED' ? `<button class="btn btn-sm btn-outline-success" onclick="resolveIssue(${i.id})" title="Resolve"><i class="bi bi-check-lg"></i></button>` : '<span class="text-muted small">Done</span>'}</td>
+                </tr>`).join('')
+                : '<tr><td colspan="7" class="text-center py-5 text-muted">No issues found.</td></tr>';
+        }
+
+        window.resolveIssue = async (id) => {
+            try {
+                await apiPatch(`/clients/issues/${id}`, { status: 'RESOLVED' });
+                showToast('Issue resolved!');
+                loadIssues();
+            } catch (e) { showToast(e.message, 'error'); }
+        };
+
+        // Load clients into dropdown
+        apiGet('/clients/').then(clients => {
+            const urlClient = new URLSearchParams(window.location.search).get('client_id');
+            document.getElementById('i-client').innerHTML = '<option value="">-- Select Client --</option>' +
+                clients.map(c => `<option value="${c.id}" ${c.id == urlClient ? 'selected' : ''}>${c.name}</option>`).join('');
+            if (urlClient) bootstrap.Modal.getOrCreateInstance(document.getElementById('addIssueModal')).show();
+        });
+
+        document.getElementById('save-issue-btn').addEventListener('click', async () => {
+            const clientId = document.getElementById('i-client').value;
+            if (!clientId) return showToast('Select a client', 'error');
+            const btn = document.getElementById('save-issue-btn');
+            btn.disabled = true; btn.textContent = 'Saving...';
+            try {
+                await apiPost(`/clients/${clientId}/issues`, {
+                    title: document.getElementById('i-title').value,
+                    description: document.getElementById('i-desc').value,
+                    severity: document.getElementById('i-sev').value,
+                    status: 'OPEN'
+                });
+                bootstrap.Modal.getInstance(document.getElementById('addIssueModal')).hide();
+                showToast('Issue reported!');
+                loadIssues();
+            } catch (e) { showToast(e.message, 'error'); }
+            finally { btn.disabled = false; btn.textContent = 'Report Issue'; }
+        });
+
+        loadIssues();
+    </script>
+</body>
+
+</html>

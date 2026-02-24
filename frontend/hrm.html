@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HRM — CRM AI SETU</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+
+<body class="bg-light">
+    <div class="d-flex">
+        <div id="sidebar"></div>
+        <div class="flex-grow-1 p-4">
+            <div class="mb-4">
+                <h2 class="fw-bold mb-0">HR & Payroll</h2><small class="text-muted">Manage employees, salary, and
+                    incentives</small>
+            </div>
+
+            <ul class="nav nav-tabs mb-3" id="hrmTabs">
+                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-emp"><i
+                            class="bi bi-person-badge me-1"></i>Employees</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-salary" id="salary-tab-link"><i
+                            class="bi bi-cash-stack me-1"></i>Salary</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-incentives"
+                        id="incentive-tab-link"><i class="bi bi-trophy me-1"></i>Incentives</a></li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- Employees Tab -->
+                <div class="tab-pane fade show active" id="tab-emp">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-0">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Phone</th>
+                                        <th>Role</th>
+                                        <th>Department</th>
+                                        <th>Base Salary</th>
+                                        <th>Active Clients</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="emp-table">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5 text-muted">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Salary Tab -->
+                <div class="tab-pane fade" id="tab-salary">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-0">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Period</th>
+                                        <th>Basic</th>
+                                        <th>Deductions</th>
+                                        <th>Net Salary</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="salary-table">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5 text-muted">Click tab to load...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Incentives Tab -->
+                <div class="tab-pane fade" id="tab-incentives">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body p-0">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Min Achievement %</th>
+                                        <th>Max Achievement %</th>
+                                        <th>Payout / Unit</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="incentive-table">
+                                    <tr>
+                                        <td colspan="4" class="text-center py-5 text-muted">Click tab to load...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        requireAuth();
+        document.getElementById('sidebar').innerHTML = renderSidebar('hrm');
+
+        const roleColor = { ADMIN: 'danger', SALES: 'success', TELESALES: 'info', PROJECT_MANAGER: 'warning', PROJECT_MANAGER_AND_SALES: 'purple' };
+
+        async function loadEmployees() {
+            const emps = await apiGet('/employees/');
+            document.getElementById('emp-table').innerHTML = emps.length
+                ? emps.map(e => `
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
+                                ${(e.full_name || e.name || '?')[0].toUpperCase()}
+                            </div>
+                            <div>
+                                <div class="fw-semibold">${e.full_name || e.name || '—'}</div>
+                                <div class="text-muted small">${e.email || '—'}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${e.phone || '—'}</td>
+                    <td><span class="badge bg-secondary">${(e.role || '—').replace(/_/g, ' ')}</span></td>
+                    <td>${e.department || '—'}</td>
+                    <td>${e.base_salary ? 'Rs. ' + Number(e.base_salary).toLocaleString('en-IN') : '—'}</td>
+                    <td>${e.active_clients_count ?? '—'}</td>
+                </tr>`).join('')
+                : '<tr><td colspan="6" class="text-center py-5 text-muted">No employees found.</td></tr>';
+        }
+
+        let salaryLoaded = false, incentiveLoaded = false;
+
+        document.getElementById('salary-tab-link').addEventListener('click', async () => {
+            if (salaryLoaded) return;
+            salaryLoaded = true;
+            try {
+                const emps = await apiGet('/employees/');
+                let slips = [];
+                for (const e of emps.slice(0, 30)) {
+                    try {
+                        const s = await apiGet(`/hrm/salary/${e.id}`);
+                        (s || []).forEach(slip => slips.push({ ...slip, emp_name: e.full_name || e.name }));
+                    } catch (ex) { }
+                }
+                slips.sort((a, b) => (b.month || '').localeCompare(a.month || ''));
+                document.getElementById('salary-table').innerHTML = slips.length
+                    ? slips.map(s => `
+                    <tr>
+                        <td class="fw-semibold">${s.emp_name}</td>
+                        <td>${s.month || '—'}</td>
+                        <td>Rs. ${Number(s.base_salary || 0).toLocaleString('en-IN')}</td>
+                        <td>${s.unpaid_leaves || 0} unpaid day(s)</td>
+                        <td class="fw-bold text-primary">Rs. ${Number(s.final_salary || 0).toLocaleString('en-IN')}</td>
+                        <td><span class="badge bg-success">Generated</span></td>
+                    </tr>`).join('')
+                    : '<tr><td colspan="6" class="text-center py-5 text-muted">No salary records. Generate slips via backend API.</td></tr>';
+            } catch (e) { document.getElementById('salary-table').innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">${e.message}</td></tr>`; }
+        });
+
+        document.getElementById('incentive-tab-link').addEventListener('click', async () => {
+            if (incentiveLoaded) return;
+            incentiveLoaded = true;
+            try {
+                const slabs = await apiGet('/incentives/slabs');
+                document.getElementById('incentive-table').innerHTML = slabs.length
+                    ? slabs.map(s => `
+                    <tr>
+                        <td>${s.min_percentage}%</td>
+                        <td>${s.max_percentage != null ? s.max_percentage + '%' : 'No limit'}</td>
+                        <td class="fw-bold">Rs. ${s.amount_per_unit} / unit</td>
+                        <td class="text-muted">${s.description || '—'}</td>
+                    </tr>`).join('')
+                    : '<tr><td colspan="4" class="text-center py-5 text-muted">No incentive slabs defined. Admin creates them via the backend.</td></tr>';
+            } catch (e) { }
+        });
+
+        loadEmployees();
+    </script>
+</body>
+
+</html>

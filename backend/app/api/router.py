@@ -23,7 +23,6 @@ api_router.include_router(issues_global_router, prefix="/issues", tags=["issues"
 api_router.include_router(meetings.router, prefix="/clients", tags=["meetings"]) # Moved from projects to clients
 api_router.include_router(employees.router, prefix="/employees", tags=["employees"])
 api_router.include_router(feedback.router, prefix="/clients", tags=["feedback"])
-api_router.include_router(feedback.public_feedback_router, prefix="/public/feedback", tags=["feedback"])
 api_router.include_router(salary.router, prefix="/hrm", tags=["salary_leave"])
 api_router.include_router(incentives.router, prefix="/incentives", tags=["incentives"])
 api_router.include_router(activity_logs.router, prefix="/activity-logs", tags=["activity_logs"])

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Meetings — CRM AI SETU</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+
+<body class="bg-light">
+    <div class="d-flex">
+        <div id="sidebar"></div>
+        <div class="flex-grow-1">
+            <!-- The top header is automatically injected here by js/auth.js -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold fs-3 mb-1">Meetings</h2>
+                    <small class="text-muted" id="meeting-count"></small>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMeetingModal">
+                    <i class="bi bi-plus-lg me-1"></i>New Meeting
+                </button>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Title</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="meetings-table">
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-arrow-clockwise" style="font-size:2rem;"></i>
+                                    <p class="mt-2">Loading...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Meeting Modal -->
+    <div class="modal fade" id="addMeetingModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Schedule Meeting</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label">Client *</label>
+                        <select id="m-client" class="form-select" required>
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Title *</label><input id="m-title" class="form-control"
+                            required></div>
+                    <div class="row g-2 mb-3">
+                        <div class="col"><label class="form-label">Date *</label><input type="date" id="m-date"
+                                class="form-control" required></div>
+                        <div class="col"><label class="form-label">Time</label><input type="time" id="m-time"
+                                class="form-control"></div>
+                    </div>
+                    <div class="mb-3"><label class="form-label">Notes</label>
+                        <textarea id="m-notes" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" id="save-meeting-btn">Schedule</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        requireAuth();
+        document.getElementById('sidebar').innerHTML = renderSidebar('meetings');
+
+        let allClients = [];
+
+        async function loadClients() {
+            allClients = await apiGet('/clients/');
+            const sel = document.getElementById('m-client');
+            // Pre-select from URL param
+            const urlClient = new URLSearchParams(window.location.search).get('client_id');
+            sel.innerHTML = '<option value="">-- Select Client --</option>' +
+                allClients.map(c => `<option value="${c.id}" ${c.id == urlClient ? 'selected' : ''}>${c.name}</option>`).join('');
+            if (urlClient) bootstrap.Modal.getOrCreateInstance(document.getElementById('addMeetingModal')).show();
+        }
+
+        async function loadMeetings() {
+            const meetings = [], clientMap = {};
+            allClients.forEach(c => clientMap[c.id] = c.name);
+            for (const c of allClients.slice(0, 30)) {
+                try {
+                    const ms = await apiGet(`/clients/${c.id}/meetings`);
+                    (ms || []).forEach(m => meetings.push({ ...m, client_name: c.name }));
+                } catch (e) { }
+            }
+            meetings.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+            document.getElementById('meeting-count').textContent = `${meetings.length} meetings`;
+            const statusBadge = s => ({ scheduled: 'primary', completed: 'success', cancelled: 'danger' }[(s || '').toLowerCase()] || 'secondary');
+            document.getElementById('meetings-table').innerHTML = meetings.length
+                ? meetings.map(m => `
+                <tr>
+                    <td class="fw-semibold">${m.client_name}</td>
+                    <td>${m.title || '—'}</td>
+                    <td>${m.date ? new Date(m.date).toLocaleDateString('en-IN') : '—'}</td>
+                    <td>${m.date ? new Date(m.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
+                    <td><span class="badge bg-${statusBadge(m.status)}">${m.status || '—'}</span></td>
+                    <td class="text-muted small" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.content || '—'}</td>
+                </tr>`).join('')
+                : '<tr><td colspan="6" class="text-center py-5 text-muted">No meetings found.</td></tr>';
+        }
+
+        document.getElementById('save-meeting-btn').addEventListener('click', async () => {
+            const clientId = document.getElementById('m-client').value;
+            if (!clientId) return showToast('Select a client first', 'error');
+            const d = document.getElementById('m-date').value;
+            const t = document.getElementById('m-time').value;
+            if (!d) return showToast('Date is required', 'error');
+            const btn = document.getElementById('save-meeting-btn');
+            btn.disabled = true; btn.textContent = 'Saving...';
+            try {
+                await apiPost(`/clients/${clientId}/meetings`, {
+                    title: document.getElementById('m-title').value,
+                    date: t ? `${d}T${t}:00` : `${d}T00:00:00`,
+                    status: 'scheduled',
+                    content: document.getElementById('m-notes').value
+                });
+                bootstrap.Modal.getInstance(document.getElementById('addMeetingModal')).hide();
+                showToast('Meeting scheduled!');
+                loadMeetings();
+            } catch (e) { showToast(e.message, 'error'); }
+            finally { btn.disabled = false; btn.textContent = 'Schedule'; }
+        });
+
+        loadClients().then(loadMeetings);
+    </script>
+</body>
+
+</html>
