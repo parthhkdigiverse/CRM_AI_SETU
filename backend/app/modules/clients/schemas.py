@@ -31,8 +31,12 @@ class ClientUpdate(ClientBase):
     owner_id: Optional[int] = None
 
 
+class ClientPMAssign(BaseModel):
+    pm_id: int
+
 class ClientRead(ClientBase):
     id: int
+    pm_id: Optional[int] = None
     owner_id: Optional[int] = None
 
     class Config:

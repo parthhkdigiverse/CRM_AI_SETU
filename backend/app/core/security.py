@@ -30,3 +30,17 @@ def get_password_hash(password: str) -> str:
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
     return hashed.decode("utf-8")
+
+def create_feedback_token(client_id: int) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(days=30)
+    to_encode = {"exp": expire, "client_id": client_id, "type": "feedback"}
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+def decode_feedback_token(token: str) -> Union[int, None]:
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("type") != "feedback":
+            return None
+        return payload.get("client_id")
+    except Exception:
+        return None

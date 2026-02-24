@@ -10,6 +10,15 @@ from app.modules.incentives import models as incentives_models # Force load mode
 
 app = FastAPI(title="CRM AI SETU API")
 
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Allow all for local dev (5500, 8080, etc)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(api_router, prefix="/api")
 
 from datetime import datetime

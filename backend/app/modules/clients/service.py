@@ -110,3 +110,40 @@ class ClientService:
 
         return {"detail": "Client deleted"}
 
+    async def assign_pm(self, client_id: int, pm_id: int, current_user: User, request: Request):
+        db_client = self.get_client(client_id)
+        if not db_client:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+
+        # Verify PM exists and has correct role
+        from app.modules.users.models import UserRole
+        pm = self.db.query(User).filter(User.id == pm_id).first()
+        if not pm or pm.role not in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES] or not pm.is_active:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or inactive Project Manager ID")
+
+        old_pm_id = db_client.pm_id
+        if old_pm_id == pm_id:
+            return db_client # Unchanged
+
+        db_client.pm_id = pm_id
+        
+        # Keep minimal PM history table
+        from app.modules.clients.models import ClientPMHistory
+        history = ClientPMHistory(client_id=db_client.id, pm_id=pm.id)
+        self.db.add(history)
+        
+        self.db.commit()
+        self.db.refresh(db_client)
+
+        await self.activity_logger.log_activity(
+            user_id=current_user.id,
+            user_role=current_user.role,
+            action=ActionType.UPDATE,
+            entity_type=EntityType.CLIENT,
+            entity_id=client_id,
+            old_data={"pm_id": old_pm_id},
+            new_data={"pm_id": pm_id},
+            request=request
+        )
+
+        return db_client

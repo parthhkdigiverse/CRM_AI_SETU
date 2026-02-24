@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from app.modules.auth import router as auth
 from app.modules.issues import router as issues
+from app.modules.issues.router import global_router as issues_global_router
 from app.modules.meetings import router as meetings
 from app.modules.employees import router as employees
 from app.modules.feedback import router as feedback
@@ -18,9 +19,11 @@ api_router.include_router(users.router, prefix="/users", tags=["users"])
 from app.modules.clients import router as clients
 api_router.include_router(clients.router, prefix="/clients", tags=["clients"])
 api_router.include_router(issues.router, prefix="/clients", tags=["issues"]) # Moved from projects to clients
+api_router.include_router(issues_global_router, prefix="/issues", tags=["issues"]) # Global issues route at /issues
 api_router.include_router(meetings.router, prefix="/clients", tags=["meetings"]) # Moved from projects to clients
 api_router.include_router(employees.router, prefix="/employees", tags=["employees"])
 api_router.include_router(feedback.router, prefix="/clients", tags=["feedback"])
+api_router.include_router(feedback.public_feedback_router, prefix="/public/feedback", tags=["feedback"])
 api_router.include_router(salary.router, prefix="/hrm", tags=["salary_leave"])
 api_router.include_router(incentives.router, prefix="/incentives", tags=["incentives"])
 api_router.include_router(activity_logs.router, prefix="/activity-logs", tags=["activity_logs"])

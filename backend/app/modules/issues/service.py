@@ -20,6 +20,21 @@ class IssueService:
     def get_issues(self, skip: int = 0, limit: int = 100):
         return self.db.query(Issue).offset(skip).limit(limit).all()
 
+    def get_all_issues(self, skip: int = 0, limit: int = 100, status=None, severity=None, client_id=None, assigned_to_id=None, pm_id=None):
+        query = self.db.query(Issue)
+        if pm_id: 
+            query = query.join(Client).filter(Client.pm_id == pm_id)
+        if status:
+            query = query.filter(Issue.status == status)
+        if severity:
+            query = query.filter(Issue.severity == severity)
+        if client_id:
+            query = query.filter(Issue.client_id == client_id)
+        if assigned_to_id:
+            query = query.filter(Issue.assigned_to_id == assigned_to_id)
+            
+        return query.order_by(Issue.created_at.desc()).offset(skip).limit(limit).all()
+
     async def create_issue(self, issue: IssueCreate, client_id: int, current_user: User, request: Request, background_tasks: BackgroundTasks = None):
         db_issue = Issue(**issue.dict(), client_id=client_id, reporter_id=current_user.id)
         self.db.add(db_issue)

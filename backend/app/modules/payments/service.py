@@ -55,8 +55,18 @@ class PaymentService:
             
             # Auto-assign PM
             if not client.pm_id:
-                # Find a PM iteratively (ideally round-robin or load-balanced, selecting first available for now)
-                pm = self.db.query(User).filter(User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]), User.is_active == True).first()
+                # Load Balanced PM Assignment (fewest active clients first)
+                pm = self.db.query(User).filter(
+                    User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]), 
+                    User.is_active == True
+                ).outerjoin(
+                    Client, (Client.pm_id == User.id) & (Client.is_active == True)
+                ).group_by(
+                    User.id
+                ).order_by(
+                    func.count(Client.id).asc()
+                ).first()
+                
                 if pm:
                     client.pm_id = pm.id
                     # 4. Keep minimal PM history table

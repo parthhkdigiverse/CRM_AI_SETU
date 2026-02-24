@@ -5,7 +5,7 @@ from app.core.database import get_db
 from app.core.dependencies import RoleChecker
 from app.modules.users.models import User, UserRole
 from app.modules.clients.models import Client
-from app.modules.clients.schemas import ClientCreate, ClientRead, ClientUpdate
+from app.modules.clients.schemas import ClientCreate, ClientRead, ClientUpdate, ClientPMAssign
 from app.modules.clients.service import ClientService
 
 router = APIRouter()
@@ -97,3 +97,16 @@ async def delete_client(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@router.post("/{client_id}/assign-pm", response_model=ClientRead)
+async def assign_pm(
+    request: Request,
+    client_id: int,
+    assign_in: ClientPMAssign,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+) -> Any:
+    """
+    Manually override and reassign a PM to a client. Restricted to Admins.
+    """
+    service = ClientService(db)
+    return await service.assign_pm(client_id, assign_in.pm_id, current_user, request)

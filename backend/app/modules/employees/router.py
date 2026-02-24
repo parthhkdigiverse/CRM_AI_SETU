@@ -2,7 +2,8 @@ from typing import List, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.dependencies import RoleChecker
+from app.core.dependencies import RoleChecker, get_current_active_user
+from datetime import date as dt_date
 from app.modules.users.models import User, UserRole
 from app.modules.employees.models import Employee
 from app.modules.employees.schemas import EmployeeCreate, EmployeeRead, EmployeeUpdate
@@ -117,14 +118,17 @@ def get_referral_code(
 def generate_id_card(
     employee_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(admin_checker)
+    current_user: User = Depends(get_current_active_user)
 ) -> Any:
     """
-    Generate and return an ID card for the employee.
+    Generate and return an ID card for the employee. Admin or Self only.
     """
     employee = db.query(Employee).filter(Employee.id == employee_id).first()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
+        
+    if current_user.role != UserRole.ADMIN and current_user.id != employee.user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to view this ID card")
     
     user = db.query(User).filter(User.id == employee.user_id).first()
     
@@ -134,4 +138,41 @@ def generate_id_card(
         "name": user.name if hasattr(user, 'name') else "Employee Name",
         "role": user.role,
         "id_card_url": f"https://api.crm.demo/static/id_cards/emp_{employee_id}_card.pdf"
+    }
+
+from sqlalchemy import cast, Date
+from app.modules.meetings.models import MeetingSummary
+from app.modules.clients.models import Client
+
+@router.get("/{pm_id}/availability")
+def get_pm_availability(
+    pm_id: int,
+    date: dt_date,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+) -> Any:
+    """
+    Calculate free meeting 1-hour blocks for a PM between 9 AM and 6 PM.
+    """
+    pm = db.query(User).filter(User.id == pm_id, User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES])).first()
+    if not pm:
+         raise HTTPException(status_code=404, detail="Project Manager not found")
+
+    meetings = db.query(MeetingSummary).join(Client).filter(
+        Client.pm_id == pm_id,
+        cast(MeetingSummary.date, Date) == date,
+        MeetingSummary.status != "CANCELLED"
+    ).all()
+    
+    booked_hours = [m.date.hour for m in meetings]
+    
+    free_slots = []
+    for h in range(9, 18):
+        if h not in booked_hours:
+            free_slots.append(f"{h:02d}:00")
+            
+    return {
+        "pm_id": pm_id,
+        "date": date,
+        "free_slots": free_slots
     }
