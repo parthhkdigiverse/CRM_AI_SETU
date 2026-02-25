@@ -11,7 +11,8 @@ from app.modules.shops.models import Shop
 from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
 
-UPLOAD_DIR = Path("backend/static/uploads/visits")
+BASE_DIR = Path(__file__).parent.parent.parent.parent # points to backend/
+UPLOAD_DIR = BASE_DIR / "static" / "uploads" / "visits"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 class VisitService:

@@ -33,7 +33,7 @@ class IssueService:
         if assigned_to_id:
             query = query.filter(Issue.assigned_to_id == assigned_to_id)
             
-        return query.order_by(Issue.created_at.desc()).offset(skip).limit(limit).all()
+        return query.order_by(Issue.id.desc()).offset(skip).limit(limit).all()
 
     async def create_issue(self, issue: IssueCreate, client_id: int, current_user: User, request: Request, background_tasks: BackgroundTasks = None):
         db_issue = Issue(**issue.dict(), client_id=client_id, reporter_id=current_user.id)

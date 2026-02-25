@@ -1,4 +1,9 @@
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+let API_BASE_URL = 'http://127.0.0.1:8000/api'; // Fallback
+// Try to load dynamically from the backend Python config endpoint
+fetch('http://127.0.0.1:8000/api/config')
+    .then(r => r.json())
+    .then(data => { API_BASE_URL = data.API_BASE_URL; ApiClient.API_BASE_URL = data.API_BASE_URL; })
+    .catch(e => console.warn('Using default API_BASE_URL due to config fetch error:', e));
 
 class ApiClient {
     static API_BASE_URL = API_BASE_URL;

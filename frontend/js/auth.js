@@ -1,26 +1,30 @@
 // auth.js — shared across all pages
-const API = 'http://127.0.0.1:8000/api';
+let API = 'http://127.0.0.1:8000/api'; // Fallback
+fetch('http://127.0.0.1:8000/api/config')
+    .then(r => r.json())
+    .then(data => { API = data.API_BASE_URL; })
+    .catch(e => console.warn('Using default API due to fetch error:', e));
 
 // Inject global theme styles
-document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="css/theme.css">');
+document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/theme.css">');
 
-function getToken() { return localStorage.getItem('access_token'); }
+function getToken() { return sessionStorage.getItem('access_token'); }
 function setTokens(a, r) {
-    localStorage.setItem('access_token', a);
-    if (r) localStorage.setItem('refresh_token', r);
+    sessionStorage.setItem('access_token', a);
+    if (r) sessionStorage.setItem('refresh_token', r);
 }
 function clearTokens() {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('crm_user');
+    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('refresh_token');
+    sessionStorage.removeItem('crm_user');
 }
 function getUser() {
-    try { return JSON.parse(localStorage.getItem('crm_user')); } catch { return null; }
+    try { return JSON.parse(sessionStorage.getItem('crm_user')); } catch { return null; }
 }
 
 // Guard: call on every protected page
 function requireAuth() {
-    if (!getToken()) { window.location.href = 'index.html'; }
+    if (!getToken()) { window.location.replace('index.html'); return; }
     const u = getUser();
     const el = document.getElementById('username-display');
     if (el && u) el.textContent = u.name || u.email || 'User';
@@ -31,11 +35,43 @@ function requireAuth() {
     injectTopHeader(pageName);
 }
 
+// Re-evaluate auth on back/forward navigation
+window.addEventListener('pageshow', (event) => {
+    // If the page was restored from the bfcache and we have no token, kick them
+    if (event.persisted && !getToken() && window.location.pathname.indexOf('index.html') === -1) {
+        window.location.replace('index.html');
+    }
+});
+
 // Logout
 function logout() {
     clearTokens();
-    window.location.href = 'index.html';
+    window.location.replace('index.html');
 }
+
+// Session Management (Inactivity Timeout)
+const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
+let inactivityTimer;
+
+function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    if (getToken()) {
+        inactivityTimer = setTimeout(() => {
+            alert('Your session has expired due to inactivity. Please log in again.');
+            logout();
+        }, INACTIVITY_LIMIT_MS);
+    }
+}
+
+// Attach activity listeners once DOM is ready
+if (typeof document !== 'undefined') {
+    ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt =>
+        document.addEventListener(evt, resetInactivityTimer, { passive: true })
+    );
+}
+
+// Call initially
+resetInactivityTimer();
 
 // Generic authenticated fetch
 async function apiFetch(path, options = {}) {
@@ -43,7 +79,7 @@ async function apiFetch(path, options = {}) {
     const token = getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch(API + path, { ...options, headers });
-    if (res.status === 401) { clearTokens(); window.location.href = 'index.html'; return; }
+    if (res.status === 401) { clearTokens(); window.location.replace('index.html'); return; }
     return res;
 }
 

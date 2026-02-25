@@ -4,6 +4,16 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI
 from app.api.router import api_router
+import sys
+import os
+
+# Allow absolute imports from the project root
+root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+
+from config import config
+
 from app.modules.salary import models as salary_models # Force load models
 from app.modules.feedback import models as feedback_models # Force load models
 from app.modules.incentives import models as incentives_models # Force load models
@@ -19,25 +29,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(api_router, prefix="/api")
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 
-from datetime import datetime
+# Mount the static frontend directory so uvicorn serves both API and UI
+# We need to guarantee root_dir points to the very top project folder
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+frontend_path = os.path.join(project_root, "frontend")
+
+if os.path.exists(frontend_path):
+    app.mount("/frontend", StaticFiles(directory=frontend_path), name="frontend")
+else:
+    print(f"WARNING: Static frontend path not found at {frontend_path}")
 
 @app.get("/")
 async def root():
-    print(f"Request received at {datetime.now()}")
     return {
-        "message": "Welcome to CRM AI SETU API",
-        "timestamp": str(datetime.now()),
+        "message": "Welcome to CRM AI SETU",
+        "backend_api_docs": "/docs",
+        "frontend_app": "/frontend/template/index.html",
         "status": "active"
+    }
+
+app.include_router(api_router, prefix="/api")
+
+@app.get("/api/config")
+async def get_config():
+    return {
+        "API_BASE_URL": config.API_BASE_URL
     }
 
 if __name__ == "__main__":
     import uvicorn
+    import os
+    
+    app_dir = os.path.dirname(os.path.abspath(__file__))
     uvicorn.run(
         "app.main:app", 
         host="127.0.0.1", 
         port=8000, 
         reload=True,
-        reload_dirs=["app"]
+        reload_dirs=[app_dir]
     )
