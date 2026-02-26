@@ -161,6 +161,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 await renderHRM();
             } else if (viewName === 'admin') {
                 await renderAdmin();
+            } else if (viewName === 'profile') {
+                await renderProfile();
             } else {
                 mainContent.innerHTML = `
                     <div class="card" style="text-align:center; padding: 60px;">
@@ -178,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function renderDashboard() {
         let stats = { total_clients: 0, open_issues: 0, total_visits: 0, total_shops: 0 };
-        let shops = [], visits = [], clients = [];
+        let shops = [], visits = [], clients = [], todos = [];
         try {
             const res = await window.ApiClient.getDashboardStats();
             stats.total_clients = res.total_clients || 0;
@@ -189,8 +191,21 @@ document.addEventListener('DOMContentLoaded', () => {
         try { shops = await window.ApiClient.getShops(); stats.total_shops = stats.total_shops || shops.length; } catch (e) { }
         try { clients = await window.ApiClient.getClients(); stats.total_clients = stats.total_clients || clients.length; } catch (e) { }
         try { visits = await window.ApiClient.getVisits(); stats.total_visits = stats.total_visits || visits.length; } catch (e) { }
+        try { todos = await window.ApiClient.getTodos(); } catch (e) { } // Fetch actual personal to-dos
 
         const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        const todoRows = todos.length ? todos.slice(0, 5).map(t => {
+            const isDone = t.status === 'COMPLETED';
+            const dotColor = isDone ? 'dot-green' : 'dot-yellow';
+            const badgeColor = isDone ? 'badge-green-light' : 'badge-purple-light';
+            return `
+                <div class="task-item" style="${isDone ? 'opacity:0.6;' : ''}">
+                    <div class="task-dot ${dotColor}"></div>
+                    <div class="task-text" style="${isDone ? 'text-decoration:line-through;' : ''}">${t.title}</div>
+                    <div class="task-badge ${badgeColor}">${isDone ? 'Done' : 'Pending'}</div>
+                </div>`;
+        }).join('') : `<div class="text-muted" style="padding:10px;">No pending tasks!</div>`;
 
         mainContent.innerHTML = `
         <!-- Row 1: Greeting -->
@@ -343,28 +358,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             <!-- Pending Tasks -->
             <div class="card">
-                <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;">Pending Tasks <button onclick="loadView('issues')" class="btn btn-ghost" style="font-size:12px;padding:4px 8px;">View All</button></div>
+                <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;">My Pending Tasks <button onclick="window.alert('Todo modal coming soon')" class="btn btn-ghost" style="font-size:12px;padding:4px 8px;"><i class="fa-solid fa-plus"></i></button></div>
                 <div class="task-list">
-                    <div class="task-item">
-                        <div class="task-dot dot-red"></div>
-                        <div class="task-text">Follow up with Mahindra lead</div>
-                        <div class="task-badge badge-red-light">Today</div>
-                    </div>
-                    <div class="task-item">
-                        <div class="task-dot dot-yellow"></div>
-                        <div class="task-text">Submit project milestone report</div>
-                        <div class="task-badge badge-purple-light">Tomorrow</div>
-                    </div>
-                    <div class="task-item">
-                        <div class="task-dot dot-green"></div>
-                        <div class="task-text">Review salary slips for March</div>
-                        <div class="task-badge badge-purple-light">In 2 days</div>
-                    </div>
-                    <div class="task-item">
-                        <div class="task-dot dot-yellow"></div>
-                        <div class="task-text">Schedule client feedback call</div>
-                        <div class="task-badge badge-purple-light">In 3 days</div>
-                    </div>
+                    ${todoRows}
                 </div>
             </div>
         </div>
@@ -657,13 +653,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const today = new Date().toISOString().slice(0, 10);
         const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
         const todayCount = visits.filter(v => (v.visit_date || '').slice(0, 10) === today).length;
-        const weekCount = visits.filter(v => v.status === 'completed' && (v.visit_date || '') >= weekAgo).length;
-        const missedCount = visits.filter(v => v.status === 'missed').length;
+        const weekCount = visits.filter(v => v.status === 'SATISFIED' || v.status === 'ACCEPT' && (v.visit_date || '') >= weekAgo).length;
+        const missedCount = visits.filter(v => v.status === 'DECLINE').length;
 
         const statusBadge = s => ({
-            completed: '<span class="badge badge-green-light">Completed</span>',
-            scheduled: '<span class="badge badge-purple-light">Scheduled</span>',
-            missed: '<span class="badge badge-red-light">Missed</span>'
+            'SATISFIED': '<span class="badge badge-green-light">Satisfied</span>',
+            'ACCEPT': '<span class="badge badge-purple-light">Accepted</span>',
+            'DECLINE': '<span class="badge badge-red-light">Declined</span>',
+            'TAKE_TIME_TO_THINK': '<span class="badge badge-warning">Thinking</span>'
         }[s] || `<span class="badge">${s || '—'}</span>`);
 
         const rows = visits.length ? visits.map(v => `
@@ -674,7 +671,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${v.visit_date ? new Date(v.visit_date).toLocaleDateString() : '—'}</td>
                 <td>${v.visit_time || '—'}</td>
                 <td>${statusBadge(v.status)}</td>
-                <td class="text-muted" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v.notes || '—'}</td>
+                <td class="text-muted" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v.remarks || '—'}</td>
             </tr>`).join('') :
             `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No visits recorded yet.</td></tr>`;
 
@@ -692,7 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="card" style="padding:0;">
             <div class="table-container">
                 <table class="table">
-                    <thead><tr><th>SHOP</th><th>AREA</th><th>AGENT</th><th>DATE</th><th>TIME</th><th>STATUS</th><th>NOTES</th></tr></thead>
+                    <thead><tr><th>SHOP</th><th>AREA</th><th>AGENT</th><th>DATE</th><th>TIME</th><th>STATUS</th><th>REMARKS</th></tr></thead>
                     <tbody>${rows}</tbody>
                 </table>
             </div>
@@ -776,25 +773,45 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    // ─── Projects (Client-PM mapping) ─────────────────────────────
+    // ─── Projects (Native Backend Module) ─────────────────────────────────────────────
     async function renderProjects() {
-        let clients = [];
-        try { clients = await window.ApiClient.getClients(); } catch (e) { }
-        const rows = clients.length ? clients.map(c => `
+        let projects = [];
+        try { projects = await window.ApiClient.getProjects(); } catch (e) { console.error('Projects fetch failed', e); }
+
+        const statusBadge = (s) => ({
+            'PLANNING': '<span class="badge badge-purple-light">Planning</span>',
+            'IN_PROGRESS': '<span class="badge badge-warning">In Progress</span>',
+            'COMPLETED': '<span class="badge badge-green-light">Completed</span>',
+            'ON_HOLD': '<span class="badge badge-red-light">On Hold</span>',
+        }[s] || `<span class="badge">${s}</span>`);
+
+        const rows = projects.length ? projects.map(p => `
             <tr>
-                <td style="font-weight:500;">${c.name}</td>
-                <td>${c.email}</td>
-                <td>${c.organization || '—'}</td>
-                <td>${c.pm_id ? `<span class="badge badge-primary">PM #${c.pm_id}</span>` : '<span class="badge badge-warning">Unassigned</span>'}</td>
-                <td>${c.status || 'active'}</td>
+                <td style="font-weight:500;">${p.name}</td>
+                <td class="text-muted" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.description || '—'}</td>
+                <td><span class="badge badge-primary">Client #${p.client_id}</span></td>
+                <td>${p.p_manager_id ? `<span class="badge badge-purple-light"><i class="fa-solid fa-user-tie"></i> PM #${p.p_manager_id}</span>` : '<span class="badge badge-red-light">Unassigned</span>'}</td>
+                <td>${statusBadge(p.status)}</td>
+                <td>${p.start_date || '—'} - ${p.end_date || '—'}</td>
             </tr>`).join('') :
-            `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No clients found.</td></tr>`;
+            `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No projects found. Create one!</td></tr>`;
+
         mainContent.innerHTML = `
-        <div class="page-header" style="margin-bottom:24px;"><h1>Projects</h1><p class="text-muted">Client-to-PM assignment overview.</p></div>
-        <div class="card" style="padding:0;"><div class="table-container"><table class="table">
-            <thead><tr><th>CLIENT</th><th>EMAIL</th><th>ORGANIZATION</th><th>ASSIGNED PM</th><th>STATUS</th></tr></thead>
-            <tbody>${rows}</tbody>
-        </table></div></div>`;
+        <div class="page-header" style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h1 style="margin-bottom:4px;">Projects</h1>
+                <p class="text-muted">Tracking ${projects.length} distinct project workloads.</p>
+            </div>
+            <button class="btn btn-primary" onclick="window.alert('Create Project Modal Template Pending')"><i class="fa-solid fa-plus"></i> New Project</button>
+        </div>
+        <div class="card" style="padding:0;">
+            <div class="table-container">
+                <table class="table">
+                    <thead><tr><th>PROJECT NAME</th><th>DESCRIPTION</th><th>CLIENT</th><th>PROJECT MANAGER</th><th>STATUS</th><th>TIMELINE</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        </div>`;
     }
 
     // ─── Meetings ─────────────────────────────────────────────
@@ -1305,7 +1322,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function renderReports() {
         let stats = null;
         try { stats = await window.ApiClient.getReportsDashboard(); } catch (e) { console.warn('Reports fetch failed', e); }
-        
+
         const openIssues = stats?.open_issues_count ?? 0;
         const totalClients = stats?.total_clients ?? 0;
         const totalVisits = stats?.total_visits ?? 0;

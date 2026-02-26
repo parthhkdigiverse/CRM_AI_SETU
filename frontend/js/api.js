@@ -142,6 +142,12 @@ class ApiClient {
     static async getMe() {
         return this.request('/auth/me');
     }
+    static async getProfile() {
+        return this.request('/auth/profile');
+    }
+    static async updateProfile(data) {
+        return this.request('/auth/profile', { method: 'PATCH', body: data });
+    }
 
     // ─── Users ───────────────────────────────────────────────
     static async getUsers() {
@@ -217,7 +223,8 @@ class ApiClient {
 
     // ─── Issues ──────────────────────────────────────────────
     static async getIssues(queryString = '') {
-        return this.request(`/clients/issues${queryString}`);
+        const query = queryString.startsWith('?') ? queryString : (queryString ? `?${queryString}` : '');
+        return this.request(`/issues/${query}`);
     }
     static async getClientIssues(clientId) {
         return this.request(`/clients/${clientId}/issues`);
@@ -270,6 +277,9 @@ class ApiClient {
     static async updateEmployee(employeeId, data) {
         return this.request(`/employees/${employeeId}`, { method: 'PATCH', body: data });
     }
+    static async deleteEmployee(employeeId) {
+        return this.request(`/employees/${employeeId}`, { method: 'DELETE' });
+    }
 
     // ─── Salary ──────────────────────────────────────────────
     static async getSalaryRecords(employeeId) {
@@ -294,8 +304,50 @@ class ApiClient {
     static async generatePaymentQR(clientId, amount) {
         return this.request(`/clients/${clientId}/payments/generate-qr`, { method: 'POST', body: { amount } });
     }
+    static async generatePaymentQRFromShop(shopId, amount) {
+        return this.request(`/shops/${shopId}/payments/generate-qr`, { method: 'POST', body: { amount } });
+    }
     static async verifyPayment(paymentId) {
         return this.request(`/payments/${paymentId}/verify`, { method: 'PATCH' });
+    }
+
+    // ─── Projects ────────────────────────────────────────────
+    static async getProjects(params = '') {
+        return this.request(`/projects/${params}`);
+    }
+    static async getProject(projectId) {
+        return this.request(`/projects/${projectId}`);
+    }
+    static async createProject(data) {
+        return this.request('/projects/', { method: 'POST', body: data });
+    }
+    static async updateProject(projectId, data) {
+        return this.request(`/projects/${projectId}`, { method: 'PATCH', body: data });
+    }
+    static async deleteProject(projectId) {
+        return this.request(`/projects/${projectId}`, { method: 'DELETE' });
+    }
+
+    // ─── Todos ───────────────────────────────────────────────
+    static async getTodos(params = '') {
+        return this.request(`/todos/${params}`);
+    }
+    static async createTodo(data) {
+        return this.request('/todos/', { method: 'POST', body: data });
+    }
+    static async updateTodo(todoId, data) {
+        return this.request(`/todos/${todoId}`, { method: 'PATCH', body: data });
+    }
+    static async deleteTodo(todoId) {
+        return this.request(`/todos/${todoId}`, { method: 'DELETE' });
+    }
+
+    // ─── Notifications ───────────────────────────────────────
+    static async getNotifications(params = '') {
+        return this.request(`/notifications/${params}`);
+    }
+    static async markNotificationRead(notifId) {
+        return this.request(`/notifications/${notifId}/read`, { method: 'PATCH' });
     }
 
     // ─── Activity Logs ───────────────────────────────────────

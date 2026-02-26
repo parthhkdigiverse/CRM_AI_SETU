@@ -12,7 +12,7 @@
 <body class="bg-light">
     <div class="d-flex">
         <div id="sidebar"></div>
-        <div class="flex-grow-1 p-4">
+        <div class="flex-grow-1">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="fw-bold mb-0">Reports & Analytics</h2><small class="text-muted">Summary of CRM
@@ -133,14 +133,17 @@
                 ).join('');
             } catch (e) { }
 
-            // Visits by status
             try {
                 const visits = await apiGet('/visits/?limit=500');
-                const st = { completed: 0, scheduled: 0, missed: 0 };
-                visits.forEach(v => { if (st[v.status] !== undefined) st[v.status]++; });
-                const stColor = { completed: 'success', scheduled: 'primary', missed: 'danger' };
+                const st = { ACCEPT: 0, SATISFIED: 0, DECLINE: 0, TAKE_TIME_TO_THINK: 0, OTHER: 0, SCHEDULED: 0 };
+                visits.forEach(v => {
+                    const s = (v.status || '').toUpperCase();
+                    if (st[s] !== undefined) st[s]++;
+                    else if (s) st.OTHER++;
+                });
+                const stColor = { ACCEPT: 'success', SATISFIED: 'info', DECLINE: 'danger', TAKE_TIME_TO_THINK: 'warning', OTHER: 'secondary', SCHEDULED: 'light text-dark border' };
                 document.getElementById('visit-status-table').innerHTML = Object.entries(st).map(([s, c]) =>
-                    `<tr><td><span class="badge bg-${stColor[s] || 'secondary'}">${s}</span></td><td class="fw-bold">${c}</td></tr>`
+                    `<tr><td><span class="badge bg-${stColor[s] || 'secondary'}">${s.replace(/_/g, ' ')}</span></td><td class="fw-bold">${c}</td></tr>`
                 ).join('');
             } catch (e) { }
         }

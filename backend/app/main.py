@@ -20,6 +20,12 @@ from app.modules.incentives import models as incentives_models # Force load mode
 
 app = FastAPI(title="CRM AI SETU API")
 
+from app.core.database import SessionLocal
+from sqlalchemy import text
+
+
+
+
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,

@@ -13,10 +13,43 @@ class PaymentService:
     def __init__(self, db: Session):
         self.db = db
 
-    def generate_payment_qr(self, client_id: int, payment_in: PaymentCreate, current_user: User):
-        client = self.db.query(Client).filter(Client.id == client_id).first()
-        if not client:
-            raise HTTPException(status_code=404, detail="Client not found")
+    def generate_payment_qr(self, payment_in: PaymentCreate, current_user: User, client_id: int = None, shop_id: int = None):
+        if not client_id and not shop_id:
+            raise HTTPException(status_code=400, detail="Must provide client_id or shop_id")
+            
+        client = None
+        if client_id:
+            client = self.db.query(Client).filter(Client.id == client_id).first()
+            if not client:
+                raise HTTPException(status_code=404, detail="Client not found")
+        elif shop_id:
+            from app.modules.shops.models import Shop
+            shop = self.db.query(Shop).filter(Shop.id == shop_id).first()
+            if not shop:
+                raise HTTPException(status_code=404, detail="Shop not found")
+            
+            # Auto-create Client from Shop details
+            import re
+            phone_val = shop.phone
+            if phone_val:
+                digits = re.sub(r"\D", "", phone_val)
+                if len(digits) < 10:
+                    phone_val = digits.zfill(10) # satisfy minimum length validation
+            else:
+                phone_val = "0000000000"
+                
+            email_val = shop.email if shop.email else f"shop_{shop_id}_{uuid.uuid4().hex[:6]}@crm.demo"
+            
+            client = Client(
+                name=shop.name,
+                email=email_val,
+                phone=phone_val,
+                organization=shop.name,
+                owner_id=current_user.id
+            )
+            self.db.add(client)
+            self.db.commit()
+            self.db.refresh(client)
         
         # Mock QR generation data URL
         qr_data = f"upi://pay?pa=business@upi&pn=CRM&am={payment_in.amount}&tr={uuid.uuid4()}"

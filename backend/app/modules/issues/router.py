@@ -1,5 +1,5 @@
 from typing import List, Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Response, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, Response, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
@@ -48,6 +48,7 @@ def read_global_issues(
 async def create_issue(
     client_id: int,
     issue_in: IssueCreate,
+    request: Request,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
@@ -64,7 +65,7 @@ async def create_issue(
         raise HTTPException(status_code=403, detail="You can only report issues for your assigned clients")
 
     service = IssueService(db)
-    return await service.create_issue(issue_in, client_id, current_user, request=None, background_tasks=background_tasks)
+    return await service.create_issue(issue_in, client_id, current_user, request=request, background_tasks=background_tasks)
 
 @router.get("/{client_id}/issues", response_model=List[IssueRead])
 def read_client_issues(
@@ -82,35 +83,25 @@ def read_client_issues(
     return db.query(Issue).filter(Issue.client_id == client_id).all()
 
 @router.patch("/issues/{issue_id}", response_model=IssueRead)
-def update_issue(
+async def update_issue(
     issue_id: int,
     issue_in: IssueUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
 ) -> Any:
-    db_issue = db.query(Issue).filter(Issue.id == issue_id).first()
-    if not db_issue:
-        raise HTTPException(status_code=404, detail="Issue not found")
-    
-    # Check client ownership if PM
-    db_client = db.query(Client).filter(Client.id == db_issue.client_id).first()
-    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    service = IssueService(db)
+    return await service.update_issue(issue_id, issue_in, current_user, request)
 
-    update_data = issue_in.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_issue, field, value)
-    
-    db.add(db_issue)
-    db.commit()
-    db.refresh(db_issue)
-    return db_issue
-
-    db_issue = db.query(Issue).filter(Issue.id == issue_id).first()
-    if not db_issue:
-        raise HTTPException(status_code=404, detail="Issue not found")
-    db.delete(db_issue)
-    db.commit()
+@router.delete("/issues/{issue_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_issue(
+    issue_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+):
+    service = IssueService(db)
+    await service.delete_issue(issue_id, current_user, request)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @router.get("/issues/{issue_id}", response_model=IssueRead)

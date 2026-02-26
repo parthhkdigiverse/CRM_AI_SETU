@@ -86,6 +86,7 @@
         </div>
     </div>
 
+    <script src="../js/api.js"></script>
     <script src="../js/auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -107,8 +108,12 @@
                     <td><span class="badge bg-${sevColor[i.severity] || 'secondary'}">${i.severity || '?'}</span></td>
                     <td><span class="badge bg-${stColor[i.status] || 'secondary'}">${(i.status || '?').replace('_', ' ')}</span></td>
                     <td>${i.pm_id ? 'PM #' + i.pm_id : '—'}</td>
-                    <td class="small text-muted">${i.created_at ? new Date(i.created_at).toLocaleDateString('en-IN') : '—'}</td>
-                    <td>${i.status !== 'RESOLVED' ? `<button class="btn btn-sm btn-outline-success" onclick="resolveIssue(${i.id})" title="Resolve"><i class="bi bi-check-lg"></i></button>` : '<span class="text-muted small">Done</span>'}</td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            ${i.status !== 'RESOLVED' ? `<button class="btn btn-sm btn-outline-success" onclick="resolveIssue(${i.id})" title="Resolve"><i class="bi bi-check-lg"></i></button>` : '<span class="text-muted small">Done</span>'}
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteIssue(${i.id})" title="Delete"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </td>
                 </tr>`).join('')
                 : '<tr><td colspan="7" class="text-center py-5 text-muted">No issues found.</td></tr>';
         }
@@ -119,6 +124,15 @@
                 showToast('Issue resolved!');
                 loadIssues();
             } catch (e) { showToast(e.message, 'error'); }
+        };
+
+        window.deleteIssue = async (id) => {
+            if (!confirm('Are you sure you want to delete this issue?')) return;
+            try {
+                await ApiClient.request(`/issues/${id}`, { method: 'DELETE' });
+                showToast('Issue deleted!', 'success');
+                loadIssues();
+            } catch (e) { showToast(e.message || 'Failed to delete issue', 'error'); }
         };
 
         // Load clients into dropdown

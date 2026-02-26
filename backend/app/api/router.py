@@ -40,6 +40,15 @@ api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
 from app.modules.payments import router as payments
 api_router.include_router(payments.router, tags=["payments"]) # We omit prefix, as paths are custom (clients/{id}/payments)
 
+from app.modules.projects import router as projects
+api_router.include_router(projects.router, prefix="/projects", tags=["projects"])
+
+from app.modules.todos import router as todos
+api_router.include_router(todos.router, prefix="/todos", tags=["todos"])
+
+from app.modules.notifications import router as notifications
+api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
+
 @api_router.get("/health")
 def health_check():
     return {"status": "ok"}

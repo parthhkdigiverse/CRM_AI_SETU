@@ -21,10 +21,10 @@ staff_checker = RoleChecker([
 ])
 
 @router.post("/", response_model=ClientRead, status_code=status.HTTP_201_CREATED)
-def create_client(
-    *,
-    db: Session = Depends(get_db),
+async def create_client(
     client_in: ClientCreate,
+    request: Request,
+    db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
 ) -> Any:
     """
@@ -35,7 +35,7 @@ def create_client(
     if db.query(Client).filter(Client.email == client_in.email).first():
         raise HTTPException(status_code=400, detail="Client with this email already exists.")
     
-    return service.create_client(client_in, current_user)
+    return await service.create_client(client_in, current_user, request)
 
 @router.get("/", response_model=List[ClientRead])
 def read_clients(

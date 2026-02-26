@@ -85,9 +85,7 @@ class VisitService:
             user_id=current_user.id,
             user_role=current_user.role,
             action=ActionType.CREATE,
-            entity_type=EntityType.MEETING, # Using MEETING for Visit/Meeting overlap or add VISIT to enum? 
-                                            # Let's check logic. Often Visits are Meetings.
-                                            # Or add VISIT to EntityType.
+            entity_type=EntityType.LEAD,
             entity_id=visit.id,
             new_data=visit_in.model_dump(mode='json'), # mode='json' for dates
             request=request
@@ -102,7 +100,7 @@ class VisitService:
 
         old_data = {
             "status": visit.status.value,
-            "notes": visit.notes
+            "remarks": visit.remarks
         }
         
         update_data = visit_in.model_dump(exclude_unset=True)
@@ -116,7 +114,7 @@ class VisitService:
             user_id=current_user.id,
             user_role=current_user.role,
             action=ActionType.UPDATE,
-            entity_type=EntityType.MEETING, # VISIT?
+            entity_type=EntityType.LEAD,
             entity_id=visit.id,
             old_data=old_data,
             new_data=update_data,

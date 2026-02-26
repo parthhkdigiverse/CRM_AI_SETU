@@ -1,11 +1,12 @@
 from typing import Optional
 from pydantic import BaseModel
-from app.modules.issues.models import IssueStatus
+from app.modules.issues.models import IssueStatus, IssueSeverity
 
 class IssueBase(BaseModel):
     title: str
     description: Optional[str] = None
     status: IssueStatus = IssueStatus.OPEN
+    severity: IssueSeverity = IssueSeverity.MEDIUM
     client_id: int
     reporter_id: Optional[int] = None
 
@@ -13,11 +14,13 @@ class IssueCreate(BaseModel):
     title: str
     description: Optional[str] = None
     status: IssueStatus = IssueStatus.OPEN
+    severity: IssueSeverity = IssueSeverity.MEDIUM
 
 class IssueUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[IssueStatus] = None
+    severity: Optional[IssueSeverity] = None
 
 class IssueAssign(BaseModel):
     assigned_to_id: int

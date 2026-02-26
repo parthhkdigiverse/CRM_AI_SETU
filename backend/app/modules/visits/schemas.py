@@ -5,16 +5,16 @@ from app.modules.visits.models import VisitStatus
 
 class VisitBase(BaseModel):
     shop_id: int
+    status: Optional[VisitStatus] = VisitStatus.SATISFIED
+    remarks: Optional[str] = None
     visit_date: Optional[datetime] = None
-    notes: Optional[str] = None
-    status: Optional[VisitStatus] = VisitStatus.SCHEDULED
 
 class VisitCreate(VisitBase):
     pass
 
 class VisitUpdate(BaseModel):
     status: Optional[VisitStatus] = None
-    notes: Optional[str] = None
+    remarks: Optional[str] = None
     visit_date: Optional[datetime] = None
 
 class VisitRead(VisitBase):

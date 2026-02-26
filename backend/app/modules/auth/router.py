@@ -9,28 +9,54 @@ from app.core.security import create_access_token, get_password_hash, verify_pas
 from app.core.dependencies import get_current_user
 from app.modules.users.models import User, UserRole
 from app.modules.auth.schemas import Token
-from app.modules.users.schemas import UserCreate, UserRead
+from app.modules.users.schemas import UserCreate, UserRead, UserProfileUpdate
+from app.modules.activity_logs.service import ActivityLogger
+from app.modules.activity_logs.models import ActionType, EntityType
+from fastapi import Request
 
 router = APIRouter()
 
 @router.post("/login", response_model=Token)
-def login(
-    db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
+async def login(
+    request: Request,
+    db: Session = Depends(get_db),
+    form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
     user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
         )
-    elif not user.is_active:
+    
+    is_password_correct = verify_password(form_data.password, user.hashed_password)
+
+    if not is_password_correct:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+        )
+    
+    if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
-    elif user.role == UserRole.CLIENT:
+        
+    if user.role == UserRole.CLIENT:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Clients are not allowed to log in to this portal.",
         )
     
+    # Log Login
+    activity_logger = ActivityLogger(db)
+    await activity_logger.log_activity(
+        user_id=user.id,
+        user_role=user.role,
+        action=ActionType.LOGIN,
+        entity_type=EntityType.USER,
+        entity_id=user.id,
+        request=request
+    )
+
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_token_expires = timedelta(days=30)
     return {
@@ -44,10 +70,10 @@ def login(
     }
 
 @router.post("/register", response_model=UserRead)
-def register(
-    *,
+async def register(
+    request: Request,
     db: Session = Depends(get_db),
-    user_in: UserCreate
+    user_in: UserCreate = None
 ) -> Any:
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
@@ -64,6 +90,18 @@ def register(
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Log Registration
+    activity_logger = ActivityLogger(db)
+    await activity_logger.log_activity(
+        user_id=user.id,
+        user_role=user.role,
+        action=ActionType.CREATE,
+        entity_type=EntityType.USER,
+        entity_id=user.id,
+        request=request
+    )
+
     return user
 
 @router.post("/refresh", response_model=Token)
@@ -82,6 +120,62 @@ def refresh_token(
         "token_type": "bearer",
     }
 
+@router.get("/me", response_model=UserRead)
+def read_current_user(
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    return current_user
+
+@router.get("/profile", response_model=UserRead)
+def read_profile(current_user: User = Depends(get_current_user)) -> Any:
+    return current_user
+
+@router.patch("/profile", response_model=UserRead)
+async def update_profile(
+    request: Request,
+    profile_in: UserProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Any:
+    old_data = {"name": current_user.name, "phone": current_user.phone}
+    update_data = profile_in.model_dump(exclude_unset=True)
+    
+    if "password" in update_data:
+        current_user.hashed_password = get_password_hash(update_data["password"])
+        del update_data["password"]
+        
+    for field, value in update_data.items():
+        setattr(current_user, field, value)
+        
+    db.commit()
+    db.refresh(current_user)
+    
+    activity_logger = ActivityLogger(db)
+    await activity_logger.log_activity(
+        user_id=current_user.id,
+        user_role=current_user.role,
+        action=ActionType.UPDATE,
+        entity_type=EntityType.USER,
+        entity_id=current_user.id,
+        old_data=old_data,
+        new_data={"name": current_user.name, "phone": current_user.phone},
+        request=request
+    )
+    return current_user
+
 @router.post("/logout")
-def logout(current_user: User = Depends(get_current_user)):
+async def logout(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    activity_logger = ActivityLogger(db)
+    await activity_logger.log_activity(
+        user_id=current_user.id,
+        user_role=current_user.role,
+        action=ActionType.LOGOUT,
+        entity_type=EntityType.USER,
+        entity_id=current_user.id,
+        request=request
+    )
     return {"message": "Logged out successfully"}

@@ -40,11 +40,23 @@ class ClientService:
 
         return query.offset(skip).limit(limit).all()
 
-    def create_client(self, client: ClientCreate, current_user: User):
+    async def create_client(self, client: ClientCreate, current_user: User, request: Request):
         db_client = Client(**client.dict())
         self.db.add(db_client)
         self.db.commit()
         self.db.refresh(db_client)
+
+        await self.activity_logger.log_activity(
+            user_id=current_user.id,
+            user_role=current_user.role,
+            action=ActionType.CREATE,
+            entity_type=EntityType.CLIENT,
+            entity_id=db_client.id,
+            old_data=None,
+            new_data=client.dict(),
+            request=request
+        )
+
         return db_client
 
     async def update_client(self, client_id: int, client_update: ClientUpdate, current_user: User, request: Request):

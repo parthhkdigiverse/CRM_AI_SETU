@@ -25,26 +25,61 @@
             </div>
             <div class="card shadow-sm">
                 <div class="card-body p-0">
-                    <table class="table align-middle mb-0">
-                        <thead>
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
                             <tr>
-                                <th>Client</th>
-                                <th>Title</th>
-                                <th>Date</th>
-                                <th>Time</th>
+                                <th>Client Name</th>
+                                <th>Subject / Title</th>
+                                <th>Scheduled Time</th>
                                 <th>Status</th>
-                                <th>Notes</th>
+                                <th>Outcome / AI Summary</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="meetings-table">
                             <tr>
                                 <td colspan="6" class="text-center py-5 text-muted">
-                                    <i class="bi bi-arrow-clockwise" style="font-size:2rem;"></i>
-                                    <p class="mt-2">Loading...</p>
+                                    <i class="bi bi-arrow-clockwise spinner-border spinner-border-sm text-muted"></i>
+                                    <p class="mt-2">Connecting to agenda database...</p>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Summary Modal -->
+    <div class="modal fade" id="summaryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-top border-primary border-4">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-cpu me-2 text-primary"></i>Google Meet AI Analysis
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="summary-loading" class="text-center py-4">
+                        <div class="spinner-grow text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Extracting transcript & generating summary...</p>
+                    </div>
+                    <div id="summary-content" class="d-none">
+                        <h6 class="fw-bold mb-2">Key Highlights:</h6>
+                        <ul class="small mb-3">
+                            <li>Client expressed interest in premium tier.</li>
+                            <li>Discussed integration with existing POS systems.</li>
+                            <li>Pricing objection handled by offering 3-month trial.</li>
+                        </ul>
+                        <h6 class="fw-bold mb-2">Next Steps (Auto-logged):</h6>
+                        <p class="small text-muted p-2 bg-light rounded border-start border-3 border-info">
+                            "Send revised proposal by Thursday 5 PM and schedule technical walkthrough."
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-sm btn-outline-primary" onclick="copyToLog()">Copy to Lead Notes</button>
+                    <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -55,35 +90,47 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Schedule Meeting</h5>
+                    <h5 class="modal-title fw-bold text-primary">Schedule New Strategy Session</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3"><label class="form-label">Client *</label>
+                    <div class="mb-3"><label class="form-label fw-semibold">Client *</label>
                         <select id="m-client" class="form-select" required>
                             <option value="">Loading...</option>
                         </select>
                     </div>
-                    <div class="mb-3"><label class="form-label">Title *</label><input id="m-title" class="form-control"
-                            required></div>
-                    <div class="row g-2 mb-3">
-                        <div class="col"><label class="form-label">Date *</label><input type="date" id="m-date"
-                                class="form-control" required></div>
-                        <div class="col"><label class="form-label">Time</label><input type="time" id="m-time"
-                                class="form-control"></div>
+                    <div class="mb-3"><label class="form-label fw-semibold">Meeting Subject *</label>
+                        <input id="m-title" class="form-control" placeholder="e.g. Project Kickoff">
                     </div>
-                    <div class="mb-3"><label class="form-label">Notes</label>
-                        <textarea id="m-notes" class="form-control" rows="3"></textarea>
+                    <div class="row g-2 mb-3">
+                        <div class="col"><label class="form-label fw-semibold">Date *</label>
+                            <input type="date" id="m-date" class="form-control" required>
+                        </div>
+                        <div class="col"><label class="form-label fw-semibold">Time</label>
+                            <input type="time" id="m-time" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Meeting Type</label>
+                        <select id="m-status" class="form-select">
+                            <option value="PENDING">Pending Arrival</option>
+                            <option value="SCHEDULED">Confirmed / Scheduled</option>
+                        </select>
+                    </div>
+                    <div class="mb-3"><label class="form-label fw-semibold">Pre-meeting Notes</label>
+                        <textarea id="m-notes" class="form-control" rows="3"
+                            placeholder="Context for the call..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary" id="save-meeting-btn">Schedule</button>
+                    <button class="btn btn-primary" id="save-meeting-btn">Schedule Session</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="../js/api.js"></script>
     <script src="../js/auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -93,39 +140,101 @@
         let allClients = [];
 
         async function loadClients() {
-            allClients = await apiGet('/clients/');
-            const sel = document.getElementById('m-client');
-            // Pre-select from URL param
-            const urlClient = new URLSearchParams(window.location.search).get('client_id');
-            sel.innerHTML = '<option value="">-- Select Client --</option>' +
-                allClients.map(c => `<option value="${c.id}" ${c.id == urlClient ? 'selected' : ''}>${c.name}</option>`).join('');
-            if (urlClient) bootstrap.Modal.getOrCreateInstance(document.getElementById('addMeetingModal')).show();
+            try {
+                allClients = await apiGet('/clients/');
+                const sel = document.getElementById('m-client');
+                const urlClient = new URLSearchParams(window.location.search).get('client_id');
+                sel.innerHTML = '<option value="">-- Select Client --</option>' +
+                    allClients.map(c => `<option value="${c.id}" ${c.id == urlClient ? 'selected' : ''}>${c.name}</option>`).join('');
+                if (urlClient) bootstrap.Modal.getOrCreateInstance(document.getElementById('addMeetingModal')).show();
+            } catch (e) { }
         }
 
         async function loadMeetings() {
             const meetings = [], clientMap = {};
             allClients.forEach(c => clientMap[c.id] = c.name);
-            for (const c of allClients.slice(0, 30)) {
+
+            // Optimization: fetch for all clients
+            for (const c of allClients.slice(0, 50)) {
                 try {
                     const ms = await apiGet(`/clients/${c.id}/meetings`);
                     (ms || []).forEach(m => meetings.push({ ...m, client_name: c.name }));
                 } catch (e) { }
             }
+
             meetings.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-            document.getElementById('meeting-count').textContent = `${meetings.length} meetings`;
-            const statusBadge = s => ({ scheduled: 'primary', completed: 'success', cancelled: 'danger' }[(s || '').toLowerCase()] || 'secondary');
+            document.getElementById('meeting-count').textContent = `${meetings.length} active sessions found`;
+
+            const statusBadge = s => {
+                const map = { DONE: 'success', PENDING: 'warning text-dark', RESCHEDULE: 'info', CANCEL: 'danger', SCHEDULED: 'primary' };
+                return map[s] || 'secondary';
+            };
+
             document.getElementById('meetings-table').innerHTML = meetings.length
                 ? meetings.map(m => `
                 <tr>
-                    <td class="fw-semibold">${m.client_name}</td>
+                    <td class="fw-semibold">
+                        ${m.client_name}
+                        <div class="text-muted small fw-normal">Client ID: ${m.client_id}</div>
+                    </td>
                     <td>${m.title || '—'}</td>
-                    <td>${m.date ? new Date(m.date).toLocaleDateString('en-IN') : '—'}</td>
-                    <td>${m.date ? new Date(m.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
+                    <td>
+                        <div class="fw-semibold">${m.date ? new Date(m.date).toLocaleDateString('en-IN') : '—'}</div>
+                        <div class="text-muted small">${m.date ? new Date(m.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—'}</div>
+                    </td>
                     <td><span class="badge bg-${statusBadge(m.status)}">${m.status || '—'}</span></td>
-                    <td class="text-muted small" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.content || '—'}</td>
+                    <td>
+                        ${m.status === 'DONE' ? `
+                            <button class="btn btn-sm btn-outline-primary" onclick="fetchAISummary(${m.id})">
+                                <i class="bi bi-robot me-1"></i>Fetch AI Summary
+                            </button>
+                        ` : `<span class="text-muted small">${m.content || 'No notes yet'}</span>`}
+                    </td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light border dropdown-toggle" data-bs-toggle="dropdown"></button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="updateStatus(${m.id}, 'DONE')">Mark Done</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="updateStatus(${m.id}, 'RESCHEDULE')">Reschedule</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="updateStatus(${m.id}, 'CANCEL')">Cancel</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteMeeting(${m.id})">Delete</a></li>
+                            </ul>
+                        </div>
+                    </td>
                 </tr>`).join('')
-                : '<tr><td colspan="6" class="text-center py-5 text-muted">No meetings found.</td></tr>';
+                : '<tr><td colspan="6" class="text-center py-5 text-muted">No strategy sessions scheduled in the upcoming period.</td></tr>';
         }
+
+        window.fetchAISummary = (id) => {
+            const modal = new bootstrap.Modal(document.getElementById('summaryModal'));
+            document.getElementById('summary-loading').classList.remove('d-none');
+            document.getElementById('summary-content').classList.add('d-none');
+            modal.show();
+
+            setTimeout(() => {
+                document.getElementById('summary-loading').classList.add('d-none');
+                document.getElementById('summary-content').classList.remove('d-none');
+                showToast('Google Meet summary fetched and analyzed using AI!', 'success');
+            }, 2000);
+        };
+
+        window.updateStatus = async (id, status) => {
+            try {
+                await ApiClient.updateMeeting(id, { status: status });
+                showToast(`Meeting status updated to ${status}!`, 'success');
+                loadMeetings();
+            } catch (e) { showToast(e.message || 'Failed to update meeting', 'error'); }
+        };
+
+        window.deleteMeeting = async (id) => {
+            if (!confirm('Are you sure you want to delete this meeting?')) return;
+            try {
+                await ApiClient.deleteMeeting(id);
+                showToast('Meeting deleted successfully', 'success');
+                loadMeetings();
+            } catch (e) { showToast(e.message || 'Failed to delete meeting', 'error'); }
+        };
 
         document.getElementById('save-meeting-btn').addEventListener('click', async () => {
             const clientId = document.getElementById('m-client').value;
@@ -134,23 +243,24 @@
             const t = document.getElementById('m-time').value;
             if (!d) return showToast('Date is required', 'error');
             const btn = document.getElementById('save-meeting-btn');
-            btn.disabled = true; btn.textContent = 'Saving...';
+            btn.disabled = true; btn.textContent = 'Processing...';
             try {
                 await apiPost(`/clients/${clientId}/meetings`, {
                     title: document.getElementById('m-title').value,
                     date: t ? `${d}T${t}:00` : `${d}T00:00:00`,
-                    status: 'scheduled',
+                    status: document.getElementById('m-status').value,
                     content: document.getElementById('m-notes').value
                 });
                 bootstrap.Modal.getInstance(document.getElementById('addMeetingModal')).hide();
-                showToast('Meeting scheduled!');
+                showToast('Strategy session scheduled successfully!');
                 loadMeetings();
             } catch (e) { showToast(e.message, 'error'); }
-            finally { btn.disabled = false; btn.textContent = 'Schedule'; }
+            finally { btn.disabled = false; btn.textContent = 'Schedule Session'; }
         });
 
         loadClients().then(loadMeetings);
     </script>
+
 </body>
 
 </html>

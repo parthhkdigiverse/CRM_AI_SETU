@@ -117,6 +117,9 @@
                         const emps = await empsRes.json();
                         const me = emps.find(e => String(e.user_id) === String(userId));
                         if (me) { userName = me.full_name || me.name || 'User'; userRole = me.role || ''; }
+                    } else {
+                        const myProfile = await fetch(`${API}/auth/profile`, { headers: { 'Authorization': `Bearer ${data.access_token}` } }).then(r => r.json()).catch(() => null);
+                        if (myProfile) { userName = myProfile.full_name || 'User'; userRole = myProfile.role || ''; }
                     }
                     sessionStorage.setItem('crm_user', JSON.stringify({ id: userId, name: userName, role: userRole }));
                 } catch (ex) {

@@ -25,7 +25,22 @@ def generate_qr(
     Only Sales, Telesales, and Admin can run this.
     """
     service = PaymentService(db)
-    return service.generate_payment_qr(client_id, payment_in, current_user)
+    return service.generate_payment_qr(payment_in, current_user, client_id=client_id)
+
+@router.post("/shops/{shop_id}/payments/generate-qr", response_model=PaymentRead, status_code=status.HTTP_201_CREATED)
+def generate_qr_from_shop(
+    shop_id: int,
+    payment_in: PaymentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(sales_checker)
+) -> Any:
+    """
+    Generate a QR code payment request directly from a Shop.
+    This will automatically convert the Shop to a Client.
+    Only Sales, Telesales, and Admin can run this.
+    """
+    service = PaymentService(db)
+    return service.generate_payment_qr(payment_in, current_user, shop_id=shop_id)
 
 @router.patch("/payments/{payment_id}/verify", response_model=PaymentRead)
 def verify_payment(

@@ -5,10 +5,11 @@ from datetime import datetime
 from app.core.database import Base
 
 class VisitStatus(str, enum.Enum):
-    SCHEDULED = "SCHEDULED"
-    COMPLETED = "COMPLETED"
-    MISSED = "MISSED"
-    CANCELLED = "CANCELLED"
+    SATISFIED = "SATISFIED"
+    ACCEPT = "ACCEPT"
+    DECLINE = "DECLINE"
+    TAKE_TIME_TO_THINK = "TAKE_TIME_TO_THINK"
+    OTHER = "OTHER"
 
 class Visit(Base):
     __tablename__ = "visits"
@@ -17,8 +18,8 @@ class Visit(Base):
     shop_id = Column(Integer, ForeignKey("shops.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     
-    status = Column(Enum(VisitStatus), default=VisitStatus.SCHEDULED)
-    notes = Column(Text, nullable=True)
+    status = Column(Enum(VisitStatus), default=VisitStatus.SATISFIED)
+    remarks = Column(Text, nullable=True)
     visit_date = Column(DateTime, default=datetime.utcnow)
     
     # Photo persistence

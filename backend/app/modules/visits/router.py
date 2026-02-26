@@ -19,8 +19,8 @@ async def create_visit(
     request: Request,
     shop_id: int = Form(...),
     visit_date: Optional[str] = Form(None), # Parse string to datetime
-    notes: Optional[str] = Form(None),
-    status: VisitStatus = Form(VisitStatus.SCHEDULED),
+    remarks: Optional[str] = Form(None),
+    status: VisitStatus = Form(VisitStatus.SATISFIED),
     photo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(create_access)
@@ -41,7 +41,7 @@ async def create_visit(
     visit_in = VisitCreate(
         shop_id=shop_id,
         visit_date=parsed_date,
-        notes=notes,
+        remarks=remarks,
         status=status
     )
     

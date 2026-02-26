@@ -50,6 +50,21 @@ def update_employee(
 ) -> Any:
     return EmployeeService.update_employee(db, employee_id, employee_in)
 
+@router.delete("/{employee_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_employee(
+    employee_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+):
+    employee = db.query(Employee).filter(Employee.id == employee_id).first()
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+        
+    db.delete(employee)
+    db.commit()
+    from fastapi import Response
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 # Referral Code Management
 from app.modules.employees.schemas import ReferralCodeCreate, ReferralCodeRead
 import uuid

@@ -24,6 +24,7 @@ class EntityType(str, enum.Enum):
     LEAD = "LEAD"
     REASSIGN = "REASSIGN"
     FEEDBACK = "FEEDBACK"
+    USER = "USER"
 
 class ActivityLog(Base):
     __tablename__ = "activity_logs"
@@ -31,8 +32,8 @@ class ActivityLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     user_role = Column(String, nullable=False) # Store current role as string for audit stability
-    action = Column(Enum(ActionType), nullable=False)
-    entity_type = Column(Enum(EntityType), nullable=False)
+    action = Column(String, nullable=False)
+    entity_type = Column(String, nullable=False)
     entity_id = Column(Integer, nullable=False)
     
     old_data = Column(JSON, nullable=True)

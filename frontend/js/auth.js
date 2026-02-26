@@ -137,122 +137,162 @@ function showToast(msg, type = 'success') {
 
 // Shared sidebar HTML
 function renderSidebar(active) {
-    const links = [
-        { id: 'dashboard', icon: 'bi-speedometer2', label: 'Dashboard', href: 'dashboard.html' },
-        { id: 'clients', icon: 'bi-people', label: 'Clients', href: 'clients.html' },
-        { id: 'visits', icon: 'bi-geo-alt', label: 'Visits', href: 'visits.html' },
-        { id: 'meetings', icon: 'bi-calendar-check', label: 'Meetings', href: 'meetings.html' },
-        { id: 'issues', icon: 'bi-exclamation-triangle', label: 'Issues', href: 'issues.html' },
-        { id: 'feedback', icon: 'bi-star', label: 'Feedback', href: 'feedback.html' },
-        { id: 'areas', icon: 'bi-map', label: 'Areas', href: 'areas.html' },
-        { id: 'hrm', icon: 'bi-person-badge', label: 'HRM', href: 'hrm.html' },
-        { id: 'reports', icon: 'bi-bar-chart-line', label: 'Reports', href: 'reports.html' },
-        { id: 'admin', icon: 'bi-shield-lock', label: 'Admin', href: 'admin.html' },
-    ];
     const u = getUser();
+    const role = u?.role || 'TELESALES';
+
+    const isAdmin = role === 'ADMIN';
+    const isSales = role === 'SALES' || role === 'PROJECT_MANAGER_AND_SALES';
+    const isTelesales = role === 'TELESALES';
+    const isPM = role === 'PROJECT_MANAGER' || role === 'PROJECT_MANAGER_AND_SALES';
+    const isClient = role === 'CLIENT';
+
+    function sbSection(id, label, icon, items) {
+        const isActiveSection = items.some(i => i.id === active);
+        return `
+        <div class="sb-section">
+            <div class="sb-section-header ${isActiveSection ? 'open' : ''}" onclick="toggleSbSection('${id}')">
+                <i class="bi ${icon} sb-sec-icon"></i>
+                <span>${label}</span>
+                <i class="bi bi-chevron-right sb-arrow"></i>
+            </div>
+            <ul class="sb-section-items ${isActiveSection ? 'open' : ''}">
+                ${items.map(item => `
+                <li><a href="${item.href}" class="sb-link ${active === item.id ? 'active' : ''}">
+                    <i class="bi ${item.icon}"></i><span>${item.label}</span></a></li>`).join('')}
+            </ul>
+        </div>`;
+    }
+
+    // ─── ALWAYS: Dashboard ───────────────────────────────────────
+    let nav = `
+    <div class="sb-section">
+        <div class="sb-section-header ${active === 'dashboard' ? 'open' : ''}" onclick="toggleSbSection('db')">
+            <i class="bi bi-grid-1x2 sb-sec-icon"></i><span>Dashboard</span>
+            <i class="bi bi-chevron-${active === 'dashboard' ? 'down' : 'right'} sb-arrow"></i>
+        </div>
+        <ul class="sb-section-items ${active === 'dashboard' ? 'open' : ''}">
+            <li><a href="dashboard.html" class="sb-link ${active === 'dashboard' ? 'active' : ''}">
+                <i class="bi bi-bar-chart-line-fill"></i><span>Overview</span></a></li>
+        </ul>
+    </div>`;
+
+    // ─── ADMINISTRATION ──────────────────────────────────────────
+    nav += sbSection('admin', 'Administration', 'bi-shield-check', [
+        { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
+    ]);
+
+    // ─── FIELD OPERATIONS ────────────────────────────────────────
+    nav += sbSection('field', 'Field Operations', 'bi-geo-alt', [
+        { id: 'visits', href: 'visits.html', icon: 'bi-bullseye', label: 'Leads' },
+        { id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas & Shops' },
+        { id: 'visits_log', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' }
+    ]);
+
+    // ─── PROJECT MANAGEMENT ──────────────────────────────────────
+    nav += sbSection('pm', 'Project Management', 'bi-briefcase', [
+        { id: 'projects', href: 'reports.html', icon: 'bi-briefcase', label: 'Projects' },
+        { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
+        { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
+    ]);
+
+    // ─── CLIENT RELATIONS ────────────────────────────────────────
+    nav += sbSection('cr', 'Client Relations', 'bi-people', [
+        { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
+        { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
+    ]);
+
+    // ─── HR & PAYROLL ────────────────────────────────────────────
+    nav += sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', [
+        { id: 'hrm', href: 'hrm.html', icon: 'bi-people', label: 'Employees' },
+        { id: 'salary', href: 'hrm.html#tab-salary', icon: 'bi-calendar3', label: 'Salary & Leaves' },
+        { id: 'incentives', href: 'hrm.html#tab-incentives', icon: 'bi-trophy', label: 'Incentives' }
+    ]);
+
+    // ─── REPORTS & ANALYTICS ─────────────────────────────────────
+    nav += sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
+        { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
+    ]);
+
     return `
     <div id="sidebar-container">
         <div class="sidebar-brand">
-            <div class="sidebar-brand-icon">
-                <i class="bi bi-diagram-3-fill"></i>
-            </div>
+            <div class="sidebar-brand-icon"><i class="bi bi-diagram-3-fill"></i></div>
             <span>CRM AI SETU</span>
         </div>
-        
-        <!-- Navigation Section -->
-        <h6 class="text-muted small px-4 mb-2 mt-2 fw-bold" style="letter-spacing:0.5px">DASHBOARD</h6>
-        <ul class="sidebar-nav">
-            <li class="sidebar-nav-item"><a href="dashboard.html" class="sidebar-link ${active === 'dashboard' ? 'active' : ''}"><i class="bi bi-speedometer2"></i>Overview</a></li>
-        </ul>
-        
-        <h6 class="text-muted small px-4 mb-2 mt-4 fw-bold" style="letter-spacing:0.5px">ADMINISTRATION</h6>
-        <ul class="sidebar-nav">
-            <li class="sidebar-nav-item"><a href="admin.html" class="sidebar-link ${active === 'admin' ? 'active' : ''}"><i class="bi bi-shield-lock"></i>User Management</a></li>
-        </ul>
-        
-        <h6 class="text-muted small px-4 mb-2 mt-4 fw-bold" style="letter-spacing:0.5px">FIELD OPERATIONS</h6>
-        <ul class="sidebar-nav">
-            <li class="sidebar-nav-item"><a href="areas.html" class="sidebar-link ${active === 'areas' ? 'active' : ''}"><i class="bi bi-map"></i>Areas & Shops</a></li>
-            <li class="sidebar-nav-item"><a href="visits.html" class="sidebar-link ${active === 'visits' ? 'active' : ''}"><i class="bi bi-geo-alt"></i>Visits</a></li>
-        </ul>
-        
-        <h6 class="text-muted small px-4 mb-2 mt-4 fw-bold" style="letter-spacing:0.5px">PROJECT MANAGEMENT</h6>
-        <ul class="sidebar-nav">
-            <li class="sidebar-nav-item"><a href="#" class="sidebar-link"><i class="bi bi-briefcase"></i>Projects</a></li>
-            <li class="sidebar-nav-item"><a href="meetings.html" class="sidebar-link ${active === 'meetings' ? 'active' : ''}"><i class="bi bi-calendar-check"></i>Meetings</a></li>
-        </ul>
-
-        <h6 class="text-muted small px-4 mb-2 mt-4 fw-bold" style="letter-spacing:0.5px">CLIENT RELATIONS</h6>
-        <ul class="sidebar-nav">
-            <li class="sidebar-nav-item"><a href="clients.html" class="sidebar-link ${active === 'clients' ? 'active' : ''}"><i class="bi bi-people"></i>Clients</a></li>
-            <li class="sidebar-nav-item"><a href="issues.html" class="sidebar-link ${active === 'issues' ? 'active' : ''}"><i class="bi bi-exclamation-triangle"></i>Issues</a></li>
-            <li class="sidebar-nav-item"><a href="feedback.html" class="sidebar-link ${active === 'feedback' ? 'active' : ''}"><i class="bi bi-star"></i>Feedback</a></li>
-        </ul>
-
-        <!--
-        <h6 class="text-muted small px-4 mb-2 mt-4 fw-bold" style="letter-spacing:0.5px">HR & PAYROLL</h6>
-        <ul class="sidebar-nav">
-            <li class="sidebar-nav-item"><a href="hrm.html" class="sidebar-link ${active === 'hrm' ? 'active' : ''}"><i class="bi bi-person-badge"></i>HRM</a></li>
-        </ul>
-        -->
-
-        <h6 class="text-muted small px-4 mb-2 mt-4 fw-bold" style="letter-spacing:0.5px">REPORTS & ANALYTICS</h6>
-        <ul class="sidebar-nav">
-            <li class="sidebar-nav-item"><a href="reports.html" class="sidebar-link ${active === 'reports' ? 'active' : ''}"><i class="bi bi-bar-chart-line"></i>Reports</a></li>
-        </ul>
-                
-        <div style="padding: 24px;">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center text-primary" style="width:36px;height:36px;font-weight:700;">
-                    ${(u?.name || 'U')[0].toUpperCase()}
-                </div>
-                <div class="flex-grow-1 overflow-hidden">
-                    <div class="fw-semibold text-truncate small" id="username-display" style="color:var(--text-main);">${u?.name || '-'}</div>
-                    <div class="text-muted" style="font-size:11px;">${u?.role || ''}</div>
-                </div>
-            </div>
-            <hr class="my-3 border-secondary" style="opacity:0.1;">
-            <button onclick="logout()" class="btn btn-sm btn-light w-100 text-start text-muted d-flex align-items-center gap-2">
-                <i class="bi bi-box-arrow-right"></i> Logout
-            </button>
+        <div class="sb-scroll-area">${nav}</div>
+        <div class="sb-bottom">
+            <a href="#" class="sb-bottom-link"><i class="bi bi-gear"></i> Settings</a>
+            <a href="#" class="sb-bottom-link" onclick="logout();return false;"><i class="bi bi-box-arrow-right"></i> Logout</a>
         </div>
     </div>`;
 }
 
+window.toggleSbSection = function (id) {
+    document.querySelectorAll('.sb-section').forEach(sec => {
+        const hdr = sec.querySelector('.sb-section-header');
+        const lst = sec.querySelector('.sb-section-items');
+        const arr = sec.querySelector('.sb-arrow');
+        if (!hdr) return;
+        const isMe = (hdr.getAttribute('onclick') || '').includes(`'${id}'`);
+        const isOpen = hdr.classList.contains('open');
+        if (isMe) {
+            hdr.classList.toggle('open');
+            lst && lst.classList.toggle('open');
+            if (arr) arr.className = `bi ${hdr.classList.contains('open') ? 'bi-chevron-down' : 'bi-chevron-right'} sb-arrow`;
+        }
+    });
+};
+
 function injectTopHeader(pageTitle) {
+    const u = getUser();
+    const role = (u?.role || '').replace(/_/g, ' ');
+    const initials = (u?.name || u?.email || 'AD').slice(0, 2).toUpperCase();
     const headerHtml = `
     <div class="top-header">
-        <div class="fw-semibold fs-5 text-dark" style="text-transform: capitalize;">
-            ${pageTitle}
+        <div class="d-flex align-items-center">
+            <div class="fw-semibold fs-5 text-dark" style="text-transform: capitalize;">${pageTitle}</div>
         </div>
-        <div class="d-flex align-items-center gap-4">
-            <div class="position-relative">
-                <i class="bi bi-search position-absolute text-muted" style="left:12px;top:10px;"></i>
+        <div class="d-flex align-items-center gap-3">
+            <div class="position-relative d-none d-md-block">
+                <i class="bi bi-search position-absolute text-muted" style="left:12px;top:10px;font-size:0.85rem;"></i>
                 <input type="text" class="search-bar" placeholder="Search anything...">
             </div>
-            <button class="btn btn-primary d-flex align-items-center gap-2">
-                <i class="bi bi-plus"></i> Add New
-            </button>
-            <div class="position-relative" style="cursor:pointer; color:var(--text-muted); font-size:1.2rem;">
-                <i class="bi bi-bell"></i>
-                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
-                    <span class="visually-hidden">New alerts</span>
-                </span>
+            <div class="dropdown">
+                <button class="btn btn-primary d-flex align-items-center gap-2 px-3 dropdown-toggle" type="button" id="addNewDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:0.875rem;">
+                    <i class="bi bi-plus-lg"></i> Add New
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px;">
+                    <li><a class="dropdown-item py-2" href="visits.html" style="border-radius:8px;"><i class="bi bi-bullseye me-2 text-primary"></i> New Lead / Visit</a></li>
+                    <li><a class="dropdown-item py-2" href="clients.html" style="border-radius:8px;"><i class="bi bi-people me-2 text-info"></i> New Client</a></li>
+                    <li><a class="dropdown-item py-2" href="issues.html" style="border-radius:8px;"><i class="bi bi-exclamation-triangle me-2 text-warning"></i> New Issue</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item py-2" href="admin.html" style="border-radius:8px;"><i class="bi bi-person-plus me-2 text-success"></i> New User</a></li>
+                </ul>
             </div>
-            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center fw-bold text-primary" style="width:36px;height:36px;font-size:14px;cursor:pointer;">
-                AD
+            <div class="position-relative text-muted" style="cursor:pointer; font-size:1.25rem; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
+                <i class="bi bi-bell"></i>
+                <span class="position-absolute bg-danger border border-white rounded-circle" style="width:8px;height:8px;top:8px;right:8px;"></span>
+            </div>
+            <div class="d-flex align-items-center gap-2 ps-2 dropdown">
+                <div class="rounded-circle bg-primary-light text-primary d-flex align-items-center justify-content-center fw-bold dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="width:36px;height:36px;font-size:13px;cursor:pointer;">${initials}</div>
+                <div class="d-none d-lg-block">
+                    <div class="fw-bold text-dark" style="font-size:0.85rem; line-height:1;">${u?.name || 'Admin'}</div>
+                    <div class="text-muted small" style="font-size:0.75rem; line-height:1.5;">${role}</div>
+                </div>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="profileDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px;">
+                    <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="if(window.loadView) window.loadView('profile');" style="border-radius:8px;"><i class="bi bi-person me-2 text-primary"></i> My Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="logout()" style="border-radius:8px; color:var(--danger);"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
+                </ul>
             </div>
         </div>
     </div>`;
     const rightSide = document.querySelector('.flex-grow-1');
     if (rightSide) {
-        // Remove old basic p-4 padding logic and inject header + scrollable content area wrapper
         rightSide.classList.remove('p-4');
         rightSide.classList.add('d-flex', 'flex-column', 'bg-light');
         rightSide.style.minHeight = '100vh';
         rightSide.insertAdjacentHTML('afterbegin', headerHtml);
-
-        // Wrap existing content from rightSide into a .page-content div
         const nodesToMove = [];
         for (const child of rightSide.childNodes) {
             if (child.nodeType === 1 && child.classList.contains('top-header')) continue;

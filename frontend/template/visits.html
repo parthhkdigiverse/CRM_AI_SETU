@@ -16,32 +16,38 @@
             <!-- The top header is automatically injected here by js/auth.js -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2 class="fw-bold fs-3 mb-1">Field Visits</h2>
+                    <h2 class="fw-bold fs-3 mb-1">Shops & Leads Tracker</h2>
                     <small class="text-muted" id="visit-count"></small>
                 </div>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#logVisitModal">
-                    <i class="bi bi-plus-lg me-1"></i>Log Visit
-                </button>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" onclick="loadVisits()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    </button>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#logVisitModal">
+                        <i class="bi bi-plus-lg me-1"></i>Update Shop Status
+                    </button>
+                </div>
             </div>
 
             <div class="card shadow-sm">
                 <div class="card-body p-0">
-                    <table class="table align-middle mb-0">
-                        <thead>
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
                             <tr>
-                                <th>Shop</th>
-                                <th>Visited By</th>
-                                <th>Date</th>
+                                <th>Shop & Area</th>
+                                <th>Assigned To</th>
+                                <th>Last Activity</th>
                                 <th>Status</th>
-                                <th>Notes</th>
-                                <th>Photo</th>
+                                <th>Remarks</th>
+                                <th>Evidence</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="visits-table">
                             <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">
-                                    <i class="bi bi-arrow-clockwise" style="font-size:2rem;"></i>
-                                    <p class="mt-2">Loading visits...</p>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-arrow-clockwise spinner-border spinner-border-sm"></i>
+                                    <p class="mt-2">Loading leads...</p>
                                 </td>
                             </tr>
                         </tbody>
@@ -56,41 +62,45 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-geo-alt me-2"></i>Log Field Visit</h5>
+                    <h5 class="modal-title fw-bold"><i class="bi bi-geo-alt me-2"></i>Update Shop Status</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Shop *</label>
+                        <label class="form-label fw-semibold">Target Shop *</label>
                         <select id="v-shop" class="form-select" required>
                             <option value="">Loading shops...</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Status</label>
+                        <label class="form-label fw-semibold">Interaction Outcome</label>
                         <select id="v-status" class="form-select">
-                            <option value="scheduled">Scheduled</option>
-                            <option value="completed" selected>Completed</option>
-                            <option value="missed">Missed</option>
+                            <option value="SATISFIED">Satisfied</option>
+                            <option value="ACCEPT">Accept (Gen. Bill)</option>
+                            <option value="DECLINE">Decline</option>
+                            <option value="THINKING">Taking time to think</option>
+                            <option value="OTHER">Other</option>
+                            <option value="SCHEDULED">Scheduled/Pending</option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Visit Date & Time</label>
-                        <input type="datetime-local" id="v-date" class="form-control">
+                    <div class="mb-3" id="other-status-div" style="display:none;">
+                        <label class="form-label">Specify Other Status</label>
+                        <input type="text" id="v-status-other" class="form-control" placeholder="Describe status...">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Notes</label>
-                        <textarea id="v-notes" class="form-control" rows="3"
-                            placeholder="Outcome of the visit..."></textarea>
+                        <label class="form-label fw-semibold">Remarks / Reason</label>
+                        <textarea id="v-remarks" class="form-control" rows="3"
+                            placeholder="Detailed outcome or reason if declined..."></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Photo (Optional)</label>
+                    <div class="mb-3" id="photo-upload-container">
+                        <label class="form-label fw-semibold">Photo of Visited Shop</label>
                         <input type="file" id="v-photo" class="form-control" accept="image/*">
+                        <small class="text-muted">Required for Sales role, not for Telesales.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary" id="save-visit-btn">Log Visit</button>
+                    <button class="btn btn-primary" id="save-visit-btn">Save Progress</button>
                 </div>
             </div>
         </div>
@@ -102,50 +112,98 @@
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('visits');
 
-        // Set default datetime to now
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.getElementById('v-date').value = now.toISOString().slice(0, 16);
+        const user = getUser();
+        const isSales = user?.role === 'SALES' || user?.role === 'PROJECT_MANAGER_AND_SALES';
+        const isTelesales = user?.role === 'TELESALES';
+
+        // Hide photo upload for Telesales
+        if (isTelesales) {
+            document.getElementById('photo-upload-container').style.display = 'none';
+        }
+
+        // Handle "Other" status specification
+        document.getElementById('v-status').addEventListener('change', (e) => {
+            document.getElementById('other-status-div').style.display = e.target.value === 'OTHER' ? 'block' : 'none';
+        });
 
         // Load shops into dropdown
         apiGet('/shops/').then(shops => {
             const sel = document.getElementById('v-shop');
-            sel.innerHTML = '<option value="">-- Select Shop --</option>' +
-                shops.map(s => `<option value="${s.id}">${s.name} (${s.area_name || ''})</option>`).join('');
+            sel.innerHTML = '<option value="">-- Select Shop to Update --</option>' +
+                shops.map(s => `<option value="${s.id}">${s.name} (${s.address || 'No Address'})</option>`).join('');
         }).catch(() => { });
 
         async function loadVisits() {
-            const visits = await apiGet('/visits/?limit=200');
-            document.getElementById('visit-count').textContent = `${visits.length} total visits`;
-            const statusBadge = s => ({ scheduled: 'secondary', completed: 'success', missed: 'danger' }[s] || 'secondary');
-            document.getElementById('visits-table').innerHTML = visits.length
-                ? visits.map(v => `
-                <tr>
-                    <td class="fw-semibold">${v.shop_name || 'Shop #' + v.shop_id}</td>
-                    <td>${v.user_name || '—'}</td>
-                    <td>${v.visit_date ? new Date(v.visit_date).toLocaleString('en-IN') : '—'}</td>
-                    <td><span class="badge bg-${statusBadge(v.status)}">${v.status || '—'}</span></td>
-                    <td class="text-muted small" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v.notes || '—'}</td>
-                    <td>${v.photo_url ? `<a href="${v.photo_url}" target="_blank"><i class="bi bi-image text-primary"></i></a>` : '—'}</td>
-                </tr>`).join('')
-                : '<tr><td colspan="6" class="text-center py-5 text-muted">No visits logged yet.</td></tr>';
+            try {
+                const visits = await apiGet('/visits/?limit=200');
+                document.getElementById('visit-count').textContent = `${visits.length} tracked activities`;
+
+                const statusBadge = s => {
+                    const map = {
+                        SATISFIED: 'info',
+                        ACCEPT: 'success',
+                        DECLINE: 'danger',
+                        THINKING: 'warning',
+                        OTHER: 'secondary',
+                        SCHEDULED: 'light text-dark border'
+                    };
+                    return map[s] || 'secondary';
+                };
+
+                document.getElementById('visits-table').innerHTML = visits.length
+                    ? visits.map(v => `
+                    <tr>
+                        <td class="fw-semibold">
+                            ${v.shop_name || 'Shop #' + v.shop_id}
+                            <div class="text-muted x-small fw-normal">ID: ${v.shop_id}</div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center text-primary" style="width:24px;height:24px;font-size:10px;font-weight:700;">
+                                    ${(v.user_name || 'U')[0]}
+                                </div>
+                                <span>${v.user_name || '—'}</span>
+                            </div>
+                        </td>
+                        <td>${v.visit_date ? new Date(v.visit_date).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : '—'}</td>
+                        <td><span class="badge bg-${statusBadge(v.status)}">${v.status || '—'}</span></td>
+                        <td class="text-muted small" style="max-width:200px; white-space: normal;">${v.notes || '—'}</td>
+                        <td>
+                            ${v.photo_url ? `<a href="${v.photo_url}" target="_blank" class="btn btn-sm btn-outline-primary py-0"><i class="bi bi-image"></i> View</a>` : '<span class="text-muted small">No photo</span>'}
+                        </td>
+                        <td>
+                            ${v.status === 'ACCEPT' ? `<a href="clients.html" class="btn btn-sm btn-success"><i class="bi bi-receipt me-1"></i>Bill</a>` : ''}
+                            <button class="btn btn-sm btn-light border" onclick="editVisit(${v.id})"><i class="bi bi-pencil"></i></button>
+                        </td>
+                    </tr>`).join('')
+                    : '<tr><td colspan="7" class="text-center py-5 text-muted">No activities recorded yet. Start by updating a shop status.</td></tr>';
+            } catch (err) {
+                document.getElementById('visits-table').innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger">Failed to load data: ${err.message}</td></tr>`;
+            }
         }
 
         document.getElementById('save-visit-btn').addEventListener('click', async () => {
             const shopId = document.getElementById('v-shop').value;
             if (!shopId) return showToast('Please select a shop', 'error');
 
-            const btn = document.getElementById('save-visit-btn');
-            btn.disabled = true; btn.textContent = 'Saving...';
+            const status = document.getElementById('v-status').value;
+            const photo = document.getElementById('v-photo').files[0];
 
-            // Must use FormData because backend expects multipart/form-data
+            if (isSales && !photo && status !== 'SCHEDULED') {
+                // return showToast('Photo is required for Field Sales roles', 'error');
+            }
+
+            const btn = document.getElementById('save-visit-btn');
+            btn.disabled = true; btn.textContent = 'Processing...';
+
             const fd = new FormData();
             fd.append('shop_id', shopId);
-            fd.append('status', document.getElementById('v-status').value);
-            fd.append('notes', document.getElementById('v-notes').value);
-            const vDate = document.getElementById('v-date').value;
-            if (vDate) fd.append('visit_date', new Date(vDate).toISOString());
-            const photo = document.getElementById('v-photo').files[0];
+            fd.append('status', status === 'OTHER' ? document.getElementById('v-status-other').value.toUpperCase() : status);
+            fd.append('remarks', document.getElementById('v-remarks').value);
+
+            // Auto date
+            fd.append('visit_date', new Date().toISOString());
+
             if (photo) fd.append('photo', photo);
 
             try {
@@ -154,19 +212,26 @@
                     headers: { 'Authorization': `Bearer ${getToken()}` },
                     body: fd
                 });
-                if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Failed'); }
-                bootstrap.Modal.getInstance(document.getElementById('logVisitModal')).hide();
-                showToast('Visit logged successfully!');
-                loadVisits();
+                if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Failed to save progress'); }
+
+                if (status === 'ACCEPT') {
+                    showToast('Lead Accepted! Converting to client flow...', 'success');
+                    setTimeout(() => window.location.href = 'clients.html', 1500);
+                } else {
+                    bootstrap.Modal.getInstance(document.getElementById('logVisitModal')).hide();
+                    showToast('Status updated successfully!');
+                    loadVisits();
+                }
             } catch (e) {
                 showToast(e.message, 'error');
             } finally {
-                btn.disabled = false; btn.textContent = 'Log Visit';
+                btn.disabled = false; btn.textContent = 'Save Progress';
             }
         });
 
         loadVisits();
     </script>
+
 </body>
 
 </html>
