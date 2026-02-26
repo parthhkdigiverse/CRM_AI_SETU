@@ -181,6 +181,9 @@ class ApiClient {
     static async assignPM(clientId, pmId) {
         return this.request(`/clients/${clientId}/assign-pm`, { method: 'POST', body: { pm_id: pmId } });
     }
+    static async getMyClients(params = '') {
+        return this.request(`/clients/my-clients?${params}`);
+    }
 
     // ─── Areas ───────────────────────────────────────────────
     static async getAreas() {
@@ -263,6 +266,12 @@ class ApiClient {
     static async createFeedback(clientId, data) {
         return this.request(`/clients/${clientId}/feedback`, { method: 'POST', body: data });
     }
+    static async createUserFeedback(data) {
+        return this.request('/clients/user', { method: 'POST', body: data });
+    }
+    static async getUserFeedbacks() {
+        return this.request('/clients/user');
+    }
 
     // ─── Employees / HR ──────────────────────────────────────
     static async getEmployees() {
@@ -310,6 +319,12 @@ class ApiClient {
     static async verifyPayment(paymentId) {
         return this.request(`/payments/${paymentId}/verify`, { method: 'PATCH' });
     }
+    static async generateBill(data) {
+        return this.request('/billing/', { method: 'POST', body: data });
+    }
+    static async getBills() {
+        return this.request('/billing/');
+    }
 
     // ─── Projects ────────────────────────────────────────────
     static async getProjects(params = '') {
@@ -348,6 +363,14 @@ class ApiClient {
     }
     static async markNotificationRead(notifId) {
         return this.request(`/notifications/${notifId}/read`, { method: 'PATCH' });
+    }
+
+    // ─── Timetable ───────────────────────────────────────────
+    static async getTimetable(startDate, endDate) {
+        let params = '';
+        if (startDate) params += `?start_date=${startDate}`;
+        if (endDate) params += (params ? '&' : '?') + `end_date=${endDate}`;
+        return this.request(`/timetable/${params}`);
     }
 
     // ─── Activity Logs ───────────────────────────────────────

@@ -8,6 +8,7 @@ class IssueBase(BaseModel):
     status: IssueStatus = IssueStatus.OPEN
     severity: IssueSeverity = IssueSeverity.MEDIUM
     client_id: int
+    project_id: Optional[int] = None
     reporter_id: Optional[int] = None
 
 class IssueCreate(BaseModel):
@@ -15,6 +16,8 @@ class IssueCreate(BaseModel):
     description: Optional[str] = None
     status: IssueStatus = IssueStatus.OPEN
     severity: IssueSeverity = IssueSeverity.MEDIUM
+    project_id: Optional[int] = None
+
 
 class IssueUpdate(BaseModel):
     title: Optional[str] = None

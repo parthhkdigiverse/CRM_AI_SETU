@@ -1,7 +1,8 @@
 from typing import List, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, UTC
+
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
 from app.modules.users.models import User, UserRole
@@ -143,7 +144,8 @@ def calculate_incentive(
         applied_slab=applied_slab_val,
         amount_per_unit=amount_per_unit,
         total_incentive=round(total_incentive, 2),
-        generated_at=datetime.utcnow()
+        generated_at=datetime.now(UTC)
+
     )
     db.add(db_slip)
     db.commit()

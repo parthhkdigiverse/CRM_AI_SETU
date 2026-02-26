@@ -8,22 +8,31 @@ fetch('http://127.0.0.1:8000/api/config')
 // Inject global theme styles
 document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/theme.css">');
 
-function getToken() { return sessionStorage.getItem('access_token'); }
+function getToken() { return localStorage.getItem('access_token'); }
 function setTokens(a, r) {
-    sessionStorage.setItem('access_token', a);
-    if (r) sessionStorage.setItem('refresh_token', r);
+    localStorage.setItem('access_token', a);
+    if (r) localStorage.setItem('refresh_token', r);
 }
 function clearTokens() {
-    sessionStorage.removeItem('access_token');
-    sessionStorage.removeItem('refresh_token');
-    sessionStorage.removeItem('crm_user');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('crm_user');
 }
 function getUser() {
-    try { return JSON.parse(sessionStorage.getItem('crm_user')); } catch { return null; }
+    try { return JSON.parse(localStorage.getItem('crm_user')); } catch { return null; }
 }
 
 // Guard: call on every protected page
 function requireAuth() {
+    // Development Bypass: Allow viewing template via ?dev=true ONLY on local environments
+    const params = new URLSearchParams(window.location.search);
+    const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
+
+    if (params.get('dev') === 'true' && isLocal) {
+        console.warn('Auth check bypassed via dev flag (Local Only).');
+        return;
+    }
+
     if (!getToken()) { window.location.replace('index.html'); return; }
     const u = getUser();
     const el = document.getElementById('username-display');
@@ -37,6 +46,10 @@ function requireAuth() {
 
 // Re-evaluate auth on back/forward navigation
 window.addEventListener('pageshow', (event) => {
+    const params = new URLSearchParams(window.location.search);
+    const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
+    if (params.get('dev') === 'true' && isLocal) return;
+
     // If the page was restored from the bfcache and we have no token, kick them
     if (event.persisted && !getToken() && window.location.pathname.indexOf('index.html') === -1) {
         window.location.replace('index.html');
@@ -50,7 +63,7 @@ function logout() {
 }
 
 // Session Management (Inactivity Timeout)
-const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
+const INACTIVITY_LIMIT_MS = 7 * 24 * 60 * 60 * 1000; // 7 days (more persistent)
 let inactivityTimer;
 
 function resetInactivityTimer() {
@@ -79,7 +92,17 @@ async function apiFetch(path, options = {}) {
     const token = getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch(API + path, { ...options, headers });
-    if (res.status === 401) { clearTokens(); window.location.replace('index.html'); return; }
+    if (res.status === 401) {
+        const params = new URLSearchParams(window.location.search);
+        const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
+        if (params.get('dev') === 'true' && isLocal) {
+            console.warn('API 401 suppressed in dev mode.');
+            return res;
+        }
+        clearTokens();
+        window.location.replace('index.html');
+        return;
+    }
     return res;
 }
 
@@ -173,6 +196,8 @@ function renderSidebar(active) {
         <ul class="sb-section-items ${active === 'dashboard' ? 'open' : ''}">
             <li><a href="dashboard.html" class="sb-link ${active === 'dashboard' ? 'active' : ''}">
                 <i class="bi bi-bar-chart-line-fill"></i><span>Overview</span></a></li>
+            <li><a href="javascript:void(0)" onclick="if(window.loadView) window.loadView('timetable');" class="sb-link ${active === 'timetable' ? 'active' : ''}">
+                <i class="bi bi-calendar3"></i><span>Timetable</span></a></li>
         </ul>
     </div>`;
 
@@ -198,6 +223,7 @@ function renderSidebar(active) {
     // ─── CLIENT RELATIONS ────────────────────────────────────────
     nav += sbSection('cr', 'Client Relations', 'bi-people', [
         { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
+        { id: 'billing', href: 'javascript:void(0)" onclick="if(window.loadView) window.loadView(\'billing\');', icon: 'bi-file-earmark-medical', label: 'Billing' },
         { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
     ]);
 
@@ -264,6 +290,7 @@ function injectTopHeader(pageTitle) {
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px;">
                     <li><a class="dropdown-item py-2" href="visits.html" style="border-radius:8px;"><i class="bi bi-bullseye me-2 text-primary"></i> New Lead / Visit</a></li>
                     <li><a class="dropdown-item py-2" href="clients.html" style="border-radius:8px;"><i class="bi bi-people me-2 text-info"></i> New Client</a></li>
+                    <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="if(window.openNewBillModal) window.openNewBillModal();" style="border-radius:8px;"><i class="bi bi-file-invoice-dollar me-2 text-danger"></i> New Bill</a></li>
                     <li><a class="dropdown-item py-2" href="issues.html" style="border-radius:8px;"><i class="bi bi-exclamation-triangle me-2 text-warning"></i> New Issue</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item py-2" href="admin.html" style="border-radius:8px;"><i class="bi bi-person-plus me-2 text-success"></i> New User</a></li>

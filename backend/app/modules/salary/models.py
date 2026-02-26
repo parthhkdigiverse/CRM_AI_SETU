@@ -1,5 +1,6 @@
 import enum
-from datetime import datetime
+from datetime import datetime, UTC
+
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Enum, Text, Float
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -30,7 +31,8 @@ class SalarySlip(Base):
     id = Column(Integer, primary_key=True, index=True)
     employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
     month = Column(String, nullable=False) # YYYY-MM
-    generated_at = Column(Date, default=datetime.utcnow)
+    generated_at = Column(Date, default=lambda: datetime.now(UTC).date())
+
     
     base_salary = Column(Float, nullable=False)
     paid_leaves = Column(Integer, default=0)

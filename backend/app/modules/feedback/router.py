@@ -2,11 +2,11 @@ from typing import List, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.dependencies import RoleChecker
+from app.core.dependencies import RoleChecker, get_current_user
 from app.modules.users.models import User, UserRole
 from app.modules.clients.models import Client
-from app.modules.feedback.models import Feedback
-from app.modules.feedback.schemas import FeedbackCreate, FeedbackRead
+from app.modules.feedback.models import Feedback, UserFeedback
+from app.modules.feedback.schemas import FeedbackCreate, FeedbackRead, UserFeedbackCreate, UserFeedbackRead
 
 router = APIRouter()
 
@@ -70,4 +70,43 @@ def read_client_feedback(
         .offset(offset).limit(limit).all()
         
     return feedbacks
+
+
+# --- Internal User Feedback Endpoints ---
+
+@router.post("/user", response_model=UserFeedbackRead, status_code=status.HTTP_201_CREATED)
+def create_user_feedback(
+    feedback_in: UserFeedbackCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    """
+    Submit feedback/issue about the system (Internal).
+    """
+    db_feedback = UserFeedback(
+        user_id=current_user.id,
+        subject=feedback_in.subject,
+        message=feedback_in.message
+    )
+    db.add(db_feedback)
+    db.commit()
+    db.refresh(db_feedback)
+    return db_feedback
+
+@router.get("/user", response_model=List[UserFeedbackRead])
+def read_user_feedbacks(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    """
+    Retrieve system feedback. Admins see all, users see their own.
+    """
+    query = db.query(UserFeedback)
+    
+    if current_user.role != UserRole.ADMIN:
+        query = query.filter(UserFeedback.user_id == current_user.id)
+        
+    return query.order_by(UserFeedback.created_at.desc()).offset(skip).limit(limit).all()
 

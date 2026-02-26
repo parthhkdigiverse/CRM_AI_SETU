@@ -1,7 +1,8 @@
 from typing import List, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, UTC
+
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
 from app.modules.users.models import User, UserRole
@@ -131,7 +132,8 @@ def generate_salary_slip(
         unpaid_leaves=unpaid_leaves,
         deduction_amount=salary_in.deduction_amount,
         final_salary=round(final_salary, 2),
-        generated_at=datetime.utcnow().date()
+        generated_at=datetime.now(UTC).date()
+
     )
     db.add(db_salary)
     db.commit()

@@ -163,6 +163,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 await renderAdmin();
             } else if (viewName === 'profile') {
                 await renderProfile();
+            } else if (viewName === 'timetable') {
+                await renderTimetable();
+            } else if (viewName === 'billing') {
+                await renderBilling();
             } else {
                 mainContent.innerHTML = `
                     <div class="card" style="text-align:center; padding: 60px;">
@@ -501,7 +505,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function renderClients() {
         try {
-            const clients = await window.ApiClient.getClients();
+            const user = window.ApiClient.getCurrentUser();
+            const isPM = user && (user.role === 'PROJECT_MANAGER' || user.role === 'PROJECT_MANAGER_AND_SALES');
+            const clients = isPM ? await window.ApiClient.getMyClients() : await window.ApiClient.getClients();
             const rows = clients.length === 0
                 ? `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No clients found. Add your first client!</td></tr>`
                 : clients.map(c => `
@@ -696,82 +702,113 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>`;
     }
 
-    async function renderFeedback() {
-        mainContent.innerHTML = `
-        <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-            <div>
-                <h1 style="margin-bottom: 4px;">Client Feedback</h1>
-                <p class="text-muted">Monitor satisfaction and gather insights.</p>
-            </div>
-            <button class="btn btn-secondary"><i class="fa-solid fa-download"></i> Export Report</button>
-        </div>
+    async function renderFeedback(activeTab = 'clients') {
+        const user = window.ApiClient.getCurrentUser();
+        const isAdmin = user && user.role === 'ADMIN';
 
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px;">
-            <div class="card" style="padding: 24px; text-align: center;">
-                <div class="text-muted" style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">AVG RATING</div>
-                <div style="font-size: 36px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">4.2<span style="font-size: 18px; color: var(--text-muted);">/5</span></div>
-                <div style="color: #F59E0B; font-size: 18px;"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star-half-stroke"></i></div>
-            </div>
-            <div class="card" style="padding: 24px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
-                <div class="text-muted" style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">POSITIVE</div>
-                <div style="font-size: 36px; font-weight: 700; color: var(--success);"><i class="fa-regular fa-face-smile"></i> 15</div>
-            </div>
-            <div class="card" style="padding: 24px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
-                <div class="text-muted" style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">NEEDS ATTENTION</div>
-                <div style="font-size: 36px; font-weight: 700; color: var(--danger);"><i class="fa-regular fa-face-frown"></i> 2</div>
-            </div>
-        </div>
+        const tabBar = `
+            <div class="tab-bar" style="margin-bottom:24px;">
+                <button class="tab-btn ${activeTab === 'clients' ? 'active' : ''}" onclick="renderFeedback('clients')">Client Reviews</button>
+                <button class="tab-btn ${activeTab === 'user' ? 'active' : ''}" onclick="renderFeedback('user')">System Feedback (Internal)</button>
+            </div>`;
 
-        <h3 style="margin-bottom: 16px;">Recent Reviews</h3>
-        
-        <div style="display: flex; flex-direction: column; gap: 16px;">
-            <!-- Review 1 -->
-            <div class="card">
-                <div style="display: flex; gap: 16px;">
-                    <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">I</div>
-                    <div style="flex: 1;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                            <div style="font-weight: 600; font-size: 16px;">Infosys <span style="font-weight: 400; font-size: 14px; color: var(--text-muted);">— Project Review</span></div>
-                            <div class="text-muted" style="font-size: 13px;">2 days ago</div>
-                        </div>
-                        <div style="color: #F59E0B; font-size: 14px; margin-bottom: 12px;"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
-                        <p style="color: var(--text-body); margin: 0; line-height: 1.6;">Excellent service and quick turnaround. The project manager was highly responsive and resolved all our technical queries within the SLA. Very satisfied.</p>
-                    </div>
+        if (activeTab === 'clients') {
+            mainContent.innerHTML = `
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <div>
+                    <h1 style="margin-bottom: 4px;">Feedback & Satisfaction</h1>
+                    <p class="text-muted">Monitor client experiences and internal system feedback.</p>
                 </div>
             </div>
-            
-            <!-- Review 2 -->
-            <div class="card">
-                <div style="display: flex; gap: 16px;">
-                    <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--secondary-light); color: var(--secondary); font-weight: 700; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">T</div>
-                    <div style="flex: 1;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                            <div style="font-weight: 600; font-size: 16px;">TCS Portal <span style="font-weight: 400; font-size: 14px; color: var(--text-muted);">— Mid-cycle Checkin</span></div>
-                            <div class="text-muted" style="font-size: 13px;">5 days ago</div>
-                        </div>
-                        <div style="color: #F59E0B; font-size: 14px; margin-bottom: 12px;"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star"></i><i class="fa-regular fa-star"></i></div>
-                        <p style="color: var(--text-body); margin: 0; line-height: 1.6;">Delivery was on time, but communication was lacking during the second phase. We expected better proactive updates. Still, the final output is good.</p>
-                    </div>
+            ${tabBar}
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 24px;">
+                <div class="card" style="padding: 24px; text-align: center;">
+                    <div class="text-muted" style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">AVG RATING</div>
+                    <div style="font-size: 36px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">4.2<span style="font-size: 18px; color: var(--text-muted);">/5</span></div>
+                    <div style="color: #F59E0B; font-size: 18px;"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star-half-stroke"></i></div>
+                </div>
+                <div class="card" style="padding: 24px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="text-muted" style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">POSITIVE</div>
+                    <div style="font-size: 36px; font-weight: 700; color: var(--success);"><i class="fa-regular fa-face-smile"></i> 15</div>
+                </div>
+                <div class="card" style="padding: 24px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div class="text-muted" style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">NEEDS ATTENTION</div>
+                    <div style="font-size: 36px; font-weight: 700; color: var(--danger);"><i class="fa-regular fa-face-frown"></i> 2</div>
                 </div>
             </div>
-            
-            <!-- Review 3 -->
-            <div class="card">
-                <div style="display: flex; gap: 16px;">
-                    <div style="width: 48px; height: 48px; border-radius: 50%; background: #FEE2E2; color: var(--danger); font-weight: 700; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">W</div>
-                    <div style="flex: 1;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                            <div style="font-weight: 600; font-size: 16px;">Wipro Technologies <span style="font-weight: 400; font-size: 14px; color: var(--text-muted);">— Support Ticket</span></div>
-                            <div class="text-muted" style="font-size: 13px;">1 week ago</div>
+            <h3 style="margin-bottom: 16px;">Recent Reviews</h3>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <!-- Static mock reviews for now -->
+                <div class="card">
+                    <div style="display: flex; gap: 16px;">
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">I</div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <div style="font-weight: 600; font-size: 16px;">Infosys <span style="font-weight: 400; font-size: 14px; color: var(--text-muted);">— Project Review</span></div>
+                                <div class="text-muted" style="font-size: 13px;">2 days ago</div>
+                            </div>
+                            <div style="color: #F59E0B; font-size: 14px; margin-bottom: 12px;"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                            <p style="color: var(--text-body); margin: 0; line-height: 1.6;">Excellent service and quick turnaround.</p>
                         </div>
-                        <div style="color: #F59E0B; font-size: 14px; margin-bottom: 12px;"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i></div>
-                        <p style="color: var(--text-body); margin: 0; line-height: 1.6;">Support team was quick to address the critical bug in production. Appreciate the swift action.</p>
                     </div>
                 </div>
+            </div>`;
+        } else {
+            // User Feedback Tab
+            let userFeedbacks = [];
+            try { userFeedbacks = await window.ApiClient.getUserFeedbacks(); } catch (e) { }
+
+            const rows = userFeedbacks.length === 0
+                ? '<div class="text-muted py-4 text-center">No internal feedback records found.</div>'
+                : userFeedbacks.map(f => `
+                <div class="card" style="margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                        <div>
+                            <div style="font-weight:600; font-size:16px;">${f.subject}</div>
+                            <div style="font-size:12px; color:var(--text-muted);">From: User #${f.user_id}</div>
+                        </div>
+                        <div class="text-muted" style="font-size:12px;">${new Date(f.created_at || Date.now()).toLocaleDateString()}</div>
+                    </div>
+                    <p style="margin:0; font-size:14px; line-height:1.5;">${f.message}</p>
+                </div>`).join('');
+
+            mainContent.innerHTML = `
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <div>
+                   <h1 style="margin-bottom: 4px;">System Feedback</h1>
+                   <p class="text-muted">Internal suggestions and issue reports from employees.</p>
+                </div>
+                <button class="btn btn-primary" onclick="openNewUserFeedbackModal()"><i class="fa-solid fa-pen-nib"></i> Submit Feedback</button>
             </div>
-        </div>
-        `;
+            ${tabBar}
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                ${rows}
+            </div>`;
+        }
+        window.renderFeedback = renderFeedback;
     }
+
+    window.openNewUserFeedbackModal = () => {
+        const html = `
+            <div class="form-group">
+                <label>Subject *</label>
+                <input type="text" id="muf-subject" class="form-control" placeholder="E.g. Suggestion for Dashboard UI" required>
+            </div>
+            <div class="form-group">
+                <label>Your Message *</label>
+                <textarea id="muf-message" class="form-textarea" style="height:120px;" placeholder="Describe your feedback, suggestion or concern..." required></textarea>
+            </div>
+        `;
+        createModal('modal-user-feedback', 'Submit Internal Feedback', html, async () => {
+            const subject = document.getElementById('muf-subject').value;
+            const message = document.getElementById('muf-message').value;
+            if (!subject || !message) throw new Error("Subject and Message are required");
+
+            await window.ApiClient.createUserFeedback({ subject, message });
+            showToast('Feedback submitted to Admin!');
+            if (document.querySelector('h1')?.innerText.includes('System Feedback')) renderFeedback('user');
+        }, "Submit Feedback");
+    };
 
     // ─── Projects (Native Backend Module) ─────────────────────────────────────────────
     async function renderProjects() {
@@ -1111,9 +1148,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="form-group">
                 <label>Status</label>
                 <select id="mv-status" class="form-control">
-                    <option value="scheduled">Scheduled</option>
-                    <option value="completed" selected>Completed</option>
-                    <option value="missed">Missed</option>
+                    <option value="SATISFIED" selected>Satisfied</option>
+                    <option value="ACCEPT">Accept</option>
+                    <option value="DECLINE">Decline</option>
+                    <option value="TAKE_TIME_TO_THINK">Take time to think</option>
+                    <option value="OTHER">Other</option>
                 </select>
             </div>
             <div class="form-group">
@@ -1124,19 +1163,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 <label>Notes</label>
                 <textarea id="mv-notes" class="form-textarea" placeholder="Outcome of the visit..."></textarea>
             </div>
-            <div class="form-group">
+            <div class="form-group" id="visit-photo-group">
                 <label>Upload Photo (Optional)</label>
                 <input type="file" id="mv-photo" class="form-control" accept="image/*">
             </div>
         `;
         createModal('modal-log-visit', 'Log Field Visit', html, async () => {
+            const user = window.ApiClient.getCurrentUser();
+            const isTelesales = user && user.role === 'TELESALES';
+
             const shopId = document.getElementById('mv-shop').value;
             if (!shopId) throw new Error("Please select a shop");
 
             const formData = new FormData();
             formData.append('shop_id', shopId);
             formData.append('status', document.getElementById('mv-status').value);
-            formData.append('notes', document.getElementById('mv-notes').value);
+            formData.append('remarks', document.getElementById('mv-notes').value);
 
             const vDate = document.getElementById('mv-date').value;
             if (vDate) {
@@ -1162,6 +1204,13 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Visit logged successfully');
             if (document.querySelector('h1').innerText.includes('Visits')) renderVisits();
         }, "Log Visit");
+
+        // Hide photo upload for telesales
+        const user = window.ApiClient.getCurrentUser();
+        if (user && user.role === 'TELESALES') {
+            const photoGrp = document.getElementById('visit-photo-group');
+            if (photoGrp) photoGrp.style.display = 'none';
+        }
     };
 
     // Modal: New Meeting
@@ -1412,6 +1461,102 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>`;
         window.renderReports = renderReports;
     }
+
+    async function renderTimetable() {
+        try {
+            const res = await window.ApiClient.getTimetable();
+            const events = res.events || [];
+
+            const rows = events.length === 0
+                ? '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted);">No scheduled activities found.</td></tr>'
+                : events.map(e => `
+                    <tr>
+                        <td><div style="font-weight:500;">${e.title}</div><div style="font-size:12px;color:var(--text-muted);">${e.description || ''}</div></td>
+                        <td>${new Date(e.date).toLocaleDateString()} ${new Date(e.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                        <td><span class="badge badge-purple-light">${e.event_type}</span></td>
+                        <td><span class="badge ${e.status === 'COMPLETED' ? 'badge-green-light' : 'badge-yellow-light'}">${e.status}</span></td>
+                    </tr>`).join('');
+
+            mainContent.innerHTML = `
+                <div class="page-header">
+                    <div><h1>Timetable & Schedule</h1><p class="text-muted">Unified view of your activities.</p></div>
+                </div>
+                <div class="card" style="padding:0;">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead><tr><th>ACTIVITY</th><th>SCHEDULED AT</th><th>TYPE</th><th>STATUS</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            mainContent.innerHTML = '<div class="card text-danger">Failed to load timetable.</div>';
+        }
+    }
+
+    async function renderBilling() {
+        try {
+            const bills = await window.ApiClient.getBills();
+            const rows = bills.length === 0
+                ? '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No bills found.</td></tr>'
+                : bills.map(b => `
+                    <tr>
+                        <td style="font-weight:600;">${b.invoice_number || 'PENDING'}</td>
+                        <td>Shop #${b.shop_id}</td>
+                        <td>Rs. ${b.amount.toLocaleString()}</td>
+                        <td><span class="badge ${b.status === 'PAID' ? 'badge-green-light' : 'badge-yellow-light'}">${b.status}</span></td>
+                        <td>${b.whatsapp_sent ? '<span class="badge badge-green-light"><i class="fa-brands fa-whatsapp"></i> Sent</span>' : '<span class="badge badge-red-light">Not Sent</span>'}</td>
+                    </tr>`).join('');
+
+            mainContent.innerHTML = `
+                <div class="page-header">
+                    <div><h1>Billing & Invoices</h1><p class="text-muted">Manage payments and shop auto-conversions.</p></div>
+                    <button class="btn btn-primary" onclick="openNewBillModal()"><i class="fa-solid fa-file-invoice-dollar"></i> Generate New Bill</button>
+                </div>
+                <div class="card" style="padding:0;">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead><tr><th>INVOICE #</th><th>SHOP/CLIENT</th><th>AMOUNT</th><th>STATUS</th><th>WHATSAPP</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            mainContent.innerHTML = '<div class="card text-danger">Failed to load billing records.</div>';
+        }
+    }
+
+    window.openNewBillModal = async () => {
+        let shops = [];
+        try { shops = await window.ApiClient.getShops(); } catch (e) { }
+
+        const shopOptions = shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        const html = `
+            <div class="form-group">
+                <label>Select Shop *</label>
+                <select id="mb-shop" class="form-control" required>
+                    <option value="">-- Choose Shop --</option>
+                    ${shopOptions}
+                </select>
+                <small class="text-muted">Note: Shop will be automatically converted to Client after billing.</small>
+            </div>
+            <div class="form-group">
+                <label>Amount (Rs.) *</label>
+                <input type="number" id="mb-amount" class="form-control" placeholder="E.g. 5000" required>
+            </div>
+        `;
+        createModal('modal-new-bill', 'Generate Bill & Convert Shop', html, async () => {
+            const shopId = document.getElementById('mb-shop').value;
+            const amount = document.getElementById('mb-amount').value;
+            if (!shopId || !amount) throw new Error("All fields are required");
+
+            await window.ApiClient.generateBill({ shop_id: parseInt(shopId), amount: parseFloat(amount) });
+            showToast('Bill generated and WhatsApp invoice sent!');
+            renderBilling();
+        }, "Generate & Convert");
+    };
 
     // Kickoff
     checkAuth();

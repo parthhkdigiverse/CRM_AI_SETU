@@ -36,7 +36,8 @@ class IssueService:
         return query.order_by(Issue.id.desc()).offset(skip).limit(limit).all()
 
     async def create_issue(self, issue: IssueCreate, client_id: int, current_user: User, request: Request, background_tasks: BackgroundTasks = None):
-        db_issue = Issue(**issue.dict(), client_id=client_id, reporter_id=current_user.id)
+        db_issue = Issue(**issue.model_dump(), client_id=client_id, reporter_id=current_user.id)
+
         self.db.add(db_issue)
         self.db.commit()
         self.db.refresh(db_issue)
@@ -48,7 +49,8 @@ class IssueService:
             entity_type=EntityType.ISSUE,
             entity_id=db_issue.id,
             old_data=None,
-            new_data=issue.dict(),
+            new_data=issue.model_dump(),
+
             request=request
         )
 
@@ -93,7 +95,8 @@ class IssueService:
             "assigned_to_id": db_issue.assigned_to_id
         }
 
-        update_data = issue_update.dict(exclude_unset=True)
+        update_data = issue_update.model_dump(exclude_unset=True)
+
         for key, value in update_data.items():
             setattr(db_issue, key, value)
 

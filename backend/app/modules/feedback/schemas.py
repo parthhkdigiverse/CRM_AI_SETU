@@ -18,3 +18,22 @@ class FeedbackRead(FeedbackBase):
 
     class Config:
         from_attributes = True
+
+class UserFeedbackBase(BaseModel):
+    subject: str
+    message: str
+
+class UserFeedbackCreate(UserFeedbackBase):
+    pass
+
+class UserFeedbackUpdate(BaseModel):
+    status: str
+
+class UserFeedbackRead(UserFeedbackBase):
+    id: int
+    user_id: int
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

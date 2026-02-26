@@ -12,3 +12,9 @@ from app.modules.shops.models import Shop  # noqa
 from app.modules.areas.models import Area  # noqa
 from app.modules.visits.models import Visit  # noqa
 from app.modules.activity_logs.models import ActivityLog  # noqa
+from app.modules.projects.models import Project  # noqa
+from app.modules.todos.models import Todo  # noqa
+from app.modules.notifications.models import Notification  # noqa
+from app.modules.billing.models import Bill  # noqa
+from app.modules.clients.models import ClientPMHistory  # noqa
+

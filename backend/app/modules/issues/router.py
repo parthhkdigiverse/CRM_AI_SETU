@@ -37,7 +37,8 @@ def read_global_issues(
     Global issue search with filters. PMs can only see issues for their assigned clients.
     """
     service = IssueService(db)
-    pm_id = current_user.id if current_user.role == UserRole.PROJECT_MANAGER else None
+    pm_id = current_user.id if current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES] else None
+
     
     return service.get_all_issues(
         skip=skip, limit=limit, status=status, severity=severity, 
@@ -61,8 +62,9 @@ async def create_issue(
     if not db_client:
         raise HTTPException(status_code=404, detail="Client not found")
     
-    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+    if current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES] and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only report issues for your assigned clients")
+
 
     service = IssueService(db)
     return await service.create_issue(issue_in, client_id, current_user, request=request, background_tasks=background_tasks)
@@ -77,8 +79,9 @@ def read_client_issues(
     if not db_client:
         raise HTTPException(status_code=404, detail="Client not found")
         
-    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+    if current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES] and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
+
 
     return db.query(Issue).filter(Issue.client_id == client_id).all()
 
@@ -116,8 +119,9 @@ def get_issue_details(
     
     # Check access (PM check)
     db_client = db.query(Client).filter(Client.id == db_issue.client_id).first()
-    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+    if current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES] and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
+
         
     return db_issue
 

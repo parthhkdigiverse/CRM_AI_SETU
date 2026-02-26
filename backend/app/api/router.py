@@ -49,6 +49,12 @@ api_router.include_router(todos.router, prefix="/todos", tags=["todos"])
 from app.modules.notifications import router as notifications
 api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 
+from app.modules.billing import router as billing
+api_router.include_router(billing.router, prefix="/billing", tags=["billing"])
+
+from app.modules.timetable import router as timetable
+api_router.include_router(timetable.router, prefix="/timetable", tags=["timetable"])
+
 @api_router.get("/health")
 def health_check():
     return {"status": "ok"}

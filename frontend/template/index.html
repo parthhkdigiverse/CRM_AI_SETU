@@ -70,10 +70,22 @@
 
     <script>
         let API = 'http://127.0.0.1:8000/api';
-        fetch('http://127.0.0.1:8000/api/config').then(r => r.json()).then(d => { API = d.API_BASE_URL; }).catch(e => e);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        fetch('http://127.0.0.1:8000/api/config', { signal: controller.signal })
+            .then(r => r.json())
+            .then(d => {
+                clearTimeout(timeoutId);
+                if (d.API_BASE_URL) API = d.API_BASE_URL;
+            })
+            .catch(e => {
+                clearTimeout(timeoutId);
+                console.warn('Config fetch failed or timed out, using default API:', e);
+            });
 
         // If already logged in, redirect
-        if (sessionStorage.getItem('access_token')) {
+        if (localStorage.getItem('access_token')) {
             window.location.replace('dashboard.html');
         }
 
@@ -102,8 +114,8 @@
                 }
 
                 const data = await res.json();
-                sessionStorage.setItem('access_token', data.access_token);
-                if (data.refresh_token) sessionStorage.setItem('refresh_token', data.refresh_token);
+                localStorage.setItem('access_token', data.access_token);
+                if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token);
 
                 // Decode JWT to get user_id, then find employee info
                 try {
@@ -121,9 +133,9 @@
                         const myProfile = await fetch(`${API}/auth/profile`, { headers: { 'Authorization': `Bearer ${data.access_token}` } }).then(r => r.json()).catch(() => null);
                         if (myProfile) { userName = myProfile.full_name || 'User'; userRole = myProfile.role || ''; }
                     }
-                    sessionStorage.setItem('crm_user', JSON.stringify({ id: userId, name: userName, role: userRole }));
+                    localStorage.setItem('crm_user', JSON.stringify({ id: userId, name: userName, role: userRole }));
                 } catch (ex) {
-                    sessionStorage.setItem('crm_user', JSON.stringify({ name: 'User', role: '' }));
+                    localStorage.setItem('crm_user', JSON.stringify({ name: 'User', role: '' }));
                 }
 
                 window.location.replace('dashboard.html');

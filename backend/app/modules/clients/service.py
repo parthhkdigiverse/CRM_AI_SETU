@@ -14,10 +14,12 @@ class ClientService:
     def get_client(self, client_id: int):
         return self.db.query(Client).filter(Client.id == client_id).first()
 
-    def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc", include_inactive: bool = False):
+    def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc", include_inactive: bool = False, pm_id: int = None):
         query = self.db.query(Client)
         if not include_inactive:
             query = query.filter(Client.is_active == True)
+        if pm_id:
+            query = query.filter(Client.pm_id == pm_id)
         if search:
             search_pattern = f"%{search}%"
             query = query.filter(
@@ -41,7 +43,49 @@ class ClientService:
         return query.offset(skip).limit(limit).all()
 
     async def create_client(self, client: ClientCreate, current_user: User, request: Request):
-        db_client = Client(**client.dict())
+        db_client = Client(**client.model_dump())
+
+        
+        # --- Round-robin / Load-balanced PM Assignment ---
+        from app.modules.users.models import User, UserRole
+        from sqlalchemy import func
+        
+        # 1. Get all active Project Managers (or PM & Sales)
+        active_pms = self.db.query(User).filter(
+            User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]),
+            User.is_active == True
+        ).all()
+        
+        if active_pms:
+            # 2. Count active clients per PM
+            pm_ids = [pm.id for pm in active_pms]
+            
+            # Subquery to count active clients per pm_id
+            client_counts = self.db.query(
+                Client.pm_id, 
+                func.count(Client.id).label('client_count')
+            ).filter(
+                Client.pm_id.in_(pm_ids),
+                Client.is_active == True
+            ).group_by(Client.pm_id).all()
+            
+            count_map = {row.pm_id: row.client_count for row in client_counts}
+            
+            # 3. Find the PM with the minimum count
+            # Start by assuming everyone has 0
+            best_pm_id = None
+            min_count = float('inf')
+            
+            for pm in active_pms:
+                count = count_map.get(pm.id, 0)
+                if count < min_count:
+                    min_count = count
+                    best_pm_id = pm.id
+                    
+            # 4. Assign the selected PM
+            db_client.pm_id = best_pm_id
+        # --------------------------------------------------
+
         self.db.add(db_client)
         self.db.commit()
         self.db.refresh(db_client)
@@ -53,7 +97,8 @@ class ClientService:
             entity_type=EntityType.CLIENT,
             entity_id=db_client.id,
             old_data=None,
-            new_data=client.dict(),
+            new_data=client.model_dump(),
+
             request=request
         )
 
@@ -71,7 +116,8 @@ class ClientService:
             "organization": db_client.organization
         }
 
-        update_data = client_update.dict(exclude_unset=True)
+        update_data = client_update.model_dump(exclude_unset=True)
+
         for key, value in update_data.items():
             setattr(db_client, key, value)
 

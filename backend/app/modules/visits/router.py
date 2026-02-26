@@ -20,6 +20,7 @@ async def create_visit(
     shop_id: int = Form(...),
     visit_date: Optional[str] = Form(None), # Parse string to datetime
     remarks: Optional[str] = Form(None),
+    decline_remarks: Optional[str] = Form(None),
     status: VisitStatus = Form(VisitStatus.SATISFIED),
     photo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
@@ -29,21 +30,25 @@ async def create_visit(
     Create a visit. Supports photo upload.
     Note: Using Form data because of File upload.
     """
-    from datetime import datetime
+    from datetime import datetime, UTC
+
     
     parsed_date = None
     if visit_date:
         try:
             parsed_date = datetime.fromisoformat(visit_date.replace('Z', '+00:00'))
         except:
-            parsed_date = datetime.utcnow() # Fallback or error?
+            parsed_date = datetime.now(UTC) # Fallback or error?
+
             
     visit_in = VisitCreate(
         shop_id=shop_id,
         visit_date=parsed_date,
         remarks=remarks,
+        decline_remarks=decline_remarks,
         status=status
     )
+
     
     service = VisitService(db)
     return await service.create_visit(visit_in, current_user, request, photo)
