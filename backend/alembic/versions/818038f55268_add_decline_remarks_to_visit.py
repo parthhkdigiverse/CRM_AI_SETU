@@ -41,15 +41,13 @@ def upgrade() -> None:
                existing_type=sa.TEXT(),
                type_=sa.String(),
                existing_nullable=False)
+
     op.alter_column('issues', 'status',
                existing_type=sa.TEXT(),
                type_=sa.String(),
                existing_nullable=False)
-    op.alter_column('issues', 'severity',
-               existing_type=sa.TEXT(),
-               type_=sa.String(),
-               nullable=False,
-               existing_server_default=sa.text("'MEDIUM'::text"))
+
+    op.add_column('issues', sa.Column('severity', sa.String(), nullable=False, server_default='MEDIUM'))
     op.alter_column('users', 'role',
                existing_type=sa.TEXT(),
                type_=sa.Enum('ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES', 'CLIENT', name='userrole'),
