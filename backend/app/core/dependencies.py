@@ -46,6 +46,8 @@ def get_current_user(
 def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
+    if current_user is None:  # Demo Mode: synthetic admin is always active
+        return None
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user

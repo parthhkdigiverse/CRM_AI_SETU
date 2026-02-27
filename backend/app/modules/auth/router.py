@@ -62,7 +62,24 @@ async def login(
                    "You can use admin@example.com / password123 as demo credentials.",
         )
 
+    # ── Fallback if user not found in DB but is demo admin ────────────────────
     if not user:
+        if (
+            form_data.username == _DEMO_EMAIL
+            and form_data.password == _DEMO_PASSWORD
+        ):
+            print("[DEMO MODE] Demo login granted (User not in DB)")
+            access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+            refresh_token_expires = timedelta(days=30)
+            return {
+                "access_token": create_access_token(
+                    _DEMO_USER_ID, expires_delta=access_token_expires
+                ),
+                "refresh_token": create_access_token(
+                    _DEMO_USER_ID, expires_delta=refresh_token_expires
+                ),
+                "token_type": "bearer",
+            }
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",

@@ -8,7 +8,11 @@ fetch('http://127.0.0.1:8000/api/config')
 // Inject global theme styles
 document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/theme.css">');
 
-function getToken() { return localStorage.getItem('access_token'); }
+function getToken() {
+    const t = localStorage.getItem('access_token');
+    if (!t || t === 'null' || t === 'undefined' || t === '') return null;
+    return t;
+}
 function setTokens(a, r) {
     localStorage.setItem('access_token', a);
     if (r) localStorage.setItem('refresh_token', r);
@@ -86,13 +90,19 @@ window.addEventListener('pageshow', (event) => {
 
     // If we land on the login page but already have a VALID token, go to dashboard.
     // We verify the token first so we don't blindly redirect on expired tokens.
-    if (isLoginPage && getToken()) {
-        fetch(API + '/auth/profile', {
-            headers: { 'Authorization': `Bearer ${getToken()}` }
-        }).then(r => {
-            if (r.ok) window.location.replace('dashboard.html');
-            else clearTokens();
-        }).catch(() => clearTokens());
+    // BYPASS: If dev=true OR msg=logged_out, stay on login page even if token exists.
+    const isBypass = params.get('dev') === 'true' || params.get('msg') === 'logged_out';
+
+    if (isLoginPage && getToken() && !isBypass) {
+        // Debounce: wait a tiny bit to ensure API is set from config
+        setTimeout(() => {
+            fetch(API + '/auth/profile', {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            }).then(r => {
+                if (r.ok) window.location.replace('dashboard.html');
+                else clearTokens();
+            }).catch(() => clearTokens());
+        }, 300);
     }
 });
 
