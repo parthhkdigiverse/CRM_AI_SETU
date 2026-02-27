@@ -204,15 +204,32 @@
                 }
             }
 
-            window.viewIdCard = (id, name) => {
-                const modal = new bootstrap.Modal(document.getElementById('idCardModal'));
-                document.getElementById('id-name').textContent = name || 'Employee Name';
-                document.getElementById('id-number').textContent = `#SETS-${1000 + id}`;
-                document.getElementById('id-photo').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
-                modal.show();
+            window.viewIdCard = async (id, name) => {
+                try {
+                    const data = await apiGet(`/idcards/${id}`);
+                    document.getElementById('id-name').textContent = data.employee_name;
+                    document.getElementById('id-number').textContent = data.employee_code;
+                    document.getElementById('id-role').textContent = data.role.replace(/_/g, ' ');
+                    document.getElementById('id-photo').src = data.photo_url;
+
+                    // Update QR Code
+                    const qrImg = document.querySelector('#idCardModal img[src*="qrserver"]');
+                    if (qrImg) {
+                        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(data.qr_data)}`;
+                    }
+
+                    const modal = new bootstrap.Modal(document.getElementById('idCardModal'));
+                    modal.show();
+                } catch (err) {
+                    showToast('Failed to load ID card data', 'error');
+                }
             };
 
             window.copyRef = (code) => {
+                if (!code || code === 'undefined') {
+                    showToast('Wait for referral code to be generated', 'info');
+                    return;
+                }
                 navigator.clipboard.writeText(code);
                 showToast('Referral link copied to clipboard!', 'info');
             };
@@ -220,7 +237,7 @@
             window.deleteEmployee = async (id) => {
                 if (!confirm('Are you sure you want to remove this employee?')) return;
                 try {
-                    await ApiClient.deleteEmployee(id);
+                    await apiFetch(`/employees/${id}`, { method: 'DELETE' });
                     showToast('Employee deleted successfully', 'success');
                     loadEmployees();
                 } catch (e) {
@@ -228,26 +245,31 @@
                 }
             };
 
-            // Tab loading logic remains largely same but updated with better UI mapping
+            // Tab loading logic: Fetch real salary slips
             document.getElementById('salary-tab-link').addEventListener('click', async () => {
                 try {
                     const emps = await apiGet('/employees/');
                     let tableHtml = '';
-                    emps.slice(0, 15).forEach(e => {
-                        const inc = Math.floor(Math.random() * 5000) + 1000;
-                        const tot = Number(e.base_salary || 25000) + inc;
-                        tableHtml += `
-                        <tr>
-                            <td class="fw-semibold">${e.name}</td>
-                            <td>FEB 2026</td>
-                            <td>₹${Number(e.base_salary || 25000).toLocaleString('en-IN')}</td>
-                            <td class="text-success">+ ₹${inc.toLocaleString('en-IN')}</td>
-                            <td class="fw-bold">₹${tot.toLocaleString('en-IN')}</td>
-                            <td><span class="badge bg-success-subtle text-success">Released</span></td>
-                        </tr>`;
-                    });
-                    document.getElementById('salary-table').innerHTML = tableHtml || '<tr><td colspan="6" class="text-center py-4">No data.</td></tr>';
-                } catch (e) { }
+                    for (const e of emps) {
+                        const slips = await apiGet(`/hrm/salary/${e.id}`).catch(() => []);
+                        if (slips.length > 0) {
+                            slips.forEach(s => {
+                                tableHtml += `
+                                <tr>
+                                    <td class="fw-semibold">${e.name || e.full_name}</td>
+                                    <td>${s.month}</td>
+                                    <td>₹${s.base_salary.toLocaleString('en-IN')}</td>
+                                    <td class="text-danger">- ₹${s.deduction_amount.toLocaleString('en-IN')} (Leaves: ${s.unpaid_leaves})</td>
+                                    <td class="fw-bold">₹${s.final_salary.toLocaleString('en-IN')}</td>
+                                    <td><span class="badge bg-success-subtle text-success">Generated</span></td>
+                                </tr>`;
+                            });
+                        }
+                    }
+                    document.getElementById('salary-table').innerHTML = tableHtml || '<tr><td colspan="6" class="text-center py-4">No payroll slips generated yet.</td></tr>';
+                } catch (e) {
+                    document.getElementById('salary-table').innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Failed to load salary data</td></tr>';
+                }
             });
 
             loadEmployees();

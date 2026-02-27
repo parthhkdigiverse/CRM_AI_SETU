@@ -3,6 +3,9 @@ from sqlalchemy import func, extract
 from app.modules.clients.models import Client
 from app.modules.issues.models import Issue, IssueStatus, IssueSeverity
 from app.modules.visits.models import Visit, VisitStatus
+from app.modules.users.models import User
+from app.modules.projects.models import Project
+from app.modules.shops.models import Shop
 
 class ReportService:
     @staticmethod

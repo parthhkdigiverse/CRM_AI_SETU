@@ -11,4 +11,5 @@ class Shop(Base):
     contact_person = Column(String, nullable=True)
     phone = Column(String, nullable=True)
     email = Column(String, nullable=True)
+    source = Column(String, default="Other") # For lead sources donut chart
     created_at = Column(DateTime, default=datetime.utcnow)

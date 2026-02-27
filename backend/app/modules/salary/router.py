@@ -83,62 +83,9 @@ def generate_salary_slip(
     db: Session = Depends(get_db),
     current_user: User = Depends(hr_checker)
 ) -> Any:
-    from sqlalchemy import extract
-    employee = db.query(Employee).filter(Employee.id == salary_in.employee_id).first()
-    if not employee:
-        raise HTTPException(status_code=404, detail="Employee not found")
-
-    year, month = map(int, salary_in.month.split('-'))
-    
-    approved_leaves = db.query(LeaveRecord).filter(
-        LeaveRecord.employee_id == employee.id,
-        LeaveRecord.status == LeaveStatus.APPROVED,
-        extract('year', LeaveRecord.start_date) == year,
-        extract('month', LeaveRecord.start_date) == month
-    ).all()
-    
-    total_leave_days = 0
-    for leave in approved_leaves:
-        days = (leave.end_date - leave.start_date).days + 1
-        total_leave_days += max(0, days)
-        
-    PAID_LEAVE_LIMIT = 1
-    paid_leaves = min(total_leave_days, PAID_LEAVE_LIMIT)
-    unpaid_leaves = max(0, total_leave_days - PAID_LEAVE_LIMIT)
-
-    # Calculate Salary
-    # Base Salary / 30 * (30 - UnpaidLeaves) - Deductions
-    daily_wage = employee.base_salary / 30
-    payable_days = 30 - unpaid_leaves
-    gross_salary = daily_wage * payable_days
-    
-    # Strictly isolate from client payload inputs
-    actual_deduction = 0
-    final_salary = gross_salary - actual_deduction
-
-    # Ensure no duplicate for month
-    existing = db.query(SalarySlip).filter(
-        SalarySlip.employee_id == salary_in.employee_id,
-        SalarySlip.month == salary_in.month
-    ).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Salary slip for this month already exists")
-
-    db_salary = SalarySlip(
-        employee_id=salary_in.employee_id,
-        month=salary_in.month,
-        base_salary=employee.base_salary,
-        paid_leaves=paid_leaves,
-        unpaid_leaves=unpaid_leaves,
-        deduction_amount=salary_in.deduction_amount,
-        final_salary=round(final_salary, 2),
-        generated_at=datetime.now(UTC).date()
-
-    )
-    db.add(db_salary)
-    db.commit()
-    db.refresh(db_salary)
-    return db_salary
+    from app.modules.salary.service import SalaryService
+    service = SalaryService(db)
+    return service.generate_salary_slip(salary_in)
 
 @router.get("/salary/{employee_id}", response_model=List[SalarySlipRead])
 def get_employee_salary_slips(
@@ -146,4 +93,6 @@ def get_employee_salary_slips(
     db: Session = Depends(get_db),
     current_user: User = Depends(hr_checker)
 ) -> Any:
-    return db.query(SalarySlip).filter(SalarySlip.employee_id == employee_id).all()
+    from app.modules.salary.service import SalaryService
+    service = SalaryService(db)
+    return service.get_employee_salary_slips(employee_id)

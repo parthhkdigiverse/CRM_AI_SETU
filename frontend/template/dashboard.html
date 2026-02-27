@@ -251,67 +251,84 @@
         }
 
         // ── Charts (now using backend-aggregated data) ──────────────────
-        let leadsChart, issuesChart, leadStatusChart;
+        let leadsChartObj, issuesChartObj, leadStatusChartObj;
 
         function initCharts(stats) {
-            // 1. Leads by Month (bar)
-            const labels = Object.keys(stats.leads_by_month);
-            const data = Object.values(stats.leads_by_month);
-
-            if (leadsChart) leadsChart.destroy();
-            leadsChart = new Chart(document.getElementById('leadsChart'), {
-                type: 'bar',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: 'Visits/Leads', data,
-                        backgroundColor: '#4f46e5', borderRadius: 5
-                    }]
-                },
-                options: {
-                    plugins: { legend: { display: false } }, scales: {
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
-                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
-                    }
+            try {
+                // 1. Leads by Month (bar)
+                let labels = Object.keys(stats.leads_by_month);
+                let data = Object.values(stats.leads_by_month);
+                if (labels.length === 0) {
+                    labels = ['No Data'];
+                    data = [0];
                 }
-            });
 
-            // 2. Issues by Severity (donut)
-            const sevData = stats.issue_severity_breakdown;
-            if (issuesChart) issuesChart.destroy();
-            issuesChart = new Chart(document.getElementById('issuesChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(sevData),
-                    datasets: [{
-                        data: Object.values(sevData),
-                        backgroundColor: ['#ef4444', '#f59e0b', '#10b981'], borderWidth: 0
-                    }]
-                },
-                options: { plugins: { legend: { display: false } }, cutout: '65%' }
-            });
-            document.getElementById('issues-legend').innerHTML = Object.entries(sevData).map(([l, v]) => {
-                const colors = { HIGH: '#ef4444', MEDIUM: '#f59e0b', LOW: '#10b981' };
-                return `<div class="d-flex align-items-center gap-1 mb-1">
-                <span style="width:10px;height:10px;border-radius:50%;background:${colors[l] || '#94a3b8'};display:inline-block;flex-shrink:0;"></span>
-                <span>${l}: <b>${v}</b></span></div>`;
-            }).join('');
+                if (leadsChartObj) leadsChartObj.destroy();
+                leadsChartObj = new Chart(document.getElementById('leadsChart'), {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Visits/Leads', data,
+                            backgroundColor: '#4f46e5', borderRadius: 5
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                            x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                        }
+                    }
+                });
+            } catch (e) { console.error("Leads Chart Error:", e); }
 
-            // 3. Lead/Visit Status donut
-            const stData = stats.visit_status_breakdown;
-            const stColors = ['#10b981', '#4f46e5', '#ef4444', '#f59e0b', '#06b6d4', '#94a3b8'];
-            if (leadStatusChart) leadStatusChart.destroy();
-            leadStatusChart = new Chart(document.getElementById('leadStatusChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(stData),
-                    datasets: [{ data: Object.values(stData), backgroundColor: stColors, borderWidth: 0 }]
-                },
-                options: { plugins: { legend: { display: false } }, cutout: '60%' }
-            });
-            document.getElementById('lead-status-legend').innerHTML = Object.keys(stData).map((s, i) =>
-                `<span><span style="width:10px;height:10px;background:${stColors[i % stColors.length]};border-radius:50%;display:inline-block;"></span> ${s}: <b>${stData[s]}</b></span>`
-            ).join(' ');
+            try {
+                // 2. Issues by Severity (donut)
+                let sevData = stats.issue_severity_breakdown;
+                if (Object.keys(sevData).length === 0) {
+                    sevData = { 'No Issues': 1 };
+                }
+                if (issuesChartObj) issuesChartObj.destroy();
+                issuesChartObj = new Chart(document.getElementById('issuesChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(sevData),
+                        datasets: [{
+                            data: Object.values(sevData),
+                            backgroundColor: ['#ef4444', '#f59e0b', '#10b981'], borderWidth: 0
+                        }]
+                    },
+                    options: { plugins: { legend: { display: false } }, cutout: '65%' }
+                });
+                document.getElementById('issues-legend').innerHTML = Object.entries(sevData).map(([l, v]) => {
+                    const colors = { HIGH: '#ef4444', MEDIUM: '#f59e0b', LOW: '#10b981' };
+                    return `<div class="d-flex align-items-center gap-1 mb-1">
+                    <span style="width:10px;height:10px;border-radius:50%;background:${colors[l] || '#94a3b8'};display:inline-block;flex-shrink:0;"></span>
+                    <span>${l}: <b>${v}</b></span></div>`;
+                }).join('');
+            } catch (e) { console.error("Issues Chart Error:", e); }
+
+            try {
+                // 3. Lead/Visit Status donut
+                let stData = stats.visit_status_breakdown;
+                if (Object.keys(stData).length === 0) {
+                    stData = { 'No Data': 1 };
+                }
+                const stColors = ['#10b981', '#4f46e5', '#ef4444', '#f59e0b', '#06b6d4', '#94a3b8'];
+                if (leadStatusChartObj) leadStatusChartObj.destroy();
+                leadStatusChartObj = new Chart(document.getElementById('leadStatusChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(stData),
+                        datasets: [{ data: Object.values(stData), backgroundColor: stColors, borderWidth: 0 }]
+                    },
+                    options: { plugins: { legend: { display: false } }, cutout: '60%' }
+                });
+                document.getElementById('lead-status-legend').innerHTML = Object.keys(stData).map((s, i) =>
+                    `<span><span style="width:10px;height:10px;background:${stColors[i % stColors.length]};border-radius:50%;display:inline-block;"></span> ${s}: <b>${stData[s]}</b></span>`
+                ).join(' ');
+            } catch (e) { console.error("Status Chart Error:", e); }
         }
 
         // ── Activity Feed ─────────────────────────────────────────────────

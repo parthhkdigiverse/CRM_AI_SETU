@@ -77,3 +77,21 @@ class MeetingService:
         )
 
         return db_meeting
+    async def import_meeting_summary(self, meeting_id: int):
+        db_meeting = self.get_meeting(meeting_id)
+        if not db_meeting:
+            raise HTTPException(status_code=404, detail="Meeting not found")
+        
+        # In a real app, this would call Google Meet API or analyze a transcript.
+        # Here we simulate the extraction.
+        summary_text = (
+            f"Imported Google Meet Summary for Meeting {meeting_id}:\n"
+            f"- Discussed project timeline.\n"
+            f"- Agreed on next steps."
+        )
+        
+        db_meeting.content = summary_text
+        db_meeting.status = MeetingStatus.COMPLETED
+        self.db.commit()
+        self.db.refresh(db_meeting)
+        return db_meeting

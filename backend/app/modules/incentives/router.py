@@ -69,89 +69,9 @@ def calculate_incentive(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_checker)
 ) -> Any:
-    from sqlalchemy import extract
-    from app.modules.clients.models import Client
-    
-    employee = db.query(Employee).filter(Employee.id == calc_in.employee_id).first()
-    if not employee:
-        raise HTTPException(status_code=404, detail="Employee not found")
-
-    existing_slip = db.query(IncentiveSlip).filter(
-        IncentiveSlip.employee_id == calc_in.employee_id,
-        IncentiveSlip.period == calc_in.period
-    ).first()
-    if existing_slip:
-        raise HTTPException(status_code=400, detail="Incentive slip for this period already exists")
-
-    user = db.query(User).filter(User.id == employee.user_id).first()
-    
-    # Determined Target
-    target = employee.target
-    if target == 0 and user:
-        # Fallback to Role based target
-        role_target = db.query(IncentiveTarget).filter(
-            IncentiveTarget.role == user.role,
-            IncentiveTarget.period == "Monthly" # Assumption
-        ).first()
-        if role_target:
-            target = role_target.target_count
-            
-    if target == 0:
-        raise HTTPException(status_code=400, detail="Target not set for employee or role")
-
-    if calc_in.closed_units is not None:
-        achieved = calc_in.closed_units
-    else:
-        year, month = map(int, calc_in.period.split('-'))
-        achieved = 0
-        if user.role in [UserRole.SALES, UserRole.TELESALES, UserRole.PROJECT_MANAGER_AND_SALES]:
-            achieved += db.query(Client).filter(
-                Client.owner_id == user.id,
-                extract('year', Client.created_at) == year,
-                extract('month', Client.created_at) == month
-            ).count()
-        if user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
-            achieved += db.query(Client).filter(
-                Client.pm_id == user.id,
-                extract('year', Client.created_at) == year,
-                extract('month', Client.created_at) == month
-            ).count()
-            
-    percentage = (achieved / target) * 100
-    
-    # Find Slab
-    # Order by min_percentage desc to find highest match
-    applied_slab = db.query(IncentiveSlab).filter(
-        IncentiveSlab.min_percentage <= percentage
-    ).order_by(IncentiveSlab.min_percentage.desc()).first()
-    
-    amount_per_unit = 0.0
-    total_incentive = 0.0
-    applied_slab_val = 0.0
-    
-    if applied_slab:
-        amount_per_unit = applied_slab.amount_per_unit
-        total_incentive = achieved * amount_per_unit
-        applied_slab_val = applied_slab.min_percentage
-        
-    # Create Slip
-    db_slip = IncentiveSlip(
-        employee_id=calc_in.employee_id,
-        period=calc_in.period,
-        target=target,
-        achieved=achieved,
-        percentage=round(percentage, 2),
-        applied_slab=applied_slab_val,
-        amount_per_unit=amount_per_unit,
-        total_incentive=round(total_incentive, 2),
-        generated_at=datetime.now(UTC)
-
-    )
-    db.add(db_slip)
-    db.commit()
-    db.refresh(db_slip)
-    
-    return db_slip
+    from app.modules.incentives.service import IncentiveService
+    service = IncentiveService(db)
+    return service.calculate_incentive(calc_in)
 
 @router.get("/slips/{employee_id}", response_model=List[IncentiveSlipRead])
 def read_incentive_slips(
@@ -159,4 +79,6 @@ def read_incentive_slips(
     db: Session = Depends(get_db),
     current_user: User = Depends(pro_checker)
 ) -> Any:
-    return db.query(IncentiveSlip).filter(IncentiveSlip.employee_id == employee_id).all()
+    from app.modules.incentives.service import IncentiveService
+    service = IncentiveService(db)
+    return service.get_employee_incentive_slips(employee_id)

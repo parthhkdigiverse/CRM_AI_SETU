@@ -118,25 +118,24 @@
                 localStorage.setItem('access_token', data.access_token);
                 if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token);
 
-                // Decode JWT to get user_id, then find employee info
+                // Get Profile and save to crm_user
                 try {
-                    const payload = JSON.parse(atob(data.access_token.split('.')[1]));
-                    const userId = payload.sub; // user_id is in 'sub'
-                    const empsRes = await fetch(`${API}/employees/`, {
+                    const profileRes = await fetch(`${API}/auth/profile`, {
                         headers: { 'Authorization': `Bearer ${data.access_token}` }
                     });
-                    let userName = 'User', userRole = '';
-                    if (empsRes.ok) {
-                        const emps = await empsRes.json();
-                        const me = emps.find(e => String(e.user_id) === String(userId));
-                        if (me) { userName = me.full_name || me.name || 'User'; userRole = me.role || ''; }
+                    if (profileRes.ok) {
+                        const profile = await profileRes.json();
+                        localStorage.setItem('crm_user', JSON.stringify({
+                            id: profile.id,
+                            name: profile.name || profile.email || 'User',
+                            role: profile.role
+                        }));
                     } else {
-                        const myProfile = await fetch(`${API}/auth/profile`, { headers: { 'Authorization': `Bearer ${data.access_token}` } }).then(r => r.json()).catch(() => null);
-                        if (myProfile) { userName = myProfile.name || 'User'; userRole = myProfile.role || ''; }
+                        localStorage.setItem('crm_user', JSON.stringify({ name: 'User', role: 'TELESALES' }));
                     }
-                    localStorage.setItem('crm_user', JSON.stringify({ id: userId, name: userName, role: userRole }));
                 } catch (ex) {
-                    localStorage.setItem('crm_user', JSON.stringify({ name: 'User', role: '' }));
+                    console.error("Profile fetch failed:", ex);
+                    localStorage.setItem('crm_user', JSON.stringify({ name: 'User', role: 'TELESALES' }));
                 }
 
                 window.location.replace('dashboard.html');

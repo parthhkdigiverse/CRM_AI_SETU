@@ -159,7 +159,7 @@ def reschedule_meeting(
     return db_meeting
 
 @router.post("/meetings/{meeting_id}/import-summary", response_model=MeetingSummaryRead)
-def import_meeting_summary(
+async def import_meeting_summary(
     meeting_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(pm_checker)
@@ -167,18 +167,6 @@ def import_meeting_summary(
     """
     Import meeting summary from Google Meet.
     """
-    db_meeting = db.query(MeetingSummary).filter(MeetingSummary.id == meeting_id).first()
-    if not db_meeting:
-        raise HTTPException(status_code=404, detail="Meeting not found")
-    
-    db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
-    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
-
-    # Mock import from Google Meet
-    db_meeting.content = f"Imported Google Meet Summary for Meeting {meeting_id}:\n- Discussed project timeline.\n- Agreed on next steps."
-    db_meeting.status = MeetingStatus.COMPLETED
-    
-    db.commit()
-    db.refresh(db_meeting)
-    return db_meeting
+    from app.modules.meetings.service import MeetingService
+    service = MeetingService(db)
+    return await service.import_meeting_summary(meeting_id)

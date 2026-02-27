@@ -52,16 +52,25 @@ class BillingService:
             client_id=client.id,
             amount=bill_in.amount,
             invoice_number=invoice_no,
-            status="PENDING"
+            status="PENDING_CONFIRMATION"
         )
         self.db.add(db_bill)
         self.db.commit()
         self.db.refresh(db_bill)
 
-        # 4. Mock WhatsApp Send
-        await self.send_whatsapp_invoice(db_bill, client)
-
         return db_bill
+
+    async def confirm_bill(self, bill_id: int):
+        bill = self.get_bill(bill_id)
+        if not bill:
+            raise HTTPException(status_code=404, detail="Bill not found")
+        
+        bill.status = "CONFIRMED"
+        self.db.commit()
+        
+        # Now send WhatsApp
+        await self.send_whatsapp_invoice(bill, bill.client)
+        return bill
 
     async def send_whatsapp_invoice(self, bill: Bill, client: Client):
         """

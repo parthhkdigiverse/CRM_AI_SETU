@@ -34,6 +34,11 @@ function requireAuth() {
 
     if (params.get('dev') === 'true' && isLocal) {
         console.warn('Auth check bypassed via dev flag (Local Only).');
+        document.body.style.visibility = 'visible';
+        // Still inject header for development visibility
+        let pageName = document.title.split('—')[0].trim();
+        if (!pageName || pageName === 'CRM AI SETU') pageName = 'Dashboard';
+        injectTopHeader(pageName);
         return;
     }
 
@@ -67,10 +72,14 @@ function requireAuth() {
             if (!pageName || pageName === 'CRM AI SETU') pageName = 'Dashboard';
             injectTopHeader(pageName);
         })
-        .catch(() => {
-            // Network error — server is completely unreachable, kick to login
-            clearTokens();
-            window.location.replace('index.html');
+        .catch((err) => {
+            // Network error — server is completely unreachable
+            // Instead of redirecting to login (which assumes bad credentials),
+            // show the page but maybe with a warning or just let the API calls fail.
+            // If we redirect to login while server is down, it creates an infinite loop.
+            console.error('Auth check failed: Server unreachable', err);
+            document.body.style.visibility = 'visible';
+            showToast('Server connection unstable', 'error');
         });
 }
 
@@ -89,8 +98,8 @@ window.addEventListener('pageshow', (event) => {
     }
 
     // If we land on the login page but already have a VALID token, go to dashboard.
-    // We verify the token first so we don't blindly redirect on expired tokens.
-    // BYPASS: If dev=true OR msg=logged_out, stay on login page even if token exists.
+    // DISABLE: This can cause redirect loops if the dashboard is failing or if the user wants to switch accounts.
+    /*
     const isBypass = params.get('dev') === 'true' || params.get('msg') === 'logged_out';
 
     if (isLoginPage && getToken() && !isBypass) {
@@ -104,6 +113,7 @@ window.addEventListener('pageshow', (event) => {
             }).catch(() => clearTokens());
         }, 300);
     }
+    */
 });
 
 // Logout
@@ -219,6 +229,8 @@ function renderSidebar(active) {
     const isPM = role === 'PROJECT_MANAGER' || role === 'PROJECT_MANAGER_AND_SALES';
     const isClient = role === 'CLIENT';
 
+    let nav = '';
+
     function sbSection(id, label, icon, items) {
         const isActiveSection = items.some(i => i.id === active);
         return `
@@ -236,58 +248,84 @@ function renderSidebar(active) {
         </div>`;
     }
 
-    // ─── ALWAYS: Dashboard ───────────────────────────────────────
-    let nav = `
-    <div class="sb-section">
-        <div class="sb-section-header ${active === 'dashboard' ? 'open' : ''}" onclick="toggleSbSection('db')">
-            <i class="bi bi-grid-1x2 sb-sec-icon"></i><span>Dashboard</span>
-            <i class="bi bi-chevron-${active === 'dashboard' ? 'down' : 'right'} sb-arrow"></i>
-        </div>
-        <ul class="sb-section-items ${active === 'dashboard' ? 'open' : ''}">
-            <li><a href="dashboard.html" class="sb-link ${active === 'dashboard' ? 'active' : ''}">
-                <i class="bi bi-bar-chart-line-fill"></i><span>Overview</span></a></li>
-            <li><a href="javascript:void(0)" onclick="if(window.loadView) window.loadView('timetable');" class="sb-link ${active === 'timetable' ? 'active' : ''}">
-                <i class="bi bi-calendar3"></i><span>Timetable</span></a></li>
-        </ul>
-    </div>`;
+    // ─── DASHBOARD (All except Client) ──────────────────────────
+    if (!isClient) {
+        nav += `
+        <div class="sb-section">
+            <div class="sb-section-header ${active === 'dashboard' ? 'open' : ''}" onclick="toggleSbSection('db')">
+                <i class="bi bi-grid-1x2 sb-sec-icon"></i><span>Dashboard</span>
+                <i class="bi bi-chevron-${active === 'dashboard' ? 'down' : 'right'} sb-arrow"></i>
+            </div>
+            <ul class="sb-section-items ${active === 'dashboard' ? 'open' : ''}">
+                <li><a href="dashboard.html" class="sb-link ${active === 'dashboard' ? 'active' : ''}">
+                    <i class="bi bi-bar-chart-line-fill"></i><span>Overview</span></a></li>
+                <li><a href="javascript:void(0)" onclick="if(window.loadView) window.loadView('timetable');" class="sb-link ${active === 'timetable' ? 'active' : ''}">
+                    <i class="bi bi-calendar3"></i><span>Timetable</span></a></li>
+            </ul>
+        </div>`;
+    }
 
-    // ─── ADMINISTRATION ──────────────────────────────────────────
-    nav += sbSection('admin', 'Administration', 'bi-shield-check', [
-        { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
-    ]);
+    // ─── ADMINISTRATION (Admin Only) ──────────────────────────────
+    if (isAdmin) {
+        nav += sbSection('admin', 'Administration', 'bi-shield-check', [
+            { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
+        ]);
+    }
 
-    // ─── FIELD OPERATIONS ────────────────────────────────────────
-    nav += sbSection('field', 'Field Operations', 'bi-geo-alt', [
-        { id: 'visits', href: 'visits.html', icon: 'bi-bullseye', label: 'Leads' },
-        { id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas & Shops' },
-        { id: 'visits_log', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' }
-    ]);
+    // ─── FIELD OPERATIONS (Admin, Sales, Telesales) ──────────────
+    if (isAdmin || isSales || isTelesales) {
+        const fieldItems = [
+            { id: 'leads', href: 'visits.html', icon: 'bi-bullseye', label: 'Leads (Shops)' },
+            { id: 'visits', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' }
+        ];
+        if (isAdmin) fieldItems.splice(1, 0, { id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas' });
 
-    // ─── PROJECT MANAGEMENT ──────────────────────────────────────
-    nav += sbSection('pm', 'Project Management', 'bi-briefcase', [
-        { id: 'projects', href: 'reports.html', icon: 'bi-briefcase', label: 'Projects' },
-        { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
-        { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
-    ]);
+        nav += sbSection('field', 'Field Operations', 'bi-geo-alt', fieldItems);
+    }
 
-    // ─── CLIENT RELATIONS ────────────────────────────────────────
-    nav += sbSection('cr', 'Client Relations', 'bi-people', [
-        { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
-        { id: 'billing', href: 'javascript:void(0)" onclick="if(window.loadView) window.loadView(\'billing\');', icon: 'bi-file-earmark-medical', label: 'Billing' },
-        { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
-    ]);
+    // ─── PROJECT MANAGEMENT (Admin, PM) ──────────────────────────
+    if (isAdmin || isPM) {
+        nav += sbSection('pm', 'Project Management', 'bi-briefcase', [
+            { id: 'projects', href: 'reports.html', icon: 'bi-briefcase', label: 'Projects' },
+            { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
+            { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
+        ]);
+    }
 
-    // ─── HR & PAYROLL ────────────────────────────────────────────
-    nav += sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', [
-        { id: 'hrm', href: 'hrm.html', icon: 'bi-people', label: 'Employees' },
-        { id: 'salary', href: 'hrm.html#tab-salary', icon: 'bi-calendar3', label: 'Salary & Leaves' },
-        { id: 'incentives', href: 'hrm.html#tab-incentives', icon: 'bi-trophy', label: 'Incentives' }
-    ]);
+    // ─── CLIENT RELATIONS (Admin, Sales, Telesales, PM) ──────────
+    if (isAdmin || isSales || isTelesales || isPM) {
+        const crItems = [
+            { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' }
+        ];
 
-    // ─── REPORTS & ANALYTICS ─────────────────────────────────────
-    nav += sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
-        { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
-    ]);
+        if (isAdmin || isSales || isTelesales || isPM) {
+            crItems.push({ id: 'payment', href: 'javascript:void(0)', icon: 'bi-file-earmark-medical', label: 'Payment' });
+        }
+
+        if (isAdmin || isPM) {
+            crItems.push({ id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' });
+        }
+
+        nav += sbSection('cr', 'Client Relations', 'bi-people', crItems);
+    }
+
+    // ─── HR & PAYROLL (Admin Only for Edit, All for View? Assumption: Admin manages, Others view own)
+    // Requirement says "it will have sales person data , project manager data... admin will assign"
+    // For now, keep HR for Admin.
+    if (isAdmin) {
+        nav += sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', [
+            { id: 'hrm', href: 'hrm.html', icon: 'bi-people', label: 'Employees' },
+            { id: 'salary', href: 'hrm.html#tab-salary', icon: 'bi-calendar3', label: 'Salary & Leaves' },
+            { id: 'incentives', href: 'hrm.html#tab-incentives', icon: 'bi-trophy', label: 'Incentives' }
+        ]);
+    }
+
+    // ─── REPORTS & ANALYTICS (Admin, PM) ─────────────────────────
+    if (isAdmin || isPM) {
+        nav += sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
+            { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
+        ]);
+    }
 
     return `
     <div id="sidebar-container">
@@ -320,6 +358,7 @@ window.toggleSbSection = function (id) {
 };
 
 function injectTopHeader(pageTitle) {
+    if (document.querySelector('.top-header')) return; // Prevent duplicate injection
     const u = getUser();
     const role = (u?.role || '').replace(/_/g, ' ');
     const initials = (u?.name || u?.email || 'AD').slice(0, 2).toUpperCase();
@@ -340,7 +379,7 @@ function injectTopHeader(pageTitle) {
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px;">
                     <li><a class="dropdown-item py-2" href="visits.html" style="border-radius:8px;"><i class="bi bi-bullseye me-2 text-primary"></i> New Lead / Visit</a></li>
                     <li><a class="dropdown-item py-2" href="clients.html" style="border-radius:8px;"><i class="bi bi-people me-2 text-info"></i> New Client</a></li>
-                    <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="if(window.openNewBillModal) window.openNewBillModal();" style="border-radius:8px;"><i class="bi bi-file-invoice-dollar me-2 text-danger"></i> New Bill</a></li>
+                    <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="if(window.openNewBillModal) window.openNewBillModal();" style="border-radius:8px;"><i class="bi bi-file-invoice-dollar me-2 text-danger"></i> New Payment</a></li>
                     <li><a class="dropdown-item py-2" href="issues.html" style="border-radius:8px;"><i class="bi bi-exclamation-triangle me-2 text-warning"></i> New Issue</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item py-2" href="admin.html" style="border-radius:8px;"><i class="bi bi-person-plus me-2 text-success"></i> New User</a></li>

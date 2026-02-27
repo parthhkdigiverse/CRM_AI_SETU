@@ -147,6 +147,11 @@ async def register(
     db.commit()
     db.refresh(user)
 
+    # Generate Referral Code
+    from app.modules.users.service import UserService
+    user_service = UserService(db)
+    user_service.generate_referral_code(user.id)
+
     # Log Registration
     activity_logger = ActivityLogger(db)
     await activity_logger.log_activity(

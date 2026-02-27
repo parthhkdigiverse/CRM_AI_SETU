@@ -30,6 +30,8 @@ async def create_visit(
     Create a visit. Supports photo upload.
     Note: Using Form data because of File upload.
     """
+    if current_user.role in [UserRole.SALES, UserRole.PROJECT_MANAGER_AND_SALES] and not photo:
+        raise HTTPException(status_code=400, detail="Shop photo is mandatory for Sales visits")
     from datetime import datetime, UTC
 
     

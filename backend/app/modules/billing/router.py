@@ -50,3 +50,12 @@ def read_bill(
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
     return bill
+
+@router.patch("/{bill_id}/confirm", response_model=BillRead)
+async def confirm_bill(
+    bill_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_access)
+) -> Any:
+    service = BillingService(db)
+    return await service.confirm_bill(bill_id)

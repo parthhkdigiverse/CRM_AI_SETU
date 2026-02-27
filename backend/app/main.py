@@ -1,45 +1,27 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
+import traceback
 
-from fastapi import FastAPI
+# Core Imports
 from app.api.router import api_router
-import sys
-import os
-
-# Allow absolute imports from the project root
-root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if root_dir not in sys.path:
-    sys.path.insert(0, root_dir)
-
 from config import config
-
-from app.modules.salary import models as salary_models # Force load models
-from app.modules.feedback import models as feedback_models # Force load models
-from app.modules.incentives import models as incentives_models # Force load models
 
 app = FastAPI(title="CRM AI SETU API")
 
-from app.core.database import SessionLocal
-from sqlalchemy import text
-
-
-
-
-from fastapi.middleware.cors import CORSMiddleware
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow all for local dev (5500, 8080, etc)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse, JSONResponse
-from fastapi import Request
-import traceback
-
+# Global Exception Handler
 @app.middleware("http")
 async def catch_exceptions_middleware(request: Request, call_next):
     try:
@@ -52,24 +34,10 @@ async def catch_exceptions_middleware(request: Request, call_next):
             content={"detail": "Internal Server Error", "error": str(e)}
         )
 
-@app.middleware("http")
-async def no_cache_html_middleware(request: Request, call_next):
-    """Force browsers to always fetch fresh HTML — prevents 304 stale-cache issues."""
-    response = await call_next(request)
-    if request.url.path.endswith(".html"):
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
-        # Remove ETag so browser can't use conditional requests to get a 304
-        if "etag" in response.headers:
-            del response.headers["etag"]
-        if "last-modified" in response.headers:
-            del response.headers["last-modified"]
-    return response
-
-# Mount the static frontend directory so uvicorn serves both API and UI
-# We need to guarantee root_dir points to the very top project folder
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Static Files
+# project_root is 2 levels up from backend/app/main.py
+app_path = os.path.dirname(os.path.abspath(__file__)) # backend/app
+project_root = os.path.dirname(os.path.dirname(app_path)) # e:/CRM AI SETU
 frontend_path = os.path.join(project_root, "frontend")
 
 if os.path.exists(frontend_path):
@@ -96,13 +64,4 @@ async def get_config():
 
 if __name__ == "__main__":
     import uvicorn
-    import os
-    
-    app_dir = os.path.dirname(os.path.abspath(__file__))
-    uvicorn.run(
-        "app.main:app", 
-        host="127.0.0.1", 
-        port=8000, 
-        reload=True,
-        reload_dirs=[app_dir]
-    )
+    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
