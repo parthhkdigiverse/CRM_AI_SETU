@@ -77,9 +77,22 @@ window.addEventListener('pageshow', (event) => {
     const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
     if (params.get('dev') === 'true' && isLocal) return;
 
+    const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
+
     // If the page was restored from the bfcache and we have no token, kick them
-    if (event.persisted && !getToken() && window.location.pathname.indexOf('index.html') === -1) {
+    if (event.persisted && !getToken() && !isLoginPage) {
         window.location.replace('index.html');
+    }
+
+    // If we land on the login page but already have a VALID token, go to dashboard.
+    // We verify the token first so we don't blindly redirect on expired tokens.
+    if (isLoginPage && getToken()) {
+        fetch(API + '/auth/profile', {
+            headers: { 'Authorization': `Bearer ${getToken()}` }
+        }).then(r => {
+            if (r.ok) window.location.replace('dashboard.html');
+            else clearTokens();
+        }).catch(() => clearTokens());
     }
 });
 

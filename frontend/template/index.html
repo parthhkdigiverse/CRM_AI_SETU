@@ -84,11 +84,9 @@
                 console.warn('Config fetch failed or timed out, using default API:', e);
             });
 
-        // Always clear any stale session when landing on the login page
-        // This ensures the login screen is never skipped on a fresh visit
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('crm_user');
+        // Instead of blindly clearing tokens, auth.js pageshow handles auto-redirecting
+        // if the session is still valid. If it's invalid, it clears them.
+        // We only clear here if we genuinely have an error or are explicitly logging out.
 
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
