@@ -1,12 +1,14 @@
 import enum
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum, Text, DateTime
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 class IssueStatus(str, enum.Enum):
     OPEN = "OPEN"
+    PENDING = "PENDING"
     IN_PROGRESS = "IN_PROGRESS"
     RESOLVED = "RESOLVED"
+    CANCELLED = "CANCELLED"
 
 class IssueSeverity(str, enum.Enum):
     HIGH = "HIGH"
@@ -21,6 +23,8 @@ class Issue(Base):
     description = Column(Text)
     status = Column(String, default=IssueStatus.OPEN, nullable=False)
     severity = Column(String, default=IssueSeverity.MEDIUM, nullable=False)
+    remarks = Column(Text, nullable=True)
+    opened_at = Column(DateTime, nullable=True)
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
     reporter_id = Column(Integer, ForeignKey("users.id"), nullable=False)

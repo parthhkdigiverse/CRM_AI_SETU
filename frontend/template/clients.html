@@ -121,6 +121,7 @@
     </div>
 
     <script src="../js/api.js"></script>
+    <script src="../js/components.js"></script>
     <script src="../js/auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -131,12 +132,25 @@
 
         async function loadClients() {
             try {
-                const clients = await apiGet('/clients/');
+                let clients = await apiGet('/clients/');
+
+                // Allow search query from Navbar to filter clients
+                const urlParams = new URLSearchParams(window.location.search);
+                const searchQuery = urlParams.get('search');
+                if (searchQuery) {
+                    const q = searchQuery.toLowerCase();
+                    clients = clients.filter(c =>
+                        c.name.toLowerCase().includes(q) ||
+                        (c.email && c.email.toLowerCase().includes(q)) ||
+                        (c.organization && c.organization.toLowerCase().includes(q))
+                    );
+                }
+
                 document.getElementById('client-count').textContent = `${clients.length} active clients registered`;
                 const tbody = document.getElementById('clients-table');
 
                 if (!clients.length) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No active clients found. Leads must be converted or registered.</td></tr>';
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">No clients found matching "${searchQuery || 'your criteria'}".</td></tr>`;
                     return;
                 }
 

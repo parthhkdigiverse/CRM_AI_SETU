@@ -33,10 +33,26 @@ class IssueService:
         if assigned_to_id:
             query = query.filter(Issue.assigned_to_id == assigned_to_id)
             
-        return query.order_by(Issue.id.desc()).offset(skip).limit(limit).all()
+        issues = query.order_by(Issue.id.desc()).offset(skip).limit(limit).all()
+        
+        # Populate logical properties manually since SQLA joins can be complex for simple Pydantic dicts
+        for issue in issues:
+            if issue.assigned_to:
+                issue.pm_name = issue.assigned_to.name
+            if issue.project:
+                issue.project_name = issue.project.name
+            elif issue.client:
+                # Fallback to Client name if no specific project
+                issue.project_name = issue.client.name
+            if issue.reporter:
+                issue.reporter_name = issue.reporter.name
+            
+        return issues
 
     async def create_issue(self, issue: IssueCreate, client_id: int, current_user: User, request: Request, background_tasks: BackgroundTasks = None):
-        db_issue = Issue(**issue.model_dump(), client_id=client_id, reporter_id=current_user.id)
+        client = self.db.query(Client).filter(Client.id == client_id).first()
+        pm_id = client.pm_id if client else None
+        db_issue = Issue(**issue.model_dump(), client_id=client_id, reporter_id=current_user.id, assigned_to_id=pm_id)
 
         self.db.add(db_issue)
         self.db.commit()
@@ -96,6 +112,10 @@ class IssueService:
         }
 
         update_data = issue_update.model_dump(exclude_unset=True)
+
+        if "status" in update_data:
+            if "remarks" not in update_data or not update_data["remarks"] or not update_data["remarks"].strip():
+                raise HTTPException(status_code=400, detail="Remarks are compulsory when updating an issue")
 
         for key, value in update_data.items():
             setattr(db_issue, key, value)

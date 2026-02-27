@@ -55,6 +55,9 @@ api_router.include_router(billing.router, prefix="/billing", tags=["billing"])
 from app.modules.timetable import router as timetable
 api_router.include_router(timetable.router, prefix="/timetable", tags=["timetable"])
 
+from app.modules.search import router as search
+api_router.include_router(search, prefix="/search", tags=["search"])
+
 from app.modules.idcards import router as idcards
 api_router.include_router(idcards.router, prefix="/idcards", tags=["idcards"])
 

@@ -29,93 +29,112 @@
 
                 <!-- KPI Cards -->
                 <div class="row g-3 mb-4">
-                    <div class="col-6 col-lg-3">
+                    <div class="col-6 col-md-3">
                         <a href="visits.html" class="text-decoration-none h-100">
-                            <div class="card border-0 shadow-sm kpi-card h-100" style="cursor:pointer;">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div class="kpi-title">Total Leads</div>
-                                    <div class="kpi-icon-wrapper icon-purple"><i class="bi bi-bullseye"></i></div>
-                                </div>
-                                <div class="kpi-value" id="kpi-leads">
-                                    <span class="spinner-border spinner-border-sm text-muted"></span>
-                                </div>
-                                <div class="kpi-trend" id="kpi-leads-trend">—</div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-6 col-lg-3">
-                        <a href="clients.html" class="text-decoration-none h-100">
-                            <div class="card border-0 shadow-sm kpi-card h-100" style="cursor:pointer;">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div class="kpi-title">Active Clients</div>
-                                    <div class="kpi-icon-wrapper icon-teal"><i class="bi bi-people-fill"></i></div>
-                                </div>
-                                <div class="kpi-value" id="kpi-clients">
-                                    <span class="spinner-border spinner-border-sm text-muted"></span>
-                                </div>
-                                <div class="kpi-trend" id="kpi-clients-trend">—</div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-6 col-lg-3">
-                        <a href="issues.html" class="text-decoration-none h-100">
-                            <div class="card border-0 shadow-sm kpi-card h-100" style="cursor:pointer;">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div class="kpi-title">Open Issues</div>
-                                    <div class="kpi-icon-wrapper icon-yellow"><i class="bi bi-exclamation-triangle"></i>
+                            <div class="card border-0 shadow-sm kpi-card h-100 p-3"
+                                style="cursor:pointer;border-radius:12px;">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="kpi-title text-uppercase text-muted fw-semibold"
+                                        style="letter-spacing:0.5px;font-size:0.75rem;">Total Leads</div>
+                                    <div class="kpi-icon-wrapper rounded-circle d-flex align-items-center justify-content-center"
+                                        style="width:36px;height:36px;background:#f5f3ff;color:#7c3aed;">
+                                        <i class="bi bi-bullseye fs-6"></i>
                                     </div>
                                 </div>
-                                <div class="kpi-value" id="kpi-issues">
+                                <div class="kpi-value fs-3 fw-bold text-dark mb-1" id="kpi-leads">
                                     <span class="spinner-border spinner-border-sm text-muted"></span>
                                 </div>
-                                <div class="kpi-trend" id="kpi-issues-trend">—</div>
+                                <div class="kpi-trend mt-auto" style="font-size:0.8rem;" id="kpi-leads-trend">—</div>
                             </div>
                         </a>
                     </div>
-                    <div class="col-6 col-lg-3">
-                        <a href="visits.html" class="text-decoration-none h-100">
-                            <div class="card border-0 shadow-sm kpi-card h-100" style="cursor:pointer;">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div class="kpi-title">Total Visits</div>
-                                    <div class="kpi-icon-wrapper icon-green"><i class="bi bi-geo-alt-fill"></i></div>
+                    <div class="col-6 col-md-3">
+                        <a href="clients.html" class="text-decoration-none h-100">
+                            <div class="card border-0 shadow-sm kpi-card h-100 p-3"
+                                style="cursor:pointer;border-radius:12px;">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="kpi-title text-uppercase text-muted fw-semibold"
+                                        style="letter-spacing:0.5px;font-size:0.75rem;">Active Clients</div>
+                                    <div class="kpi-icon-wrapper rounded-circle d-flex align-items-center justify-content-center"
+                                        style="width:36px;height:36px;background:#f0fdfa;color:#0d9488;">
+                                        <i class="bi bi-people fs-6"></i>
+                                    </div>
                                 </div>
-                                <div class="kpi-value" id="kpi-visits">
+                                <div class="kpi-value fs-3 fw-bold text-dark mb-1" id="kpi-clients">
                                     <span class="spinner-border spinner-border-sm text-muted"></span>
                                 </div>
-                                <div class="kpi-trend" id="kpi-visits-trend">—</div>
+                                <div class="kpi-trend mt-auto" style="font-size:0.8rem;" id="kpi-clients-trend">—</div>
                             </div>
                         </a>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <a href="reports.html" class="text-decoration-none h-100">
+                            <div class="card border-0 shadow-sm kpi-card h-100 p-3"
+                                style="cursor:pointer;border-radius:12px;">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="kpi-title text-uppercase text-muted fw-semibold"
+                                        style="letter-spacing:0.5px;font-size:0.75rem;">Ongoing Projects</div>
+                                    <div class="kpi-icon-wrapper rounded-circle d-flex align-items-center justify-content-center"
+                                        style="width:36px;height:36px;background:#fef3c7;color:#d97706;">
+                                        <i class="bi bi-briefcase fs-6"></i>
+                                    </div>
+                                </div>
+                                <div class="kpi-value fs-3 fw-bold text-dark mb-1" id="kpi-projects">
+                                    <span class="spinner-border spinner-border-sm text-muted"></span>
+                                </div>
+                                <div class="kpi-trend mt-auto" style="font-size:0.8rem;" id="kpi-projects-trend">—</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="card border-0 shadow-sm kpi-card h-100 p-3"
+                            style="cursor:pointer;border-radius:12px;">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="kpi-title text-uppercase text-muted fw-semibold"
+                                    style="letter-spacing:0.5px;font-size:0.75rem;">Revenue (MTD)</div>
+                                <div class="kpi-icon-wrapper rounded-circle d-flex align-items-center justify-content-center"
+                                    style="width:36px;height:36px;background:#dcfce7;color:#16a34a;">
+                                    <i class="bi bi-currency-rupee fs-6"></i>
+                                </div>
+                            </div>
+                            <div class="kpi-value fs-3 fw-bold text-dark mb-1" id="kpi-revenue">
+                                <span class="spinner-border spinner-border-sm text-muted"></span>
+                            </div>
+                            <div class="kpi-trend mt-auto" style="font-size:0.8rem;" id="kpi-revenue-trend">—</div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Charts Row -->
                 <div class="row g-3 mb-4">
-                    <!-- Bar: Visits/Leads by Month -->
-                    <div class="col-md-5">
-                        <div class="card border-0 shadow-sm h-100 p-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold mb-0">Leads by Month</h6>
-                                <span class="badge rounded-pill"
-                                    style="background:#eef2ff;color:#4f46e5;font-size:0.7rem;">Live</span>
-                            </div>
-                            <canvas id="leadsChart" height="230"></canvas>
-                        </div>
-                    </div>
-                    <!-- Status Breakdown: Issues -->
-                    <div class="col-md-3">
-                        <div class="card border-0 shadow-sm h-100 p-4">
-                            <h6 class="fw-bold mb-3">Issues by Severity</h6>
-                            <canvas id="issuesChart" height="220"></canvas>
-                            <div id="issues-legend" class="mt-3" style="font-size:0.78rem;"></div>
-                        </div>
-                    </div>
-                    <!-- Lead Status Donut -->
+                    <!-- Leads by Month -->
                     <div class="col-md-4">
-                        <div class="card border-0 shadow-sm h-100 p-4">
-                            <h6 class="fw-bold mb-3">Lead Status Breakdown</h6>
-                            <canvas id="leadStatusChart" height="200"></canvas>
-                            <div id="lead-status-legend" class="d-flex flex-wrap gap-2 mt-3" style="font-size:0.78rem;">
+                        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius:12px;">
+                            <h6 class="fw-bold mb-3">Leads by Month</h6>
+                            <div style="position: relative; height: 230px;">
+                                <canvas id="leadsChart"></canvas>
                             </div>
+                        </div>
+                    </div>
+                    <!-- Revenue Trend -->
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius:12px;">
+                            <h6 class="fw-bold mb-3">Revenue Trend</h6>
+                            <div style="position: relative; height: 230px;">
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Lead Sources -->
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100 p-4 d-flex flex-column" style="border-radius:12px;">
+                            <h6 class="fw-bold mb-3">Lead Sources</h6>
+                            <div class="d-flex justify-content-center mb-3 flex-grow-1"
+                                style="position: relative; height: 200px;">
+                                <canvas id="sourcesChart"></canvas>
+                            </div>
+                            <div id="sources-legend" class="d-flex flex-wrap justify-content-center gap-3 mt-auto"
+                                style="font-size:0.75rem;"></div>
                         </div>
                     </div>
                 </div>
@@ -217,7 +236,7 @@
         </div>
     </div>
 
-    <script src="../js/auth.js"></script>
+    <script src="../js/components.js"></script><script src="../js/auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
@@ -251,17 +270,16 @@
         }
 
         // ── Charts (now using backend-aggregated data) ──────────────────
-        let leadsChartObj, issuesChartObj, leadStatusChartObj;
+        let leadsChartObj, revenueChartObj, sourcesChartObj;
 
         function initCharts(stats) {
+            Chart.defaults.font.family = "'Inter', 'Segoe UI', sans-serif";
+
+            // 1. Leads by Month (bar)
             try {
-                // 1. Leads by Month (bar)
                 let labels = Object.keys(stats.leads_by_month);
                 let data = Object.values(stats.leads_by_month);
-                if (labels.length === 0) {
-                    labels = ['No Data'];
-                    data = [0];
-                }
+                if (labels.length === 0) { labels = ['No Data']; data = [0]; }
 
                 if (leadsChartObj) leadsChartObj.destroy();
                 leadsChartObj = new Chart(document.getElementById('leadsChart'), {
@@ -269,75 +287,91 @@
                     data: {
                         labels,
                         datasets: [{
-                            label: 'Visits/Leads', data,
-                            backgroundColor: '#4f46e5', borderRadius: 5
+                            label: 'Leads', data,
+                            backgroundColor: '#4f46e5', borderRadius: 4, barPercentage: 0.6
                         }]
                     },
                     options: {
                         plugins: { legend: { display: false } },
                         scales: {
-                            y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
-                            x: { grid: { display: false }, ticks: { font: { size: 10 } } }
-                        }
+                            y: { beginAtZero: true, border: { display: false }, grid: { color: '#f1f5f9', drawTicks: false }, ticks: { font: { size: 10 }, padding: 10, stepSize: 35 } },
+                            x: { border: { display: false }, grid: { display: false }, ticks: { font: { size: 10 } } }
+                        },
+                        maintainAspectRatio: false
                     }
                 });
             } catch (e) { console.error("Leads Chart Error:", e); }
 
+            // 2. Revenue Trend (Line)
             try {
-                // 2. Issues by Severity (donut)
-                let sevData = stats.issue_severity_breakdown;
-                if (Object.keys(sevData).length === 0) {
-                    sevData = { 'No Issues': 1 };
-                }
-                if (issuesChartObj) issuesChartObj.destroy();
-                issuesChartObj = new Chart(document.getElementById('issuesChart'), {
-                    type: 'doughnut',
+                let rLabels = Object.keys(stats.revenue_by_month);
+                let rData = Object.values(stats.revenue_by_month);
+                if (rLabels.length === 0) { rLabels = ['No Data']; rData = [0]; }
+
+                if (revenueChartObj) revenueChartObj.destroy();
+                revenueChartObj = new Chart(document.getElementById('revenueChart'), {
+                    type: 'line',
                     data: {
-                        labels: Object.keys(sevData),
+                        labels: rLabels,
                         datasets: [{
-                            data: Object.values(sevData),
-                            backgroundColor: ['#ef4444', '#f59e0b', '#10b981'], borderWidth: 0
+                            label: 'Revenue', data: rData,
+                            borderColor: '#10b981', backgroundColor: '#10b981',
+                            tension: 0.4, borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#10b981'
                         }]
                     },
-                    options: { plugins: { legend: { display: false } }, cutout: '65%' }
+                    options: {
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true, border: { display: false }, grid: { color: '#f1f5f9' },
+                                ticks: { font: { size: 10 }, callback: (value) => '₹' + (value >= 1000 ? (value / 1000) + 'K' : value) }
+                            },
+                            x: { border: { display: false }, grid: { display: false }, ticks: { font: { size: 10 } } }
+                        },
+                        maintainAspectRatio: false
+                    }
                 });
-                document.getElementById('issues-legend').innerHTML = Object.entries(sevData).map(([l, v]) => {
-                    const colors = { HIGH: '#ef4444', MEDIUM: '#f59e0b', LOW: '#10b981' };
-                    return `<div class="d-flex align-items-center gap-1 mb-1">
-                    <span style="width:10px;height:10px;border-radius:50%;background:${colors[l] || '#94a3b8'};display:inline-block;flex-shrink:0;"></span>
-                    <span>${l}: <b>${v}</b></span></div>`;
-                }).join('');
-            } catch (e) { console.error("Issues Chart Error:", e); }
+            } catch (e) { console.error("Revenue Chart Error:", e); }
 
+            // 3. Lead Sources (Donut)
             try {
-                // 3. Lead/Visit Status donut
-                let stData = stats.visit_status_breakdown;
-                if (Object.keys(stData).length === 0) {
-                    stData = { 'No Data': 1 };
-                }
-                const stColors = ['#10b981', '#4f46e5', '#ef4444', '#f59e0b', '#06b6d4', '#94a3b8'];
-                if (leadStatusChartObj) leadStatusChartObj.destroy();
-                leadStatusChartObj = new Chart(document.getElementById('leadStatusChart'), {
+                let sData = stats.lead_sources_breakdown;
+                if (Object.keys(sData).length === 0) { sData = { 'No Data': 1 }; }
+
+                const sLabels = Object.keys(sData);
+                const sValues = Object.values(sData);
+                const sColors = ['#4f46e5', '#06b6d4', '#f59e0b', '#10b981', '#94a3b8'];
+
+                if (sourcesChartObj) sourcesChartObj.destroy();
+                sourcesChartObj = new Chart(document.getElementById('sourcesChart'), {
                     type: 'doughnut',
                     data: {
-                        labels: Object.keys(stData),
-                        datasets: [{ data: Object.values(stData), backgroundColor: stColors, borderWidth: 0 }]
+                        labels: sLabels,
+                        datasets: [{ data: sValues, backgroundColor: sColors, borderWidth: 2, borderColor: '#fff' }]
                     },
-                    options: { plugins: { legend: { display: false } }, cutout: '60%' }
+                    options: {
+                        plugins: { legend: { display: false } },
+                        cutout: '70%',
+                        maintainAspectRatio: false
+                    }
                 });
-                document.getElementById('lead-status-legend').innerHTML = Object.keys(stData).map((s, i) =>
-                    `<span><span style="width:10px;height:10px;background:${stColors[i % stColors.length]};border-radius:50%;display:inline-block;"></span> ${s}: <b>${stData[s]}</b></span>`
-                ).join(' ');
-            } catch (e) { console.error("Status Chart Error:", e); }
+
+                document.getElementById('sources-legend').innerHTML = sLabels.map((s, i) =>
+                    `<div class="d-flex align-items-center gap-2 fw-medium text-secondary">
+                        <span style="width:10px;height:10px;background:${sColors[i % sColors.length]};border-radius:50%;display:inline-block;"></span> 
+                        <span>${s}</span>
+                    </div>`
+                ).join('');
+            } catch (e) { console.error("Sources Chart Error:", e); }
         }
 
         // ── Activity Feed ─────────────────────────────────────────────────
         const ACTION_META = {
-            CREATE: { icon: 'bi-plus-circle-fill', cls: 'purple', label: 'Created' },
-            UPDATE: { icon: 'bi-pencil-fill', cls: 'blue', label: 'Updated' },
-            DELETE: { icon: 'bi-trash-fill', cls: 'red', label: 'Deleted' },
-            LOGIN: { icon: 'bi-person-check-fill', cls: 'green', label: 'Logged in' },
-            LOGOUT: { icon: 'bi-box-arrow-right', cls: 'teal', label: 'Logged out' },
+            CREATE: { icon: 'bi-plus-lg', bg: '#e0e7ff', color: '#4f46e5', label: 'Created' },
+            UPDATE: { icon: 'bi-pencil-fill', bg: '#e0f2fe', color: '#0ea5e9', label: 'Updated' },
+            DELETE: { icon: 'bi-trash-fill', bg: '#ffe4e6', color: '#e11d48', label: 'Deleted' },
+            LOGIN: { icon: 'bi-box-arrow-in-right', bg: '#dcfce7', color: '#16a34a', label: 'Logged in' },
+            LOGOUT: { icon: 'bi-box-arrow-right', bg: '#f1f5f9', color: '#64748b', label: 'Logged out' },
         };
 
         async function loadActivity() {
@@ -350,18 +384,20 @@
                     return;
                 }
                 feed.innerHTML = logs.map(log => {
-                    const m = ACTION_META[log.action] || { icon: 'bi-activity', cls: 'teal', label: log.action };
+                    const m = ACTION_META[log.action] || { icon: 'bi-activity', bg: '#f1f5f9', color: '#64748b', label: log.action };
                     return `
-                <div class="activity-item">
-                    <div class="activity-icon ${m.cls}"><i class="bi ${m.icon}"></i></div>
-                    <div class="flex-grow-1">
-                        <div class="fw-semibold small">${m.label}: ${log.entity_type}</div>
-                        <div class="text-muted" style="font-size:0.78rem;">
-                            User #${log.user_id} · ${log.user_role.replace(/_/g, ' ')}
-                        </div>
+                <div class="d-flex align-items-start gap-3 py-3 border-bottom position-relative">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: ${m.bg}; color: ${m.color}; z-index: 2;">
+                        <i class="bi ${m.icon}"></i>
                     </div>
-                    <div class="text-muted d-flex align-items-center gap-1" style="font-size:0.78rem;white-space:nowrap;">
-                        <i class="bi bi-clock"></i> ${timeAgo(log.created_at)}
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-semibold text-dark" style="font-size: 0.85rem;">${m.label}: <span class="text-primary">${log.entity_type}</span></span>
+                            <span class="text-muted small"><i class="bi bi-clock me-1"></i>${timeAgo(log.created_at)}</span>
+                        </div>
+                        <div class="text-muted" style="font-size: 0.80rem;">
+                            <i class="bi bi-person me-1"></i>User #${log.user_id} &middot; ${log.user_role.replace(/_/g, ' ')}
+                        </div>
                     </div>
                 </div>`;
                 }).join('');
@@ -373,23 +409,39 @@
         }
 
         // ── Open Issues ───────────────────────────────────────────────────
+        function stBadge(status) {
+            const stStyle = {
+                OPEN: 'color: #dc3545; background-color: #ffeef0;',
+                PENDING: 'color: #d39e00; background-color: #fff8e1;',
+                IN_PROGRESS: 'color: #856404; background-color: #fff3cd;',
+                RESOLVED: 'color: #198754; background-color: #e8f5e9;',
+                CANCELLED: 'color: #6c757d; background-color: #f8f9fa;'
+            };
+            const stLabel = (status || 'OPEN').replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+            return `<span class="badge rounded-pill fw-medium px-2 py-1" style="${stStyle[status] || stStyle.OPEN} font-size: 0.70rem;">${stLabel}</span>`;
+        }
+
         async function loadOpenIssues() {
             const el = document.getElementById('open-issues-list');
             try {
-                const issues = await apiGet('/issues/?status=OPEN&limit=5');
-                if (!issues.length) {
+                const issues = await apiGet('/issues/?limit=5');
+                const openIssues = issues.filter(i => i.status === 'OPEN' || i.status === 'PENDING').slice(0, 5);
+                if (!openIssues.length) {
                     el.innerHTML = `<div class="text-center py-4 text-success">
-                    <i class="bi bi-check2-circle" style="font-size:2rem;"></i>
-                    <p class="mt-2 small mb-0">No open issues! Great job.</p></div>`;
+                    <i class="bi bi-check-circle" style="font-size:2rem;"></i>
+                    <p class="mt-2 small mb-0 fw-semibold">No open issues! Great job.</p></div>`;
                     return;
                 }
-                el.innerHTML = issues.map(i => `
-            <div class="task-item">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge ${sevBadge(i.severity)} rounded-pill" style="font-size:0.68rem;">${i.severity || '?'}</span>
-                    <span class="small fw-semibold text-truncate" style="max-width:170px;">${i.title}</span>
+                el.innerHTML = openIssues.map(i => `
+            <div class="task-item d-flex justify-content-between align-items-center py-3 border-bottom">
+                <div>
+                    <div class="fw-semibold text-dark mb-1 d-flex align-items-center gap-2">
+                        ${i.title}
+                    </div>
                 </div>
-                <span class="text-muted small">#${i.client_id}</span>
+                <div>
+                    ${stBadge(i.status)}
+                </div>
             </div>`).join('');
             } catch (e) {
                 el.innerHTML = `<p class="text-muted small text-center py-4">Could not load issues.</p>`;
@@ -406,12 +458,22 @@
                     return;
                 }
                 tbody.innerHTML = clients.map(c => `
-            <tr>
-                <td class="fw-semibold">${c.name}</td>
-                <td class="text-muted small">${c.organization || '—'}</td>
-                <td><span class="badge rounded-pill ${c.status === 'ACTIVE' ? 'badge-success' : 'bg-secondary'}"
-                    style="font-size:0.68rem;">${c.status || 'NEW'}</span></td>
-                <td>${c.pm_id ? `<span class="badge badge-primary rounded-pill" style="font-size:0.68rem;">PM #${c.pm_id}</span>` : '<span class="text-muted small">Unassigned</span>'}</td>
+            <tr class="align-middle">
+                <td class="fw-semibold text-dark">
+                   <div class="d-flex align-items-center gap-2">
+                      <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width:32px;height:32px;font-size:12px;">
+                          ${c.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      ${c.name}
+                   </div>
+                </td>
+                <td class="text-secondary small fw-medium">${c.organization || '—'}</td>
+                <td>
+                    <span class="badge rounded-pill fw-medium px-2 py-1" style="${c.status === 'ACTIVE' ? 'color: #0d9488; background-color: #ccfbf1;' : 'color: #64748b; background-color: #f1f5f9;'} font-size:0.70rem;">
+                        ${(c.status || 'NEW').replace('_', ' ')}
+                    </span>
+                </td>
+                <td>${c.pm_id ? `<span class="badge rounded-pill px-2 py-1 mx-0 fw-medium" style="color: #4f46e5; background-color: #e0e7ff; font-size:0.70rem;"><i class="bi bi-person-fill me-1"></i>PM #${c.pm_id}</span>` : '<span class="text-muted small">Unassigned</span>'}</td>
             </tr>`).join('');
             } catch (e) {
                 tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Could not load clients.</td></tr>`;
@@ -427,17 +489,23 @@
                     el.innerHTML = `<p class="text-muted small text-center py-3">No employees found.</p>`;
                     return;
                 }
-                el.innerHTML = emps.map(e => {
-                    const initials = (e.full_name || e.user?.name || 'EMP').slice(0, 2).toUpperCase();
+                const pastelColors = ['#e0e7ff', '#fce7f3', '#dcfce7', '#fef3c7', '#e0f2fe'];
+                const textColors = ['#4f46e5', '#db2777', '#16a34a', '#d97706', '#0ea5e9'];
+                el.innerHTML = emps.map((e, idx) => {
+                    const initials = (e.full_name || e.user?.name || 'EM').slice(0, 2).toUpperCase();
                     const name = e.full_name || e.user?.name || `Employee #${e.id}`;
                     const role = (e.department || e.user?.role || '').replace(/_/g, ' ');
+                    const bg = pastelColors[idx % pastelColors.length];
+                    const fg = textColors[idx % textColors.length];
                     return `
-                <div class="d-flex align-items-center gap-3 py-2" style="border-bottom:1px solid #f1f5f9;">
-                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
-                        style="width:36px;height:36px;font-size:0.75rem;">${initials}</div>
+                <div class="d-flex align-items-center gap-3 py-2 border-bottom">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
+                        style="width: 38px; height: 38px; font-size: 0.80rem; background-color: ${bg}; color: ${fg};">
+                        ${initials}
+                    </div>
                     <div class="flex-grow-1 overflow-hidden">
-                        <div class="fw-semibold small text-truncate">${name}</div>
-                        <div class="text-muted" style="font-size:0.72rem;">${role}</div>
+                        <div class="fw-semibold text-dark text-truncate" style="font-size: 0.90rem;">${name}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-briefcase me-1"></i>${role}</div>
                     </div>
                 </div>`;
                 }).join('');
@@ -447,6 +515,14 @@
         }
 
         // ── Main loader ───────────────────────────────────────────────────
+        function formatTrend(pct) {
+            const isPos = pct >= 0;
+            const color = isPos ? 'text-success' : 'text-danger';
+            const icon = isPos ? 'bi-arrow-up-right' : 'bi-arrow-down-right';
+            const prefix = isPos ? '+' : '';
+            return `<span class="${color} fw-medium"><i class="bi ${icon}"></i> ${prefix}${pct}%</span> <span class="text-muted">vs last month</span>`;
+        }
+
         async function loadDashboard() {
             try {
                 // Load pre-aggregated stats from backend
@@ -454,35 +530,32 @@
 
                 // Update KPIs
                 document.getElementById('kpi-leads').textContent = stats.total_leads.toLocaleString('en-IN');
-                document.getElementById('kpi-leads-trend').innerHTML =
-                    `<i class="bi bi-bullseye text-success"></i> <span class="text-success fw-semibold">${stats.visit_status_breakdown['COMPLETED'] || 0}</span>
-                 <span class="text-muted fw-normal small"> completed visits</span>`;
+                document.getElementById('kpi-leads-trend').innerHTML = formatTrend(stats.leads_mom_pct);
 
                 document.getElementById('kpi-clients').textContent = stats.active_clients.toLocaleString('en-IN');
-                document.getElementById('kpi-clients-trend').innerHTML =
-                    `<i class="bi bi-people text-primary"></i> <span class="text-primary fw-semibold">${stats.ongoing_projects}</span>
-                 <span class="text-muted fw-normal small"> with PM assigned</span>`;
+                document.getElementById('kpi-clients-trend').innerHTML = formatTrend(stats.clients_mom_pct);
 
-                document.getElementById('kpi-issues').textContent = stats.open_issues.toLocaleString('en-IN');
-                const highSevCount = stats.issue_severity_breakdown['HIGH'] || 0;
-                document.getElementById('kpi-issues-trend').innerHTML =
-                    highSevCount > 0
-                        ? `<i class="bi bi-exclamation-triangle-fill text-danger"></i> <span class="text-danger fw-semibold">${highSevCount}</span> <span class="text-muted fw-normal small">critical</span>`
-                        : `<i class="bi bi-check-circle text-success"></i> <span class="text-muted fw-normal small">No critical issues</span>`;
+                document.getElementById('kpi-projects').textContent = stats.ongoing_projects.toLocaleString('en-IN');
+                document.getElementById('kpi-projects-trend').innerHTML = formatTrend(stats.projects_mom_pct);
 
-                document.getElementById('kpi-visits').textContent = stats.total_leads.toLocaleString('en-IN');
-                const scheduled = stats.visit_status_breakdown['SCHEDULED'] || 0;
-                document.getElementById('kpi-visits-trend').innerHTML =
-                    `<i class="bi bi-calendar-check text-info"></i> <span class="text-info fw-semibold">${scheduled}</span>
-                 <span class="text-muted fw-normal small"> scheduled</span>`;
+                // Format Revenue (e.g. 24.5L, 300K, etc.)
+                let revText = '₹' + stats.revenue_mtd.toLocaleString('en-IN');
+                if (stats.revenue_mtd >= 100000) {
+                    revText = '₹' + (stats.revenue_mtd / 100000).toFixed(1) + 'L';
+                } else if (stats.revenue_mtd >= 1000) {
+                    revText = '₹' + (stats.revenue_mtd / 1000).toFixed(1) + 'K';
+                }
+                document.getElementById('kpi-revenue').textContent = revText;
+                document.getElementById('kpi-revenue-trend').innerHTML = formatTrend(stats.revenue_mom_pct);
 
                 // Charts
                 initCharts(stats);
 
             } catch (e) {
                 console.error("Dashboard Stats Error:", e);
-                ['kpi-leads', 'kpi-clients', 'kpi-issues', 'kpi-visits'].forEach(id => {
-                    document.getElementById(id).textContent = '—';
+                ['leads', 'clients', 'projects', 'revenue'].forEach(id => {
+                    const el = document.getElementById('kpi-' + id);
+                    if (el) el.textContent = '—';
                 });
             }
 

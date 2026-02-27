@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project Overview — CRM AI SETU</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --bg-light: #f8fafc;
+            --border-color: #f1f5f9;
+            --text-muted: #64748b;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        .page-content {
+            padding: 1.5rem 2rem;
+        }
+
+        .kanban-board {
+            display: flex;
+            gap: 1.25rem;
+            overflow-x: auto;
+            padding-bottom: 2rem;
+            min-height: calc(100vh - 180px);
+            scrollbar-width: thin;
+        }
+
+        .kanban-column {
+            flex: 1;
+            min-width: 250px;
+            max-width: 320px;
+            display: flex;
+            flex-direction: column;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 12px;
+            max-height: calc(100vh - 200px);
+            border: 1px solid #f1f5f9;
+        }
+
+        .kanban-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            padding: 0 0.25rem;
+        }
+
+        .column-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .kanban-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #1e293b;
+        }
+
+        .kanban-count {
+            background: #f1f5f9;
+            color: #94a3b8;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .kanban-cards {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .lead-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f1f5f9;
+            position: relative;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .lead-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+            border-color: #e2e8f0;
+        }
+
+        .card-menu {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 2px;
+        }
+
+        .lead-name {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #1e293b;
+            margin-bottom: 0.2rem;
+            padding-right: 1.5rem;
+        }
+
+        .lead-company {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 1rem;
+        }
+
+        .lead-info-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+
+        .lead-info-row i {
+            font-size: 1.05rem;
+            color: #cbd5e1;
+        }
+
+        .source-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+
+        .bg-website {
+            background: #eef2ff;
+            color: #4f46e5;
+        }
+
+        .bg-cold-call {
+            background: #fefce8;
+            color: #a16207;
+        }
+
+        .bg-social {
+            background: #fff1f2;
+            color: #e11d48;
+        }
+
+        .bg-referral {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+
+        .bg-other {
+            background: #f8fafc;
+            color: #64748b;
+        }
+
+        .lead-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.25rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .lead-owner {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.825rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .owner-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #eef2ff;
+            color: #4f46e5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            border: 1px solid #e0e7ff;
+        }
+
+        .btn-action {
+            width: 100%;
+            margin-top: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .btn-action-contact {
+            background: #eef2ff;
+            color: #4f46e5;
+        }
+
+        .btn-action-contact:hover {
+            background: #4f46e5;
+            color: #fff;
+        }
+
+        .btn-action-meeting {
+            background: #fff7ed;
+            color: #ea580c;
+        }
+
+        .btn-action-meeting:hover {
+            background: #ea580c;
+            color: #fff;
+        }
+
+        .btn-action-convert {
+            background: #ecfdf5;
+            color: #059669;
+        }
+
+        .btn-action-convert:hover {
+            background: #059669;
+            color: #fff;
+        }
+
+        /* Mockup colors */
+        .column-new .column-dot {
+            background: #6366f1;
+        }
+
+        .column-contacted .column-dot {
+            background: #f59e0b;
+        }
+
+        .column-meeting .column-dot {
+            background: #10b981;
+        }
+
+        .column-converted .column-dot {
+            background: #10b981;
+        }
+
+        .breadcrumb {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .breadcrumb span {
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .layout-toggles button {
+            padding: 6px 10px;
+            color: #94a3b8;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+        }
+
+        .layout-toggles button.active {
+            color: #1e293b;
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            z-index: 1;
+        }
+
+        /* List View Styles */
+        .list-view-container {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .list-view-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .leads-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .leads-table th {
+            text-align: left;
+            padding: 1rem 1.25rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            font-weight: 700;
+            background: #f8fafc;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .leads-table td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+            color: #1e293b;
+            font-size: 0.9rem;
+        }
+
+        .leads-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .leads-table tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        .table-lead-name {
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .table-company {
+            color: #64748b;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .badge-new {
+            background: #eef2ff;
+            color: #4f46e5;
+        }
+
+        .badge-contacted {
+            background: #fffbeb;
+            color: #d97706;
+        }
+
+        .badge-meeting_set {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+
+        .badge-converted {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+
+        .badge-lost {
+            background: #fff1f2;
+            color: #e11d48;
+        }
+
+        .search-container {
+            position: relative;
+            flex-grow: 1;
+            max-width: 400px;
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 12px 8px 36px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.875rem;
+            outline: none;
+            transition: all 0.2s;
+            background: #f8fafc;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        /* Filter Dropdown Menu */
+        .filter-dropdown {
+            width: 250px;
+            padding: 1rem;
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-group {
+            margin-bottom: 1rem;
+        }
+
+        .filter-group-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #1e293b;
+            padding: 4px 0;
+            cursor: pointer;
+        }
+
+        .filter-option input {
+            cursor: pointer;
+        }
+
+        .clear-filters {
+            width: 100%;
+            padding: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #ef4444;
+            background: #fef2f2;
+            border: none;
+            border-radius: 6px;
+            margin-top: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .clear-filters:hover {
+            background: #fee2e2;
+        }
+
+        /* Pipeline Stats Bar */
+        .pipeline-stats {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 8px 14px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #1e293b;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            white-space: nowrap;
+        }
+
+        .stat-chip .stat-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .stat-chip .stat-count {
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
+        .stat-chip.rate-chip {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        /* Stale Lead Indicator */
+        .lead-card.stale {
+            border-color: #fbbf24 !important;
+            box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.15);
+        }
+
+        .stale-badge {
+            font-size: 0.65rem;
+            padding: 2px 7px;
+            border-radius: 20px;
+            background: #fef3c7;
+            color: #b45309;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        /* Last Activity */
+        .last-activity {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Sortable Table Headers */
+        .leads-table th.sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .leads-table th.sortable:hover {
+            color: #4f46e5;
+        }
+
+        .leads-table th .sort-icon {
+            margin-left: 4px;
+            opacity: 0.4;
+            font-size: 0.7rem;
+        }
+
+        .leads-table th.sort-asc .sort-icon::after {
+            content: ' ▲';
+            opacity: 1;
+        }
+
+        .leads-table th.sort-desc .sort-icon::after {
+            content: ' ▼';
+            opacity: 1;
+        }
+
+        /* Lead Detail Slide-over Panel */
+        .detail-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            z-index: 1050;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s;
+        }
+
+        .detail-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .detail-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 380px;
+            height: 100vh;
+            background: #fff;
+            z-index: 1051;
+            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.12);
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-panel.show {
+            transform: translateX(0);
+        }
+
+        .detail-panel-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 10;
+        }
+
+        .detail-panel-body {
+            padding: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .detail-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid #f8fafc;
+            font-size: 0.875rem;
+        }
+
+        .detail-row i {
+            width: 18px;
+            color: #94a3b8;
+            flex-shrink: 0;
+        }
+
+        .detail-row span {
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        .detail-close-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f1f5f9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #64748b;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .detail-close-btn:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="d-flex">
+        <div id="sidebar"></div>
+        <div class="flex-grow-1">
+            <div class="page-content pt-0">
+                <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+                    <div>
+                        <h2 class="fw-bold fs-3 text-dark mb-0">Project Overview</h2>
+                        <p class="text-muted small mb-0 mt-1" id="total-leads-count">0 total leads in pipeline</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-chip rate-chip" style="border-radius: 10px;">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            Conversion Rate <span class="fw-bold" id="stat-rate">0%</span>
+                        </div>
+                        <div class="layout-toggles rounded-2 overflow-hidden d-flex">
+                            <button class="active border-end-0" id="toggle-kanban" title="Kanban View"><i
+                                    class="bi bi-grid-3x3-gap"></i></button>
+                            <button id="toggle-list" title="List View"><i class="bi bi-list-ul"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="kanban-board" id="kanban-board">
+                    <!-- Kanban columns remain here -->
+                    <div class="kanban-column column-new">
+                        <div class="kanban-header">
+                            <div class="column-dot"></div>
+                            <span class="kanban-title">New</span>
+                            <span class="kanban-count" id="count-NEW">0</span>
+                        </div>
+                        <div class="kanban-cards" id="cards-NEW"></div>
+                    </div>
+
+                    <div class="kanban-column column-contacted">
+                        <div class="kanban-header">
+                            <div class="column-dot"></div>
+                            <span class="kanban-title">Contacted</span>
+                            <span class="kanban-count" id="count-CONTACTED">0</span>
+                        </div>
+                        <div class="kanban-cards" id="cards-CONTACTED"></div>
+                    </div>
+
+                    <div class="kanban-column column-meeting">
+                        <div class="kanban-header">
+                            <div class="column-dot"></div>
+                            <span class="kanban-title">Meeting Set</span>
+                            <span class="kanban-count" id="count-MEETING_SET">0</span>
+                        </div>
+                        <div class="kanban-cards" id="cards-MEETING_SET"></div>
+                    </div>
+
+                    <div class="kanban-column column-converted">
+                        <div class="kanban-header">
+                            <div class="column-dot"></div>
+                            <span class="kanban-title">Converted</span>
+                            <span class="kanban-count" id="count-CONVERTED">0</span>
+                        </div>
+                        <div class="kanban-cards" id="cards-CONVERTED"></div>
+                    </div>
+                </div>
+
+                <div class="list-view-container d-none" id="list-view">
+                    <div class="list-view-header">
+                        <div class="search-container">
+                            <i class="bi bi-search"></i>
+                            <input type="text" class="search-input" placeholder="Search leads..." id="list-search">
+                        </div>
+                        <div class="dropdown">
+                            <button class="filter-btn" type="button" data-bs-toggle="dropdown"
+                                data-bs-auto-close="outside">
+                                <i class="bi bi-filter"></i> Filter
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end filter-dropdown p-3 shadow-lg border-0">
+                                <div class="filter-group">
+                                    <span class="filter-group-title">Status</span>
+                                    <label class="filter-option"><input type="checkbox" name="f-status" value="NEW">
+                                        New</label>
+                                    <label class="filter-option"><input type="checkbox" name="f-status"
+                                            value="CONTACTED"> Contacted</label>
+                                    <label class="filter-option"><input type="checkbox" name="f-status"
+                                            value="MEETING_SET"> Meeting Set</label>
+                                    <label class="filter-option"><input type="checkbox" name="f-status"
+                                            value="CONVERTED"> Converted</label>
+                                </div>
+                                <div class="filter-group border-top pt-2">
+                                    <span class="filter-group-title">Lead Source</span>
+                                    <label class="filter-option"><input type="checkbox" name="f-source" value="Website">
+                                        Website</label>
+                                    <label class="filter-option"><input type="checkbox" name="f-source"
+                                            value="Cold Call"> Cold Call</label>
+                                    <label class="filter-option"><input type="checkbox" name="f-source" value="Social">
+                                        Social</label>
+                                    <label class="filter-option"><input type="checkbox" name="f-source"
+                                            value="Referral"> Referral</label>
+                                </div>
+                                <div class="filter-group border-top pt-2">
+                                    <span class="filter-group-title">Project Type</span>
+                                    <label class="filter-option"><input type="checkbox" name="f-project"
+                                            value="AI Integration"> AI Integration</label>
+                                    <label class="filter-option"><input type="checkbox" name="f-project"
+                                            value="CRM Setup"> CRM Setup</label>
+                                    <label class="filter-option"><input type="checkbox" name="f-project" value="Other">
+                                        Other</label>
+                                </div>
+                                <button class="clear-filters" id="clear-filters">Clear All Filters</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="leads-table">
+                            <thead>
+                                <tr>
+                                    <th class="sortable" data-col="contact_person">Name <span class="sort-icon"></span>
+                                    </th>
+                                    <th class="sortable" data-col="name">Company <span class="sort-icon"></span></th>
+                                    <th>Phone</th>
+                                    <th class="sortable" data-col="source">Source <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-col="status">Status <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-col="owner_name">Assignee <span class="sort-icon"></span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="leads-list-body">
+                                <!-- List rows will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lead Detail Slide-over -->
+    <div class="detail-overlay" id="detail-overlay"></div>
+    <div class="detail-panel" id="detail-panel">
+        <div class="detail-panel-header">
+            <div>
+                <div id="dp-badge" class="mb-1"></div>
+                <h5 class="fw-bold mb-0 fs-5" id="dp-name">—</h5>
+                <div class="text-muted small" id="dp-company">—</div>
+            </div>
+            <button class="detail-close-btn" id="detail-close"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="detail-panel-body">
+            <div class="detail-section">
+                <span class="detail-section-title">Contact Information</span>
+                <div class="detail-row"><i class="bi bi-telephone-fill"></i><span id="dp-phone">—</span></div>
+                <div class="detail-row"><i class="bi bi-shop"></i><span id="dp-shop">—</span></div>
+                <div class="detail-row"><i class="bi bi-geo-alt-fill"></i><span id="dp-area">—</span></div>
+                <div class="detail-row"><i class="bi bi-tag-fill"></i><span id="dp-source">—</span></div>
+            </div>
+            <div class="detail-section">
+                <span class="detail-section-title">Project Details</span>
+                <div class="detail-row"><i class="bi bi-cpu-fill"></i><span id="dp-project-type">—</span></div>
+                <div class="detail-row"><i class="bi bi-file-text-fill"></i><span id="dp-requirements">—</span></div>
+            </div>
+            <div class="detail-section">
+                <span class="detail-section-title">Assignment</span>
+                <div class="detail-row"><i class="bi bi-person-fill"></i><span id="dp-owner">—</span></div>
+                <div class="detail-row"><i class="bi bi-clock-fill"></i><span id="dp-updated">—</span></div>
+            </div>
+            <div id="dp-action-section"></div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/components.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        requireAuth();
+        document.getElementById('sidebar').innerHTML = renderSidebar('leads');
+
+        // Global store for lead data — avoids JSON injection in onclick attributes
+        const leadStore = {};
+
+        async function loadLeads() {
+            try {
+                const kanbanData = await ApiClient.request('/shops/kanban');
+                let totalCount = 0;
+
+                ['NEW', 'CONTACTED', 'MEETING_SET', 'CONVERTED'].forEach(status => {
+                    const container = document.getElementById(`cards-${status}`);
+                    const countEl = document.getElementById(`count-${status}`);
+                    const leads = kanbanData[status] || [];
+
+                    totalCount += leads.length;
+                    countEl.textContent = leads.length;
+
+                    container.innerHTML = leads.map(l => {
+                        leadStore[l.id] = l; // Store lead for panel lookup
+                        const sourceClass = (l.source || 'Other').toLowerCase().replace(' ', '-');
+                        // Stale detection: if updated_at is older than 3 days
+                        const updatedAt = l.updated_at ? new Date(l.updated_at) : null;
+                        const daysSince = updatedAt ? Math.floor((Date.now() - updatedAt) / 86400000) : null;
+                        const isStale = daysSince !== null && daysSince >= 3 && status !== 'CONVERTED';
+                        const staleClass = isStale ? ' stale' : '';
+                        const activityText = updatedAt ? (daysSince === 0 ? 'Today' : daysSince === 1 ? 'Yesterday' : `${daysSince}d ago`) : 'No activity';
+                        return `
+                        <div class="lead-card${staleClass}" draggable="true" ondragstart="drag(event)" data-id="${l.id}" onclick="openDetail(leadStore[${l.id}])"
+                             style="cursor:pointer">
+                            <div class="card-menu" onclick="event.stopPropagation()"><i class="bi bi-three-dots"></i></div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="badge bg-primary-subtle text-primary border-0" style="font-size: 0.7rem; padding: 2px 8px;">${l.project_type || 'General Lead'}</span>
+                                ${l.area_name ? `<span class="text-muted" style="font-size: 0.7rem;"><i class="bi bi-geo-alt me-1"></i>${l.area_name}</span>` : ''}
+                                ${isStale ? `<span class="stale-badge ms-auto"><i class="bi bi-exclamation-circle"></i>${daysSince}d idle</span>` : ''}
+                            </div>
+                            <div class="lead-name">${l.contact_person || 'No Contact Person'}</div>
+                            <div class="lead-company">${l.name}</div>
+                            
+                            <div class="lead-info-row">
+                                <i class="bi bi-telephone-fill" style="font-size: 0.75rem;"></i>
+                                <span>${l.phone || '—'}</span>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-end mt-2">
+                                <span class="source-badge bg-${sourceClass}">${l.source || 'Other'}</span>
+                                <div class="lead-owner">
+                                    <div class="owner-avatar">${(l.owner_name || 'U')[0].toUpperCase()}</div>
+                                    <span>${l.owner_name || 'Unassigned'}</span>
+                                </div>
+                            </div>
+
+                            <div class="last-activity"><i class="bi bi-clock"></i> ${activityText}</div>
+                        </div>
+                    `;
+                    }).join('');
+
+                    if (leads.length === 0) {
+                        container.innerHTML = `<div class="text-center py-5">
+                            <div class="text-muted small">No leads in pipeline</div>
+                        </div>`;
+                    }
+                });
+
+                document.getElementById('total-leads-count').textContent = `${totalCount} total leads in pipeline`;
+
+                // Update Conversion Rate in header
+                const nConverted = (kanbanData.CONVERTED || []).length;
+                const nTotal = Object.values(kanbanData).reduce((sum, arr) => sum + (arr || []).length, 0);
+                const convRate = nTotal > 0 ? Math.round((nConverted / nTotal) * 100) : 0;
+                document.getElementById('stat-rate').textContent = convRate + '%';
+
+                // Populate List View
+                const allLeads = Object.values(kanbanData).flat();
+                const listBody = document.getElementById('leads-list-body');
+
+                listBody.innerHTML = allLeads.map(l => {
+                    const statusText = l.status.replace('_', ' ');
+                    return `
+                    <tr>
+                        <td class="table-lead-name">${l.contact_person || '—'}</td>
+                        <td class="table-company">${l.name}</td>
+                        <td>${l.phone || '—'}</td>
+                        <td><span class="badge bg-light text-primary border">${l.source || 'Other'}</span></td>
+                        <td><span class="status-badge badge-${l.status.toLowerCase()}">${statusText}</span></td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="owner-avatar">${(l.owner_name || 'U')[0].toUpperCase()}</div>
+                                <span class="small">${l.owner_name || 'Unassigned'}</span>
+                            </div>
+                        </td>
+                    </tr>
+                    `;
+                }).join('');
+
+                if (allLeads.length === 0) {
+                    listBody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No leads available</td></tr>';
+                }
+
+                // Advanced Filter Logic
+                const searchInput = document.getElementById('list-search');
+                const filterInputs = document.querySelectorAll('.filter-dropdown input[type="checkbox"]');
+                const clearBtn = document.getElementById('clear-filters');
+
+                function applyFilters() {
+                    const q = searchInput.value.toLowerCase();
+                    const activeStatuses = Array.from(document.querySelectorAll('input[name="f-status"]:checked')).map(i => i.value);
+                    const activeSources = Array.from(document.querySelectorAll('input[name="f-source"]:checked')).map(i => i.value);
+                    const activeProjects = Array.from(document.querySelectorAll('input[name="f-project"]:checked')).map(i => i.value);
+
+                    const filtered = allLeads.filter(l => {
+                        const matchesSearch = !q ||
+                            l.name.toLowerCase().includes(q) ||
+                            (l.contact_person && l.contact_person.toLowerCase().includes(q)) ||
+                            (l.phone && l.phone.toLowerCase().includes(q));
+
+                        const matchesStatus = activeStatuses.length === 0 || activeStatuses.includes(l.status);
+                        const matchesSource = activeSources.length === 0 || activeSources.includes(l.source);
+                        const matchesProject = activeProjects.length === 0 || activeProjects.includes(l.project_type);
+
+                        return matchesSearch && matchesStatus && matchesSource && matchesProject;
+                    });
+
+                    renderList(filtered);
+                }
+
+                function renderList(leads) {
+                    listBody.innerHTML = leads.map(l => {
+                        const statusText = l.status.replace('_', ' ');
+                        return `
+                        <tr>
+                            <td class="table-lead-name">${l.contact_person || '—'}</td>
+                            <td class="table-company">${l.name}</td>
+                            <td>${l.phone || '—'}</td>
+                            <td><span class="badge bg-light text-primary border">${l.source || 'Other'}</span></td>
+                            <td><span class="status-badge badge-${l.status.toLowerCase()}">${statusText}</span></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="owner-avatar">${(l.owner_name || 'U')[0].toUpperCase()}</div>
+                                    <span class="small">${l.owner_name || 'Unassigned'}</span>
+                                </div>
+                            </td>
+                        </tr>
+                        `;
+                    }).join('');
+
+                    if (leads.length === 0) {
+                        listBody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No matching leads found</td></tr>';
+                    }
+                }
+
+                searchInput.addEventListener('input', applyFilters);
+                filterInputs.forEach(input => input.addEventListener('change', applyFilters));
+
+                clearBtn.addEventListener('click', () => {
+                    filterInputs.forEach(input => input.checked = false);
+                    searchInput.value = '';
+                    applyFilters();
+                });
+
+                // Sortable Table Columns
+                let sortCol = null;
+                let sortDir = 'asc';
+
+                document.querySelectorAll('.leads-table th.sortable').forEach(th => {
+                    th.addEventListener('click', () => {
+                        const col = th.dataset.col;
+                        if (sortCol === col) {
+                            sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+                        } else {
+                            sortCol = col;
+                            sortDir = 'asc';
+                        }
+                        document.querySelectorAll('.leads-table th').forEach(h => {
+                            h.classList.remove('sort-asc', 'sort-desc');
+                        });
+                        th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+                        applyFilters();
+                    });
+                });
+
+                function getSortedLeads(leads) {
+                    if (!sortCol) return leads;
+                    return [...leads].sort((a, b) => {
+                        const va = (a[sortCol] || '').toString().toLowerCase();
+                        const vb = (b[sortCol] || '').toString().toLowerCase();
+                        return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+                    });
+                }
+
+                // Override renderList to include sort
+                const _origRenderList = renderList;
+                window.renderList = function (leads) {
+                    _origRenderList(getSortedLeads(leads));
+                };
+
+            } catch (e) {
+                console.error("Load Leads Error:", e);
+                showToast("Failed to load leads board", "error");
+            }
+        }
+
+        // Lead Detail Slide-over
+        function openDetail(lead) {
+            const statusLabels = { NEW: 'New', CONTACTED: 'Contacted', MEETING_SET: 'Meeting Set', CONVERTED: 'Converted' };
+            const statusColors = { NEW: '#6366f1', CONTACTED: '#f59e0b', MEETING_SET: '#10b981', CONVERTED: '#059669' };
+            const col = statusColors[lead.status] || '#94a3b8';
+
+            document.getElementById('dp-badge').innerHTML = `<span class="status-badge badge-${(lead.status || '').toLowerCase()}">${statusLabels[lead.status] || lead.status}</span>`;
+            document.getElementById('dp-name').textContent = lead.contact_person || 'No Contact Person';
+            document.getElementById('dp-company').textContent = lead.name || '—';
+            document.getElementById('dp-phone').textContent = lead.phone || '—';
+            document.getElementById('dp-shop').textContent = lead.name || '—';
+            document.getElementById('dp-area').textContent = lead.area_name || 'No Area Specified';
+            document.getElementById('dp-source').textContent = lead.source || '—';
+            document.getElementById('dp-project-type').textContent = lead.project_type || '—';
+            document.getElementById('dp-requirements').textContent = lead.requirements || 'No requirements noted';
+            document.getElementById('dp-owner').textContent = lead.owner_name || 'Unassigned';
+            const upd = lead.updated_at ? new Date(lead.updated_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Unknown';
+            document.getElementById('dp-updated').textContent = `Last updated: ${upd}`;
+
+            // Status flow timeline (read-only, auto-driven by visit logging)
+            const actionSection = document.getElementById('dp-action-section');
+            const stages = ['NEW', 'CONTACTED', 'MEETING_SET', 'CONVERTED'];
+            const stageLabels = { NEW: 'New Client', CONTACTED: 'Contacted', MEETING_SET: 'Meeting Set', CONVERTED: 'Converted' };
+            const stageIcons = { NEW: 'bi-person-plus', CONTACTED: 'bi-telephone-fill', MEETING_SET: 'bi-calendar-check-fill', CONVERTED: 'bi-patch-check-fill' };
+            const stageHints = {
+                NEW: 'Auto-advances when a visit is logged',
+                CONTACTED: 'Auto-advances when visit outcome is Accepted',
+                MEETING_SET: 'Auto-advances when visit outcome is Satisfied',
+                CONVERTED: 'Client successfully converted'
+            };
+            const currentIdx = stages.indexOf(lead.status);
+
+            actionSection.innerHTML = `
+                <span class="detail-section-title mt-3">Progress Flow</span>
+                <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.5rem;">
+                    ${stages.map((s, i) => `
+                        <div style="display:flex;align-items:center;gap:0.75rem;opacity:${i <= currentIdx ? 1 : 0.35}">
+                            <div style="width:28px;height:28px;border-radius:50%;background:${i < currentIdx ? '#059669' : i === currentIdx ? '#4f46e5' : '#e2e8f0'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="bi ${i < currentIdx ? 'bi-check-lg' : stageIcons[s]}" style="color:#fff;font-size:0.75rem;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size:0.8rem;font-weight:700;color:${i === currentIdx ? '#4f46e5' : '#1e293b'}">${stageLabels[s]}</div>
+                                <div style="font-size:0.7rem;color:#94a3b8">${stageHints[s]}</div>
+                            </div>
+                        </div>
+                        ${i < stages.length - 1 ? `<div style="width:2px;height:16px;background:${i < currentIdx ? '#059669' : '#e2e8f0'};margin-left:13px;border-radius:2px;"></div>` : ''}
+                    `).join('')}
+                </div>
+            `;
+
+            document.getElementById('detail-overlay').classList.add('show');
+            document.getElementById('detail-panel').classList.add('show');
+        }
+
+        function closeDetail() {
+            document.getElementById('detail-overlay').classList.remove('show');
+            document.getElementById('detail-panel').classList.remove('show');
+        }
+
+        document.getElementById('detail-close').addEventListener('click', closeDetail);
+        document.getElementById('detail-overlay').addEventListener('click', closeDetail);
+
+        async function convertLead(leadId) {
+            if (!confirm("Are you sure you want to convert this lead to a Client?")) return;
+
+            try {
+                await ApiClient.request(`/shops/${leadId}/convert`, { method: 'POST' });
+                showToast("Lead successfully converted to Client!", "success");
+                loadLeads();
+            } catch (e) {
+                showToast(e.data?.detail || "Conversion failed", "error");
+            }
+        }
+
+        // Advance status automatically via PATCH
+        async function advanceStatus(leadId, newStatus, event) {
+            event.stopPropagation();
+            const btn = event.currentTarget;
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            try {
+                await ApiClient.request(`/shops/${leadId}`, {
+                    method: 'PATCH',
+                    body: { status: newStatus }
+                });
+                const labels = { CONTACTED: 'Marked as Contacted', MEETING_SET: 'Meeting Set!', CONVERTED: 'Converted!' };
+                showToast(labels[newStatus] || 'Status updated', 'success');
+                loadLeads();
+            } catch (e) {
+                showToast(e.data?.detail || 'Failed to update status', 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        }
+
+        // Drag and Drop
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.closest('[data-id]').dataset.id);
+        }
+
+        document.querySelectorAll('.kanban-cards').forEach(cards => {
+            cards.addEventListener('dragover', e => e.preventDefault());
+            cards.addEventListener('drop', async e => {
+                e.preventDefault();
+                const leadId = e.dataTransfer.getData("text");
+                const newStatus = e.currentTarget.id.replace('cards-', '');
+                try {
+                    await ApiClient.request(`/shops/${leadId}`, {
+                        method: 'PATCH',
+                        body: { status: newStatus }
+                    });
+                    loadLeads();
+                } catch (e) {
+                    showToast("Failed to move lead", "error");
+                }
+            });
+        });
+
+        // View Toggling Logic (Kanban / List)
+        const btnKanban = document.getElementById('toggle-kanban');
+        const btnList = document.getElementById('toggle-list');
+        const boardKanban = document.getElementById('kanban-board');
+        const boardList = document.getElementById('list-view');
+
+        btnKanban.addEventListener('click', () => {
+            btnKanban.classList.add('active');
+            btnList.classList.remove('active');
+            boardKanban.classList.remove('d-none');
+            boardList.classList.add('d-none');
+            localStorage.setItem('leadsView', 'kanban');
+        });
+
+        btnList.addEventListener('click', () => {
+            btnList.classList.add('active');
+            btnKanban.classList.remove('active');
+            boardKanban.classList.add('d-none');
+            boardList.classList.remove('d-none');
+            localStorage.setItem('leadsView', 'list');
+        });
+
+        // Restore view preference
+        const savedView = localStorage.getItem('leadsView');
+        if (savedView === 'list') {
+            btnList.click();
+        }
+
+        loadLeads();
+    </script>
+</body>
+
+</html>
