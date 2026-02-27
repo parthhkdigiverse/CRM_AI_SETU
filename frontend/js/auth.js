@@ -33,16 +33,49 @@ function requireAuth() {
         return;
     }
 
-    if (!getToken()) { window.location.replace('index.html'); return; }
-    const u = getUser();
-    const el = document.getElementById('username-display');
-    if (el && u) el.textContent = u.name || u.email || 'User';
+    const token = getToken();
+    if (!token) {
+        window.location.replace('index.html');
+        return;
+    }
 
-    // Auto-inject theme header
-    let pageName = document.title.split('—')[0].trim();
-    if (!pageName || pageName === 'CRM AI SETU') pageName = 'Dashboard';
-    injectTopHeader(pageName);
+    // Hide page while we verify the token is still valid
+    document.body.style.visibility = 'hidden';
+
+    fetch('http://127.0.0.1:8000/api/auth/profile', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(r => {
+        if (!r.ok) {
+            // Token invalid or expired — kick to login
+            clearTokens();
+            window.location.replace('index.html');
+            return;
+        }
+        // Token is valid — show the page
+        document.body.style.visibility = 'visible';
+        const u = getUser();
+        const el = document.getElementById('username-display');
+        if (el && u) el.textContent = u.name || u.email || 'User';
+
+        // Auto-inject theme header
+        let pageName = document.title.split('—')[0].trim();
+        if (!pageName || pageName === 'CRM AI SETU') pageName = 'Dashboard';
+        injectTopHeader(pageName);
+    })
+    .catch(() => {
+        // Network error — fall back to token-only check (server may be starting up)
+        document.body.style.visibility = 'visible';
+        const u = getUser();
+        const el = document.getElementById('username-display');
+        if (el && u) el.textContent = u.name || u.email || 'User';
+
+        let pageName = document.title.split('—')[0].trim();
+        if (!pageName || pageName === 'CRM AI SETU') pageName = 'Dashboard';
+        injectTopHeader(pageName);
+    });
 }
+
 
 // Re-evaluate auth on back/forward navigation
 window.addEventListener('pageshow', (event) => {

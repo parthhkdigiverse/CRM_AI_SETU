@@ -84,10 +84,12 @@
                 console.warn('Config fetch failed or timed out, using default API:', e);
             });
 
-        // If already logged in, redirect
-        if (localStorage.getItem('access_token')) {
-            window.location.replace('dashboard.html');
-        }
+        // Always clear any stale session when landing on the login page
+        // This ensures the login screen is never skipped on a fresh visit
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('crm_user');
+
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();

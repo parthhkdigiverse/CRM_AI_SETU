@@ -52,6 +52,21 @@ async def catch_exceptions_middleware(request: Request, call_next):
             content={"detail": "Internal Server Error", "error": str(e)}
         )
 
+@app.middleware("http")
+async def no_cache_html_middleware(request: Request, call_next):
+    """Force browsers to always fetch fresh HTML — prevents 304 stale-cache issues."""
+    response = await call_next(request)
+    if request.url.path.endswith(".html"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        # Remove ETag so browser can't use conditional requests to get a 304
+        if "etag" in response.headers:
+            del response.headers["etag"]
+        if "last-modified" in response.headers:
+            del response.headers["last-modified"]
+    return response
+
 # Mount the static frontend directory so uvicorn serves both API and UI
 # We need to guarantee root_dir points to the very top project folder
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
