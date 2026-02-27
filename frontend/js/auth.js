@@ -45,35 +45,29 @@ function requireAuth() {
     fetch('http://127.0.0.1:8000/api/auth/profile', {
         headers: { 'Authorization': `Bearer ${token}` }
     })
-    .then(r => {
-        if (!r.ok) {
-            // Token invalid or expired — kick to login
+        .then(r => {
+            if (!r.ok) {
+                // Token invalid/expired OR server returned an error — kick to login
+                clearTokens();
+                window.location.replace('index.html');
+                return;
+            }
+            // Token is valid — show the page
+            document.body.style.visibility = 'visible';
+            const u = getUser();
+            const el = document.getElementById('username-display');
+            if (el && u) el.textContent = u.name || u.email || 'User';
+
+            // Auto-inject theme header
+            let pageName = document.title.split('—')[0].trim();
+            if (!pageName || pageName === 'CRM AI SETU') pageName = 'Dashboard';
+            injectTopHeader(pageName);
+        })
+        .catch(() => {
+            // Network error — server is completely unreachable, kick to login
             clearTokens();
             window.location.replace('index.html');
-            return;
-        }
-        // Token is valid — show the page
-        document.body.style.visibility = 'visible';
-        const u = getUser();
-        const el = document.getElementById('username-display');
-        if (el && u) el.textContent = u.name || u.email || 'User';
-
-        // Auto-inject theme header
-        let pageName = document.title.split('—')[0].trim();
-        if (!pageName || pageName === 'CRM AI SETU') pageName = 'Dashboard';
-        injectTopHeader(pageName);
-    })
-    .catch(() => {
-        // Network error — fall back to token-only check (server may be starting up)
-        document.body.style.visibility = 'visible';
-        const u = getUser();
-        const el = document.getElementById('username-display');
-        if (el && u) el.textContent = u.name || u.email || 'User';
-
-        let pageName = document.title.split('—')[0].trim();
-        if (!pageName || pageName === 'CRM AI SETU') pageName = 'Dashboard';
-        injectTopHeader(pageName);
-    });
+        });
 }
 
 

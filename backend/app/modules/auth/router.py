@@ -3,6 +3,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import OperationalError
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import create_access_token, get_password_hash, verify_password
@@ -16,13 +17,51 @@ from fastapi import Request
 
 router = APIRouter()
 
+# ──────────────────────────────────────────────────────────────────────────────
+# DEMO / FALLBACK account — used when the database is not yet configured.
+# Anyone who clones the repo and hasn't set up PostgreSQL can still log in.
+#   Email:    admin@example.com
+#   Password: password123
+# ──────────────────────────────────────────────────────────────────────────────
+_DEMO_EMAIL    = "admin@example.com"
+_DEMO_PASSWORD = "password123"
+_DEMO_USER_ID  = 0  # Synthetic ID — not a real DB row
+
 @router.post("/login", response_model=Token)
 async def login(
     request: Request,
     db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
-    user = db.query(User).filter(User.email == form_data.username).first()
+    # ── Try the real database first ───────────────────────────────────────────
+    try:
+        user = db.query(User).filter(User.email == form_data.username).first()
+    except (OperationalError, Exception) as db_err:
+        # ── Database is not reachable — check demo credentials ────────────────
+        print(f"[DEMO MODE] Database unavailable ({db_err.__class__.__name__}). "
+              f"Checking fallback demo credentials...")
+        if (
+            form_data.username == _DEMO_EMAIL
+            and form_data.password == _DEMO_PASSWORD
+        ):
+            print("[DEMO MODE] Demo login granted for admin@example.com")
+            access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+            refresh_token_expires = timedelta(days=30)
+            return {
+                "access_token": create_access_token(
+                    _DEMO_USER_ID, expires_delta=access_token_expires
+                ),
+                "refresh_token": create_access_token(
+                    _DEMO_USER_ID, expires_delta=refresh_token_expires
+                ),
+                "token_type": "bearer",
+            }
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database not available. Please set up your .env and run database migrations. "
+                   "You can use admin@example.com / password123 as demo credentials.",
+        )
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -124,10 +163,20 @@ def refresh_token(
 def read_current_user(
     current_user: User = Depends(get_current_user)
 ) -> Any:
+    if current_user is None:  # Demo mode: return synthetic admin
+        return {
+            "id": 0, "email": _DEMO_EMAIL, "name": "Demo Admin",
+            "role": "ADMIN", "is_active": True, "phone": None
+        }
     return current_user
 
 @router.get("/profile", response_model=UserRead)
 def read_profile(current_user: User = Depends(get_current_user)) -> Any:
+    if current_user is None:  # Demo mode: return synthetic admin
+        return {
+            "id": 0, "email": _DEMO_EMAIL, "name": "Demo Admin",
+            "role": "ADMIN", "is_active": True, "phone": None
+        }
     return current_user
 
 @router.patch("/profile", response_model=UserRead)
