@@ -23,9 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
     const loginError = document.getElementById('login-error');
     const logoutBtn = document.getElementById('logout-btn');
-    const mainContent = document.getElementById('main-content');
+    const mainContent = document.getElementById('main-content') || document.body; // Fallback
     const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
-    const topbarTitle = document.getElementById('topbar-title');
+    const topbarTitle = document.getElementById('topbar-title') || { innerText: '' };
 
     // Auth Guard
     function checkAuth() {
@@ -39,43 +39,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showLogin() {
-        loginView.classList.remove('hidden');
-        appShell.classList.add('hidden');
+        if (loginView) loginView.classList.remove('hidden');
+        if (appShell) appShell.classList.add('hidden');
     }
 
     function showApp() {
-        loginView.classList.add('hidden');
-        appShell.classList.remove('hidden');
+        if (loginView) loginView.classList.add('hidden');
+        if (appShell) appShell.classList.remove('hidden');
     }
 
     // Login Form
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-        const submitBtn = loginForm.querySelector('button');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const submitBtn = loginForm.querySelector('button');
 
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
-        loginError.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
+            if (loginError) loginError.classList.add('hidden');
 
-        try {
-            await window.ApiClient.login(email, password);
-            showApp();
-            loadView('dashboard');
-        } catch (error) {
-            loginError.classList.remove('hidden');
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<span>Sign In</span><i class="fa-solid fa-arrow-right"></i>';
-        }
-    });
+            try {
+                await window.ApiClient.login(email, password);
+                showApp();
+                loadView('dashboard');
+            } catch (error) {
+                if (loginError) loginError.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>Sign In</span><i class="fa-solid fa-arrow-right"></i>';
+            }
+        });
+    }
 
     // Logout
-    logoutBtn.addEventListener('click', () => {
-        window.ApiClient.clearTokens();
-        showLogin();
-    });
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            window.ApiClient.clearTokens();
+            showLogin();
+        });
+    }
 
     window.addEventListener('auth-failed', () => {
         window.ApiClient.clearTokens();
@@ -163,6 +167,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 await renderAdmin();
             } else if (viewName === 'profile') {
                 await renderProfile();
+<<<<<<< Updated upstream
+=======
+            } else if (viewName === 'timetable') {
+                await renderTimetable();
+            } else if (viewName === 'todo') {
+                await renderTodo();
+            } else if (viewName === 'billing') {
+                await renderBilling();
+>>>>>>> Stashed changes
             } else {
                 mainContent.innerHTML = `
                     <div class="card" style="text-align:center; padding: 60px;">
@@ -1413,6 +1426,324 @@ document.addEventListener('DOMContentLoaded', () => {
         window.renderReports = renderReports;
     }
 
+<<<<<<< Updated upstream
+=======
+    async function renderTimetable() {
+        const today = new Date();
+        const dateStr = today.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        // Mock Data for Timetable (following Google Calendar inspiration)
+        const mockEvents = [
+            { id: 1, name: 'Morning Lead Follow-up', start: '09:00 AM', end: '10:30 AM', type: 'Call', loc: 'Office', recurrence: 'Daily', status: 'COMPLETED' },
+            { id: 2, name: 'Client Meeting - HCL', start: '11:00 AM', end: '12:30 PM', type: 'Meeting', loc: 'Main Street Office', recurrence: 'None', status: 'UPCOMING' },
+            { id: 3, name: 'Shop Visit - Metro Bazar', start: '02:00 PM', end: '04:00 PM', type: 'Field Visit', loc: 'Metro Area', recurrence: 'Weekly', status: 'UPCOMING' },
+            { id: 4, name: 'Team Sync', start: '05:00 PM', end: '06:00 PM', type: 'Internal', loc: 'Conference Room', recurrence: 'Daily', status: 'UPCOMING' },
+        ];
+
+        const rows = mockEvents.map(e => `
+            <tr>
+                <td><div class="fw-bold">${e.name}</div><div class="text-muted small">${e.type}</div></td>
+                <td><div class="text-dark">${e.start} - ${e.end}</div></td>
+                <td>${e.loc}</td>
+                <td><span class="badge badge-purple-light">${e.recurrence}</span></td>
+                <td><span class="badge ${e.status === 'COMPLETED' ? 'badge-green-light' : 'badge-yellow-light'}">${e.status}</span></td>
+                <td><button class="btn btn-ghost p-1" onclick="window.alert('Future function: View Details')"><i class="bi bi-eye"></i></button></td>
+            </tr>
+        `).join('');
+
+        mainContent.innerHTML = `
+            <div class="page-header d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 fw-bold mb-1">Timetable & Schedule</h1>
+                    <p class="text-muted mb-0">${dateStr}</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-secondary border-0" style="background:#f1f5f9; color:#475569;" onclick="renderTimetable()">Today</button>
+                    <button class="btn btn-primary" onclick="openNewTimetableModal()"><i class="bi bi-calendar-plus me-1"></i> Schedule Activity</button>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm p-0 mb-4">
+                <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">Daily Agenda</h5>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary active">Day</button>
+                        <button class="btn btn-outline-primary">Week</button>
+                        <button class="btn btn-outline-primary">Month</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="px-4">Event Name & Type</th>
+                                <th>Schedule</th>
+                                <th>Location / Reference</th>
+                                <th>Recurrence</th>
+                                <th>Status</th>
+                                <th class="text-end px-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm p-4 h-100">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-bell-fill text-warning me-2"></i>Upcoming Reminders</h6>
+                        <div class="d-flex flex-column gap-3">
+                            <div class="p-3 rounded bg-light border-start border-4 border-primary">
+                                <div class="fw-semibold small">Call Mr. Sharma</div>
+                                <div class="text-muted smaller">In 15 minutes</div>
+                            </div>
+                            <div class="p-3 rounded bg-light border-start border-4 border-warning">
+                                <div class="fw-semibold small">Submit Weekly Report</div>
+                                <div class="text-muted smaller">By 06:00 PM today</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm p-4 h-100">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-sticky-fill text-info me-2"></i>Quick Remarks</h6>
+                        <textarea class="form-control border-dashed" rows="4" placeholder="Type a quick note for your day..."></textarea>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    async function renderTodo() {
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+        const mockTodos = [
+            { id: 1, title: 'Finalize Proposal - TechCorp', priority: 'HIGH', status: 'PENDING', assigned: 'Nency Savaliya', due: `${tomorrow}T14:30:00`, related: 'Project Alpha' },
+            { id: 2, title: 'Follow-up with New Leads', priority: 'MEDIUM', status: 'IN_PROGRESS', assigned: 'Nency Savaliya', due: `${today}T10:00:00`, related: 'Tech Expo' },
+            { id: 3, title: 'Internal Security Audit', priority: 'LOW', status: 'PENDING', assigned: 'Admin', due: `${yesterday}T16:00:00`, related: 'System Admin' },
+            { id: 4, title: 'Client Feedback Analysis', priority: 'HIGH', status: 'COMPLETED', assigned: 'Nency Savaliya', due: '2026-02-26T12:00:00', related: 'CRM Feedback' },
+        ];
+
+        const formatRelativeDate = (dateStr) => {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffTime = date.getTime() - now.getTime();
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+            const timeStr = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+            let dateLabel = '';
+            if (diffDays === 0) dateLabel = 'Today';
+            else if (diffDays === 1) dateLabel = 'Tomorrow';
+            else if (diffDays === -1) dateLabel = 'Yesterday';
+            else dateLabel = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+
+            return `${dateLabel}, ${timeStr}`;
+        };
+
+        const sevBadge = s => ({
+            HIGH: '<span class="badge bg-danger">High</span>',
+            MEDIUM: '<span class="badge bg-warning text-dark">Medium</span>',
+            LOW: '<span class="badge bg-success">Low</span>'
+        })[s] || `<span class="badge bg-secondary">${s}</span>`;
+
+        const statBadge = s => ({
+            PENDING: '<span class="badge badge-purple-light">Pending</span>',
+            IN_PROGRESS: '<span class="badge bg-info-subtle text-info border border-info-subtle">In Progress</span>',
+            COMPLETED: '<span class="badge badge-green-light">Completed</span>'
+        })[s] || `<span class="badge">${s}</span>`;
+
+        const rows = mockTodos.map(t => {
+            const initials = t.assigned.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            return `
+            <tr>
+                <td class="px-4"><div class="fw-bold">${t.title}</div><div class="text-muted smaller">Assigned: ${t.assigned}</div></td>
+                <td>${sevBadge(t.priority)}</td>
+                <td>${statBadge(t.status)}</td>
+                <td><div class="d-flex align-items-center gap-2"><div class="rounded-circle bg-primary-light text-primary d-flex align-items-center justify-content-center fw-bold" style="width:28px;height:28px;font-size:10px;">${initials}</div><span class="small">${t.assigned}</span></div></td>
+                <td><i class="bi bi-clock me-1"></i>${formatRelativeDate(t.due)}</td>
+                <td><span class="text-muted small">${t.related}</span></td>
+                <td class="text-end px-4">
+                    <div class="dropdown">
+                        <button class="btn btn-ghost btn-sm" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2">
+                            <li><a class="dropdown-item py-2 small" href="javascript:void(0)" onclick="window.alert('Evidence upload triggered')"><i class="bi bi-upload me-2 text-primary"></i> Upload Evidence</a></li>
+                            <li><a class="dropdown-item py-2 small" href="#"><i class="bi bi-pencil me-2 text-info"></i> Edit Task</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item py-2 small text-danger" href="#"><i class="bi bi-trash me-2"></i> Delete</a></li>
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+        `;
+        }).join('');
+
+        mainContent.innerHTML = `
+            <div class="page-header d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 fw-bold mb-1">To-Do List</h1>
+                    <p class="text-muted mb-0">Manage and track your personal and team tasks.</p>
+                </div>
+                <button class="btn btn-primary" onclick="openNewTodoModal()"><i class="bi bi-plus-lg me-1"></i> Add New Task</button>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-lg-3">
+                    <div class="card border-0 shadow-sm p-3 text-center">
+                        <div class="text-muted smaller mb-1">Total Tasks</div>
+                        <div class="h4 fw-bold mb-0">${mockTodos.length}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="card border-0 shadow-sm p-3 text-center">
+                        <div class="text-muted smaller mb-1">High Priority</div>
+                        <div class="h4 fw-bold mb-0 text-danger">${mockTodos.filter(t => t.priority === 'HIGH').length}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="card border-0 shadow-sm p-3 text-center">
+                        <div class="text-muted smaller mb-1">Ongoing</div>
+                        <div class="h4 fw-bold mb-0 text-info">${mockTodos.filter(t => t.status === 'IN_PROGRESS').length}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="card border-0 shadow-sm p-3 text-center">
+                        <div class="text-muted smaller mb-1">Completed</div>
+                        <div class="h4 fw-bold mb-0 text-success">${mockTodos.filter(t => t.status === 'COMPLETED').length}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm p-0 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="px-4">Task Title</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Assigned To</th>
+                                <th>Due Date</th>
+                                <th>Related Entity</th>
+                                <th class="text-end px-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    window.openNewTodoModal = () => {
+        const html = `
+            <div class="row g-3">
+                <div class="col-12"><label class="form-label fw-semibold">Task Title *</label><input type="text" id="td-title" class="form-control" placeholder="What needs to be done?"></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">Priority Level</label><select id="td-priority" class="form-select"><option value="LOW">Low</option><option value="MEDIUM" selected>Medium</option><option value="HIGH">High</option></select></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">Status</label><select id="td-status" class="form-select"><option value="PENDING">Pending</option><option value="IN_PROGRESS">In Progress</option><option value="COMPLETED">Completed</option></select></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">Assigned To</label><input type="text" id="td-assigned" class="form-control" placeholder="User Name"></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">Due Date</label><input type="date" id="td-due" class="form-control"></div>
+                <div class="col-12"><label class="form-label fw-semibold">Related Entity</label><input type="text" id="td-related" class="form-control" placeholder="Project, Client or Lead name"></div>
+                <div class="col-12"><label class="form-label fw-semibold">Description</label><textarea id="td-desc" class="form-control" rows="3" placeholder="Additional details..."></textarea></div>
+                <div class="col-12"><label class="form-label fw-semibold">Evidence Upload</label><input type="file" id="td-evidence" class="form-control"></div>
+            </div>
+        `;
+        createModal('modal-new-todo', 'Create New Task', html, async () => {
+            const title = document.getElementById('td-title').value;
+            if (!title) throw new Error("Task title is required");
+            showToast('New task added successfully (Frontend Sync)');
+            renderTodo();
+        }, "Create Task");
+    };
+
+    window.openNewTimetableModal = () => {
+        const html = `
+            <div class="row g-3">
+                <div class="col-12"><label class="form-label fw-semibold">Event Name *</label><input type="text" id="tt-name" class="form-control" placeholder="e.g., Client Follow-up"></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">Start Time *</label><input type="datetime-local" id="tt-start" class="form-control"></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">End Time *</label><input type="datetime-local" id="tt-end" class="form-control"></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">Activity Type</label><select id="tt-type" class="form-select"><option value="Meeting">Meeting</option><option value="Call">Call</option><option value="Field Visit">Field Visit</option><option value="Internal">Internal</option></select></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">Recurrence</label><select id="tt-rec" class="form-select"><option value="None">None</option><option value="Daily">Daily</option><option value="Weekly">Weekly</option><option value="Monthly">Monthly</option></select></div>
+                <div class="col-12"><label class="form-label fw-semibold">Location / Shop Reference</label><input type="text" id="tt-loc" class="form-control" placeholder="Shop name or address"></div>
+                <div class="col-12"><label class="form-label fw-semibold">Reminders</label><select id="tt-rem" class="form-select"><option value="5m">5 mins before</option><option value="15m" selected>15 mins before</option><option value="1h">1 hour before</option></select></div>
+                <div class="col-12"><label class="form-label fw-semibold">Remarks</label><textarea id="tt-remarks" class="form-control" rows="2" placeholder="Any special notes..."></textarea></div>
+            </div>
+        `;
+        createModal('modal-new-timetable', 'Schedule Activity', html, async () => {
+            const name = document.getElementById('tt-name').value;
+            if (!name) throw new Error("Event name is required");
+            showToast('Activity scheduled successfully (Frontend Sync)');
+            renderTimetable();
+        }, "Schedule");
+    };
+
+    async function renderBilling() {
+        try {
+            const bills = await window.ApiClient.getBills();
+            const rows = bills.length === 0
+                ? '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No bills found.</td></tr>'
+                : bills.map(b => `
+                    <tr>
+                        <td style="font-weight:600;">${b.invoice_number || 'PENDING'}</td>
+                        <td>Shop #${b.shop_id}</td>
+                        <td>Rs. ${b.amount.toLocaleString()}</td>
+                        <td><span class="badge ${b.status === 'PAID' ? 'badge-green-light' : 'badge-yellow-light'}">${b.status}</span></td>
+                        <td>${b.whatsapp_sent ? '<span class="badge badge-green-light"><i class="fa-brands fa-whatsapp"></i> Sent</span>' : '<span class="badge badge-red-light">Not Sent</span>'}</td>
+                    </tr>`).join('');
+
+            mainContent.innerHTML = `
+                <div class="page-header">
+                    <div><h1>Billing & Invoices</h1><p class="text-muted">Manage payments and shop auto-conversions.</p></div>
+                    <button class="btn btn-primary" onclick="openNewBillModal()"><i class="fa-solid fa-file-invoice-dollar"></i> Generate New Bill</button>
+                </div>
+                <div class="card" style="padding:0;">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead><tr><th>INVOICE #</th><th>SHOP/CLIENT</th><th>AMOUNT</th><th>STATUS</th><th>WHATSAPP</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            mainContent.innerHTML = '<div class="card text-danger">Failed to load billing records.</div>';
+        }
+    }
+
+    window.openNewBillModal = async () => {
+        let shops = [];
+        try { shops = await window.ApiClient.getShops(); } catch (e) { }
+
+        const shopOptions = shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        const html = `
+            <div class="form-group">
+                <label>Select Shop *</label>
+                <select id="mb-shop" class="form-control" required>
+                    <option value="">-- Choose Shop --</option>
+                    ${shopOptions}
+                </select>
+                <small class="text-muted">Note: Shop will be automatically converted to Client after billing.</small>
+            </div>
+            <div class="form-group">
+                <label>Amount (Rs.) *</label>
+                <input type="number" id="mb-amount" class="form-control" placeholder="E.g. 5000" required>
+            </div>
+        `;
+        createModal('modal-new-bill', 'Generate Bill & Convert Shop', html, async () => {
+            const shopId = document.getElementById('mb-shop').value;
+            const amount = document.getElementById('mb-amount').value;
+            if (!shopId || !amount) throw new Error("All fields are required");
+
+            await window.ApiClient.generateBill({ shop_id: parseInt(shopId), amount: parseFloat(amount) });
+            showToast('Bill generated and WhatsApp invoice sent!');
+            renderBilling();
+        }, "Generate & Convert");
+    };
+
+>>>>>>> Stashed changes
     // Kickoff
     checkAuth();
 });

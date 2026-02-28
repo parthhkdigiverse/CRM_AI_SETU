@@ -7,6 +7,8 @@ fetch('http://127.0.0.1:8000/api/config')
 
 // Inject global theme styles
 document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/theme.css">');
+document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/components.css">');
+document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/global.css">');
 
 function getToken() { return sessionStorage.getItem('access_token'); }
 function setTokens(a, r) {
@@ -173,6 +175,13 @@ function renderSidebar(active) {
         <ul class="sb-section-items ${active === 'dashboard' ? 'open' : ''}">
             <li><a href="dashboard.html" class="sb-link ${active === 'dashboard' ? 'active' : ''}">
                 <i class="bi bi-bar-chart-line-fill"></i><span>Overview</span></a></li>
+<<<<<<< Updated upstream
+=======
+            <li><a href="todo.html" class="sb-link ${active === 'todo' ? 'active' : ''}">
+                <i class="bi bi-list-check"></i><span>To-Do</span></a></li>
+            <li><a href="timetable.html" class="sb-link ${active === 'timetable' ? 'active' : ''}">
+                <i class="bi bi-calendar3"></i><span>Timetable</span></a></li>
+>>>>>>> Stashed changes
         </ul>
     </div>`;
 
