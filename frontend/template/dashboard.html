@@ -68,7 +68,7 @@
                         </a>
                     </div>
                     <div class="col-6 col-md-3">
-                        <a href="reports.html" class="text-decoration-none h-100">
+                        <a href="projects.html" class="text-decoration-none h-100">
                             <div class="card border-0 shadow-sm kpi-card h-100 p-3"
                                 style="cursor:pointer;border-radius:12px;">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
@@ -236,7 +236,9 @@
         </div>
     </div>
 
-    <script src="../js/components.js"></script><script src="../js/auth.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/components.js?v=2.1"></script>
+    <script src="../js/auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
@@ -411,21 +413,20 @@
         // ── Open Issues ───────────────────────────────────────────────────
         function stBadge(status) {
             const stStyle = {
-                OPEN: 'color: #dc3545; background-color: #ffeef0;',
                 PENDING: 'color: #d39e00; background-color: #fff8e1;',
-                IN_PROGRESS: 'color: #856404; background-color: #fff3cd;',
-                RESOLVED: 'color: #198754; background-color: #e8f5e9;',
-                CANCELLED: 'color: #6c757d; background-color: #f8f9fa;'
+                SOLVED: 'color: #0ea5e9; background-color: #e0f2fe;',
+                COMPLETED: 'color: #198754; background-color: #e8f5e9;',
+                CANCEL: 'color: #dc3545; background-color: #ffeef0;'
             };
-            const stLabel = (status || 'OPEN').replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
-            return `<span class="badge rounded-pill fw-medium px-2 py-1" style="${stStyle[status] || stStyle.OPEN} font-size: 0.70rem;">${stLabel}</span>`;
+            const stLabel = (status || 'PENDING').replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+            return `<span class="badge rounded-pill fw-medium px-2 py-1" style="${stStyle[status] || stStyle.PENDING} font-size: 0.70rem;">${stLabel}</span>`;
         }
 
         async function loadOpenIssues() {
             const el = document.getElementById('open-issues-list');
             try {
                 const issues = await apiGet('/issues/?limit=5');
-                const openIssues = issues.filter(i => i.status === 'OPEN' || i.status === 'PENDING').slice(0, 5);
+                const openIssues = issues.filter(i => i.status === 'PENDING').slice(0, 5);
                 if (!openIssues.length) {
                     el.innerHTML = `<div class="text-center py-4 text-success">
                     <i class="bi bi-check-circle" style="font-size:2rem;"></i>

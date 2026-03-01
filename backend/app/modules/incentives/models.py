@@ -27,7 +27,7 @@ class EmployeePerformance(Base):
     period = Column(String, nullable=False) # YYYY-MM
     closed_units = Column(Integer, default=0)
 
-    employee = relationship("app.modules.employees.models.Employee", backref="performances")
+    employee = relationship("Employee", backref="performances")
 
 class IncentiveSlip(Base):
     __tablename__ = "incentive_slips"
@@ -45,4 +45,6 @@ class IncentiveSlip(Base):
     
     generated_at = Column(DateTime, default=datetime.utcnow)
 
-    employee = relationship("app.modules.employees.models.Employee", backref="incentive_slips")
+    employee = relationship("Employee", backref="incentive_slips")
+
+from app.modules.employees.models import Employee

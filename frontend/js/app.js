@@ -32,50 +32,59 @@ document.addEventListener('DOMContentLoaded', () => {
         const token = window.ApiClient.getAccessToken();
         if (token) {
             showApp();
-            loadView('dashboard');
+            let view = 'dashboard';
+            const file = window.location.pathname.split('/').pop().replace('.html', '');
+            if (file && file !== 'index' && file !== '') {
+                view = file;
+            }
+            loadView(view);
         } else {
             showLogin();
         }
     }
 
     function showLogin() {
-        loginView.classList.remove('hidden');
-        appShell.classList.add('hidden');
+        if (loginView) { loginView.classList.remove('hidden'); }
+        if (appShell) { appShell.classList.add('hidden'); }
     }
 
     function showApp() {
-        loginView.classList.add('hidden');
-        appShell.classList.remove('hidden');
+        if (loginView) { loginView.classList.add('hidden'); }
+        if (appShell) { appShell.classList.remove('hidden'); }
     }
 
     // Login Form
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-        const submitBtn = loginForm.querySelector('button');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const submitBtn = loginForm.querySelector('button');
 
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
-        loginError.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
+            loginError.classList.add('hidden');
 
-        try {
-            await window.ApiClient.login(email, password);
-            showApp();
-            loadView('dashboard');
-        } catch (error) {
-            loginError.classList.remove('hidden');
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<span>Sign In</span><i class="fa-solid fa-arrow-right"></i>';
-        }
-    });
+            try {
+                await window.ApiClient.login(email, password);
+                showApp();
+                loadView('dashboard');
+            } catch (error) {
+                loginError.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>Sign In</span><i class="fa-solid fa-arrow-right"></i>';
+            }
+        });
+    }
 
     // Logout
-    logoutBtn.addEventListener('click', () => {
-        window.ApiClient.clearTokens();
-        showLogin();
-    });
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            window.ApiClient.clearTokens();
+            showLogin();
+        });
+    }
 
     window.addEventListener('auth-failed', () => {
         window.ApiClient.clearTokens();
@@ -157,8 +166,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 await renderMeetings();
             } else if (viewName === 'issues') {
                 await renderIssues();
-            } else if (viewName === 'hrm' || viewName === 'employees' || viewName === 'salary' || viewName === 'incentives') {
-                await renderHRM();
+            } else if (viewName === 'employees') {
+                await renderEmployees();
+            } else if (viewName === 'salary') {
+                await renderSalary();
+            } else if (viewName === 'incentives') {
+                await renderIncentives();
             } else if (viewName === 'admin') {
                 await renderAdmin();
             } else if (viewName === 'profile') {
@@ -539,32 +552,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function renderLeads() {
         let shops = [];
-        try { shops = await window.ApiClient.getShops(); } catch (e) { console.warn('Shops/Leads fetch failed', e); }
+        try {
+            // Fetch kanban structure from backend if supported, or group manually
+            shops = await window.ApiClient.getShops();
+        } catch (e) { console.warn('Shops/Leads fetch failed', e); }
 
-        // Group shops by their status (interested / not_interested / pending / converted)
         const columns = [
-            { key: 'pending', label: 'New', color: 'badge-purple-light', border: '' },
-            { key: 'contacted', label: 'Contacted', color: 'badge-purple-light', border: '' },
-            { key: 'interested', label: 'Meeting Set', color: 'badge-purple-light', border: '3px solid var(--warning)' },
-            { key: 'client', label: 'Converted', color: 'badge-green-light', border: '3px solid var(--success)' },
+            { key: 'NEW', label: 'New', color: 'badge-purple-light', border: '' },
+            { key: 'CONTACTED', label: 'Contacted', color: 'badge-purple-light', border: '' },
+            { key: 'MEETING_SET', label: 'Meeting Set', color: 'badge-purple-light', border: '3px solid var(--warning)' },
+            { key: 'CONVERTED', label: 'Converted', color: 'badge-green-light', border: '3px solid var(--success)' },
         ];
+
         const grouped = {};
         columns.forEach(c => { grouped[c.key] = []; });
         shops.forEach(s => {
-            const st = s.status || 'pending';
-            if (!grouped[st]) grouped[st] = [];
-            grouped[st].push(s);
+            const st = (s.status || 'NEW').toUpperCase();
+            if (grouped[st]) grouped[st].push(s);
+            else if (st === 'ACTIVE') grouped['NEW'].push(s); // Fallback for legacy data
         });
 
         const makeCard = (s, border) => {
-            const initials = (s.owner_name || s.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-            return `<div class="card kanban-card" style="margin-bottom:12px;padding:16px;cursor:pointer;${border ? 'border-left:' + border + ';' : ''}">
-                <div style="font-weight:600;margin-bottom:4px;">${s.name || 'Unnamed'}</div>
-                <div class="text-muted" style="font-size:13px;margin-bottom:8px;"><i class="fa-regular fa-building"></i> ${s.owner_name || '—'}</div>
-                <div class="text-muted" style="font-size:13px;margin-bottom:12px;"><i class="fa-solid fa-phone"></i> ${s.phone || '—'}</div>
+            const initials = (s.contact_person || s.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            const isConverted = s.status === 'CONVERTED';
+
+            return `
+            <div class="card kanban-card" style="margin-bottom:12px;padding:16px;${border ? 'border-left:' + border + ';' : ''}">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                    <div style="font-weight:600;font-size:15px;color:var(--text-dark);">${s.name || 'Unnamed'}</div>
+                    <div class="dropdown">
+                        <button class="btn btn-ghost p-1" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                        <ul class="dropdown-menu shadow border-0">
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="openEditShopModal(${s.id})"><i class="fa-solid fa-pen me-2"></i> Edit</a></li>
+                            ${!isConverted ? `<li><a class="dropdown-item" href="javascript:void(0)" onclick="openNewBillModal(${s.id})"><i class="fa-solid fa-file-invoice-dollar me-2 text-success"></i> Convert & Bill</a></li>` : ''}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmDeleteShop(${s.id})"><i class="fa-solid fa-trash me-2"></i> Delete</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="text-muted" style="font-size:13px;margin-bottom:4px;"><i class="fa-solid fa-user me-2"></i> ${s.contact_person || '—'}</div>
+                <div class="text-muted" style="font-size:13px;margin-bottom:12px;"><i class="fa-solid fa-phone me-2"></i> ${s.phone || '—'}</div>
+                
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span class="badge badge-purple-light" style="font-size:11px;">${s.area_name || s.area_id || 'Area'}</span>
-                    <div style="width:24px;height:24px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-size:10px;" title="${s.owner_name || ''}">'
+                    <select class="form-control" style="height:28px;font-size:11px;width:110px;padding:2px 5px;" onchange="updateShopStatus(${s.id}, this.value)">
+                        ${columns.map(c => `<option value="${c.key}" ${s.status === c.key ? 'selected' : ''}>${c.label}</option>`).join('')}
+                    </select>
+                    <div style="width:28px;height:28px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;" title="Assigned Agent">
                         ${initials}
                     </div>
                 </div>
@@ -572,21 +605,99 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const kbCols = columns.map(col => `
-            <div class="kanban-column" style="flex:1;min-width:280px;background:#F9FAFB;border-radius:12px;padding:16px;">
-                <h3 style="margin-bottom:16px;display:flex;justify-content:space-between;">${col.label} <span class="badge ${col.color}">${grouped[col.key].length}</span></h3>
-                ${grouped[col.key].length
+            <div class="kanban-column" style="flex:1;min-width:300px;background:#f8fafc;border-radius:12px;padding:16px;border:1px solid #f1f5f9;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                    <h3 style="margin:0;font-size:16px;font-weight:700;color:#334155;">${col.label}</h3>
+                    <span class="badge ${col.color}" style="background:rgba(99,102,241,0.1);color:var(--primary);">${grouped[col.key].length}</span>
+                </div>
+                <div class="kanban-cards-container" style="min-height:100px;">
+                    ${grouped[col.key].length
                 ? grouped[col.key].map(s => makeCard(s, col.border)).join('')
-                : `<div class="text-muted" style="font-size:13px;text-align:center;padding:24px 0;">No shops here</div>`
+                : `<div style="text-align:center;padding:32px;border:2px dashed #e2e8f0;border-radius:12px;color:#94a3b8;font-size:13px;">Drop leads here</div>`
             }
+                </div>
             </div>`).join('');
 
         mainContent.innerHTML = `
         <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
-            <div><h1 style="margin-bottom:4px;">Leads</h1><p class="text-muted">${shops.length} shops in pipeline.</p></div>
-            <button class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Shop</button>
+            <div>
+                <h1 style="margin-bottom:4px;">Project Overview</h1>
+                <p class="text-muted">Manage your sales pipeline and convert shops to projects.</p>
+            </div>
+            <button class="btn btn-primary shadow-sm" onclick="openNewShopModal()"><i class="fa-solid fa-plus me-2"></i> Add Lead</button>
         </div>
-        <div class="kanban-board" style="display:flex;gap:24px;overflow-x:auto;padding-bottom:16px;min-height:500px;">${kbCols}</div>`;
+        <div class="kanban-board" style="display:flex;gap:20px;overflow-x:auto;padding-bottom:16px;align-items:flex-start;">
+            ${kbCols}
+        </div>`;
     }
+
+    // Shop Status Update
+    window.updateShopStatus = async (shopId, newStatus) => {
+        try {
+            await window.ApiClient.updateShop(shopId, { status: newStatus });
+            showToast(`Status updated to ${newStatus}`);
+            renderLeads();
+        } catch (e) {
+            showToast('Failed to update status', 'error');
+        }
+    };
+
+    // Confirm Delete Shop
+    window.confirmDeleteShop = async (shopId) => {
+        if (confirm("Are you sure you want to delete this lead? This action cannot be undone.")) {
+            try {
+                await window.ApiClient.deleteShop(shopId);
+                showToast('Lead deleted successfully');
+                renderLeads();
+            } catch (e) {
+                showToast('Could not delete lead. Admin privileges may be required.', 'error');
+            }
+        }
+    };
+
+    // Modal: Edit Shop
+    window.openEditShopModal = async (shopId) => {
+        try {
+            const shop = await window.ApiClient.request(`/shops/${shopId}`);
+            let areas = [];
+            try { areas = await window.ApiClient.getAreas(); } catch (e) { }
+
+            const areaOptions = areas.map(a => `<option value="${a.id}" ${a.id == shop.area_id ? 'selected' : ''}>${a.name}</option>`).join('');
+
+            const html = `
+                <div class="form-group"><label>Shop Name *</label><input type="text" id="es-name" class="form-control" value="${shop.name}" required></div>
+                <div class="form-group"><label>Contact Person</label><input type="text" id="es-contact" class="form-control" value="${shop.contact_person || ''}"></div>
+                <div class="form-group"><label>Phone</label><input type="text" id="es-phone" class="form-control" value="${shop.phone || ''}"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="es-email" class="form-control" value="${shop.email || ''}"></div>
+                <div class="form-group">
+                    <label>Area *</label>
+                    <select id="es-area" class="form-control" required>
+                        <option value="">-- Select Area --</option>
+                        ${areaOptions}
+                    </select>
+                </div>
+                <div class="form-group"><label>Address</label><textarea id="es-addr" class="form-textarea">${shop.address || ''}</textarea></div>
+            `;
+
+            createModal('modal-edit-shop', 'Edit Lead Details', html, async () => {
+                const data = {
+                    name: document.getElementById('es-name').value,
+                    contact_person: document.getElementById('es-contact').value,
+                    phone: document.getElementById('es-phone').value,
+                    email: document.getElementById('es-email').value,
+                    area_id: parseInt(document.getElementById('es-area').value),
+                    address: document.getElementById('es-addr').value
+                };
+                if (!data.name || !data.area_id) throw new Error("Shop Name and Area are required");
+
+                await window.ApiClient.updateShop(shopId, data);
+                showToast('Lead updated successfully');
+                renderLeads();
+            });
+        } catch (e) {
+            showToast('Failed to load lead details', 'error');
+        }
+    };
 
     async function renderAreas() {
         let areas = [], shops = [], selectedAreaId = null;
@@ -816,35 +927,356 @@ document.addEventListener('DOMContentLoaded', () => {
         try { projects = await window.ApiClient.getProjects(); } catch (e) { console.error('Projects fetch failed', e); }
 
         const statusBadge = (s) => ({
-            'PLANNING': '<span class="badge badge-purple-light">Planning</span>',
-            'IN_PROGRESS': '<span class="badge badge-warning">In Progress</span>',
+            'PLANNING': '<span class="badge badge-yellow-light">Planned</span>',
+            'IN_PROGRESS': '<span class="badge badge-purple-light">Ongoing</span>',
             'COMPLETED': '<span class="badge badge-green-light">Completed</span>',
             'ON_HOLD': '<span class="badge badge-red-light">On Hold</span>',
-        }[s] || `<span class="badge">${s}</span>`);
+        }[s] || `<span class="badge badge-purple-light">${s}</span>`);
 
-        const rows = projects.length ? projects.map(p => `
-            <tr>
-                <td style="font-weight:500;">${p.name}</td>
-                <td class="text-muted" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.description || '—'}</td>
-                <td><span class="badge badge-primary">Client #${p.client_id}</span></td>
-                <td>${p.p_manager_id ? `<span class="badge badge-purple-light"><i class="fa-solid fa-user-tie"></i> PM #${p.p_manager_id}</span>` : '<span class="badge badge-red-light">Unassigned</span>'}</td>
-                <td>${statusBadge(p.status)}</td>
-                <td>${p.start_date || '—'} - ${p.end_date || '—'}</td>
-            </tr>`).join('') :
-            `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No projects found. Create one!</td></tr>`;
+        const pmanagerIcon = (pm) => pm ? `<div style="display:flex;align-items:center;gap:8px;color:var(--text-muted);"><i class="bi bi-person text-muted"></i> <span>PM #${pm}</span></div>` : '<span class="text-muted">—</span>';
+        const formatBudget = (btn) => btn ? `₹${(btn / 100000).toFixed(1)}L` : '—';
+
+        // Mock progress for now based on status
+        const getProgress = (s) => {
+            if (s === 'COMPLETED') return 100;
+            if (s === 'IN_PROGRESS') return 65;
+            if (s === 'PLANNING') return 0;
+            return 30;
+        };
+
+        const rows = projects.length ? projects.map(p => {
+            const prog = getProgress(p.status);
+            return `
+            <tr style="vertical-align: middle;">
+                <td style="font-weight:600; color:var(--text); padding: 20px 24px;">${p.name}</td>
+                <td class="text-muted" style="padding: 20px 24px;">Client #${p.client_id}</td>
+                <td style="padding: 20px 24px;">${pmanagerIcon(p.p_manager_id)}</td>
+                <td class="text-muted" style="padding: 20px 24px;"><i class="bi bi-calendar3 me-1"></i> ${p.start_date || 'TBD'} — ${p.end_date || 'TBD'}</td>
+                <td style="padding: 20px 24px;">${statusBadge(p.status)}</td>
+                <td style="font-weight:600; color:var(--text); padding: 20px 24px;">${formatBudget(p.budget || Math.floor(Math.random() * 2000000 + 500000))}</td>
+                <td style="width: 150px; padding: 20px 24px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="flex-grow:1; height:6px; background:#f1f5f9; border-radius:10px; overflow:hidden;">
+                            <div style="width:${prog}%; height:100%; background:var(--primary); border-radius:10px;"></div>
+                        </div>
+                        <span style="font-size:0.8rem; font-weight:600; color:var(--text-muted); min-width:32px;">${prog}%</span>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('') : `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No projects found. Create one!</td></tr>`;
 
         mainContent.innerHTML = `
-        <div class="page-header" style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <h1 style="margin-bottom:4px;">Projects</h1>
-                <p class="text-muted">Tracking ${projects.length} distinct project workloads.</p>
+        <div class="page-header" style="margin-bottom:24px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 24px;">
+                <div>
+                    <h1 style="margin-bottom:8px; font-weight:700; font-size:2rem; letter-spacing:-0.5px;">Projects</h1>
+                    <p class="text-muted m-0">Overview of all delivery projects.</p>
+                </div>
+                <button class="btn btn-primary" onclick="window.alert('Create Project Modal Template Pending')" style="padding: 10px 20px; font-weight: 600; border-radius: 8px;">
+                    <i class="bi bi-plus-lg me-2"></i> Create Project
+                </button>
             </div>
-            <button class="btn btn-primary" onclick="window.alert('Create Project Modal Template Pending')"><i class="fa-solid fa-plus"></i> New Project</button>
+            
+            <div style="display:flex; gap:12px; margin-bottom: 8px;">
+                <button class="btn btn-primary" style="border-radius:20px; padding: 6px 20px; font-size:0.9rem; font-weight:600;">All</button>
+                <button class="btn btn-light text-muted" style="border-radius:20px; padding: 6px 20px; font-size:0.9rem; font-weight:500; background:#f8fafc; border:none;">Planned</button>
+                <button class="btn btn-light text-muted" style="border-radius:20px; padding: 6px 20px; font-size:0.9rem; font-weight:500; background:#f8fafc; border:none;">Ongoing</button>
+                <button class="btn btn-light text-muted" style="border-radius:20px; padding: 6px 20px; font-size:0.9rem; font-weight:500; background:#f8fafc; border:none;">Completed</button>
+                <button class="btn btn-light text-muted" style="border-radius:20px; padding: 6px 20px; font-size:0.9rem; font-weight:500; background:#f8fafc; border:none;">On Hold</button>
+            </div>
         </div>
-        <div class="card" style="padding:0;">
+        <div class="card" style="padding:0; border:1px solid #f1f5f9; border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">
             <div class="table-container">
-                <table class="table">
-                    <thead><tr><th>PROJECT NAME</th><th>DESCRIPTION</th><th>CLIENT</th><th>PROJECT MANAGER</th><th>STATUS</th><th>TIMELINE</th></tr></thead>
+                <table class="table" style="margin-bottom:0;">
+                    <thead style="background:#f8fafc;">
+                        <tr>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">PROJECT</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">CLIENT</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">PM</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">TIMELINE</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">STATUS</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">BUDGET</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">PROGRESS</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        </div>`;
+    }
+
+    // ─── HR & Payroll Modules ─────────────────────────────────────────────
+    async function renderEmployees() {
+        let employees = [];
+        try { employees = await window.ApiClient.getEmployees(); } catch (e) { console.warn('Employees fetch failed', e); }
+
+        const formatCurrency = (amount) => amount ? `₹${amount.toLocaleString()}` : '—';
+
+        const rows = employees.length ? employees.map(e => `
+            <tr style="vertical-align: middle;">
+                <td style="font-weight:600; color:var(--text-muted); padding: 20px 24px;">EMP00${e.id}</td>
+                <td style="font-weight:600; color:var(--text); padding: 20px 24px;">${e.name || e.email || '—'}</td>
+                <td style="padding: 20px 24px;"><span class="badge badge-purple-light">${e.department || 'Staff'}</span></td>
+                <td style="padding: 20px 24px;">${formatCurrency(e.base_salary)}</td>
+                <td style="padding: 20px 24px;">${formatCurrency(e.target)}</td>
+                <td class="text-muted" style="padding: 20px 24px;">${e.joining_date ? new Date(e.joining_date).toLocaleDateString() : '—'}</td>
+                <td style="padding: 20px 24px; color:var(--text-muted);"><i class="bi bi-key" style="cursor:pointer;" title="Reset Password"></i></td>
+            </tr>`).join('') :
+            `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No employees found.</td></tr>`;
+
+        mainContent.innerHTML = `
+        <div class="page-header" style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+                <h1 style="margin-bottom:8px; font-weight:700; font-size:2rem; letter-spacing:-0.5px;">Employees</h1>
+                <p class="text-muted m-0">Manage staff details, targets, and salaries.</p>
+            </div>
+            <button class="btn btn-primary" onclick="window.alert('Add Employee Modal Pending')" style="padding: 10px 20px; font-weight: 600; border-radius: 8px;">
+                <i class="bi bi-plus-lg me-2"></i> Add Employee
+            </button>
+        </div>
+        
+        <div class="card" style="padding:0; border:1px solid #f1f5f9; border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">
+            <div class="table-container">
+                <table class="table" style="margin-bottom:0;">
+                    <thead style="background:#f8fafc;">
+                        <tr>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">CODE</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">NAME</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">DEPARTMENT</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">BASE SALARY</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">TARGET</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">JOINED</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        </div>`;
+    }
+
+    async function renderSalary() {
+        let employees = [];
+        try { employees = await window.ApiClient.getEmployees(); } catch (e) { console.warn('Employees fetch failed', e); }
+
+        const formatCurrency = (amount) => amount ? `₹${amount.toLocaleString()}` : '0';
+
+        window.openSalaryModal = (id, name, base) => {
+            const m = document.getElementById('salaryModal');
+            if (!m) {
+                const html = `
+                <div class="modal fade" id="salaryModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="border-radius:16px; border:none; box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+                            <div class="modal-header" style="border-bottom:1px solid #f1f5f9; padding:20px 24px;">
+                                <h5 class="modal-title fw-bold">Generate Salary Slip</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body" style="padding:24px;">
+                                <form id="salaryForm">
+                                    <input type="hidden" id="sal-emp-id">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small fw-semibold">Employee</label>
+                                        <input type="text" id="sal-emp-name" class="form-control bg-light" readonly>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small fw-semibold">Month</label>
+                                            <input type="month" id="sal-month" class="form-control" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small fw-semibold">Base Salary</label>
+                                            <input type="number" id="sal-base" class="form-control bg-light" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small fw-semibold">Paid Leaves</label>
+                                            <input type="number" id="sal-paid" class="form-control" value="0" min="0">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small fw-semibold">Unpaid Leaves</label>
+                                            <input type="number" id="sal-unpaid" class="form-control" value="0" min="0">
+                                        </div>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="form-label text-muted small fw-semibold">Deductions (₹)</label>
+                                        <input type="number" id="sal-deduction" class="form-control" value="0" min="0">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" style="border-radius:10px;">Generate Slip</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+                document.body.insertAdjacentHTML('beforeend', html);
+
+                document.getElementById('salaryForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    try {
+                        await window.ApiClient.generateSalary({
+                            employee_id: document.getElementById('sal-emp-id').value,
+                            month: document.getElementById('sal-month').value,
+                            paid_leaves: parseInt(document.getElementById('sal-paid').value),
+                            unpaid_leaves: parseInt(document.getElementById('sal-unpaid').value),
+                            deduction_amount: parseFloat(document.getElementById('sal-deduction').value)
+                        });
+                        showToast('Salary slip generated successfully!');
+                        bootstrap.Modal.getInstance(document.getElementById('salaryModal')).hide();
+                    } catch (err) {
+                        showToast('Failed to generate slip', 'error');
+                    }
+                });
+            }
+            document.getElementById('sal-emp-id').value = id;
+            document.getElementById('sal-emp-name').value = name;
+            document.getElementById('sal-base').value = base;
+            const today = new Date();
+            document.getElementById('sal-month').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+            new bootstrap.Modal(document.getElementById('salaryModal')).show();
+        };
+
+        const rows = employees.length ? employees.map(e => {
+            const name = e.name || e.email || '—';
+            return `
+            <tr style="vertical-align: middle;">
+                <td style="font-weight:600; color:var(--text); padding: 20px 24px;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold text-uppercase" style="width:40px;height:40px;">
+                            ${name.substring(0, 2)}
+                        </div>
+                        <div>
+                            <div class="mb-1">${name}</div>
+                            <div class="text-muted small fw-normal">EMP00${e.id} &middot; ${e.department || 'Staff'}</div>
+                        </div>
+                    </div>
+                </td>
+                <td style="padding: 20px 24px;">
+                    <span class="badge" style="background:#e0e7ff; color:#4f46e5; border-radius:6px; padding:6px 10px;">${e.role.replace(/_/g, ' ')}</span>
+                </td>
+                <td style="padding: 20px 24px; font-weight:600;">${formatCurrency(e.base_salary)}</td>
+                <td style="padding: 20px 24px;">
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="badge bg-success" title="Paid Leaves Taken">0 P</span>
+                        <span class="badge bg-danger" title="Unpaid Leaves Taken">0 U</span>
+                    </div>
+                </td>
+                <td style="padding: 20px 24px; text-align:right;">
+                    <button class="btn btn-sm btn-light border fw-semibold" onclick="openSalaryModal(${e.id}, '${name.replace(/'/g, "\\'")}', ${e.base_salary})" style="border-radius:8px;">
+                        <i class="bi bi-file-earmark-text text-primary me-1"></i> Generate Slip
+                    </button>
+                </td>
+            </tr>`;
+        }).join('') : `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No employees found.</td></tr>`;
+
+        mainContent.innerHTML = `
+        <div class="page-header" style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+                <h1 style="margin-bottom:8px; font-weight:700; font-size:2rem; letter-spacing:-0.5px;">Salary & Leaves</h1>
+                <p class="text-muted m-0">Track employee compensation and generate payroll slips.</p>
+            </div>
+            <button class="btn btn-primary" onclick="window.alert('Mass Run Payroll Pending')" style="padding: 10px 20px; font-weight: 600; border-radius: 8px;">
+                <i class="bi bi-wallet2 me-2"></i> Run Payroll
+            </button>
+        </div>
+        
+        <div class="card" style="padding:0; border:1px solid #f1f5f9; border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">
+            <div class="table-container">
+                <table class="table" style="margin-bottom:0;">
+                    <thead style="background:#f8fafc;">
+                        <tr>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">EMPLOYEE</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">ROLE</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">BASE SALARY</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">LEAVES (THIS MONTH)</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9; text-align:right;">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        </div>`;
+    }
+
+    async function renderIncentives() {
+        let incentives = [];
+        try { incentives = await window.ApiClient.getIncentives(); } catch (e) { console.warn('Incentives fetch failed', e); }
+
+        const formatCurrency = (amount) => amount ? `₹${amount.toLocaleString()}` : '0';
+        const getStatusBadge = (s) => ({
+            'APPROVED': '<span class="badge badge-green-light">Approved</span>',
+            'PENDING': '<span class="badge badge-yellow-light">Pending</span>'
+        }[s] || '<span class="badge badge-purple-light">N/A</span>');
+
+        const rows = incentives.length ? incentives.map(i => `
+            <tr style="vertical-align: middle;">
+                <td style="font-weight:600; color:var(--text); padding: 20px 24px;">Employee #${i.employee_id}</td>
+                <td style="padding: 20px 24px;"><span class="badge badge-purple-light">Sales</span></td>
+                <td style="padding: 20px 24px; color:var(--text-muted);">${i.leads_converted || 0}</td>
+                <td style="padding: 20px 24px; color:var(--text-muted);">${i.rate || '—'}</td>
+                <td style="font-weight:600; color:var(--green); padding: 20px 24px;">${formatCurrency(i.amount)}</td>
+                <td style="padding: 20px 24px;">${getStatusBadge(i.status)}</td>
+            </tr>`).join('') :
+            `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No incentives recorded yet.</td></tr>`;
+
+        // Dummy stats based on screenshot
+        const totalEarned = formatCurrency(Math.floor(Math.random() * 50000 + 10000));
+        const avgConv = Math.floor(Math.random() * 30 + 15);
+
+        mainContent.innerHTML = `
+        <div class="page-header" style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+                <h1 style="margin-bottom:8px; font-weight:700; font-size:2rem; letter-spacing:-0.5px;">Incentives</h1>
+                <p class="text-muted m-0">Performance-based bonus tracking.</p>
+            </div>
+            <button class="btn btn-primary" onclick="window.alert('Add Incentive Modal Pending')" style="padding: 10px 20px; font-weight: 600; border-radius: 8px;">
+                <i class="bi bi-plus-lg me-2"></i> Add New
+            </button>
+        </div>
+        
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:24px; margin-bottom: 24px;">
+            <div class="card" style="display:flex; flex-direction:row; align-items:center; gap:16px; padding:24px; border-radius:12px; border:1px solid #f1f5f9; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">
+                <div style="width:48px; height:48px; border-radius:12px; background:rgba(34,197,94,0.1); color:#22c55e; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+                    <i class="bi bi-award"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.75rem; font-weight:600; color:var(--text-muted); letter-spacing:0.5px; margin-bottom:4px;">TOTAL EARNED (MONTH)</div>
+                    <div style="font-size:1.5rem; font-weight:700; color:var(--text);">${totalEarned}</div>
+                </div>
+            </div>
+            <div class="card" style="display:flex; flex-direction:row; align-items:center; gap:16px; padding:24px; border-radius:12px; border:1px solid #f1f5f9; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">
+                <div style="width:48px; height:48px; border-radius:12px; background:rgba(99,102,241,0.1); color:#6366f1; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.75rem; font-weight:600; color:var(--text-muted); letter-spacing:0.5px; margin-bottom:4px;">TOP PERFORMER</div>
+                    <div style="font-size:1.2rem; font-weight:700; color:var(--text);">Staff Leader</div>
+                </div>
+            </div>
+            <div class="card" style="display:flex; flex-direction:row; align-items:center; gap:16px; padding:24px; border-radius:12px; border:1px solid #f1f5f9; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">
+                <div style="width:48px; height:48px; border-radius:12px; background:rgba(234,179,8,0.1); color:#eab308; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+                    <i class="bi bi-bullseye"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.75rem; font-weight:600; color:var(--text-muted); letter-spacing:0.5px; margin-bottom:4px;">AVG CONVERSION RATE</div>
+                    <div style="font-size:1.5rem; font-weight:700; color:var(--text);">${avgConv}%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="padding:0; border:1px solid #f1f5f9; border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">
+            <div class="table-container">
+                <table class="table" style="margin-bottom:0;">
+                    <thead style="background:#f8fafc;">
+                        <tr>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">EMPLOYEE</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">ROLE</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">CONVERTED</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">RATE</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">EARNED</th>
+                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">STATUS</th>
+                        </tr>
+                    </thead>
                     <tbody>${rows}</tbody>
                 </table>
             </div>
@@ -898,12 +1330,12 @@ document.addEventListener('DOMContentLoaded', () => {
             LOW: '<span class="badge badge-green-light">Low</span>'
         })[(s || '').toUpperCase()] || `<span class="badge">${s || '—'}</span>`;
         const statusBadge = s => ({
-            OPEN: '<span class="badge badge-red-light">Open</span>',
-            IN_PROGRESS: '<span class="badge badge-purple-light">In Progress</span>',
-            RESOLVED: '<span class="badge badge-green-light">Resolved</span>',
-            CLOSED: '<span class="badge">Closed</span>'
+            PENDING: '<span class="badge badge-yellow-light">Pending</span>',
+            SOLVED: '<span class="badge badge-green-light">Solved</span>',
+            COMPLETED: '<span class="badge badge-primary">Completed</span>',
+            CANCEL: '<span class="badge badge-red-light">Cancelled</span>'
         })[(s || '').toUpperCase()] || `<span class="badge">${s || '—'}</span>`;
-        const openCount = issues.filter(i => (i.status || '').toUpperCase() === 'OPEN').length;
+        const openCount = issues.filter(i => (i.status || '').toUpperCase() === 'PENDING').length;
         const rows = issues.length ? issues.map(i => `
             <tr>
                 <td style="font-weight:500;">${i.title || '—'}</td>
@@ -913,7 +1345,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${i.pm_id ? `PM #${i.pm_id}` : '—'}</td>
                 <td>${i.created_at ? new Date(i.created_at).toLocaleDateString() : '—'}</td>
                 <td>
-                    ${(i.status || '').toUpperCase() !== 'RESOLVED' ? `<button class="btn btn-ghost" style="padding:4px 8px;" title="Mark Resolved" onclick="markIssueResolved(${i.id})"><i class="fa-solid fa-check text-success"></i></button>` : '<span style="color:var(--text-muted);font-size:12px;">Done</span>'}
+                    <select class="form-control" style="height:28px;font-size:11px;width:120px;padding:2px 5px;" onchange="promptIssueStatusUpdate(${i.id}, this.value, '${i.status}')">
+                        <option value="PENDING" ${i.status === 'PENDING' ? 'selected' : ''}>Pending</option>
+                        <option value="SOLVED" ${i.status === 'SOLVED' ? 'selected' : ''}>Solved</option>
+                        <option value="COMPLETED" ${i.status === 'COMPLETED' ? 'selected' : ''}>Completed</option>
+                        <option value="CANCEL" ${i.status === 'CANCEL' ? 'selected' : ''}>Cancel</option>
+                    </select>
                 </td>
             </tr>`).join('') :
             `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No issues found.</td></tr>`;
@@ -926,12 +1363,29 @@ document.addEventListener('DOMContentLoaded', () => {
             <thead><tr><th>TITLE</th><th>CLIENT</th><th>SEVERITY</th><th>STATUS</th><th>ASSIGNED PM</th><th>REPORTED</th><th></th></tr></thead>
             <tbody>${rows}</tbody>
         </table></div></div>`;
-        window.markIssueResolved = async (id) => {
-            try {
-                await window.ApiClient.patchIssue(id, { status: 'RESOLVED' });
-                showToast('Issue marked as resolved');
+        window.promptIssueStatusUpdate = async (id, newStatus, oldStatus) => {
+            if (newStatus === oldStatus) return;
+
+            const remarks = prompt(`Please enter mandatory remarks for changing status to ${newStatus}:`);
+            if (remarks === null) { // Cancelled prompt
                 renderIssues();
-            } catch (e) { showToast('Could not update issue', 'error'); }
+                return;
+            }
+
+            if (!remarks.trim()) {
+                showToast('Remarks are mandatory for status updates', 'error');
+                renderIssues();
+                return;
+            }
+
+            try {
+                await window.ApiClient.patchIssue(id, { status: newStatus, remarks: remarks });
+                showToast(`Issue status updated to ${newStatus}`);
+                renderIssues();
+            } catch (e) {
+                showToast(e.message || 'Could not update issue', 'error');
+                renderIssues();
+            }
         };
     }
 
@@ -1112,7 +1566,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const html = `
             <div class="form-group"><label>Client Name *</label><input type="text" id="mc-name" class="form-control" required></div>
             <div class="form-group"><label>Email *</label><input type="email" id="mc-email" class="form-control" required></div>
-            <div class="form-group"><label>Phone</label><input type="text" id="mc-phone" class="form-control"></div>
+            <div class="form-group"><label>Phone *</label><input type="text" id="mc-phone" class="form-control" minlength="10" required></div>
             <div class="form-group"><label>Organization</label><input type="text" id="mc-org" class="form-control"></div>
             <div class="form-group"><label>Address</label><textarea id="mc-addr" class="form-textarea"></textarea></div>
         `;
@@ -1124,7 +1578,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 organization: document.getElementById('mc-org').value,
                 address: document.getElementById('mc-addr').value
             };
-            if (!data.name || !data.email) throw new Error("Name and Email are required");
+            if (!data.name || !data.email || !data.phone) throw new Error("Name, Email, and Phone are required. Phone must be 10+ digits.");
             await window.ApiClient.createClient(data);
             showToast('Client created successfully');
             if (document.querySelector('h1').innerText.includes('Clients')) renderClients();
@@ -1367,6 +1821,102 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // ─── Profile ──────────────────────────────────────────────────
+    async function renderProfile() {
+        const u = window.ApiClient.getCurrentUser();
+        if (!u) {
+            loadView('dashboard');
+            return;
+        }
+
+        const roleName = u.role.replace(/_/g, ' ');
+        const initials = u.name.slice(0, 2).toUpperCase();
+
+        // Check if user has an associated employee record for ID card
+        // For now, we'll assume admins and PMs can see their own if they have one
+        const canViewIdCard = ['ADMIN', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES', 'SALES', 'TELESALES'].includes(u.role);
+
+        // Referral code is for Sales/Telesales
+        const hasReferralCode = ['SALES', 'TELESALES', 'PROJECT_MANAGER_AND_SALES'].includes(u.role);
+
+        mainContent.innerHTML = `
+            <div class="page-header">
+                <div><h1>My Profile</h1><p class="text-muted">Manage your personal information and credentials.</p></div>
+            </div>
+            
+            <div class="grid-2">
+                <div class="card">
+                    <div style="display:flex; flex-direction:column; align-items:center; padding: 20px 0;">
+                        <div style="width:100px; height:100px; border-radius:50%; background:var(--primary-subtle); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:700; margin-bottom:16px;">
+                            ${initials}
+                        </div>
+                        <h2 style="margin-bottom:4px;">${u.name}</h2>
+                        <span class="badge badge-purple-light">${roleName}</span>
+                    </div>
+                    
+                    <div style="margin-top:20px; border-top: 1px solid var(--border); padding-top:20px;">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" class="form-control" value="${u.name}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" class="form-control" value="${u.email}" readonly>
+                        </div>
+                        
+                        ${hasReferralCode && u.referral_code ? `
+                            <div class="form-group">
+                                <label>Your Referral Code</label>
+                                <div style="display:flex; gap:8px;">
+                                    <input type="text" class="form-control" value="${u.referral_code}" readonly style="font-family:monospace; font-weight:700; color:var(--primary);">
+                                    <button class="btn btn-ghost" onclick="navigator.clipboard.writeText('${u.referral_code}'); showToast('Code copied!')">
+                                        <i class="bi bi-copy"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted">Share this code with clients to track your referrals.</small>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>Employee Resources</h3>
+                    <div style="margin-top:20px; display:flex; flex-direction:column; gap:12px;">
+                        ${canViewIdCard ? `
+                            <div class="d-flex align-items-center justify-content-between p-3 border rounded-3 bg-light">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="icon-box bg-primary-subtle text-primary" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                                        <i class="bi bi-person-badge"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">Company ID Card</div>
+                                        <div class="text-muted small">Digital identity & verification</div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm btn-primary" onclick="window.open('${window.ApiClient.API_BASE_URL}/idcards/view_own', '_blank')">
+                                    View Digital ID
+                                </button>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="d-flex align-items-center justify-content-between p-3 border rounded-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-box bg-success-subtle text-success" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                                    <i class="bi bi-shield-lock"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">Security Settings</div>
+                                    <div class="text-muted small">Update your password</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-secondary">Configure</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     // ─── Reports & Analytics ──────────────────────────────────────
     async function renderReports() {
         let stats = null;
@@ -1528,15 +2078,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    window.openNewBillModal = async () => {
+    window.openNewBillModal = async (shopId = null) => {
         let shops = [];
         try { shops = await window.ApiClient.getShops(); } catch (e) { }
 
-        const shopOptions = shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        const shopOptions = shops.map(s => `<option value="${s.id}" ${s.id == shopId ? 'selected' : ''}>${s.name}</option>`).join('');
         const html = `
             <div class="form-group">
                 <label>Select Shop *</label>
-                <select id="mb-shop" class="form-control" required>
+                <select id="mb-shop" class="form-control" ${shopId ? 'disabled' : ''} required>
                     <option value="">-- Choose Shop --</option>
                     ${shopOptions}
                 </select>

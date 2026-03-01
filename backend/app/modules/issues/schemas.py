@@ -6,7 +6,7 @@ from app.modules.issues.models import IssueStatus, IssueSeverity
 class IssueBase(BaseModel):
     title: str
     description: Optional[str] = None
-    status: IssueStatus = IssueStatus.OPEN
+    status: IssueStatus = IssueStatus.PENDING
     severity: IssueSeverity = IssueSeverity.MEDIUM
     client_id: int
     project_id: Optional[int] = None
@@ -17,7 +17,7 @@ class IssueBase(BaseModel):
 class IssueCreate(BaseModel):
     title: str
     description: Optional[str] = None
-    status: IssueStatus = IssueStatus.OPEN
+    status: IssueStatus = IssueStatus.PENDING
     severity: IssueSeverity = IssueSeverity.MEDIUM
     project_id: Optional[int] = None
     remarks: Optional[str] = None

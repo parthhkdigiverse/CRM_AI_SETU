@@ -23,15 +23,35 @@ class EmployeeService:
         return db_employee
 
     @staticmethod
-    def get_employee(db: Session, employee_id: int) -> Employee:
-        employee = db.query(Employee).filter(Employee.id == employee_id).first()
-        if not employee:
+    def get_employee(db: Session, employee_id: int) -> dict:
+        result = db.query(Employee, User).join(User, Employee.user_id == User.id).filter(Employee.id == employee_id).first()
+        if not result:
             raise HTTPException(status_code=404, detail="Employee not found")
-        return employee
+        
+        emp, user = result
+        emp_data = emp.__dict__.copy()
+        emp_data["name"] = user.name
+        emp_data["email"] = user.email
+        emp_data["role"] = user.role
+        emp_data["referral_code"] = user.referral_code
+        return emp_data
 
     @staticmethod
     def list_employees(db: Session, skip: int = 0, limit: int = 100):
-        return db.query(Employee).offset(skip).limit(limit).all()
+        # Join with User to get extra details
+        results = db.query(Employee, User).join(User, Employee.user_id == User.id).offset(skip).limit(limit).all()
+        
+        employees_out = []
+        for emp, user in results:
+            emp_data = emp.__dict__.copy()
+            # Flatten user details into employee dict
+            emp_data["name"] = user.name
+            emp_data["email"] = user.email
+            emp_data["role"] = user.role
+            emp_data["referral_code"] = user.referral_code
+            employees_out.append(emp_data)
+            
+        return employees_out
 
     @staticmethod
     def update_employee(db: Session, employee_id: int, employee_in: EmployeeUpdate) -> Employee:

@@ -4,11 +4,11 @@ from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 class IssueStatus(str, enum.Enum):
-    OPEN = "OPEN"
     PENDING = "PENDING"
-    IN_PROGRESS = "IN_PROGRESS"
+    SOLVED = "SOLVED"
     RESOLVED = "RESOLVED"
-    CANCELLED = "CANCELLED"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCEL"
 
 class IssueSeverity(str, enum.Enum):
     HIGH = "HIGH"
@@ -21,7 +21,7 @@ class Issue(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True, nullable=False)
     description = Column(Text)
-    status = Column(String, default=IssueStatus.OPEN, nullable=False)
+    status = Column(String, default=IssueStatus.PENDING, nullable=False)
     severity = Column(String, default=IssueSeverity.MEDIUM, nullable=False)
     remarks = Column(Text, nullable=True)
     opened_at = Column(DateTime, nullable=True)
@@ -30,8 +30,13 @@ class Issue(Base):
     reporter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
-    client = relationship("app.modules.clients.models.Client", backref="issues")
-    project = relationship("app.modules.projects.models.Project", backref="issues")
-    reporter = relationship("app.modules.users.models.User", foreign_keys=[reporter_id], backref="reported_issues")
+    client = relationship("Client", backref="issues")
+    project = relationship("Project", backref="issues")
+    reporter = relationship("User", foreign_keys=[reporter_id], backref="reported_issues")
 
-    assigned_to = relationship("app.modules.users.models.User", foreign_keys=[assigned_to_id], backref="assigned_issues")
+    assigned_to = relationship("User", foreign_keys=[assigned_to_id], backref="assigned_issues")
+
+# Import models at the end to ensure they are registered without circular dependency issues
+from app.modules.clients.models import Client
+from app.modules.projects.models import Project
+from app.modules.users.models import User

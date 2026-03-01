@@ -30,5 +30,9 @@ class Shop(Base):
     
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
 
-    owner = relationship("app.modules.users.models.User", backref="assigned_shops")
-    area = relationship("app.modules.areas.models.Area", backref="shops")
+    owner = relationship("User", backref="assigned_shops")
+    area = relationship("Area", backref="shops")
+
+# Import models at the end to ensure they are registered without circular dependency issues
+from app.modules.areas.models import Area
+from app.modules.users.models import User

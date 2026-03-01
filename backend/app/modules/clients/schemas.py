@@ -8,6 +8,9 @@ class ClientBase(BaseModel):
     email: EmailStr
     phone: Optional[str] = None
     organization: Optional[str] = None
+    address: Optional[str] = None
+    project_type: Optional[str] = None
+    requirements: Optional[str] = None
 
     @field_validator("phone")
     @classmethod
@@ -38,6 +41,9 @@ class ClientRead(ClientBase):
     id: int
     pm_id: Optional[int] = None
     owner_id: Optional[int] = None
+    address: Optional[str] = None
+    project_type: Optional[str] = None
+    requirements: Optional[str] = None
 
     class Config:
         from_attributes = True

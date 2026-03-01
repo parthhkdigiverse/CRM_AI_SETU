@@ -28,6 +28,51 @@
             background: #4f46e5;
             border-radius: 14px;
         }
+
+        /* Password Wrapper for Internal Icon */
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            padding: 4px;
+            color: #64748b;
+            z-index: 10;
+            cursor: pointer;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle-btn:hover {
+            color: #4f46e5;
+        }
+
+        #password {
+            padding-right: 45px;
+        }
+
+        /* Hide browser's native reveal icon */
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none;
+        }
+
+        input::-webkit-contacts-auto-fill-button,
+        input::-webkit-credentials-auto-fill-button {
+            visibility: hidden;
+            display: none !important;
+            pointer-events: none;
+            position: absolute;
+            right: 0;
+        }
     </style>
 </head>
 
@@ -53,10 +98,10 @@
             </div>
             <div class="mb-4">
                 <label class="form-label fw-semibold">Password</label>
-                <div class="input-group">
+                <div class="input-group password-wrapper">
                     <span class="input-group-text"><i class="bi bi-lock"></i></span>
                     <input type="password" id="password" class="form-control" placeholder="••••••••" required>
-                    <button class="btn btn-outline-secondary" type="button" id="togglePassword"
+                    <button type="button" class="password-toggle-btn" id="togglePassword"
                         onclick="togglePasswordVisibility('password', 'password-icon')">
                         <i id="password-icon" class="bi bi-eye"></i>
                     </button>
@@ -72,35 +117,25 @@
         </p>
     </div>
 
-    <script src="../js/components.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/components.js?v=2.1"></script>
+
     <script src="../js/auth.js"></script>
     <script>
-        // API is globally defined in auth.js
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        fetch('http://127.0.0.1:8000/api/config', { signal: controller.signal })
-            .then(r => r.json())
-            .then(d => {
-                clearTimeout(timeoutId);
-                if (d.API_BASE_URL) API = d.API_BASE_URL;
-            })
-            .catch(e => {
-                clearTimeout(timeoutId);
-                console.warn('Config fetch failed or timed out, using default API:', e);
-            });
+        // auth.js now handles the global 'API' variable with caching.
 
         // Instead of blindly clearing tokens, auth.js pageshow handles auto-redirecting
         // if the session is still valid. If it's invalid, it clears them.
-        // We only clear here if we genuinely have an error or are explicitly logging out.
-
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('login-btn');
             const errEl = document.getElementById('login-error');
             errEl.classList.add('d-none');
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Signing in...';
+            btn.innerHTML = `
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Verifying Credentials...
+            `;
             btn.disabled = true;
 
             const formData = new URLSearchParams();
@@ -123,27 +158,17 @@
                 localStorage.setItem('access_token', data.access_token);
                 if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token);
 
-                // Get Profile and save to crm_user
-                try {
-                    const profileRes = await fetch(`${API}/auth/profile`, {
-                        headers: { 'Authorization': `Bearer ${data.access_token}` }
-                    });
-                    if (profileRes.ok) {
-                        const profile = await profileRes.json();
-                        localStorage.setItem('crm_user', JSON.stringify({
-                            id: profile.id,
-                            name: profile.name || profile.email || 'User',
-                            role: profile.role
-                        }));
-                    } else {
-                        localStorage.setItem('crm_user', JSON.stringify({ name: 'User', role: 'TELESALES' }));
-                    }
-                } catch (ex) {
-                    console.error("Profile fetch failed:", ex);
-                    localStorage.setItem('crm_user', JSON.stringify({ name: 'User', role: 'TELESALES' }));
-                }
-
+                // Fast Redirect (Sync profile on landing)
                 window.location.replace('dashboard.html');
+
+                // Background Sync (best-effort before page change)
+                fetch(`${API}/auth/profile`, {
+                    headers: { 'Authorization': `Bearer ${data.access_token}` }
+                }).then(r => r.json()).then(p => {
+                    localStorage.setItem('crm_user', JSON.stringify({
+                        id: p.id, name: p.name || p.email, role: p.role
+                    }));
+                }).catch(() => { });
             } catch (err) {
                 errEl.textContent = err.message || 'Login failed. Please try again.';
                 errEl.classList.remove('d-none');

@@ -19,9 +19,15 @@ class EmployeeUpdate(BaseModel):
     target: Optional[int] = None
     department: Optional[str] = None
 
+from app.modules.users.models import UserRole
+
 class EmployeeRead(EmployeeBase):
     id: int
     user_id: int
+    name: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[UserRole] = None
+    referral_code: Optional[str] = None
 
     class Config:
         from_attributes = True

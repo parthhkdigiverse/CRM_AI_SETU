@@ -106,7 +106,8 @@
         </div>
     </div>
 
-    <script src="../js/components.js"></script><script src="../js/auth.js"></script>
+    <script src="../js/components.js?v=2.1"></script>
+    <script src="../js/auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
@@ -190,7 +191,9 @@
             const photo = document.getElementById('v-photo').files[0];
 
             if (isSales && !photo && status !== 'SCHEDULED') {
-                // return showToast('Photo is required for Field Sales roles', 'error');
+                showToast('Photo is required for Field Sales roles', 'error');
+                btn.disabled = false; btn.textContent = 'Save Progress';
+                return;
             }
 
             const btn = document.getElementById('save-visit-btn');
@@ -207,12 +210,7 @@
             if (photo) fd.append('photo', photo);
 
             try {
-                const res = await fetch(`${API}/visits/`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${getToken()}` },
-                    body: fd
-                });
-                if (!res.ok) { const e = await res.json(); throw new Error(e.detail || 'Failed to save progress'); }
+                await ApiClient.createVisit(fd);
 
                 if (status === 'ACCEPT') {
                     showToast('Lead Accepted! Converting to client flow...', 'success');

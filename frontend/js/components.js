@@ -15,6 +15,7 @@ function logout() {
 function renderSidebar(active) {
     const u = getUser();
     const role = u?.role || 'TELESALES';
+    console.log('Sidebar Debug - Role:', role);
 
     const isAdmin = role === 'ADMIN';
     const isSales = role === 'SALES' || role === 'PROJECT_MANAGER_AND_SALES';
@@ -68,17 +69,20 @@ function renderSidebar(active) {
     // FIELD OPERATIONS
     if (isAdmin || isSales || isTelesales) {
         const fieldItems = [
-            { id: 'leads', href: 'leads.html', icon: 'bi-kanban', label: 'Project Overview' },
+            { id: 'leads', href: 'leads.html', icon: 'bi-bullseye', label: 'Project Overview' },
             { id: 'visits', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' }
         ];
-        if (isAdmin) fieldItems.splice(1, 0, { id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas' });
+        // Only Admin, Sales and PM can manage Areas & Shops
+        if (isAdmin || isSales || isPM) {
+            fieldItems.splice(1, 0, { id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas & Shops' });
+        }
         nav += sbSection('field', 'Field Operations', 'bi-geo-alt', fieldItems);
     }
 
     // PROJECT MANAGEMENT
     if (isAdmin || isPM) {
         nav += sbSection('pm', 'Project Management', 'bi-briefcase', [
-            { id: 'projects', href: 'reports.html', icon: 'bi-briefcase', label: 'Projects' },
+            { id: 'projects', href: 'projects.html', icon: 'bi-briefcase', label: 'Projects' },
             { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
             { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
         ]);
@@ -87,11 +91,9 @@ function renderSidebar(active) {
     // CLIENT RELATIONS
     if (isAdmin || isSales || isTelesales || isPM) {
         const crItems = [
-            { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' }
+            { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
+            { id: 'payment', href: 'javascript:void(0)', onclick: "if(window.loadView) window.loadView('billing');", icon: 'bi-file-earmark-medical', label: 'Payment' }
         ];
-        if (isAdmin || isSales || isTelesales || isPM) {
-            crItems.push({ id: 'payment', href: 'javascript:void(0)', icon: 'bi-file-earmark-medical', label: 'Payment' });
-        }
         if (isAdmin || isPM) {
             crItems.push({ id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' });
         }
@@ -101,9 +103,9 @@ function renderSidebar(active) {
     // HR & PAYROLL
     if (isAdmin) {
         nav += sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', [
-            { id: 'hrm', href: 'hrm.html', icon: 'bi-people', label: 'Employees' },
-            { id: 'salary', href: 'hrm.html#tab-salary', icon: 'bi-calendar3', label: 'Salary & Leaves' },
-            { id: 'incentives', href: 'hrm.html#tab-incentives', icon: 'bi-trophy', label: 'Incentives' }
+            { id: 'employees', href: 'employees.html', icon: 'bi-people', label: 'Employees' },
+            { id: 'salary', href: 'salary.html', icon: 'bi-calendar3', label: 'Salary & Leaves' },
+            { id: 'incentives', href: 'incentives.html', icon: 'bi-trophy', label: 'Incentives' }
         ]);
     }
 
@@ -117,7 +119,7 @@ function renderSidebar(active) {
     return `
     <div id="sidebar-container">
         <div class="sidebar-brand">
-            <div class="sidebar-brand-icon"><i class="bi bi-diagram-3-fill"></i></div>
+            <div class="sidebar-brand-icon"><i class="bi bi-grid-fill"></i></div>
             <span>CRM AI SETU</span>
         </div>
         <div class="sb-scroll-area">${nav}</div>
@@ -172,7 +174,7 @@ function injectTopHeader(pageTitle) {
         'Users & Roles': 'Administration',
         'Project Overview': 'Field Operations',
         'Visits': 'Field Operations',
-        'Areas': 'Field Operations',
+        'Areas & Shops': 'Field Operations',
         'Projects': 'Project Management',
         'Meetings': 'Project Management',
         'Issues': 'Project Management',
@@ -226,7 +228,8 @@ function injectTopHeader(pageTitle) {
                     <i class="bi bi-plus-lg"></i> Add New
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px;">
-                    <li><a class="dropdown-item py-2" href="leads.html?add=true" style="border-radius:8px;"><i class="bi bi-bullseye me-2 text-primary"></i> New Lead</a></li>
+                    <li><a class="dropdown-item py-2" href="leads.html?add=true" style="border-radius:8px;"><i class="bi bi-bullseye me-2 text-primary"></i> New Project</a></li>
+                    <li><a class="dropdown-item py-2" href="areas.html?add=true" style="border-radius:8px;"><i class="bi bi-building me-2 text-primary" style="color: #6366f1 !important;"></i> New Area/Shop</a></li>
                     <li><a class="dropdown-item py-2" href="clients.html" style="border-radius:8px;"><i class="bi bi-people me-2 text-info"></i> New Client</a></li>
                     <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="if(window.openNewBillModal) window.openNewBillModal();" style="border-radius:8px;"><i class="bi bi-file-invoice-dollar me-2 text-danger"></i> New Payment</a></li>
                     <li><a class="dropdown-item py-2" href="issues.html" style="border-radius:8px;"><i class="bi bi-exclamation-triangle me-2 text-warning"></i> New Issue</a></li>

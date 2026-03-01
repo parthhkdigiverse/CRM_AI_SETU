@@ -1,9 +1,16 @@
 // auth.js — shared across all pages
-let API = 'http://127.0.0.1:8000/api'; // Fallback
+let API = localStorage.getItem('api_base') || 'http://127.0.0.1:8000/api';
+
+// Background Refresh Config
 fetch('http://127.0.0.1:8000/api/config')
     .then(r => r.json())
-    .then(data => { API = data.API_BASE_URL; })
-    .catch(e => console.warn('Using default API due to fetch error:', e));
+    .then(data => {
+        if (data.API_BASE_URL) {
+            API = data.API_BASE_URL;
+            localStorage.setItem('api_base', API);
+        }
+    })
+    .catch(e => console.warn('Config fetch error:', e));
 
 // Inject global theme styles
 document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/theme.css">');
@@ -28,58 +35,73 @@ function getUser() {
 
 // Guard: call on every protected page
 function requireAuth() {
-    // Development Bypass: Allow viewing template via ?dev=true ONLY on local environments
     const params = new URLSearchParams(window.location.search);
     const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
+    const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
 
     if (params.get('dev') === 'true' && isLocal) {
-        console.warn('Auth check bypassed via dev flag (Local Only).');
         document.body.style.visibility = 'visible';
-        // Still inject header for development visibility
         let pageName = document.title.split('—')[0].trim();
         if (!pageName || pageName === 'CRM AI SETU') pageName = 'Dashboard';
-        injectTopHeader(pageName);
+        if (typeof injectTopHeader === 'function') injectTopHeader(pageName);
         return;
     }
 
     const token = getToken();
+    const user = getUser();
+
     if (!token) {
-        window.location.replace('index.html');
+        if (!isLoginPage) window.location.replace('index.html');
         return;
     }
 
-    // Hide page while we verify the token is still valid
-    document.body.style.visibility = 'hidden';
+    // --- OPTIMISTIC UI ---
+    // If we have a user in session, show the page IMMEDIATELY.
+    if (user) {
+        document.body.style.visibility = 'visible';
+        const el = document.getElementById('username-display');
+        if (el) el.textContent = user.name || 'User';
 
-    fetch('http://127.0.0.1:8000/api/auth/profile', {
+        // Inject header immediately
+        let pageName = document.title.split('—')[0].trim();
+        if (!pageName || pageName === 'CRM AI SETU') pageName = 'Dashboard';
+        if (typeof injectTopHeader === 'function') injectTopHeader(pageName);
+    } else {
+        // Fallback: hide until we get a profile (rare)
+        document.body.style.visibility = 'hidden';
+        // Emergency unhide after 3 seconds to prevent permanent black screen
+        setTimeout(() => { document.body.style.visibility = 'visible'; }, 3000);
+    }
+
+    // Background Verification
+    fetch(`${API}/auth/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
     })
         .then(r => {
             if (!r.ok) {
-                // Token invalid/expired OR server returned an error — kick to login
-                clearTokens();
-                window.location.replace('index.html');
-                return;
+                if (r.status === 401) {
+                    clearTokens();
+                    if (!isLoginPage) window.location.replace('index.html');
+                }
+                return null;
             }
-            // Token is valid — show the page
-            document.body.style.visibility = 'visible';
-            const u = getUser();
-            const el = document.getElementById('username-display');
-            if (el && u) el.textContent = u.name || u.email || 'User';
+            return r.json();
+        })
+        .then(profile => {
+            if (!profile) return;
+            const userData = { id: profile.id, name: profile.name || profile.email, role: profile.role };
+            localStorage.setItem('crm_user', JSON.stringify(userData));
 
-            // Auto-inject theme header
+            document.body.style.visibility = 'visible';
+            const el = document.getElementById('username-display');
+            if (el) el.textContent = profile.name || 'User';
+
             let pageName = document.title.split('—')[0].trim();
-            if (!pageName || pageName === 'CRM AI SETU') pageName = 'Dashboard';
-            injectTopHeader(pageName);
+            if (typeof injectTopHeader === 'function') injectTopHeader(pageName);
         })
         .catch((err) => {
-            // Network error — server is completely unreachable
-            // Instead of redirecting to login (which assumes bad credentials),
-            // show the page but maybe with a warning or just let the API calls fail.
-            // If we redirect to login while server is down, it creates an infinite loop.
-            console.error('Auth check failed: Server unreachable', err);
+            console.warn('Background auth check failed:', err);
             document.body.style.visibility = 'visible';
-            showToast('Server connection unstable', 'error');
         });
 }
 

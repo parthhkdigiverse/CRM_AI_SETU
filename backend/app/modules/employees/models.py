@@ -13,5 +13,9 @@ class Employee(Base):
     target = Column(Integer, default=0)
     department = Column(String, nullable=True)
 
-    user = relationship("app.modules.users.models.User", backref="employee_profile")
-    leaves = relationship("app.modules.salary.models.LeaveRecord", back_populates="employee")
+    user = relationship("User", backref="employee_profile")
+    leaves = relationship("LeaveRecord", back_populates="employee")
+
+# Import related models for relationships
+from app.modules.users.models import User
+from app.modules.salary.models import LeaveRecord
