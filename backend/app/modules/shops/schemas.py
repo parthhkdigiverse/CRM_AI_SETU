@@ -8,6 +8,7 @@ class ShopBase(BaseModel):
     contact_person: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
+    area_id: Optional[int] = None
 
 class ShopCreate(ShopBase):
     pass
@@ -22,6 +23,7 @@ class ShopUpdate(BaseModel):
 class ShopRead(ShopBase):
     id: int
     created_at: datetime
+    area_name: Optional[str] = None
 
     class Config:
         from_attributes = True

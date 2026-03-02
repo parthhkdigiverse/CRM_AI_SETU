@@ -17,11 +17,18 @@ class ShopService:
         shop = db.query(Shop).filter(Shop.id == shop_id).first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
+        if getattr(shop, 'area', None):
+            setattr(shop, 'area_name', shop.area.name)
         return shop
 
     @staticmethod
     def list_shops(db: Session, skip: int = 0, limit: int = 100):
-        return db.query(Shop).offset(skip).limit(limit).all()
+        shops = db.query(Shop).offset(skip).limit(limit).all()
+        # Add area_name to shop models dynamically
+        for shop in shops:
+            if getattr(shop, 'area', None):
+                setattr(shop, 'area_name', shop.area.name)
+        return shops
 
     @staticmethod
     def update_shop(db: Session, shop_id: int, shop_in: ShopUpdate):

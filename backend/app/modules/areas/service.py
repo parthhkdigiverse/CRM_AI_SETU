@@ -9,7 +9,11 @@ class AreaService:
         self.db = db
 
     def get_areas(self, skip: int = 0, limit: int = 100):
-        return self.db.query(Area).offset(skip).limit(limit).all()
+        areas = self.db.query(Area).offset(skip).limit(limit).all()
+        for area in areas:
+            # We add shops_count dynamically to the model 
+            setattr(area, 'shops_count', len(area.shops) if area.shops else 0)
+        return areas
 
     def create_area(self, area_in: AreaCreate):
         area = Area(**area_in.model_dump())

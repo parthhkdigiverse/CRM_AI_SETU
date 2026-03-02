@@ -5,6 +5,8 @@ class AreaBase(BaseModel):
     name: str
     pincode: Optional[str] = None
     city: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
 
 class AreaCreate(AreaBase):
     pass
@@ -15,5 +17,6 @@ class AreaAssign(BaseModel):
 class AreaRead(AreaBase):
     id: int
     assigned_user_id: Optional[int] = None
+    shops_count: Optional[int] = 0
     
     model_config = ConfigDict(from_attributes=True)

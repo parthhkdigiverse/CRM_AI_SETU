@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Float
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -10,5 +10,7 @@ class Area(Base):
     pincode = Column(String, index=True, nullable=True)
     city = Column(String, index=True, nullable=True)
     assigned_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-
+    # Add Google Maps coordinates
+    lat = Column(Float, nullable=True)
+    lng = Column(Float, nullable=True)
     assigned_user = relationship("app.modules.users.models.User", backref="assigned_areas")
