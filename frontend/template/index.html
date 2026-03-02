@@ -28,6 +28,51 @@
             background: #4f46e5;
             border-radius: 14px;
         }
+
+        /* Password Wrapper for Internal Icon */
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            padding: 4px;
+            color: #64748b;
+            z-index: 10;
+            cursor: pointer;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle-btn:hover {
+            color: #4f46e5;
+        }
+
+        #password {
+            padding-right: 45px;
+        }
+
+        /* Hide browser's native reveal icon */
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none;
+        }
+
+        input::-webkit-contacts-auto-fill-button,
+        input::-webkit-credentials-auto-fill-button {
+            visibility: hidden;
+            display: none !important;
+            pointer-events: none;
+            position: absolute;
+            right: 0;
+        }
     </style>
 </head>
 
@@ -53,9 +98,13 @@
             </div>
             <div class="mb-4">
                 <label class="form-label fw-semibold">Password</label>
-                <div class="input-group">
+                <div class="input-group password-wrapper">
                     <span class="input-group-text"><i class="bi bi-lock"></i></span>
                     <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+                    <button type="button" class="password-toggle-btn" id="togglePassword"
+                        onclick="togglePasswordVisibility('password', 'password-icon')">
+                        <i id="password-icon" class="bi bi-eye"></i>
+                    </button>
                 </div>
             </div>
             <button type="submit" id="login-btn" class="btn btn-primary w-100 fw-semibold py-2">
@@ -68,21 +117,25 @@
         </p>
     </div>
 
-    <script>
-        let API = 'http://127.0.0.1:8000/api';
-        fetch('http://127.0.0.1:8000/api/config').then(r => r.json()).then(d => { API = d.API_BASE_URL; }).catch(e => e);
+    <script src="../js/utils.js"></script>
+    <script src="../js/components.js?v=2.1"></script>
 
-        // If already logged in, redirect
-        if (sessionStorage.getItem('access_token')) {
-            window.location.replace('dashboard.html');
-        }
+    <script src="../js/auth.js"></script>
+    <script>
+        // auth.js now handles the global 'API' variable with caching.
+
+        // Instead of blindly clearing tokens, auth.js pageshow handles auto-redirecting
+        // if the session is still valid. If it's invalid, it clears them.
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('login-btn');
             const errEl = document.getElementById('login-error');
             errEl.classList.add('d-none');
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Signing in...';
+            btn.innerHTML = `
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Verifying Credentials...
+            `;
             btn.disabled = true;
 
             const formData = new URLSearchParams();
@@ -102,31 +155,20 @@
                 }
 
                 const data = await res.json();
-                sessionStorage.setItem('access_token', data.access_token);
-                if (data.refresh_token) sessionStorage.setItem('refresh_token', data.refresh_token);
+                localStorage.setItem('access_token', data.access_token);
+                if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token);
 
-                // Decode JWT to get user_id, then find employee info
-                try {
-                    const payload = JSON.parse(atob(data.access_token.split('.')[1]));
-                    const userId = payload.sub; // user_id is in 'sub'
-                    const empsRes = await fetch(`${API}/employees/`, {
-                        headers: { 'Authorization': `Bearer ${data.access_token}` }
-                    });
-                    let userName = 'User', userRole = '';
-                    if (empsRes.ok) {
-                        const emps = await empsRes.json();
-                        const me = emps.find(e => String(e.user_id) === String(userId));
-                        if (me) { userName = me.full_name || me.name || 'User'; userRole = me.role || ''; }
-                    } else {
-                        const myProfile = await fetch(`${API}/auth/profile`, { headers: { 'Authorization': `Bearer ${data.access_token}` } }).then(r => r.json()).catch(() => null);
-                        if (myProfile) { userName = myProfile.full_name || 'User'; userRole = myProfile.role || ''; }
-                    }
-                    sessionStorage.setItem('crm_user', JSON.stringify({ id: userId, name: userName, role: userRole }));
-                } catch (ex) {
-                    sessionStorage.setItem('crm_user', JSON.stringify({ name: 'User', role: '' }));
-                }
-
+                // Fast Redirect (Sync profile on landing)
                 window.location.replace('dashboard.html');
+
+                // Background Sync (best-effort before page change)
+                fetch(`${API}/auth/profile`, {
+                    headers: { 'Authorization': `Bearer ${data.access_token}` }
+                }).then(r => r.json()).then(p => {
+                    localStorage.setItem('crm_user', JSON.stringify({
+                        id: p.id, name: p.name || p.email, role: p.role
+                    }));
+                }).catch(() => { });
             } catch (err) {
                 errEl.textContent = err.message || 'Login failed. Please try again.';
                 errEl.classList.remove('d-none');

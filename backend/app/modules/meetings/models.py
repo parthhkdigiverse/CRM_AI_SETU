@@ -1,7 +1,8 @@
 import enum
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Enum
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, UTC
+
 from app.core.database import Base
 
 class MeetingStatus(str, enum.Enum):
@@ -15,7 +16,8 @@ class MeetingSummary(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True, nullable=False)
     content = Column(Text, nullable=False)
-    date = Column(DateTime, default=datetime.utcnow)
+    date = Column(DateTime, default=lambda: datetime.now(UTC))
+
     status = Column(Enum(MeetingStatus), default=MeetingStatus.SCHEDULED)
     cancellation_reason = Column(Text, nullable=True)
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)

@@ -3,7 +3,8 @@ import shutil
 from pathlib import Path
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, UploadFile, Request
-from datetime import datetime
+from datetime import datetime, UTC
+
 from app.modules.visits.models import Visit, VisitStatus
 from app.modules.visits.schemas import VisitCreate, VisitUpdate
 from app.modules.users.models import User
@@ -40,7 +41,8 @@ class VisitService:
         visit_data = visit_in.model_dump()
         
         # Validation: Duplicate Visit Protection (One per user, per lead, per day)
-        target_date = visit_data.get('visit_date') or datetime.utcnow()
+        target_date = visit_data.get('visit_date') or datetime.now(UTC)
+
         start_of_day = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
         end_of_day = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
         
@@ -61,7 +63,8 @@ class VisitService:
             try:
                 # Validate file extension if needed, for now accept images
                 file_ext = photo.filename.split(".")[-1]
-                filename = f"visit_{visit_in.shop_id}_{current_user.id}_{int(datetime.utcnow().timestamp())}.{file_ext}"
+                filename = f"visit_{visit_in.shop_id}_{current_user.id}_{int(datetime.now(UTC).timestamp())}.{file_ext}"
+
                 file_path = UPLOAD_DIR / filename
                 
                 with file_path.open("wb") as buffer:
@@ -78,7 +81,31 @@ class VisitService:
         self.db.add(visit)
         self.db.commit()
         self.db.refresh(visit)
-        
+
+        # --- Auto-transition Shop status based on visit outcome ---
+        from app.modules.shops.models import ShopStatus
+        shop = self.db.query(Shop).filter(Shop.id == visit_in.shop_id).first()
+        if shop:
+            current = shop.status
+            new_status = None
+
+            # Any visit: move NEW → CONTACTED
+            if current == ShopStatus.NEW:
+                new_status = ShopStatus.CONTACTED
+
+            # Visit outcome: ACCEPT → MEETING_SET
+            if visit.status == VisitStatus.ACCEPT and current == ShopStatus.CONTACTED:
+                new_status = ShopStatus.MEETING_SET
+
+            # Visit outcome: SATISFIED → CONVERTED (only from MEETING_SET)
+            if visit.status == VisitStatus.SATISFIED and current == ShopStatus.MEETING_SET:
+                new_status = ShopStatus.CONVERTED
+
+            if new_status and new_status != current:
+                shop.status = new_status
+                self.db.commit()
+        # ----------------------------------------------------------
+
         # Helper for activity logging
         
         await self.activity_logger.log_activity(

@@ -11,14 +11,31 @@ class ProjectService:
         self.db = db
         self.activity_logger = ActivityLogger(db)
 
-    def get_project(self, project_id: int):
-        return self.db.query(Project).filter(Project.id == project_id).first()
-
     def get_projects(self, skip: int = 0, limit: int = 100, pm_id: int = None):
         query = self.db.query(Project)
         if pm_id:
             query = query.filter(Project.pm_id == pm_id)
-        return query.order_by(Project.created_at.desc()).offset(skip).limit(limit).all()
+        
+        projects = query.order_by(Project.created_at.desc()).offset(skip).limit(limit).all()
+        
+        # Calculate progress for each project
+        from app.modules.issues.models import Issue, IssueStatus
+        for p in projects:
+            p.total_issues = self.db.query(Issue).filter(Issue.project_id == p.id).count()
+            p.resolved_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.status == IssueStatus.RESOLVED).count()
+            p.progress_percentage = (p.resolved_issues / p.total_issues * 100) if p.total_issues > 0 else 0.0
+            
+        return projects
+
+    def get_project(self, project_id: int):
+        project = self.db.query(Project).filter(Project.id == project_id).first()
+        if project:
+            from app.modules.issues.models import Issue, IssueStatus
+            project.total_issues = self.db.query(Issue).filter(Issue.project_id == project_id).count()
+            project.resolved_issues = self.db.query(Issue).filter(Issue.project_id == project_id, Issue.status == IssueStatus.RESOLVED).count()
+            project.progress_percentage = (project.resolved_issues / project.total_issues * 100) if project.total_issues > 0 else 0.0
+        return project
+
 
     async def create_project(self, project_in: ProjectCreate, current_user: User, request: Request):
         project_data = project_in.model_dump()

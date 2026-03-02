@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum, Float
+
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -25,6 +26,8 @@ class Project(Base):
     
     start_date = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
+    budget = Column(Float, default=0.0)
+
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

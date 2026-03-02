@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum, Boolean
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, UTC
+
 import enum
 from app.core.database import Base
 
@@ -21,8 +22,9 @@ class Todo(Base):
     due_date = Column(DateTime, nullable=True)
     status = Column(Enum(TodoStatus), default=TodoStatus.PENDING)
     
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+
 
     # Relationship
     user = relationship("app.modules.users.models.User", backref="todos")

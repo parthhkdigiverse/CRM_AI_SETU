@@ -18,7 +18,8 @@ class MeetingService:
         return self.db.query(MeetingSummary).offset(skip).limit(limit).all()
 
     async def create_meeting(self, meeting: MeetingSummaryCreate, current_user: User, request: Request):
-        db_meeting = MeetingSummary(**meeting.dict())
+        db_meeting = MeetingSummary(**meeting.model_dump())
+
         self.db.add(db_meeting)
         self.db.commit()
         self.db.refresh(db_meeting)
@@ -30,7 +31,8 @@ class MeetingService:
             entity_type=EntityType.MEETING,
             entity_id=db_meeting.id,
             old_data=None,
-            new_data=meeting.dict(),
+            new_data=meeting.model_dump(),
+
             request=request
         )
 
@@ -47,7 +49,8 @@ class MeetingService:
             "status": db_meeting.status.value if hasattr(db_meeting.status, 'value') else str(db_meeting.status)
         }
 
-        update_data = meeting_update.dict(exclude_unset=True)
+        update_data = meeting_update.model_dump(exclude_unset=True)
+
         for key, value in update_data.items():
             setattr(db_meeting, key, value)
 
@@ -73,4 +76,22 @@ class MeetingService:
             request=request
         )
 
+        return db_meeting
+    async def import_meeting_summary(self, meeting_id: int):
+        db_meeting = self.get_meeting(meeting_id)
+        if not db_meeting:
+            raise HTTPException(status_code=404, detail="Meeting not found")
+        
+        # In a real app, this would call Google Meet API or analyze a transcript.
+        # Here we simulate the extraction.
+        summary_text = (
+            f"Imported Google Meet Summary for Meeting {meeting_id}:\n"
+            f"- Discussed project timeline.\n"
+            f"- Agreed on next steps."
+        )
+        
+        db_meeting.content = summary_text
+        db_meeting.status = MeetingStatus.COMPLETED
+        self.db.commit()
+        self.db.refresh(db_meeting)
         return db_meeting

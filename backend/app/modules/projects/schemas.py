@@ -11,6 +11,7 @@ class ProjectBase(BaseModel):
     status: Optional[ProjectStatus] = ProjectStatus.PLANNING
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
+    budget: Optional[float] = 0.0
 
 class ProjectCreate(ProjectBase):
     pass
@@ -22,10 +23,18 @@ class ProjectUpdate(BaseModel):
     status: Optional[ProjectStatus] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
+    budget: Optional[float] = None
+
 
 class ProjectRead(ProjectBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    
+    # Progress metrics (calculated in service)
+    total_issues: Optional[int] = 0
+    resolved_issues: Optional[int] = 0
+    progress_percentage: Optional[float] = 0.0
 
     model_config = ConfigDict(from_attributes=True)
+

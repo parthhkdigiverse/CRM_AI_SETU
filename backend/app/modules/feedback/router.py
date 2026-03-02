@@ -2,11 +2,11 @@ from typing import List, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.dependencies import RoleChecker
+from app.core.dependencies import RoleChecker, get_current_user
 from app.modules.users.models import User, UserRole
 from app.modules.clients.models import Client
-from app.modules.feedback.models import Feedback
-from app.modules.feedback.schemas import FeedbackCreate, FeedbackRead
+from app.modules.feedback.models import Feedback, UserFeedback
+from app.modules.feedback.schemas import FeedbackCreate, FeedbackRead, UserFeedbackCreate, UserFeedbackRead
 
 router = APIRouter()
 
@@ -25,49 +25,47 @@ def create_feedback(
     feedback_in: FeedbackCreate,
     db: Session = Depends(get_db)
 ) -> Any:
-    """
-    Submit feedback for a client. Public endpoint.
-    """
+    from app.modules.feedback.service import FeedbackService
+    service = FeedbackService(db)
+    # Ensure client exists
+    from app.modules.clients.models import Client
     db_client = db.query(Client).filter(Client.id == client_id).first()
     if not db_client:
         raise HTTPException(status_code=404, detail="Client not found")
     
-    # Validate rating
-    if not (1 <= feedback_in.rating <= 5):
-        raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
-
-    dump = feedback_in.model_dump()
-    if "client_id" in dump:
-        del dump["client_id"]
-
-    db_feedback = Feedback(
-        **dump,
-        client_id=client_id
-    )
-    db.add(db_feedback)
-    db.commit()
-    db.refresh(db_feedback)
-    return db_feedback
+    feedback_in.client_id = client_id
+    return service.create_client_feedback(feedback_in)
 
 @router.get("/{client_id}/feedback", response_model=List[FeedbackRead])
 def read_client_feedback(
     client_id: int,
-    page: int = Query(1, ge=1),
-    limit: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
 ) -> Any:
-    db_client = db.query(Client).filter(Client.id == client_id).first()
-    if not db_client:
-        raise HTTPException(status_code=404, detail="Client not found")
-        
-    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    from app.modules.feedback.service import FeedbackService
+    service = FeedbackService(db)
+    return service.get_client_feedbacks(client_id)
 
-    offset = (page - 1) * limit
-    feedbacks = db.query(Feedback).filter(Feedback.client_id == client_id)\
-        .order_by(Feedback.created_at.desc())\
-        .offset(offset).limit(limit).all()
-        
-    return feedbacks
+@router.post("/user", response_model=UserFeedbackRead, status_code=status.HTTP_201_CREATED)
+def create_user_feedback(
+    feedback_in: UserFeedbackCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    from app.modules.feedback.service import FeedbackService
+    service = FeedbackService(db)
+    return service.create_user_feedback(current_user.id, feedback_in)
+
+@router.get("/user", response_model=List[UserFeedbackRead])
+def read_user_feedbacks(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    from app.modules.feedback.service import FeedbackService
+    service = FeedbackService(db)
+    if current_user.role == UserRole.ADMIN:
+        return service.get_user_feedbacks()
+    else:
+        # Filter in service ideally, but for now:
+        return [f for f in service.get_user_feedbacks() if f.user_id == current_user.id]
 
