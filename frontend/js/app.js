@@ -2040,6 +2040,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+<<<<<<< HEAD
     async function renderBilling() {
         try {
             const bills = await window.ApiClient.getBills();
@@ -2421,6 +2422,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 >>>>>>> Stashed changes
+=======
+>>>>>>> fe8cc333fc54a8a0054fbef9f31c83834c4bed83
     // Kickoff
     checkAuth();
 });

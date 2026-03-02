@@ -38,3 +38,6 @@ Thumbs.db
 
 # ─── Uploads / Static generated files ───────────────────────────────────────
 backend/static/uploads/
+
+# Temp scripts
+resolve.py

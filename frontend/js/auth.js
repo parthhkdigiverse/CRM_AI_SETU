@@ -242,6 +242,7 @@ function showToast(msg, type = 'success') {
     el.addEventListener('hidden.bs.toast', () => el.remove());
 }
 
+<<<<<<< HEAD
 // Shared sidebar HTML
 function renderSidebar(active) {
     const u = getUser();
@@ -411,3 +412,6 @@ function injectTopHeader(pageTitle) {
         rightSide.appendChild(contentContainer);
     }
 }
+=======
+// Components are now housed in js/components.js
+>>>>>>> fe8cc333fc54a8a0054fbef9f31c83834c4bed83
