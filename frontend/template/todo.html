@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>To-Do List — CRM AI SETU</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background: #f1f5f9;
+        }
+
+        .smaller {
+            font-size: 0.75rem;
+        }
+
+        .badge-purple-light {
+            background: #f5f3ff;
+            color: #7c3aed;
+            border: 1px solid #ede9fe;
+        }
+
+        .badge-green-light {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        .badge-yellow-light {
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
+        }
+
+        .badge-info-custom {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+
+        .btn-ghost:hover {
+            background: #f8fafc;
+        }
+
+        .stat-card {
+            border-radius: 14px;
+            background: #fff;
+            box-shadow: 0 1px 8px rgba(0, 0, 0, .07);
+            padding: 20px 24px;
+        }
+
+        .stat-card .label {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .stat-card .value {
+            font-size: 1.9rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .todo-table thead th {
+            font-size: 0.72rem;
+            letter-spacing: .05em;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e2e8f0;
+            background: #f8fafc;
+        }
+
+        .todo-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .todo-table td {
+            vertical-align: middle;
+            padding: 14px 16px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .avatar-circle {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #eef2ff;
+            color: #4f46e5;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Modal */
+        .modal-custom-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .45);
+            z-index: 1050;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-custom-overlay.show {
+            display: flex;
+        }
+
+        .modal-custom-box {
+            background: #fff;
+            border-radius: 18px;
+            padding: 32px 28px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .18);
+            position: relative;
+            animation: fadeSlideIn .22s ease-out;
+        }
+
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-custom-box h5 {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .modal-custom-close {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            color: #94a3b8;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-custom-close:hover {
+            color: #334155;
+        }
+
+        /* ── Switch to Calendar view button ─────────────────────── */
+        .task-toggle-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #5f6368;
+            font-size: 1rem;
+            position: relative;
+            transition: background .15s, color .15s;
+            text-decoration: none;
+        }
+
+        .task-toggle-btn:hover {
+            background: #f1f5f9;
+            color: #4f46e5;
+        }
+
+        .task-toggle-btn.active {
+            background: #e8eafd !important;
+            color: #4f46e5 !important;
+            border-color: #c7d2fe !important;
+        }
+
+        .task-toggle-btn .tt-tip {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            background: #3c4043;
+            color: #fff;
+            font-size: .72rem;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s;
+            z-index: 20;
+        }
+
+        .task-toggle-btn:hover .tt-tip {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ─── Layout ─────────────────────────────────────────── -->
+    <div class="d-flex">
+        <div id="sidebar"></div>
+        <div class="flex-grow-1 d-flex flex-column" style="min-height:100vh;">
+            <!-- Top header injected by auth.js -->
+            <div id="main-content" style="padding:28px 32px; flex:1;"></div>
+        </div>
+    </div>
+
+    <!-- ─── Add Task Modal ────────────────────────────────── -->
+    <div class="modal-custom-overlay" id="taskModal">
+        <div class="modal-custom-box">
+            <button class="modal-custom-close" onclick="closeModal()">&times;</button>
+            <h5><i class="bi bi-plus-circle-fill text-primary me-2"></i>Create New Task</h5>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label fw-semibold small">Task Title <span class="text-danger">*</span></label>
+                    <input type="text" id="td-title" class="form-control" placeholder="What needs to be done?">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small">Priority</label>
+                    <select id="td-priority" class="form-select">
+                        <option value="LOW">Low</option>
+                        <option value="MEDIUM" selected>Medium</option>
+                        <option value="HIGH">High</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small">Status</label>
+                    <select id="td-status" class="form-select">
+                        <option value="PENDING">Pending</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="COMPLETED">Completed</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small">Assigned To</label>
+                    <input type="text" id="td-assigned" class="form-control" placeholder="User full name">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small">Due Date &amp; Time</label>
+                    <input type="datetime-local" id="td-due" class="form-control">
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold small">Related Entity</label>
+                    <input type="text" id="td-related" class="form-control" placeholder="Project, Client or Lead name">
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold small">Description</label>
+                    <textarea id="td-desc" class="form-control" rows="2" placeholder="Additional details..."></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold small">Evidence Upload</label>
+                    <input type="file" id="td-evidence" class="form-control">
+                </div>
+                <div class="col-12 d-flex gap-2 justify-content-end pt-1">
+                    <button class="btn btn-light border" onclick="closeModal()">Cancel</button>
+                    <button class="btn btn-primary px-4" onclick="saveTask()"><i class="bi bi-check-lg me-1"></i>Create
+                        Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Scripts ───────────────────────────────────────── -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+
+    <script>
+        // ── Auth & Sidebar ──────────────────────────────────────
+        requireAuth();
+        document.getElementById('sidebar').innerHTML = renderSidebar('todo');
+
+        // ── Mock data ───────────────────────────────────────────
+        const today = new Date();
+        const tomorrow = new Date(Date.now() + 86400000);
+        const yesterday = new Date(Date.now() - 86400000);
+
+        const fmt = d => d.toISOString().replace('T', ' ').slice(0, 16);
+
+        let tasks = [
+            { id: 1, title: 'Finalize Proposal - TechCorp', priority: 'HIGH', status: 'PENDING', assigned: 'Nency Savaliya', due: fmt(tomorrow), related: 'Project Alpha' },
+            { id: 2, title: 'Follow-up with New Leads', priority: 'MEDIUM', status: 'IN_PROGRESS', assigned: 'Nency Savaliya', due: fmt(today), related: 'Tech Expo' },
+            { id: 3, title: 'Internal Security Audit', priority: 'LOW', status: 'PENDING', assigned: 'Admin', due: fmt(yesterday), related: 'System Admin' },
+            { id: 4, title: 'Client Feedback Analysis', priority: 'HIGH', status: 'COMPLETED', assigned: 'Nency Savaliya', due: '2026-02-26 12:00', related: 'CRM Feedback' },
+        ];
+
+        // ── Helpers ─────────────────────────────────────────────
+        function formatRelativeDate(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffDays = Math.round((date - now) / 86400000);
+            const timeStr = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            let label = '';
+            if (diffDays === 0) label = 'Today';
+            else if (diffDays === 1) label = 'Tomorrow';
+            else if (diffDays === -1) label = 'Yesterday';
+            else label = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+            return `${label}, ${timeStr}`;
+        }
+
+        function initials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        }
+
+        function sevBadge(s) {
+            const map = { HIGH: 'bg-danger', MEDIUM: 'bg-warning text-dark', LOW: 'bg-success' };
+            return `<span class="badge ${map[s] || 'bg-secondary'} rounded-pill px-3">${s.charAt(0) + s.slice(1).toLowerCase()}</span>`;
+        }
+
+        function statBadge(s) {
+            if (s === 'PENDING') return '<span class="badge badge-purple-light rounded-pill px-3">Pending</span>';
+            if (s === 'IN_PROGRESS') return '<span class="badge badge-info-custom rounded-pill px-3">In Progress</span>';
+            if (s === 'COMPLETED') return '<span class="badge badge-green-light rounded-pill px-3">Completed</span>';
+            return `<span class="badge bg-secondary rounded-pill px-3">${s}</span>`;
+        }
+
+        // ── Render ──────────────────────────────────────────────
+        function renderTodo() {
+            const total = tasks.length;
+            const highPri = tasks.filter(t => t.priority === 'HIGH').length;
+            const ongoing = tasks.filter(t => t.status === 'IN_PROGRESS').length;
+            const completed = tasks.filter(t => t.status === 'COMPLETED').length;
+
+            const rows = tasks.map(t => `
+            <tr id="row-${t.id}">
+                <td>
+                    <div class="fw-semibold text-dark" style="font-size:0.92rem;">${t.title}</div>
+                    <div class="text-muted smaller mt-1">Assigned: ${t.assigned}</div>
+                </td>
+                <td>${sevBadge(t.priority)}</td>
+                <td>${statBadge(t.status)}</td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="avatar-circle">${initials(t.assigned)}</div>
+                        <span class="small">${t.assigned}</span>
+                    </div>
+                </td>
+                <td class="small text-secondary" style="white-space:nowrap;">
+                    <i class="bi bi-clock me-1"></i>${formatRelativeDate(t.due)}
+                </td>
+                <td class="small text-muted">${t.related}</td>
+                <td class="text-end">
+                    <div class="dropdown">
+                        <button class="btn btn-ghost btn-sm px-2 py-1" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" style="border-radius:12px;min-width:160px;">
+                            <li><a class="dropdown-item rounded py-2 small" href="#"><i class="bi bi-pencil me-2 text-info"></i>Edit Task</a></li>
+                            <li><a class="dropdown-item rounded py-2 small" href="javascript:void(0)" onclick="alert('Upload evidence triggered')"><i class="bi bi-upload me-2 text-primary"></i>Upload Evidence</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item rounded py-2 small text-danger" href="javascript:void(0)" onclick="deleteTask(${t.id})"><i class="bi bi-trash me-2"></i>Delete</a></li>
+                        </ul>
+                    </div>
+                </td>
+            </tr>`).join('');
+
+            document.getElementById('main-content').innerHTML = `
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                    <h1 class="h3 fw-bold mb-1">To-Do List</h1>
+                    <p class="text-muted mb-0" style="font-size:0.9rem;">Manage and <span class="fw-semibold text-primary">track</span> your personal and team tasks.</p>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <a href="timetable.html" class="task-toggle-btn active text-decoration-none">
+                        <i class="bi bi-calendar3"></i>
+                        <span class="tt-tip">Switch to Calendar</span>
+                    </a>
+                    <button class="btn btn-primary d-flex align-items-center gap-2 px-4" onclick="openModal()" style="height:32px; border-radius:8px; font-size:0.85rem; padding-top:0; padding-bottom:0;">
+                        <i class="bi bi-plus-lg"></i> Add New Task
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stat Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-lg-3">
+                    <div class="stat-card text-center">
+                        <div class="label">Total Tasks</div>
+                        <div class="value">${total}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="stat-card text-center">
+                        <div class="label">High Priority</div>
+                        <div class="value text-danger">${highPri}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="stat-card text-center">
+                        <div class="label">Ongoing</div>
+                        <div class="value text-info">${ongoing}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="stat-card text-center">
+                        <div class="label">Completed</div>
+                        <div class="value text-success">${completed}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Table -->
+            <div class="card border-0 shadow-sm overflow-hidden" style="border-radius:14px;">
+                <div class="table-responsive">
+                    <table class="table todo-table mb-0">
+                        <thead>
+                            <tr>
+                                <th class="px-4">Task Title</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Assigned To</th>
+                                <th>Due Date</th>
+                                <th>Related Entity</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            </div>`;
+        }
+
+        // ── Modal helpers ────────────────────────────────────────
+        function openModal() {
+            document.getElementById('taskModal').classList.add('show');
+        }
+        function closeModal() {
+            document.getElementById('taskModal').classList.remove('show');
+            ['td-title', 'td-assigned', 'td-related', 'td-desc'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            document.getElementById('td-priority').value = 'MEDIUM';
+            document.getElementById('td-status').value = 'PENDING';
+        }
+        function saveTask() {
+            const title = document.getElementById('td-title').value.trim();
+            const priority = document.getElementById('td-priority').value;
+            const status = document.getElementById('td-status').value;
+            const assigned = document.getElementById('td-assigned').value.trim() || 'Unassigned';
+            const due = document.getElementById('td-due').value || new Date().toISOString().slice(0, 16);
+            const related = document.getElementById('td-related').value.trim() || '—';
+
+            if (!title) {
+                document.getElementById('td-title').classList.add('is-invalid');
+                document.getElementById('td-title').style.borderColor = '#ef4444';
+                return;
+            }
+            const newId = tasks.length ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
+            tasks.push({ id: newId, title, priority, status, assigned, due, related });
+            closeModal();
+            renderTodo();
+
+            // Show a simple success toast
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#22c55e;color:#fff;padding:12px 20px;border-radius:10px;font-size:0.875rem;font-weight:500;z-index:9999;box-shadow:0 4px 12px rgba(34,197,94,.4);';
+            toast.innerHTML = '<i class="bi bi-check-circle me-2"></i>Task created successfully!';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        function deleteTask(id) {
+            if (!confirm('Delete this task?')) return;
+            tasks = tasks.filter(t => t.id !== id);
+            renderTodo();
+        }
+
+        // Close modal on backdrop click
+        document.getElementById('taskModal').addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+
+        // ── Init ─────────────────────────────────────────────────
+        renderTodo();
+    </script>
+</body>
+
+</html>
