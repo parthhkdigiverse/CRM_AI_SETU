@@ -1,244 +1,269 @@
-let areas = [];
-let map;
-let marker;
-let placesService;
-let currentAreaId = null;
+// 1. Declare variables globally
+window.map = null;
+window.marker = null;
+window.placesService = null;
+window.searchBox = null;
+window.geocoder = null;
 
-async function initMap() {
-    const defaultLoc = { lat: 18.5204, lng: 73.8567 }; // Default to Pune
-    map = new google.maps.Map(document.getElementById("area-map"), {
-        center: defaultLoc,
+// 2. The HTML script tag calls this, but we tell it to wait!
+window.initMap = function() {
+    console.log("Google Maps API loaded successfully. Waiting for modal to open...");
+};
+
+// 3. The On-Demand Map Builder
+function buildMapNow() {
+    // This strict selector guarantees we ignore any old hidden modals!
+    const mapDiv = document.querySelector('#form-area #area-map'); 
+    
+    if (!mapDiv) {
+        console.error("CRITICAL: Cannot find the #area-map inside #form-area!");
+        return;
+    }
+
+    // Ensure the div has explicit height so the map doesn't collapse
+    mapDiv.style.height = "350px";
+    mapDiv.style.display = "block";
+
+    // If the map already exists, just resize it
+    if (window.map) {
+        console.log("Resizing existing map...");
+        google.maps.event.trigger(window.map, 'resize');
+        window.map.setCenter(window.map.getCenter() || { lat: 21.1702, lng: 72.8311 });
+        return;
+    }
+
+    console.log("Building map for the first time...");
+    
+    // Initialize Map
+    window.map = new google.maps.Map(mapDiv, {
+        center: { lat: 21.1702, lng: 72.8311 }, // Default to Surat
         zoom: 12,
+        mapTypeId: 'roadmap'
     });
 
-    marker = new google.maps.Marker({
-        map: map,
-        position: defaultLoc,
+    // Initialize Marker
+    window.marker = new google.maps.Marker({
+        map: window.map,
+        position: { lat: 21.1702, lng: 72.8311 }, // Default to Surat
         draggable: true
     });
 
-    placesService = new google.maps.places.PlacesService(map);
+    // Initialize Services
+    window.placesService = new google.maps.places.PlacesService(window.map);
+    window.geocoder = new google.maps.Geocoder();
 
-    // Search Box integration
+    // Initialize SearchBox
     const input = document.getElementById("map-search");
-    const searchBox = new google.maps.places.SearchBox(input);
+    if (input) {
+        window.searchBox = new google.maps.places.SearchBox(input);
+        window.searchBox.addListener("places_changed", () => {
+            const places = window.searchBox.getPlaces();
+            if (places.length === 0) return;
+            const location = places[0].geometry.location;
+            
+            window.map.setCenter(location);
+            window.map.setZoom(15);
+            window.marker.setPosition(location);
+            
+            document.getElementById('a-lat').value = location.lat();
+            document.getElementById('a-lng').value = location.lng();
+            
+            // Auto-fill the Area Name input box from SearchBox
+            document.getElementById('a-name').value = places[0].name;
+        });
+    }
 
-    map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+// Helper function to get the name of the dropped pin via Reverse Geocoding
+    function getNeighborhoodName(latLng) {
+        window.geocoder.geocode({ location: latLng }, (results, status) => {
+            if (status === "OK" && results[0]) {
+                
+                // 1. ALWAYS update the "Search Location on Map" box with the full address
+                const searchInput = document.getElementById('map-search');
+                if (searchInput) {
+                    searchInput.value = results[0].formatted_address;
+                }
+                
+                // 2. ONLY update the "Area Name" if the user hasn't typed anything yet
+                const nameInput = document.getElementById('a-name');
+                if (nameInput && nameInput.value.trim() === '') {
+                    let areaName = results[0].formatted_address; // Fallback
+                    
+                    // Hunt for the specific neighborhood name
+                    for (let i = 0; i < results.length; i++) {
+                        if (results[i].types.includes('sublocality') || results[i].types.includes('locality')) {
+                            areaName = results[i].address_components[0].long_name;
+                            break;
+                        }
+                    }
+                    nameInput.value = areaName;
+                }
+            }
+        });
+    }
 
-    map.addListener("bounds_changed", () => {
-        searchBox.setBounds(map.getBounds());
+    // Map Click Listener
+    window.map.addListener('click', (e) => {
+        window.marker.setPosition(e.latLng);
+        document.getElementById('a-lat').value = e.latLng.lat();
+        document.getElementById('a-lng').value = e.latLng.lng();
+        
+        // Ask Google for the name of where we just clicked
+        getNeighborhoodName(e.latLng);
     });
-
-    searchBox.addListener("places_changed", () => {
-        const places = searchBox.getPlaces();
-        if (places.length == 0) return;
-
-        const place = places[0];
-        if (!place.geometry || !place.geometry.location) return;
-
-        if (place.geometry.viewport) {
-            map.fitBounds(place.geometry.viewport);
-        } else {
-            map.setCenter(place.geometry.location);
-            map.setZoom(15);
-        }
-
-        marker.setPosition(place.geometry.location);
-        updateLatLng(place.geometry.location);
-
-        // Auto-fill area name if empty
-        if (!document.getElementById('a-name').value) {
-            document.getElementById('a-name').value = place.name;
-        }
-    });
-
-    // Allow dragging marker
-    marker.addListener('dragend', () => {
-        updateLatLng(marker.getPosition());
-    });
-
-    // Click on map to move marker
-    map.addListener('click', (e) => {
-        marker.setPosition(e.latLng);
-        updateLatLng(e.latLng);
+    
+    // Marker Drag Listener
+    window.marker.addListener('dragend', () => {
+        const pos = window.marker.getPosition();
+        document.getElementById('a-lat').value = pos.lat();
+        document.getElementById('a-lng').value = pos.lng();
+        
+        // Ask Google for the name of where we just dragged the pin
+        getNeighborhoodName(pos);
     });
 }
 
-function updateLatLng(location) {
-    document.getElementById('a-lat').value = location.lat();
-    document.getElementById('a-lng').value = location.lng();
-}
-
-async function loadAreas() {
-    areas = await apiGet('/areas/');
-    document.getElementById('area-count').textContent = `${areas.length} areas`;
-    document.getElementById('areas-table').innerHTML = areas.length
-        ? areas.map((a, i) => `<tr><td>${a.id}</td><td class="fw-semibold">${a.name}</td><td class="text-muted">${a.city || '—'}</td><td>${a.shops_count ?? '—'}</td></tr>`).join('')
-        : '<tr><td colspan="4" class="text-center py-4 text-muted">No areas yet.</td></tr>';
-    document.getElementById('s-area').innerHTML = '<option value="">-- Select Area --</option>' +
-        areas.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
-}
-
-async function loadShops() {
-    const shops = await apiGet('/shops/?limit=200');
-    document.getElementById('shops-table').innerHTML = shops.length
-        ? shops.map(s => `
-        <tr>
-            <td class="fw-semibold">${s.name}</td>
-            <td>${s.area_name || 'Area #' + s.area_id}</td>
-            <td class="text-muted small">${s.address || '—'}</td>
-            <td>${s.phone || '—'}</td>
-            <td><span class="badge bg-success">Active</span></td>
-            <td>
-                <button class="btn btn-sm btn-outline-danger" onclick="deleteShop(${s.id})" title="Delete Shop"><i class="bi bi-trash"></i></button>
-            </td>
-        </tr>`).join('')
-        : '<tr><td colspan="6" class="text-center py-4 text-muted">No shops yet.</td></tr>';
-}
-
-// Reset modal when reopened
-document.getElementById('addAreaModal').addEventListener('show.bs.modal', function () {
-    document.getElementById('step-1-area').style.display = 'block';
-    document.getElementById('step-2-shops').style.display = 'none';
-    document.getElementById('a-name').value = '';
-    document.getElementById('a-lat').value = '';
-    document.getElementById('a-lng').value = '';
-    document.getElementById('map-search').value = '';
-    setTimeout(() => {
-        if (!map) initMap();
-        else google.maps.event.trigger(map, 'resize');
-    }, 200);
+// 4. Attach to Bootstrap's "I am completely finished opening" event
+document.addEventListener('DOMContentLoaded', function() {
+    const addModalEl = document.getElementById('addModal');
+    if (addModalEl) {
+        addModalEl.addEventListener('shown.bs.modal', function () {
+            // Check if the "New Area" form is the one currently visible
+            if (document.getElementById('form-area').style.display !== 'none') {
+                buildMapNow();
+            }
+        });
+    }
 });
 
-// Step 1: Save Area
-document.getElementById('save-area-btn').addEventListener('click', async () => {
-    const name = document.getElementById('a-name').value;
+// =========================================================================
+// STEP 1 & 2 LOGIC: Handling the Save Area & Discover Shops flow
+// =========================================================================
+
+window.handleModalSave = async function() {
+    const name = document.getElementById('a-name').value.trim();
+    const desc = document.getElementById('a-desc').value.trim();
     const lat = document.getElementById('a-lat').value;
     const lng = document.getElementById('a-lng').value;
+    const btn = document.getElementById('modal-save-btn');
 
-    if (!name) return showToast("Area Name is required", "error");
+    if (!name || !lat || !lng) {
+        alert("Please provide an Area Name and select a location on the map.");
+        return;
+    }
 
-    const btn = document.getElementById('save-area-btn');
     btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
     try {
-        const payload = {
+        // Create the Area in the backend
+        const newArea = await ApiClient.createArea({
             name: name,
-            lat: lat ? parseFloat(lat) : null,
-            lng: lng ? parseFloat(lng) : null
-        };
-        const newArea = await apiPost('/areas/', payload);
-        currentAreaId = newArea.id;
+            description: desc,
+            lat: parseFloat(lat),
+            lng: parseFloat(lng)
+        });
 
-        showToast('Area created!');
-        loadAreas();
+        // Hide Step 1 (Map/Form) and Show Step 2 (Discovered Shops)
+        document.getElementById('area-step-1').style.display = 'none';
+        document.getElementById('discovered-shops-container').style.display = 'block';
+        document.getElementById('area-saved-msg').textContent = `Area "${newArea.name}" saved!`;
+        
+        // Hide the main save button since we are done with the form
+        btn.style.display = 'none'; 
 
-        // Transition to Step 2
-        document.getElementById('step-1-area').style.display = 'none';
-        document.getElementById('step-2-shops').style.display = 'block';
+        // Start hunting for nearby shops!
+        // Added 'window.' to fix the ReferenceError, and added fallbacks just in case your API returns nested JSON
+        const savedAreaId = newArea.id || newArea.data?.id; 
+        window._discoverShops(savedAreaId, { lat: parseFloat(lat), lng: parseFloat(lng) });
 
-        if (lat && lng) {
-            discoverShops(parseFloat(lat), parseFloat(lng));
-        } else {
-            document.getElementById('discovered-shops-table').innerHTML = '<tr><td colspan="3" class="text-muted text-center py-3">No coordinates saved to discover shops.</td></tr>';
-        }
+        // Update the sidebar list in the background
+        if (typeof loadAll === 'function') loadAll();
 
-    } catch (e) { showToast(e.message, 'error'); }
-    finally { btn.disabled = false; }
-});
+    } catch (error) {
+        console.error("Failed to save area:", error);
+        alert(error?.data?.detail || "Failed to save the area.");
+        btn.disabled = false;
+        btn.textContent = 'Create Area';
+    }
+};
 
-// Step 2: Discover Shops
-function discoverShops(lat, lng) {
-    document.getElementById('discovered-shops-table').innerHTML = '<tr><td colspan="3" class="text-muted text-center py-3"><div class="spinner-border spinner-border-sm me-2"></div>Searching nearby shops...</td></tr>';
+window._discoverShops = function(areaId, locationParams) {
+    const tableBody = document.getElementById('discovered-shops-table');
+    
+    if (!window.placesService) {
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-danger">Maps service not available.</td></tr>';
+        return;
+    }
 
-    const location = new google.maps.LatLng(lat, lng);
     const request = {
-        location: location,
-        radius: '1000', // 1km radius
-        type: ['store']
+        location: locationParams,
+        radius: '1000', // Search within 1km
+        type: ['store'] // Look specifically for stores/shops
     };
 
-    placesService.nearbySearch(request, (results, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-            // Filter out exact matches that might just be the city center, prioritize actual stores
-            const shopsHtml = results.slice(0, 15).map(place => {
-                const address = place.vicinity || '';
-                return `
-                <tr>
-                    <td class="fw-semibold">${place.name}</td>
-                    <td class="small text-muted">${address}</td>
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-outline-success add-discovered-shop-btn" 
-                                onclick="addDiscoveredShop(this, '${escapeHtml(place.name)}', '${escapeHtml(address)}')">
-                            <i class="bi bi-plus-lg me-1"></i>Add
-                        </button>
-                    </td>
-                </tr>
-                `;
-            }).join('');
-            document.getElementById('discovered-shops-table').innerHTML = shopsHtml;
+    window.placesService.nearbySearch(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+            if (results.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">No shops found within 1km.</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = ''; // Clear loading spinner
+
+            // Take the top 15 results
+            results.slice(0, 15).forEach(place => {
+                const row = document.createElement('tr');
+                
+                const nameCell = document.createElement('td');
+                nameCell.className = 'fw-bold';
+                nameCell.textContent = place.name;
+                
+                const addressCell = document.createElement('td');
+                addressCell.textContent = place.vicinity;
+
+                const actionCell = document.createElement('td');
+                actionCell.className = 'text-end';
+                
+                const addBtn = document.createElement('button');
+                addBtn.className = 'btn btn-sm btn-outline-primary fw-semibold';
+                addBtn.textContent = 'Add to CRM';
+                addBtn.onclick = () => window.addDiscoveredShop(addBtn, areaId, place.name, place.vicinity);
+                
+                actionCell.appendChild(addBtn);
+
+                row.appendChild(nameCell);
+                row.appendChild(addressCell);
+                row.appendChild(actionCell);
+                tableBody.appendChild(row);
+            });
         } else {
-            document.getElementById('discovered-shops-table').innerHTML = '<tr><td colspan="3" class="text-muted text-center py-3">No shops found automatically in this radius.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-danger">Failed to load nearby shops.</td></tr>';
         }
     });
-}
+};
 
-// Add Discovered Shop to CRM
-window.addDiscoveredShop = async (btn, name, address) => {
-    btn.disabled = true;
-    const originalHtml = btn.innerHTML;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+window.addDiscoveredShop = async function(btnEl, areaId, shopName, shopAddress) {
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
     try {
-        await apiPost('/shops/', {
-            name: name,
-            area_id: currentAreaId,
-            address: address,
+        await ApiClient.createShop({
+            name: shopName,
+            area_id: areaId,
+            address: shopAddress,
             source: 'Google Maps'
         });
-        btn.classList.remove('btn-outline-success');
-        btn.classList.add('btn-success');
-        btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Added';
-        loadShops();
-        loadAreas(); // Update count
-    } catch (e) {
-        showToast(e.message, 'error');
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
+
+        // Turn button green to indicate success
+        btnEl.className = 'btn btn-sm btn-success fw-semibold text-white disabled';
+        btnEl.innerHTML = '<i class="bi bi-check-lg"></i> Added';
+        
+        if (typeof loadAll === 'function') loadAll();
+    } catch (error) {
+        console.error("Error adding shop:", error);
+        btnEl.disabled = false;
+        btnEl.textContent = 'Retry';
+        alert(error?.data?.detail || "Failed to add shop.");
     }
 };
-
-// Helper to escape HTML quotes for the onclick handler
-function escapeHtml(text) {
-    if (!text) return '';
-    return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-}
-
-document.getElementById('save-shop-btn').addEventListener('click', async () => {
-    const areaId = document.getElementById('s-area').value;
-    if (!areaId) return showToast('Select an area', 'error');
-    const btn = document.getElementById('save-shop-btn');
-    btn.disabled = true;
-    try {
-        await apiPost('/shops/', { name: document.getElementById('s-name').value, area_id: parseInt(areaId), address: document.getElementById('s-addr').value, phone: document.getElementById('s-phone').value });
-        bootstrap.Modal.getInstance(document.getElementById('addShopModal')).hide();
-        showToast('Shop added!');
-        loadShops();
-        loadAreas();
-    } catch (e) { showToast(e.message, 'error'); }
-    finally { btn.disabled = false; }
-});
-
-window.deleteShop = async (id) => {
-    if (!confirm('Are you sure you want to delete this shop?')) return;
-    try {
-        await apiDelete('/shops/' + id);
-        showToast('Shop deleted successfully', 'success');
-        loadShops();
-        loadAreas();
-    } catch (e) {
-        showToast(e.message || 'Failed to delete shop', 'error');
-    }
-};
-
-loadAreas();
-loadShops();
