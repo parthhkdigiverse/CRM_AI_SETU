@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi import HTTPException, status
-from datetime import datetime
+from datetime import datetime, UTC
+
 import uuid
 
 from app.modules.payments.models import Payment, PaymentStatus
@@ -80,7 +81,8 @@ class PaymentService:
             # Mark payment as verified
             payment.status = PaymentStatus.VERIFIED
             payment.verified_by_id = current_user.id
-            payment.verified_at = datetime.utcnow()
+            payment.verified_at = datetime.now(UTC)
+
             
             client = self.db.query(Client).filter(Client.id == payment.client_id).first()
             if not client:

@@ -1,5 +1,6 @@
 import enum
-from datetime import datetime
+from datetime import datetime, UTC
+
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Enum, Text, Float
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -21,8 +22,8 @@ class LeaveRecord(Base):
 
     approved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
 
-    employee = relationship("app.modules.employees.models.Employee", back_populates="leaves")
-    approver = relationship("app.modules.users.models.User", foreign_keys=[approved_by])
+    employee = relationship("Employee", back_populates="leaves")
+    approver = relationship("User", foreign_keys=[approved_by])
 
 class SalarySlip(Base):
     __tablename__ = "salary_slips"
@@ -30,7 +31,8 @@ class SalarySlip(Base):
     id = Column(Integer, primary_key=True, index=True)
     employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
     month = Column(String, nullable=False) # YYYY-MM
-    generated_at = Column(Date, default=datetime.utcnow)
+    generated_at = Column(Date, default=lambda: datetime.now(UTC).date())
+
     
     base_salary = Column(Float, nullable=False)
     paid_leaves = Column(Integer, default=0)
@@ -40,4 +42,9 @@ class SalarySlip(Base):
     
     file_url = Column(String, nullable=True)
 
-    employee = relationship("app.modules.employees.models.Employee", backref="salary_slips")
+    employee = relationship("Employee", backref="salary_slips")
+
+# Import models at the end to ensure they are registered without circular dependency issues
+from app.modules.employees.models import Employee
+from app.modules.users.models import User
+

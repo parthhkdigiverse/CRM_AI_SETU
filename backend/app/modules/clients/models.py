@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, UTC
+
 from app.core.database import Base
 
 class Client(Base):
@@ -11,12 +12,16 @@ class Client(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     phone = Column(String, index=True)
     organization = Column(String)
+    address = Column(String, nullable=True)
+    project_type = Column(String, nullable=True)
+    requirements = Column(Text, nullable=True)
     referral_code = Column(String, nullable=True)
     referred_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True) # For assignment
     pm_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Automatically assigned Project Manager
     is_active = Column(Boolean, default=True, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+
     
     referred_by = relationship("app.modules.users.models.User", foreign_keys=[referred_by_id], backref="referred_clients")
     owner = relationship("app.modules.users.models.User", foreign_keys=[owner_id], backref="owned_clients")
@@ -28,6 +33,7 @@ class ClientPMHistory(Base):
     id = Column(Integer, primary_key=True, index=True)
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False, index=True)
     pm_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    assigned_at = Column(DateTime, default=datetime.utcnow)
+    assigned_at = Column(DateTime, default=lambda: datetime.now(UTC))
+
 
     # Note: relationships can be added here if needed, but not strictly necessary for simple auditing.

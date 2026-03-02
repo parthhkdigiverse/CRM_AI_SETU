@@ -49,9 +49,45 @@ def read_clients(
 ) -> Any:
     """
     Retrieve all clients with optional search and pagination.
+    PMs only see their assigned clients.
     """
     service = ClientService(db)
-    return service.get_clients(skip=skip, limit=limit, search=search, sort_by=sort_by, sort_order=sort_order)
+    pm_id = None
+    if current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
+        pm_id = current_user.id
+        
+    return service.get_clients(
+        skip=skip, 
+        limit=limit, 
+        search=search, 
+        sort_by=sort_by, 
+        sort_order=sort_order,
+        pm_id=pm_id
+    )
+
+
+@router.get("/my-clients", response_model=List[ClientRead])
+def read_my_clients(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    search: Optional[str] = None,
+    sort_by: Optional[str] = "created_at",
+    sort_order: Optional[str] = "desc",
+    current_user: User = Depends(RoleChecker([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]))
+) -> Any:
+    """
+    Retrieve only the clients assigned to the currently logged-in Project Manager.
+    """
+    service = ClientService(db)
+    return service.get_clients(
+        skip=skip, 
+        limit=limit, 
+        search=search, 
+        sort_by=sort_by, 
+        sort_order=sort_order,
+        pm_id=current_user.id
+    )
 
 @router.get("/{client_id}", response_model=ClientRead)
 def read_client_by_id(

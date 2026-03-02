@@ -1,7 +1,8 @@
 import enum
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum, Text
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, UTC
+
 from app.core.database import Base
 
 class VisitStatus(str, enum.Enum):
@@ -20,13 +21,15 @@ class Visit(Base):
     
     status = Column(Enum(VisitStatus), default=VisitStatus.SATISFIED)
     remarks = Column(Text, nullable=True)
-    visit_date = Column(DateTime, default=datetime.utcnow)
+    decline_remarks = Column(Text, nullable=True)
+    visit_date = Column(DateTime, default=lambda: datetime.now(UTC))
     
     # Photo persistence
     photo_url = Column(String, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     shop = relationship("app.modules.shops.models.Shop", backref="visits")
     user = relationship("app.modules.users.models.User", backref="visits")
+
