@@ -10,53 +10,53 @@ async function initMap() {
         center: defaultLoc,
         zoom: 12,
     });
-    
+
     marker = new google.maps.Marker({
         map: map,
         position: defaultLoc,
         draggable: true
     });
-    
+
     placesService = new google.maps.places.PlacesService(map);
-    
+
     // Search Box integration
     const input = document.getElementById("map-search");
     const searchBox = new google.maps.places.SearchBox(input);
-    
+
     map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
-    
+
     map.addListener("bounds_changed", () => {
         searchBox.setBounds(map.getBounds());
     });
-    
+
     searchBox.addListener("places_changed", () => {
         const places = searchBox.getPlaces();
         if (places.length == 0) return;
-        
+
         const place = places[0];
         if (!place.geometry || !place.geometry.location) return;
-        
+
         if (place.geometry.viewport) {
             map.fitBounds(place.geometry.viewport);
         } else {
             map.setCenter(place.geometry.location);
             map.setZoom(15);
         }
-        
+
         marker.setPosition(place.geometry.location);
         updateLatLng(place.geometry.location);
-        
+
         // Auto-fill area name if empty
         if (!document.getElementById('a-name').value) {
             document.getElementById('a-name').value = place.name;
         }
     });
-    
+
     // Allow dragging marker
     marker.addListener('dragend', () => {
         updateLatLng(marker.getPosition());
     });
-    
+
     // Click on map to move marker
     map.addListener('click', (e) => {
         marker.setPosition(e.latLng);
@@ -115,33 +115,33 @@ document.getElementById('save-area-btn').addEventListener('click', async () => {
     const name = document.getElementById('a-name').value;
     const lat = document.getElementById('a-lat').value;
     const lng = document.getElementById('a-lng').value;
-    
+
     if (!name) return showToast("Area Name is required", "error");
-    
+
     const btn = document.getElementById('save-area-btn');
     btn.disabled = true;
     try {
-        const payload = { 
+        const payload = {
             name: name,
             lat: lat ? parseFloat(lat) : null,
             lng: lng ? parseFloat(lng) : null
         };
         const newArea = await apiPost('/areas/', payload);
         currentAreaId = newArea.id;
-        
+
         showToast('Area created!');
         loadAreas();
-        
+
         // Transition to Step 2
         document.getElementById('step-1-area').style.display = 'none';
         document.getElementById('step-2-shops').style.display = 'block';
-        
+
         if (lat && lng) {
             discoverShops(parseFloat(lat), parseFloat(lng));
         } else {
             document.getElementById('discovered-shops-table').innerHTML = '<tr><td colspan="3" class="text-muted text-center py-3">No coordinates saved to discover shops.</td></tr>';
         }
-        
+
     } catch (e) { showToast(e.message, 'error'); }
     finally { btn.disabled = false; }
 });
@@ -149,14 +149,14 @@ document.getElementById('save-area-btn').addEventListener('click', async () => {
 // Step 2: Discover Shops
 function discoverShops(lat, lng) {
     document.getElementById('discovered-shops-table').innerHTML = '<tr><td colspan="3" class="text-muted text-center py-3"><div class="spinner-border spinner-border-sm me-2"></div>Searching nearby shops...</td></tr>';
-    
+
     const location = new google.maps.LatLng(lat, lng);
     const request = {
         location: location,
         radius: '1000', // 1km radius
         type: ['store']
     };
-    
+
     placesService.nearbySearch(request, (results, status) => {
         if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
             // Filter out exact matches that might just be the city center, prioritize actual stores
@@ -187,13 +187,13 @@ window.addDiscoveredShop = async (btn, name, address) => {
     btn.disabled = true;
     const originalHtml = btn.innerHTML;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-    
+
     try {
-        await apiPost('/shops/', { 
-            name: name, 
-            area_id: currentAreaId, 
-            address: address, 
-            source: 'Google Maps' 
+        await apiPost('/shops/', {
+            name: name,
+            area_id: currentAreaId,
+            address: address,
+            source: 'Google Maps'
         });
         btn.classList.remove('btn-outline-success');
         btn.classList.add('btn-success');
