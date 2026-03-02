@@ -44,19 +44,11 @@ function renderSidebar(active) {
 
     // DASHBOARD
     if (!isClient) {
-        nav += `
-        <div class="sb-section">
-            <div class="sb-section-header ${active === 'dashboard' ? 'open' : ''}" onclick="toggleSbSection('db')">
-                <i class="bi bi-grid-1x2 sb-sec-icon"></i><span>Dashboard</span>
-                <i class="bi bi-chevron-${active === 'dashboard' ? 'down' : 'right'} sb-arrow"></i>
-            </div>
-            <ul class="sb-section-items ${active === 'dashboard' ? 'open' : ''}">
-                <li><a href="dashboard.html" class="sb-link ${active === 'dashboard' ? 'active' : ''}">
-                    <i class="bi bi-bar-chart-line-fill"></i><span>Overview</span></a></li>
-                <li><a href="javascript:void(0)" onclick="if(window.loadView) window.loadView('timetable');" class="sb-link ${active === 'timetable' ? 'active' : ''}">
-                    <i class="bi bi-calendar3"></i><span>Timetable</span></a></li>
-            </ul>
-        </div>`;
+        nav += sbSection('db', 'Dashboard', 'bi-grid-1x2', [
+            { id: 'dashboard', href: 'dashboard.html', icon: 'bi-bar-chart-line-fill', label: 'Overview' },
+            { id: 'timetable', href: 'timetable.html', icon: 'bi-calendar3', label: 'Timetable' },
+            { id: 'todo', href: 'todo.html', icon: 'bi-check2-square', label: 'To-Do List' }
+        ]);
     }
 
     // ADMINISTRATION
@@ -186,6 +178,7 @@ function injectTopHeader(pageTitle) {
         'Incentives': 'HR & Payroll',
         'Reports': 'Reports & Analytics',
         'Timetable': 'Dashboard',
+        'To-Do List': 'Dashboard',
         'Overview': 'Dashboard',
         'Profile': 'Dashboard',
         'Search Results': 'Search'

@@ -61,165 +61,165 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('login-password').value;
             const submitBtn = loginForm.querySelector('button');
 
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
-        loginError.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
+            loginError.classList.add('hidden');
 
-        try {
-            await window.ApiClient.login(email, password);
-            showApp();
-            loadView('dashboard');
-        } catch (error) {
-            loginError.classList.remove('hidden');
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<span>Sign In</span><i class="fa-solid fa-arrow-right"></i>';
+            try {
+                await window.ApiClient.login(email, password);
+                showApp();
+                loadView('dashboard');
+            } catch (error) {
+                loginError.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>Sign In</span><i class="fa-solid fa-arrow-right"></i>';
+            }
+        });
+
+        // Logout
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                window.ApiClient.clearTokens();
+                showLogin();
+            });
         }
-    });
 
-    // Logout
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
+        window.addEventListener('auth-failed', () => {
             window.ApiClient.clearTokens();
             showLogin();
         });
-    }
 
-    window.addEventListener('auth-failed', () => {
-        window.ApiClient.clearTokens();
-        showLogin();
-    });
+        // Sidebar Navigation - Accordion Logic
+        const toggleSections = document.querySelectorAll('.toggle-section');
+        toggleSections.forEach(section => {
+            section.addEventListener('click', () => {
+                const subItems = section.nextElementSibling;
+                const arrow = section.querySelector('.section-arrow');
 
-    // Sidebar Navigation - Accordion Logic
-    const toggleSections = document.querySelectorAll('.toggle-section');
-    toggleSections.forEach(section => {
-        section.addEventListener('click', () => {
-            const subItems = section.nextElementSibling;
-            const arrow = section.querySelector('.section-arrow');
+                if (subItems && subItems.classList.contains('nav-sub-items')) {
+                    const isHidden = subItems.classList.contains('hidden');
 
-            if (subItems && subItems.classList.contains('nav-sub-items')) {
-                const isHidden = subItems.classList.contains('hidden');
+                    // Close all other accordions
+                    document.querySelectorAll('.nav-sub-items').forEach(el => el.classList.add('hidden'));
+                    document.querySelectorAll('.section-arrow').forEach(arr => {
+                        arr.classList.remove('fa-chevron-down');
+                        arr.classList.add('fa-chevron-right');
+                    });
 
-                // Close all other accordions
-                document.querySelectorAll('.nav-sub-items').forEach(el => el.classList.add('hidden'));
-                document.querySelectorAll('.section-arrow').forEach(arr => {
-                    arr.classList.remove('fa-chevron-down');
-                    arr.classList.add('fa-chevron-right');
-                });
-
-                // Open clicked accordion if it was closed
-                if (isHidden) {
-                    subItems.classList.remove('hidden');
-                    if (arrow) {
-                        arrow.classList.remove('fa-chevron-right');
-                        arrow.classList.add('fa-chevron-down');
+                    // Open clicked accordion if it was closed
+                    if (isHidden) {
+                        subItems.classList.remove('hidden');
+                        if (arrow) {
+                            arrow.classList.remove('fa-chevron-right');
+                            arrow.classList.add('fa-chevron-down');
+                        }
                     }
                 }
-            }
+            });
         });
-    });
 
-    // Sidebar Navigation - View Routing
-    navItems.forEach(item => {
-        item.addEventListener('click', (e) => {
-            const viewName = e.currentTarget.getAttribute('data-view');
-            if (viewName) {
-                navItems.forEach(nav => nav.classList.remove('active'));
-                e.currentTarget.classList.add('active');
+        // Sidebar Navigation - View Routing
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                const viewName = e.currentTarget.getAttribute('data-view');
+                if (viewName) {
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
 
-                const sectionOuter = e.currentTarget.closest('.sidebar-section');
-                const emojiSpan = sectionOuter ? sectionOuter.querySelector('.nav-icon') : null;
-                const emojiHTML = emojiSpan ? emojiSpan.outerHTML : '';
-                const text = e.currentTarget.innerText.trim();
+                    const sectionOuter = e.currentTarget.closest('.sidebar-section');
+                    const emojiSpan = sectionOuter ? sectionOuter.querySelector('.nav-icon') : null;
+                    const emojiHTML = emojiSpan ? emojiSpan.outerHTML : '';
+                    const text = e.currentTarget.innerText.trim();
 
-                const topbarBreadcrumb = document.getElementById('topbar-breadcrumb');
-                if (topbarBreadcrumb) {
-                    topbarBreadcrumb.innerHTML = `${emojiHTML} <span style="margin-left:8px;">${text}</span>`;
+                    const topbarBreadcrumb = document.getElementById('topbar-breadcrumb');
+                    if (topbarBreadcrumb) {
+                        topbarBreadcrumb.innerHTML = `${emojiHTML} <span style="margin-left:8px;">${text}</span>`;
+                    }
+
+                    loadView(viewName);
                 }
-
-                loadView(viewName);
-            }
+            });
         });
-    });
 
-    // View Routing
-    async function loadView(viewName) {
-        mainContent.innerHTML = '<div style="display:flex; justify-content:center; padding: 40px; color: var(--primary); font-size: 24px;"><i class="fa-solid fa-circle-notch fa-spin"></i></div>';
+        // View Routing
+        async function loadView(viewName) {
+            mainContent.innerHTML = '<div style="display:flex; justify-content:center; padding: 40px; color: var(--primary); font-size: 24px;"><i class="fa-solid fa-circle-notch fa-spin"></i></div>';
 
-        try {
-            if (viewName === 'dashboard') {
-                await renderDashboard();
-            } else if (viewName === 'clients') {
-                await renderClients();
-            } else if (viewName === 'leads') {
-                await renderLeads();
-            } else if (viewName === 'areas') {
-                await renderAreas();
-            } else if (viewName === 'visits') {
-                await renderVisits();
-            } else if (viewName === 'feedback') {
-                await renderFeedback();
-            } else if (viewName === 'projects') {
-                await renderProjects();
-            } else if (viewName === 'meetings') {
-                await renderMeetings();
-            } else if (viewName === 'issues') {
-                await renderIssues();
-            } else if (viewName === 'employees') {
-                await renderEmployees();
-            } else if (viewName === 'salary') {
-                await renderSalary();
-            } else if (viewName === 'incentives') {
-                await renderIncentives();
-            } else if (viewName === 'admin') {
-                await renderAdmin();
-            } else if (viewName === 'profile') {
-                await renderProfile();
-            } else {
-                mainContent.innerHTML = `
+            try {
+                if (viewName === 'dashboard') {
+                    await renderDashboard();
+                } else if (viewName === 'clients') {
+                    await renderClients();
+                } else if (viewName === 'leads') {
+                    await renderLeads();
+                } else if (viewName === 'areas') {
+                    await renderAreas();
+                } else if (viewName === 'visits') {
+                    await renderVisits();
+                } else if (viewName === 'feedback') {
+                    await renderFeedback();
+                } else if (viewName === 'projects') {
+                    await renderProjects();
+                } else if (viewName === 'meetings') {
+                    await renderMeetings();
+                } else if (viewName === 'issues') {
+                    await renderIssues();
+                } else if (viewName === 'employees') {
+                    await renderEmployees();
+                } else if (viewName === 'salary') {
+                    await renderSalary();
+                } else if (viewName === 'incentives') {
+                    await renderIncentives();
+                } else if (viewName === 'admin') {
+                    await renderAdmin();
+                } else if (viewName === 'profile') {
+                    await renderProfile();
+                } else {
+                    mainContent.innerHTML = `
                     <div class="card" style="text-align:center; padding: 60px;">
                         <i class="fa-solid fa-person-digging" style="font-size: 48px; color: var(--text-muted); margin-bottom: 16px;"></i>
                         <h2>${viewName.charAt(0).toUpperCase() + viewName.slice(1)} View is Under Construction</h2>
                         <p class="text-muted">Will be built out shortly.</p>
                     </div>
                 `;
+                }
+            } catch (e) {
+                mainContent.innerHTML = `<div class="card text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Error loading view. Please verify backend connection.</div>`;
             }
-        } catch (e) {
-            mainContent.innerHTML = `<div class="card text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Error loading view. Please verify backend connection.</div>`;
         }
-    }
-    window.loadView = loadView; // Expose globally for onclick= handlers in dynamically rendered HTML
+        window.loadView = loadView; // Expose globally for onclick= handlers in dynamically rendered HTML
 
-    async function renderDashboard() {
-        let stats = { total_clients: 0, open_issues: 0, total_visits: 0, total_shops: 0 };
-        let shops = [], visits = [], clients = [], todos = [];
-        try {
-            const res = await window.ApiClient.getDashboardStats();
-            stats.total_clients = res.total_clients || 0;
-            stats.open_issues = res.open_issues_count || res.open_issues || 0;
-            stats.total_visits = res.total_visits || 0;
-            stats.total_shops = res.total_shops || 0;
-        } catch (e) { console.warn('Dashboard stats failed', e); }
-        try { shops = await window.ApiClient.getShops(); stats.total_shops = stats.total_shops || shops.length; } catch (e) { }
-        try { clients = await window.ApiClient.getClients(); stats.total_clients = stats.total_clients || clients.length; } catch (e) { }
-        try { visits = await window.ApiClient.getVisits(); stats.total_visits = stats.total_visits || visits.length; } catch (e) { }
-        try { todos = await window.ApiClient.getTodos(); } catch (e) { } // Fetch actual personal to-dos
+        async function renderDashboard() {
+            let stats = { total_clients: 0, open_issues: 0, total_visits: 0, total_shops: 0 };
+            let shops = [], visits = [], clients = [], todos = [];
+            try {
+                const res = await window.ApiClient.getDashboardStats();
+                stats.total_clients = res.total_clients || 0;
+                stats.open_issues = res.open_issues_count || res.open_issues || 0;
+                stats.total_visits = res.total_visits || 0;
+                stats.total_shops = res.total_shops || 0;
+            } catch (e) { console.warn('Dashboard stats failed', e); }
+            try { shops = await window.ApiClient.getShops(); stats.total_shops = stats.total_shops || shops.length; } catch (e) { }
+            try { clients = await window.ApiClient.getClients(); stats.total_clients = stats.total_clients || clients.length; } catch (e) { }
+            try { visits = await window.ApiClient.getVisits(); stats.total_visits = stats.total_visits || visits.length; } catch (e) { }
+            try { todos = await window.ApiClient.getTodos(); } catch (e) { } // Fetch actual personal to-dos
 
-        const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-        const todoRows = todos.length ? todos.slice(0, 5).map(t => {
-            const isDone = t.status === 'COMPLETED';
-            const dotColor = isDone ? 'dot-green' : 'dot-yellow';
-            const badgeColor = isDone ? 'badge-green-light' : 'badge-purple-light';
-            return `
+            const todoRows = todos.length ? todos.slice(0, 5).map(t => {
+                const isDone = t.status === 'COMPLETED';
+                const dotColor = isDone ? 'dot-green' : 'dot-yellow';
+                const badgeColor = isDone ? 'badge-green-light' : 'badge-purple-light';
+                return `
                 <div class="task-item" style="${isDone ? 'opacity:0.6;' : ''}">
                     <div class="task-dot ${dotColor}"></div>
                     <div class="task-text" style="${isDone ? 'text-decoration:line-through;' : ''}">${t.title}</div>
                     <div class="task-badge ${badgeColor}">${isDone ? 'Done' : 'Pending'}</div>
                 </div>`;
-        }).join('') : `<div class="text-muted" style="padding:10px;">No pending tasks!</div>`;
+            }).join('') : `<div class="text-muted" style="padding:10px;">No pending tasks!</div>`;
 
-        mainContent.innerHTML = `
+            mainContent.innerHTML = `
         <!-- Row 1: Greeting -->
         <div class="page-header" style="margin-bottom: 24px;">
             <div>
@@ -378,147 +378,147 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
     `;
 
-        // Initialize Charts (Delaying 100ms to allow DOM injection to finish)
-        setTimeout(() => {
-            initCharts();
-        }, 100);
-    }
-
-    function initCharts() {
-        if (!window.Chart) return;
-
-        // Common Grid Options for the light dashed lines in the screenshot
-        const gridOptions = {
-            color: '#E5E7EB',
-            borderDash: [5, 5],
-            drawBorder: false
-        };
-
-        // 1. Leads by Month (Bar Chart, Purple)
-        const ctxLeadsMonth = document.getElementById('leadsMonthChart');
-        if (ctxLeadsMonth) {
-            new Chart(ctxLeadsMonth, {
-                type: 'bar',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Leads',
-                        data: [65, 70, 95, 100, 135, 125],
-                        backgroundColor: '#6366f1',
-                        borderRadius: 4,
-                        barPercentage: 0.7
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 140,
-                            ticks: { stepSize: 35, color: '#9CA3AF' },
-                            grid: gridOptions,
-                            border: { display: false }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#9CA3AF' },
-                            border: { display: false }
-                        }
-                    }
-                }
-            });
+            // Initialize Charts (Delaying 100ms to allow DOM injection to finish)
+            setTimeout(() => {
+                initCharts();
+            }, 100);
         }
 
-        // 2. Revenue Trend (Line Chart, Teal)
-        const ctxRev = document.getElementById('revenueTrendChart');
-        if (ctxRev) {
-            new Chart(ctxRev, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Revenue',
-                        data: [180, 220, 190, 310, 280, 360],
-                        borderColor: '#14b8a6',
-                        backgroundColor: '#14b8a6',
-                        pointBackgroundColor: '#14b8a6',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2,
-                        pointRadius: 5,
-                        tension: 0.4, // Smooth curvy line
-                        borderWidth: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 360,
-                            ticks: {
-                                stepSize: 90,
-                                callback: function (value) { return '₹' + value + 'K'; },
-                                color: '#9CA3AF'
+        function initCharts() {
+            if (!window.Chart) return;
+
+            // Common Grid Options for the light dashed lines in the screenshot
+            const gridOptions = {
+                color: '#E5E7EB',
+                borderDash: [5, 5],
+                drawBorder: false
+            };
+
+            // 1. Leads by Month (Bar Chart, Purple)
+            const ctxLeadsMonth = document.getElementById('leadsMonthChart');
+            if (ctxLeadsMonth) {
+                new Chart(ctxLeadsMonth, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Leads',
+                            data: [65, 70, 95, 100, 135, 125],
+                            backgroundColor: '#6366f1',
+                            borderRadius: 4,
+                            barPercentage: 0.7
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 140,
+                                ticks: { stepSize: 35, color: '#9CA3AF' },
+                                grid: gridOptions,
+                                border: { display: false }
                             },
-                            grid: gridOptions,
-                            border: { display: false }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#9CA3AF' },
-                            border: { display: false }
-                        }
-                    }
-                }
-            });
-        }
-
-        // 3. Lead Sources (Doughnut Chart)
-        const ctxSources = document.getElementById('leadSourcesChart');
-        if (ctxSources) {
-            new Chart(ctxSources, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Website', 'Referral', 'Cold Call', 'Social', 'Other'],
-                    datasets: [{
-                        data: [40, 25, 20, 10, 5],
-                        backgroundColor: ['#6366f1', '#14b8a6', '#f59e0b', '#10B981', '#9CA3AF'],
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '75%', // Make it thin like the screenshot
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                usePointStyle: true,
-                                boxWidth: 8,
-                                padding: 20,
-                                color: '#6B7280'
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#9CA3AF' },
+                                border: { display: false }
                             }
                         }
                     }
-                }
-            });
-        }
-    }
+                });
+            }
 
-    async function renderClients() {
-        try {
-            const user = window.ApiClient.getCurrentUser();
-            const isPM = user && (user.role === 'PROJECT_MANAGER' || user.role === 'PROJECT_MANAGER_AND_SALES');
-            const clients = isPM ? await window.ApiClient.getMyClients() : await window.ApiClient.getClients();
-            const rows = clients.length === 0
-                ? `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No clients found. Add your first client!</td></tr>`
-                : clients.map(c => `
+            // 2. Revenue Trend (Line Chart, Teal)
+            const ctxRev = document.getElementById('revenueTrendChart');
+            if (ctxRev) {
+                new Chart(ctxRev, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Revenue',
+                            data: [180, 220, 190, 310, 280, 360],
+                            borderColor: '#14b8a6',
+                            backgroundColor: '#14b8a6',
+                            pointBackgroundColor: '#14b8a6',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            tension: 0.4, // Smooth curvy line
+                            borderWidth: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 360,
+                                ticks: {
+                                    stepSize: 90,
+                                    callback: function (value) { return '₹' + value + 'K'; },
+                                    color: '#9CA3AF'
+                                },
+                                grid: gridOptions,
+                                border: { display: false }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#9CA3AF' },
+                                border: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 3. Lead Sources (Doughnut Chart)
+            const ctxSources = document.getElementById('leadSourcesChart');
+            if (ctxSources) {
+                new Chart(ctxSources, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Website', 'Referral', 'Cold Call', 'Social', 'Other'],
+                        datasets: [{
+                            data: [40, 25, 20, 10, 5],
+                            backgroundColor: ['#6366f1', '#14b8a6', '#f59e0b', '#10B981', '#9CA3AF'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '75%', // Make it thin like the screenshot
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    usePointStyle: true,
+                                    boxWidth: 8,
+                                    padding: 20,
+                                    color: '#6B7280'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        async function renderClients() {
+            try {
+                const user = window.ApiClient.getCurrentUser();
+                const isPM = user && (user.role === 'PROJECT_MANAGER' || user.role === 'PROJECT_MANAGER_AND_SALES');
+                const clients = isPM ? await window.ApiClient.getMyClients() : await window.ApiClient.getClients();
+                const rows = clients.length === 0
+                    ? `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No clients found. Add your first client!</td></tr>`
+                    : clients.map(c => `
                     <tr>
                         <td><div style="font-weight:500;">${c.name}</div><div style="font-size:12px;color:var(--text-muted);">${c.email}</div></td>
                         <td>${c.phone || '—'}</td>
@@ -529,7 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <button class="btn btn-ghost" title="Add Meeting" style="padding:4px 8px;" onclick="openNewMeetingModal(${c.id})"><i class="fa-regular fa-calendar-plus" style="color:var(--primary);"></i></button>
                         </td>
                     </tr>`).join('');
-            mainContent.innerHTML = `
+                mainContent.innerHTML = `
             <div class="page-header">
                 <div><h1 style="margin-bottom:4px;">Clients</h1><p class="text-muted">${clients.length} onboarded accounts</p></div>
                 <button class="btn btn-primary" onclick="openNewClientModal()"><i class="fa-solid fa-plus"></i> New Client</button>
@@ -542,36 +542,36 @@ document.addEventListener('DOMContentLoaded', () => {
                     </table>
                 </div>
             </div>`;
-        } catch (e) { throw e; }
-    }
+            } catch (e) { throw e; }
+        }
 
-    async function renderLeads() {
-        let shops = [];
-        try {
-            // Fetch kanban structure from backend if supported, or group manually
-            shops = await window.ApiClient.getShops();
-        } catch (e) { console.warn('Shops/Leads fetch failed', e); }
+        async function renderLeads() {
+            let shops = [];
+            try {
+                // Fetch kanban structure from backend if supported, or group manually
+                shops = await window.ApiClient.getShops();
+            } catch (e) { console.warn('Shops/Leads fetch failed', e); }
 
-        const columns = [
-            { key: 'NEW', label: 'New', color: 'badge-purple-light', border: '' },
-            { key: 'CONTACTED', label: 'Contacted', color: 'badge-purple-light', border: '' },
-            { key: 'MEETING_SET', label: 'Meeting Set', color: 'badge-purple-light', border: '3px solid var(--warning)' },
-            { key: 'CONVERTED', label: 'Converted', color: 'badge-green-light', border: '3px solid var(--success)' },
-        ];
+            const columns = [
+                { key: 'NEW', label: 'New', color: 'badge-purple-light', border: '' },
+                { key: 'CONTACTED', label: 'Contacted', color: 'badge-purple-light', border: '' },
+                { key: 'MEETING_SET', label: 'Meeting Set', color: 'badge-purple-light', border: '3px solid var(--warning)' },
+                { key: 'CONVERTED', label: 'Converted', color: 'badge-green-light', border: '3px solid var(--success)' },
+            ];
 
-        const grouped = {};
-        columns.forEach(c => { grouped[c.key] = []; });
-        shops.forEach(s => {
-            const st = (s.status || 'NEW').toUpperCase();
-            if (grouped[st]) grouped[st].push(s);
-            else if (st === 'ACTIVE') grouped['NEW'].push(s); // Fallback for legacy data
-        });
+            const grouped = {};
+            columns.forEach(c => { grouped[c.key] = []; });
+            shops.forEach(s => {
+                const st = (s.status || 'NEW').toUpperCase();
+                if (grouped[st]) grouped[st].push(s);
+                else if (st === 'ACTIVE') grouped['NEW'].push(s); // Fallback for legacy data
+            });
 
-        const makeCard = (s, border) => {
-            const initials = (s.contact_person || s.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-            const isConverted = s.status === 'CONVERTED';
+            const makeCard = (s, border) => {
+                const initials = (s.contact_person || s.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                const isConverted = s.status === 'CONVERTED';
 
-            return `
+                return `
             <div class="card kanban-card" style="margin-bottom:12px;padding:16px;${border ? 'border-left:' + border + ';' : ''}">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
                     <div style="font-weight:600;font-size:15px;color:var(--text-dark);">${s.name || 'Unnamed'}</div>
@@ -597,9 +597,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             </div>`;
-        };
+            };
 
-        const kbCols = columns.map(col => `
+            const kbCols = columns.map(col => `
             <div class="kanban-column" style="flex:1;min-width:300px;background:#f8fafc;border-radius:12px;padding:16px;border:1px solid #f1f5f9;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
                     <h3 style="margin:0;font-size:16px;font-weight:700;color:#334155;">${col.label}</h3>
@@ -607,13 +607,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="kanban-cards-container" style="min-height:100px;">
                     ${grouped[col.key].length
-                ? grouped[col.key].map(s => makeCard(s, col.border)).join('')
-                : `<div style="text-align:center;padding:32px;border:2px dashed #e2e8f0;border-radius:12px;color:#94a3b8;font-size:13px;">Drop leads here</div>`
-            }
+                    ? grouped[col.key].map(s => makeCard(s, col.border)).join('')
+                    : `<div style="text-align:center;padding:32px;border:2px dashed #e2e8f0;border-radius:12px;color:#94a3b8;font-size:13px;">Drop leads here</div>`
+                }
                 </div>
             </div>`).join('');
 
-        mainContent.innerHTML = `
+            mainContent.innerHTML = `
         <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
             <div>
                 <h1 style="margin-bottom:4px;">Project Overview</h1>
@@ -624,42 +624,42 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="kanban-board" style="display:flex;gap:20px;overflow-x:auto;padding-bottom:16px;align-items:flex-start;">
             ${kbCols}
         </div>`;
-    }
-
-    // Shop Status Update
-    window.updateShopStatus = async (shopId, newStatus) => {
-        try {
-            await window.ApiClient.updateShop(shopId, { status: newStatus });
-            showToast(`Status updated to ${newStatus}`);
-            renderLeads();
-        } catch (e) {
-            showToast('Failed to update status', 'error');
         }
-    };
 
-    // Confirm Delete Shop
-    window.confirmDeleteShop = async (shopId) => {
-        if (confirm("Are you sure you want to delete this lead? This action cannot be undone.")) {
+        // Shop Status Update
+        window.updateShopStatus = async (shopId, newStatus) => {
             try {
-                await window.ApiClient.deleteShop(shopId);
-                showToast('Lead deleted successfully');
+                await window.ApiClient.updateShop(shopId, { status: newStatus });
+                showToast(`Status updated to ${newStatus}`);
                 renderLeads();
             } catch (e) {
-                showToast('Could not delete lead. Admin privileges may be required.', 'error');
+                showToast('Failed to update status', 'error');
             }
-        }
-    };
+        };
 
-    // Modal: Edit Shop
-    window.openEditShopModal = async (shopId) => {
-        try {
-            const shop = await window.ApiClient.request(`/shops/${shopId}`);
-            let areas = [];
-            try { areas = await window.ApiClient.getAreas(); } catch (e) { }
+        // Confirm Delete Shop
+        window.confirmDeleteShop = async (shopId) => {
+            if (confirm("Are you sure you want to delete this lead? This action cannot be undone.")) {
+                try {
+                    await window.ApiClient.deleteShop(shopId);
+                    showToast('Lead deleted successfully');
+                    renderLeads();
+                } catch (e) {
+                    showToast('Could not delete lead. Admin privileges may be required.', 'error');
+                }
+            }
+        };
 
-            const areaOptions = areas.map(a => `<option value="${a.id}" ${a.id == shop.area_id ? 'selected' : ''}>${a.name}</option>`).join('');
+        // Modal: Edit Shop
+        window.openEditShopModal = async (shopId) => {
+            try {
+                const shop = await window.ApiClient.request(`/shops/${shopId}`);
+                let areas = [];
+                try { areas = await window.ApiClient.getAreas(); } catch (e) { }
 
-            const html = `
+                const areaOptions = areas.map(a => `<option value="${a.id}" ${a.id == shop.area_id ? 'selected' : ''}>${a.name}</option>`).join('');
+
+                const html = `
                 <div class="form-group"><label>Shop Name *</label><input type="text" id="es-name" class="form-control" value="${shop.name}" required></div>
                 <div class="form-group"><label>Contact Person</label><input type="text" id="es-contact" class="form-control" value="${shop.contact_person || ''}"></div>
                 <div class="form-group"><label>Phone</label><input type="text" id="es-phone" class="form-control" value="${shop.phone || ''}"></div>
@@ -674,48 +674,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="form-group"><label>Address</label><textarea id="es-addr" class="form-textarea">${shop.address || ''}</textarea></div>
             `;
 
-            createModal('modal-edit-shop', 'Edit Lead Details', html, async () => {
-                const data = {
-                    name: document.getElementById('es-name').value,
-                    contact_person: document.getElementById('es-contact').value,
-                    phone: document.getElementById('es-phone').value,
-                    email: document.getElementById('es-email').value,
-                    area_id: parseInt(document.getElementById('es-area').value),
-                    address: document.getElementById('es-addr').value
-                };
-                if (!data.name || !data.area_id) throw new Error("Shop Name and Area are required");
+                createModal('modal-edit-shop', 'Edit Lead Details', html, async () => {
+                    const data = {
+                        name: document.getElementById('es-name').value,
+                        contact_person: document.getElementById('es-contact').value,
+                        phone: document.getElementById('es-phone').value,
+                        email: document.getElementById('es-email').value,
+                        area_id: parseInt(document.getElementById('es-area').value),
+                        address: document.getElementById('es-addr').value
+                    };
+                    if (!data.name || !data.area_id) throw new Error("Shop Name and Area are required");
 
-                await window.ApiClient.updateShop(shopId, data);
-                showToast('Lead updated successfully');
-                renderLeads();
-            });
-        } catch (e) {
-            showToast('Failed to load lead details', 'error');
-        }
-    };
+                    await window.ApiClient.updateShop(shopId, data);
+                    showToast('Lead updated successfully');
+                    renderLeads();
+                });
+            } catch (e) {
+                showToast('Failed to load lead details', 'error');
+            }
+        };
 
-    async function renderAreas() {
-        let areas = [], shops = [], selectedAreaId = null;
-        try { areas = await window.ApiClient.getAreas(); } catch (e) { console.warn('Areas fetch failed', e); }
-        try { shops = await window.ApiClient.getShops(); } catch (e) { console.warn('Shops fetch failed', e); }
+        async function renderAreas() {
+            let areas = [], shops = [], selectedAreaId = null;
+            try { areas = await window.ApiClient.getAreas(); } catch (e) { console.warn('Areas fetch failed', e); }
+            try { shops = await window.ApiClient.getShops(); } catch (e) { console.warn('Shops fetch failed', e); }
 
-        if (areas.length) selectedAreaId = areas[0].id;
-        const filteredShops = selectedAreaId ? shops.filter(s => s.area_id === selectedAreaId) : shops;
-        const activeArea = areas.find(a => a.id === selectedAreaId);
+            if (areas.length) selectedAreaId = areas[0].id;
+            const filteredShops = selectedAreaId ? shops.filter(s => s.area_id === selectedAreaId) : shops;
+            const activeArea = areas.find(a => a.id === selectedAreaId);
 
-        const areaItems = areas.length
-            ? areas.map(a => {
-                const count = shops.filter(s => s.area_id === a.id).length;
-                const isActive = a.id === selectedAreaId;
-                return `<div class="area-item" data-area-id="${a.id}" style="padding:12px 16px;border-left:3px solid ${isActive ? 'var(--primary)' : 'transparent'};background:${isActive ? 'var(--primary-light)' : 'transparent'};cursor:pointer;transition:background 0.2s;">
+            const areaItems = areas.length
+                ? areas.map(a => {
+                    const count = shops.filter(s => s.area_id === a.id).length;
+                    const isActive = a.id === selectedAreaId;
+                    return `<div class="area-item" data-area-id="${a.id}" style="padding:12px 16px;border-left:3px solid ${isActive ? 'var(--primary)' : 'transparent'};background:${isActive ? 'var(--primary-light)' : 'transparent'};cursor:pointer;transition:background 0.2s;">
                     <div style="font-weight:${isActive ? '600' : '500'};color:${isActive ? 'var(--primary)' : 'inherit'}">${a.name}</div>
                     <div style="font-size:13px;color:var(--text-muted);margin-top:4px;"><i class="fa-solid fa-store"></i> ${count} shops</div>
                 </div>`;
-            }).join('')
-            : `<div class="text-muted" style="padding:24px;text-align:center;">No areas found.</div>`;
+                }).join('')
+                : `<div class="text-muted" style="padding:24px;text-align:center;">No areas found.</div>`;
 
-        const shopRows = filteredShops.length
-            ? filteredShops.map(s => `
+            const shopRows = filteredShops.length
+                ? filteredShops.map(s => `
                 <tr>
                     <td><div style="font-weight:500;">${s.name}</div><div style="font-size:12px;color:var(--text-muted);">${s.address || '\u2014'}</div></td>
                     <td>${s.owner_name || '\u2014'}</td>
@@ -723,9 +723,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td><span class="badge badge-purple-light">${s.status || 'active'}</span></td>
                     <td><button class="btn btn-ghost" style="padding:4px;"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
                 </tr>`).join('')
-            : `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No shops in this area.</td></tr>`;
+                : `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No shops in this area.</td></tr>`;
 
-        mainContent.innerHTML = `
+            mainContent.innerHTML = `
         <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
             <div><h1 style="margin-bottom:4px;">Areas &amp; Shops</h1><p class="text-muted">Geographical tracking for field sales.</p></div>
             <div style="display:flex;gap:12px;">
@@ -750,32 +750,32 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         </div>`;
 
-        document.querySelectorAll('.area-item').forEach(el => {
-            el.addEventListener('click', () => {
-                selectedAreaId = parseInt(el.dataset.areaId);
-                renderAreas();
+            document.querySelectorAll('.area-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    selectedAreaId = parseInt(el.dataset.areaId);
+                    renderAreas();
+                });
             });
-        });
-    }
+        }
 
-    async function renderVisits() {
-        let visits = [];
-        try { visits = await window.ApiClient.getVisits(); } catch (e) { console.warn('Visits fetch failed', e); }
+        async function renderVisits() {
+            let visits = [];
+            try { visits = await window.ApiClient.getVisits(); } catch (e) { console.warn('Visits fetch failed', e); }
 
-        const today = new Date().toISOString().slice(0, 10);
-        const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
-        const todayCount = visits.filter(v => (v.visit_date || '').slice(0, 10) === today).length;
-        const weekCount = visits.filter(v => v.status === 'SATISFIED' || v.status === 'ACCEPT' && (v.visit_date || '') >= weekAgo).length;
-        const missedCount = visits.filter(v => v.status === 'DECLINE').length;
+            const today = new Date().toISOString().slice(0, 10);
+            const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+            const todayCount = visits.filter(v => (v.visit_date || '').slice(0, 10) === today).length;
+            const weekCount = visits.filter(v => v.status === 'SATISFIED' || v.status === 'ACCEPT' && (v.visit_date || '') >= weekAgo).length;
+            const missedCount = visits.filter(v => v.status === 'DECLINE').length;
 
-        const statusBadge = s => ({
-            'SATISFIED': '<span class="badge badge-green-light">Satisfied</span>',
-            'ACCEPT': '<span class="badge badge-purple-light">Accepted</span>',
-            'DECLINE': '<span class="badge badge-red-light">Declined</span>',
-            'TAKE_TIME_TO_THINK': '<span class="badge badge-warning">Thinking</span>'
-        }[s] || `<span class="badge">${s || '—'}</span>`);
+            const statusBadge = s => ({
+                'SATISFIED': '<span class="badge badge-green-light">Satisfied</span>',
+                'ACCEPT': '<span class="badge badge-purple-light">Accepted</span>',
+                'DECLINE': '<span class="badge badge-red-light">Declined</span>',
+                'TAKE_TIME_TO_THINK': '<span class="badge badge-warning">Thinking</span>'
+            }[s] || `<span class="badge">${s || '—'}</span>`);
 
-        const rows = visits.length ? visits.map(v => `
+            const rows = visits.length ? visits.map(v => `
             <tr>
                 <td style="font-weight:500;">${v.shop_name || v.shop_id || '—'}</td>
                 <td>${v.area_name || '—'}</td>
@@ -785,9 +785,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${statusBadge(v.status)}</td>
                 <td class="text-muted" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v.remarks || '—'}</td>
             </tr>`).join('') :
-            `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No visits recorded yet.</td></tr>`;
+                `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No visits recorded yet.</td></tr>`;
 
-        mainContent.innerHTML = `
+            mainContent.innerHTML = `
         <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
             <div><h1 style="margin-bottom:4px;">Visits</h1><p class="text-muted">${visits.length} total visits tracked</p></div>
             <button class="btn btn-primary" onclick="openLogVisitModal()"><i class="fa-solid fa-location-dot"></i> Log Visit</button>
@@ -806,20 +806,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 </table>
             </div>
         </div>`;
-    }
+        }
 
-    async function renderFeedback(activeTab = 'clients') {
-        const user = window.ApiClient.getCurrentUser();
-        const isAdmin = user && user.role === 'ADMIN';
+        async function renderFeedback(activeTab = 'clients') {
+            const user = window.ApiClient.getCurrentUser();
+            const isAdmin = user && user.role === 'ADMIN';
 
-        const tabBar = `
+            const tabBar = `
             <div class="tab-bar" style="margin-bottom:24px;">
                 <button class="tab-btn ${activeTab === 'clients' ? 'active' : ''}" onclick="renderFeedback('clients')">Client Reviews</button>
                 <button class="tab-btn ${activeTab === 'user' ? 'active' : ''}" onclick="renderFeedback('user')">System Feedback (Internal)</button>
             </div>`;
 
-        if (activeTab === 'clients') {
-            mainContent.innerHTML = `
+            if (activeTab === 'clients') {
+                mainContent.innerHTML = `
             <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                 <div>
                     <h1 style="margin-bottom: 4px;">Feedback & Satisfaction</h1>
@@ -859,14 +859,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             </div>`;
-        } else {
-            // User Feedback Tab
-            let userFeedbacks = [];
-            try { userFeedbacks = await window.ApiClient.getUserFeedbacks(); } catch (e) { }
+            } else {
+                // User Feedback Tab
+                let userFeedbacks = [];
+                try { userFeedbacks = await window.ApiClient.getUserFeedbacks(); } catch (e) { }
 
-            const rows = userFeedbacks.length === 0
-                ? '<div class="text-muted py-4 text-center">No internal feedback records found.</div>'
-                : userFeedbacks.map(f => `
+                const rows = userFeedbacks.length === 0
+                    ? '<div class="text-muted py-4 text-center">No internal feedback records found.</div>'
+                    : userFeedbacks.map(f => `
                 <div class="card" style="margin-bottom:12px;">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
                         <div>
@@ -878,7 +878,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p style="margin:0; font-size:14px; line-height:1.5;">${f.message}</p>
                 </div>`).join('');
 
-            mainContent.innerHTML = `
+                mainContent.innerHTML = `
             <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                 <div>
                    <h1 style="margin-bottom: 4px;">System Feedback</h1>
@@ -890,12 +890,12 @@ document.addEventListener('DOMContentLoaded', () => {
             <div style="display: flex; flex-direction: column; gap: 4px;">
                 ${rows}
             </div>`;
+            }
+            window.renderFeedback = renderFeedback;
         }
-        window.renderFeedback = renderFeedback;
-    }
 
-    window.openNewUserFeedbackModal = () => {
-        const html = `
+        window.openNewUserFeedbackModal = () => {
+            const html = `
             <div class="form-group">
                 <label>Subject *</label>
                 <input type="text" id="muf-subject" class="form-control" placeholder="E.g. Suggestion for Dashboard UI" required>
@@ -905,43 +905,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 <textarea id="muf-message" class="form-textarea" style="height:120px;" placeholder="Describe your feedback, suggestion or concern..." required></textarea>
             </div>
         `;
-        createModal('modal-user-feedback', 'Submit Internal Feedback', html, async () => {
-            const subject = document.getElementById('muf-subject').value;
-            const message = document.getElementById('muf-message').value;
-            if (!subject || !message) throw new Error("Subject and Message are required");
+            createModal('modal-user-feedback', 'Submit Internal Feedback', html, async () => {
+                const subject = document.getElementById('muf-subject').value;
+                const message = document.getElementById('muf-message').value;
+                if (!subject || !message) throw new Error("Subject and Message are required");
 
-            await window.ApiClient.createUserFeedback({ subject, message });
-            showToast('Feedback submitted to Admin!');
-            if (document.querySelector('h1')?.innerText.includes('System Feedback')) renderFeedback('user');
-        }, "Submit Feedback");
-    };
-
-    // ─── Projects (Native Backend Module) ─────────────────────────────────────────────
-    async function renderProjects() {
-        let projects = [];
-        try { projects = await window.ApiClient.getProjects(); } catch (e) { console.error('Projects fetch failed', e); }
-
-        const statusBadge = (s) => ({
-            'PLANNING': '<span class="badge badge-yellow-light">Planned</span>',
-            'IN_PROGRESS': '<span class="badge badge-purple-light">Ongoing</span>',
-            'COMPLETED': '<span class="badge badge-green-light">Completed</span>',
-            'ON_HOLD': '<span class="badge badge-red-light">On Hold</span>',
-        }[s] || `<span class="badge badge-purple-light">${s}</span>`);
-
-        const pmanagerIcon = (pm) => pm ? `<div style="display:flex;align-items:center;gap:8px;color:var(--text-muted);"><i class="bi bi-person text-muted"></i> <span>PM #${pm}</span></div>` : '<span class="text-muted">—</span>';
-        const formatBudget = (btn) => btn ? `₹${(btn / 100000).toFixed(1)}L` : '—';
-
-        // Mock progress for now based on status
-        const getProgress = (s) => {
-            if (s === 'COMPLETED') return 100;
-            if (s === 'IN_PROGRESS') return 65;
-            if (s === 'PLANNING') return 0;
-            return 30;
+                await window.ApiClient.createUserFeedback({ subject, message });
+                showToast('Feedback submitted to Admin!');
+                if (document.querySelector('h1')?.innerText.includes('System Feedback')) renderFeedback('user');
+            }, "Submit Feedback");
         };
 
-        const rows = projects.length ? projects.map(p => {
-            const prog = getProgress(p.status);
-            return `
+        // ─── Projects (Native Backend Module) ─────────────────────────────────────────────
+        async function renderProjects() {
+            let projects = [];
+            try { projects = await window.ApiClient.getProjects(); } catch (e) { console.error('Projects fetch failed', e); }
+
+            const statusBadge = (s) => ({
+                'PLANNING': '<span class="badge badge-yellow-light">Planned</span>',
+                'IN_PROGRESS': '<span class="badge badge-purple-light">Ongoing</span>',
+                'COMPLETED': '<span class="badge badge-green-light">Completed</span>',
+                'ON_HOLD': '<span class="badge badge-red-light">On Hold</span>',
+            }[s] || `<span class="badge badge-purple-light">${s}</span>`);
+
+            const pmanagerIcon = (pm) => pm ? `<div style="display:flex;align-items:center;gap:8px;color:var(--text-muted);"><i class="bi bi-person text-muted"></i> <span>PM #${pm}</span></div>` : '<span class="text-muted">—</span>';
+            const formatBudget = (btn) => btn ? `₹${(btn / 100000).toFixed(1)}L` : '—';
+
+            // Mock progress for now based on status
+            const getProgress = (s) => {
+                if (s === 'COMPLETED') return 100;
+                if (s === 'IN_PROGRESS') return 65;
+                if (s === 'PLANNING') return 0;
+                return 30;
+            };
+
+            const rows = projects.length ? projects.map(p => {
+                const prog = getProgress(p.status);
+                return `
             <tr style="vertical-align: middle;">
                 <td style="font-weight:600; color:var(--text); padding: 20px 24px;">${p.name}</td>
                 <td class="text-muted" style="padding: 20px 24px;">Client #${p.client_id}</td>
@@ -958,9 +958,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </td>
             </tr>`;
-        }).join('') : `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No projects found. Create one!</td></tr>`;
+            }).join('') : `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No projects found. Create one!</td></tr>`;
 
-        mainContent.innerHTML = `
+            mainContent.innerHTML = `
         <div class="page-header" style="margin-bottom:24px;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 24px;">
                 <div>
@@ -998,16 +998,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 </table>
             </div>
         </div>`;
-    }
+        }
 
-    // ─── HR & Payroll Modules ─────────────────────────────────────────────
-    async function renderEmployees() {
-        let employees = [];
-        try { employees = await window.ApiClient.getEmployees(); } catch (e) { console.warn('Employees fetch failed', e); }
+        // ─── HR & Payroll Modules ─────────────────────────────────────────────
+        async function renderEmployees() {
+            let employees = [];
+            try { employees = await window.ApiClient.getEmployees(); } catch (e) { console.warn('Employees fetch failed', e); }
 
-        const formatCurrency = (amount) => amount ? `₹${amount.toLocaleString()}` : '—';
+            const formatCurrency = (amount) => amount ? `₹${amount.toLocaleString()}` : '—';
 
-        const rows = employees.length ? employees.map(e => `
+            const rows = employees.length ? employees.map(e => `
             <tr style="vertical-align: middle;">
                 <td style="font-weight:600; color:var(--text-muted); padding: 20px 24px;">EMP00${e.id}</td>
                 <td style="font-weight:600; color:var(--text); padding: 20px 24px;">${e.name || e.email || '—'}</td>
@@ -1017,9 +1017,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="text-muted" style="padding: 20px 24px;">${e.joining_date ? new Date(e.joining_date).toLocaleDateString() : '—'}</td>
                 <td style="padding: 20px 24px; color:var(--text-muted);"><i class="bi bi-key" style="cursor:pointer;" title="Reset Password"></i></td>
             </tr>`).join('') :
-            `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No employees found.</td></tr>`;
+                `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No employees found.</td></tr>`;
 
-        mainContent.innerHTML = `
+            mainContent.innerHTML = `
         <div class="page-header" style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-start;">
             <div>
                 <h1 style="margin-bottom:8px; font-weight:700; font-size:2rem; letter-spacing:-0.5px;">Employees</h1>
@@ -1048,18 +1048,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 </table>
             </div>
         </div>`;
-    }
+        }
 
-    async function renderSalary() {
-        let employees = [];
-        try { employees = await window.ApiClient.getEmployees(); } catch (e) { console.warn('Employees fetch failed', e); }
+        async function renderSalary() {
+            let employees = [];
+            try { employees = await window.ApiClient.getEmployees(); } catch (e) { console.warn('Employees fetch failed', e); }
 
-        const formatCurrency = (amount) => amount ? `₹${amount.toLocaleString()}` : '0';
+            const formatCurrency = (amount) => amount ? `₹${amount.toLocaleString()}` : '0';
 
-        window.openSalaryModal = (id, name, base) => {
-            const m = document.getElementById('salaryModal');
-            if (!m) {
-                const html = `
+            window.openSalaryModal = (id, name, base) => {
+                const m = document.getElementById('salaryModal');
+                if (!m) {
+                    const html = `
                 <div class="modal fade" id="salaryModal" tabindex="-1">
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content" style="border-radius:16px; border:none; box-shadow:0 10px 40px rgba(0,0,0,0.1);">
@@ -1104,36 +1104,36 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 </div>`;
-                document.body.insertAdjacentHTML('beforeend', html);
+                    document.body.insertAdjacentHTML('beforeend', html);
 
-                document.getElementById('salaryForm').addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    try {
-                        await window.ApiClient.generateSalary({
-                            employee_id: document.getElementById('sal-emp-id').value,
-                            month: document.getElementById('sal-month').value,
-                            paid_leaves: parseInt(document.getElementById('sal-paid').value),
-                            unpaid_leaves: parseInt(document.getElementById('sal-unpaid').value),
-                            deduction_amount: parseFloat(document.getElementById('sal-deduction').value)
-                        });
-                        showToast('Salary slip generated successfully!');
-                        bootstrap.Modal.getInstance(document.getElementById('salaryModal')).hide();
-                    } catch (err) {
-                        showToast('Failed to generate slip', 'error');
-                    }
-                });
-            }
-            document.getElementById('sal-emp-id').value = id;
-            document.getElementById('sal-emp-name').value = name;
-            document.getElementById('sal-base').value = base;
-            const today = new Date();
-            document.getElementById('sal-month').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-            new bootstrap.Modal(document.getElementById('salaryModal')).show();
-        };
+                    document.getElementById('salaryForm').addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        try {
+                            await window.ApiClient.generateSalary({
+                                employee_id: document.getElementById('sal-emp-id').value,
+                                month: document.getElementById('sal-month').value,
+                                paid_leaves: parseInt(document.getElementById('sal-paid').value),
+                                unpaid_leaves: parseInt(document.getElementById('sal-unpaid').value),
+                                deduction_amount: parseFloat(document.getElementById('sal-deduction').value)
+                            });
+                            showToast('Salary slip generated successfully!');
+                            bootstrap.Modal.getInstance(document.getElementById('salaryModal')).hide();
+                        } catch (err) {
+                            showToast('Failed to generate slip', 'error');
+                        }
+                    });
+                }
+                document.getElementById('sal-emp-id').value = id;
+                document.getElementById('sal-emp-name').value = name;
+                document.getElementById('sal-base').value = base;
+                const today = new Date();
+                document.getElementById('sal-month').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+                new bootstrap.Modal(document.getElementById('salaryModal')).show();
+            };
 
-        const rows = employees.length ? employees.map(e => {
-            const name = e.name || e.email || '—';
-            return `
+            const rows = employees.length ? employees.map(e => {
+                const name = e.name || e.email || '—';
+                return `
             <tr style="vertical-align: middle;">
                 <td style="font-weight:600; color:var(--text); padding: 20px 24px;">
                     <div class="d-flex align-items-center gap-3">
@@ -1162,9 +1162,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     </button>
                 </td>
             </tr>`;
-        }).join('') : `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No employees found.</td></tr>`;
+            }).join('') : `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No employees found.</td></tr>`;
 
-        mainContent.innerHTML = `
+            mainContent.innerHTML = `
         <div class="page-header" style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-start;">
             <div>
                 <h1 style="margin-bottom:8px; font-weight:700; font-size:2rem; letter-spacing:-0.5px;">Salary & Leaves</h1>
@@ -1191,19 +1191,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 </table>
             </div>
         </div>`;
-    }
+        }
 
-    async function renderIncentives() {
-        let incentives = [];
-        try { incentives = await window.ApiClient.getIncentives(); } catch (e) { console.warn('Incentives fetch failed', e); }
+        async function renderIncentives() {
+            let incentives = [];
+            try { incentives = await window.ApiClient.getIncentives(); } catch (e) { console.warn('Incentives fetch failed', e); }
 
-        const formatCurrency = (amount) => amount ? `₹${amount.toLocaleString()}` : '0';
-        const getStatusBadge = (s) => ({
-            'APPROVED': '<span class="badge badge-green-light">Approved</span>',
-            'PENDING': '<span class="badge badge-yellow-light">Pending</span>'
-        }[s] || '<span class="badge badge-purple-light">N/A</span>');
+            const formatCurrency = (amount) => amount ? `₹${amount.toLocaleString()}` : '0';
+            const getStatusBadge = (s) => ({
+                'APPROVED': '<span class="badge badge-green-light">Approved</span>',
+                'PENDING': '<span class="badge badge-yellow-light">Pending</span>'
+            }[s] || '<span class="badge badge-purple-light">N/A</span>');
 
-        const rows = incentives.length ? incentives.map(i => `
+            const rows = incentives.length ? incentives.map(i => `
             <tr style="vertical-align: middle;">
                 <td style="font-weight:600; color:var(--text); padding: 20px 24px;">Employee #${i.employee_id}</td>
                 <td style="padding: 20px 24px;"><span class="badge badge-purple-light">Sales</span></td>
@@ -1212,13 +1212,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td style="font-weight:600; color:var(--green); padding: 20px 24px;">${formatCurrency(i.amount)}</td>
                 <td style="padding: 20px 24px;">${getStatusBadge(i.status)}</td>
             </tr>`).join('') :
-            `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No incentives recorded yet.</td></tr>`;
+                `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No incentives recorded yet.</td></tr>`;
 
-        // Dummy stats based on screenshot
-        const totalEarned = formatCurrency(Math.floor(Math.random() * 50000 + 10000));
-        const avgConv = Math.floor(Math.random() * 30 + 15);
+            // Dummy stats based on screenshot
+            const totalEarned = formatCurrency(Math.floor(Math.random() * 50000 + 10000));
+            const avgConv = Math.floor(Math.random() * 30 + 15);
 
-        mainContent.innerHTML = `
+            mainContent.innerHTML = `
         <div class="page-header" style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-start;">
             <div>
                 <h1 style="margin-bottom:8px; font-weight:700; font-size:2rem; letter-spacing:-0.5px;">Incentives</h1>
@@ -1276,25 +1276,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 </table>
             </div>
         </div>`;
-    }
-
-    // ─── Meetings ─────────────────────────────────────────────
-    async function renderMeetings() {
-        let clients = [], allMeetings = [];
-        try { clients = await window.ApiClient.getClients(); } catch (e) { }
-        for (const c of clients.slice(0, 20)) {
-            try {
-                const ms = await window.ApiClient.getClientMeetings(c.id);
-                (ms || []).forEach(m => allMeetings.push({ ...m, client_name: c.name }));
-            } catch (e) { }
         }
-        allMeetings.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-        const statusBadgeMtg = s => ({
-            scheduled: '<span class="badge badge-purple-light">Scheduled</span>',
-            completed: '<span class="badge badge-green-light">Completed</span>',
-            cancelled: '<span class="badge badge-red-light">Cancelled</span>'
-        }[(s || '').toLowerCase()] || `<span class="badge">${s || '—'}</span>`);
-        const rows = allMeetings.length ? allMeetings.map(m => `
+
+        // ─── Meetings ─────────────────────────────────────────────
+        async function renderMeetings() {
+            let clients = [], allMeetings = [];
+            try { clients = await window.ApiClient.getClients(); } catch (e) { }
+            for (const c of clients.slice(0, 20)) {
+                try {
+                    const ms = await window.ApiClient.getClientMeetings(c.id);
+                    (ms || []).forEach(m => allMeetings.push({ ...m, client_name: c.name }));
+                } catch (e) { }
+            }
+            allMeetings.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+            const statusBadgeMtg = s => ({
+                scheduled: '<span class="badge badge-purple-light">Scheduled</span>',
+                completed: '<span class="badge badge-green-light">Completed</span>',
+                cancelled: '<span class="badge badge-red-light">Cancelled</span>'
+            }[(s || '').toLowerCase()] || `<span class="badge">${s || '—'}</span>`);
+            const rows = allMeetings.length ? allMeetings.map(m => `
             <tr>
                 <td style="font-weight:500;">${m.client_name}</td>
                 <td>${m.title || '—'}</td>
@@ -1303,8 +1303,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${statusBadgeMtg(m.status)}</td>
                 <td class="text-muted" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.content || '—'}</td>
             </tr>`).join('') :
-            `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No meetings found.</td></tr>`;
-        mainContent.innerHTML = `
+                `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No meetings found.</td></tr>`;
+            mainContent.innerHTML = `
         <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
             <div><h1>Meetings</h1><p class="text-muted">All client meeting summaries.</p></div>
             <button class="btn btn-primary" onclick="openNewMeetingModal()"><i class="fa-solid fa-plus"></i> New Meeting</button>
@@ -1313,25 +1313,25 @@ document.addEventListener('DOMContentLoaded', () => {
             <thead><tr><th>CLIENT</th><th>TITLE</th><th>DATE</th><th>TIME</th><th>STATUS</th><th>NOTES</th></tr></thead>
             <tbody>${rows}</tbody>
         </table></div></div>`;
-    }
+        }
 
-    // ─── Issues ───────────────────────────────────────────────
-    async function renderIssues() {
-        let issues = [];
-        try { issues = await window.ApiClient.getIssues(); } catch (e) { console.warn('Issues fetch failed', e); }
-        const sevBadge = s => ({
-            HIGH: '<span class="badge badge-red-light">High</span>',
-            MEDIUM: '<span class="badge badge-yellow-light">Medium</span>',
-            LOW: '<span class="badge badge-green-light">Low</span>'
-        })[(s || '').toUpperCase()] || `<span class="badge">${s || '—'}</span>`;
-        const statusBadge = s => ({
-            PENDING: '<span class="badge badge-yellow-light">Pending</span>',
-            SOLVED: '<span class="badge badge-green-light">Solved</span>',
-            COMPLETED: '<span class="badge badge-primary">Completed</span>',
-            CANCEL: '<span class="badge badge-red-light">Cancelled</span>'
-        })[(s || '').toUpperCase()] || `<span class="badge">${s || '—'}</span>`;
-        const openCount = issues.filter(i => (i.status || '').toUpperCase() === 'PENDING').length;
-        const rows = issues.length ? issues.map(i => `
+        // ─── Issues ───────────────────────────────────────────────
+        async function renderIssues() {
+            let issues = [];
+            try { issues = await window.ApiClient.getIssues(); } catch (e) { console.warn('Issues fetch failed', e); }
+            const sevBadge = s => ({
+                HIGH: '<span class="badge badge-red-light">High</span>',
+                MEDIUM: '<span class="badge badge-yellow-light">Medium</span>',
+                LOW: '<span class="badge badge-green-light">Low</span>'
+            })[(s || '').toUpperCase()] || `<span class="badge">${s || '—'}</span>`;
+            const statusBadge = s => ({
+                PENDING: '<span class="badge badge-yellow-light">Pending</span>',
+                SOLVED: '<span class="badge badge-green-light">Solved</span>',
+                COMPLETED: '<span class="badge badge-primary">Completed</span>',
+                CANCEL: '<span class="badge badge-red-light">Cancelled</span>'
+            })[(s || '').toUpperCase()] || `<span class="badge">${s || '—'}</span>`;
+            const openCount = issues.filter(i => (i.status || '').toUpperCase() === 'PENDING').length;
+            const rows = issues.length ? issues.map(i => `
             <tr>
                 <td style="font-weight:500;">${i.title || '—'}</td>
                 <td>Client #${i.client_id || '—'}</td>
@@ -1348,8 +1348,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     </select>
                 </td>
             </tr>`).join('') :
-            `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No issues found.</td></tr>`;
-        mainContent.innerHTML = `
+                `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No issues found.</td></tr>`;
+            mainContent.innerHTML = `
         <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
             <div><h1>Issues</h1><p class="text-muted">${openCount} open · ${issues.length} total</p></div>
             <button class="btn btn-primary" onclick="openNewIssueModal()"><i class="fa-solid fa-plus"></i> New Issue</button>
@@ -1358,46 +1358,46 @@ document.addEventListener('DOMContentLoaded', () => {
             <thead><tr><th>TITLE</th><th>CLIENT</th><th>SEVERITY</th><th>STATUS</th><th>ASSIGNED PM</th><th>REPORTED</th><th></th></tr></thead>
             <tbody>${rows}</tbody>
         </table></div></div>`;
-        window.promptIssueStatusUpdate = async (id, newStatus, oldStatus) => {
-            if (newStatus === oldStatus) return;
+            window.promptIssueStatusUpdate = async (id, newStatus, oldStatus) => {
+                if (newStatus === oldStatus) return;
 
-            const remarks = prompt(`Please enter mandatory remarks for changing status to ${newStatus}:`);
-            if (remarks === null) { // Cancelled prompt
-                renderIssues();
-                return;
-            }
+                const remarks = prompt(`Please enter mandatory remarks for changing status to ${newStatus}:`);
+                if (remarks === null) { // Cancelled prompt
+                    renderIssues();
+                    return;
+                }
 
-            if (!remarks.trim()) {
-                showToast('Remarks are mandatory for status updates', 'error');
-                renderIssues();
-                return;
-            }
+                if (!remarks.trim()) {
+                    showToast('Remarks are mandatory for status updates', 'error');
+                    renderIssues();
+                    return;
+                }
 
-            try {
-                await window.ApiClient.patchIssue(id, { status: newStatus, remarks: remarks });
-                showToast(`Issue status updated to ${newStatus}`);
-                renderIssues();
-            } catch (e) {
-                showToast(e.message || 'Could not update issue', 'error');
-                renderIssues();
-            }
-        };
-    }
+                try {
+                    await window.ApiClient.patchIssue(id, { status: newStatus, remarks: remarks });
+                    showToast(`Issue status updated to ${newStatus}`);
+                    renderIssues();
+                } catch (e) {
+                    showToast(e.message || 'Could not update issue', 'error');
+                    renderIssues();
+                }
+            };
+        }
 
-    // ─── HRM (Tabbed: Employees / Salary / Incentives) ──────────
-    async function renderHRM(activeTab = 'employees') {
-        const tabBar = `
+        // ─── HRM (Tabbed: Employees / Salary / Incentives) ──────────
+        async function renderHRM(activeTab = 'employees') {
+            const tabBar = `
             <div class="tab-bar" style="margin-bottom:0;">
                 <button class="tab-btn ${activeTab === 'employees' ? 'active' : ''}" onclick="renderHRM('employees')">Employees</button>
                 <button class="tab-btn ${activeTab === 'salary' ? 'active' : ''}" onclick="renderHRM('salary')">Salary Records</button>
                 <button class="tab-btn ${activeTab === 'incentives' ? 'active' : ''}" onclick="renderHRM('incentives')">Incentives</button>
             </div>`;
 
-        if (activeTab === 'employees') {
-            let employees = [];
-            try { employees = await window.ApiClient.getEmployees(); } catch (e) { }
-            const roleColors = { ADMIN: 'badge-red-light', SALES: 'badge-green-light', TELESALES: 'badge-purple-light', PROJECT_MANAGER: 'badge-yellow-light', PROJECT_MANAGER_AND_SALES: 'badge-purple-light' };
-            const rows = employees.length ? employees.map(e => `
+            if (activeTab === 'employees') {
+                let employees = [];
+                try { employees = await window.ApiClient.getEmployees(); } catch (e) { }
+                const roleColors = { ADMIN: 'badge-red-light', SALES: 'badge-green-light', TELESALES: 'badge-purple-light', PROJECT_MANAGER: 'badge-yellow-light', PROJECT_MANAGER_AND_SALES: 'badge-purple-light' };
+                const rows = employees.length ? employees.map(e => `
                 <tr>
                     <td>
                         <div style="display:flex;align-items:center;gap:12px;">
@@ -1411,8 +1411,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${e.base_salary ? `Rs. ${e.base_salary.toLocaleString()}` : '—'}</td>
                     <td>${e.active_clients_count ?? '—'}</td>
                 </tr>`).join('') :
-                `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No employees found. Create Employee records in the backend.</td></tr>`;
-            mainContent.innerHTML = `
+                    `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No employees found. Create Employee records in the backend.</td></tr>`;
+                mainContent.innerHTML = `
             <div class="page-header"><div><h1>HR &amp; Payroll</h1><p class="text-muted">${employees.length} employees on record.</p></div></div>
             <div class="card" style="padding:0 0 0 0;">
                 ${tabBar}
@@ -1421,19 +1421,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     <tbody>${rows}</tbody>
                 </table></div>
             </div>`;
-            window.renderHRM = renderHRM;
+                window.renderHRM = renderHRM;
 
-        } else if (activeTab === 'salary') {
-            let employees = [], allSlips = [];
-            try { employees = await window.ApiClient.getEmployees(); } catch (e) { }
-            for (const emp of employees.slice(0, 30)) {
-                try {
-                    const slips = await window.ApiClient.getSalaryRecords(emp.id);
-                    (slips || []).forEach(s => allSlips.push({ ...s, emp_name: emp.full_name || emp.name }));
-                } catch (e) { }
-            }
-            allSlips.sort((a, b) => (b.period || '').localeCompare(a.period || ''));
-            const rows = allSlips.length ? allSlips.map(s => `
+            } else if (activeTab === 'salary') {
+                let employees = [], allSlips = [];
+                try { employees = await window.ApiClient.getEmployees(); } catch (e) { }
+                for (const emp of employees.slice(0, 30)) {
+                    try {
+                        const slips = await window.ApiClient.getSalaryRecords(emp.id);
+                        (slips || []).forEach(s => allSlips.push({ ...s, emp_name: emp.full_name || emp.name }));
+                    } catch (e) { }
+                }
+                allSlips.sort((a, b) => (b.period || '').localeCompare(a.period || ''));
+                const rows = allSlips.length ? allSlips.map(s => `
                 <tr>
                     <td style="font-weight:500;">${s.emp_name || '—'}</td>
                     <td>${s.period || '—'}</td>
@@ -1442,8 +1442,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td style="font-weight:600;color:var(--primary);">Rs. ${(s.net_salary || 0).toLocaleString()}</td>
                     <td><span class="badge ${s.status === 'PAID' ? 'badge-green-light' : 'badge-yellow-light'}">${s.status || 'GENERATED'}</span></td>
                 </tr>`).join('') :
-                `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No salary records yet. Generate salary slips for employees.</td></tr>`;
-            mainContent.innerHTML = `
+                    `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No salary records yet. Generate salary slips for employees.</td></tr>`;
+                mainContent.innerHTML = `
             <div class="page-header"><div><h1>Salary Records</h1><p class="text-muted">${allSlips.length} slips on record.</p></div></div>
             <div class="card" style="padding:0;">
                 ${tabBar}
@@ -1452,20 +1452,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     <tbody>${rows}</tbody>
                 </table></div>
             </div>`;
-            window.renderHRM = renderHRM;
+                window.renderHRM = renderHRM;
 
-        } else if (activeTab === 'incentives') {
-            let slabs = [];
-            try { slabs = await window.ApiClient.getIncentiveSlabs(); } catch (e) { }
-            const rows = slabs.length ? slabs.map(s => `
+            } else if (activeTab === 'incentives') {
+                let slabs = [];
+                try { slabs = await window.ApiClient.getIncentiveSlabs(); } catch (e) { }
+                const rows = slabs.length ? slabs.map(s => `
                 <tr>
                     <td>${s.min_percentage}%</td>
                     <td>${s.max_percentage != null ? s.max_percentage + '%' : 'No limit'}</td>
                     <td>Rs. ${s.amount_per_unit} / unit</td>
                     <td>${s.description || '—'}</td>
                 </tr>`).join('') :
-                `<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted);">No incentive slabs defined. Admin can create slabs in Incentive Targets.</td></tr>`;
-            mainContent.innerHTML = `
+                    `<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted);">No incentive slabs defined. Admin can create slabs in Incentive Targets.</td></tr>`;
+                mainContent.innerHTML = `
             <div class="page-header"><div><h1>Incentive Slabs</h1><p class="text-muted">Performance-based bonus tiers.</p></div></div>
             <div class="card" style="padding:0;">
                 ${tabBar}
@@ -1474,16 +1474,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     <tbody>${rows}</tbody>
                 </table></div>
             </div>`;
-            window.renderHRM = renderHRM;
+                window.renderHRM = renderHRM;
+            }
         }
-    }
 
-    // ─── Admin (Users & Roles) ────────────────────────────────
-    async function renderAdmin() {
-        let users = [];
-        try { users = await window.ApiClient.getEmployees(); } catch (e) { console.warn('Admin fetch failed', e); }
-        const roleOptions = ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'];
-        const rows = users.length ? users.map(u => `
+        // ─── Admin (Users & Roles) ────────────────────────────────
+        async function renderAdmin() {
+            let users = [];
+            try { users = await window.ApiClient.getEmployees(); } catch (e) { console.warn('Admin fetch failed', e); }
+            const roleOptions = ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'];
+            const rows = users.length ? users.map(u => `
             <tr>
                 <td>
                     <div style="display:flex;align-items:center;gap:10px;">
@@ -1499,8 +1499,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
                 <td><span class="badge ${u.is_active ? 'badge-green-light' : 'badge-red-light'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
             </tr>`).join('') :
-            `<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted);">No users found.</td></tr>`;
-        mainContent.innerHTML = `
+                `<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted);">No users found.</td></tr>`;
+            mainContent.innerHTML = `
         <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
             <div><h1>Users & Roles</h1><p class="text-muted">Manage system access and role assignments.</p></div>
         </div>
@@ -1508,20 +1508,20 @@ document.addEventListener('DOMContentLoaded', () => {
             <thead><tr><th>USER</th><th>EMAIL</th><th>ROLE</th><th>STATUS</th></tr></thead>
             <tbody>${rows}</tbody>
         </table></div></div>`;
-        window.changeUserRole = async (userId, role) => {
-            try { await window.ApiClient.updateUserRole(userId, role); } catch (e) { alert('Could not update role.'); }
-        };
-    }
+            window.changeUserRole = async (userId, role) => {
+                try { await window.ApiClient.updateUserRole(userId, role); } catch (e) { alert('Could not update role.'); }
+            };
+        }
 
-    // ─── Modals Implementation ──────────────────────────────────────
-    function createModal(id, title, contentHtml, submitAction, submitLabel = "Save") {
-        const existing = document.getElementById(id);
-        if (existing) existing.remove();
+        // ─── Modals Implementation ──────────────────────────────────────
+        function createModal(id, title, contentHtml, submitAction, submitLabel = "Save") {
+            const existing = document.getElementById(id);
+            if (existing) existing.remove();
 
-        const overlay = document.createElement('div');
-        overlay.id = id;
-        overlay.className = 'modal-overlay';
-        overlay.innerHTML = `
+            const overlay = document.createElement('div');
+            overlay.id = id;
+            overlay.className = 'modal-overlay';
+            overlay.innerHTML = `
             <div class="modal-box">
                 <div class="modal-header">
                     <h2>${title}</h2>
@@ -1536,57 +1536,57 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
-        document.body.appendChild(overlay);
+            document.body.appendChild(overlay);
 
-        document.getElementById(`${id}-submit`).addEventListener('click', async (e) => {
-            const btn = e.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
-            btn.disabled = true;
-            try {
-                await submitAction();
-                overlay.remove();
-            } catch (err) {
-                console.error(err);
-                alert("Error: " + (err.message || 'Action failed'));
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        });
-    }
+            document.getElementById(`${id}-submit`).addEventListener('click', async (e) => {
+                const btn = e.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+                btn.disabled = true;
+                try {
+                    await submitAction();
+                    overlay.remove();
+                } catch (err) {
+                    console.error(err);
+                    alert("Error: " + (err.message || 'Action failed'));
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            });
+        }
 
-    // Modal: New Client
-    window.openNewClientModal = () => {
-        const html = `
+        // Modal: New Client
+        window.openNewClientModal = () => {
+            const html = `
             <div class="form-group"><label>Client Name *</label><input type="text" id="mc-name" class="form-control" required></div>
             <div class="form-group"><label>Email *</label><input type="email" id="mc-email" class="form-control" required></div>
             <div class="form-group"><label>Phone *</label><input type="text" id="mc-phone" class="form-control" minlength="10" required></div>
             <div class="form-group"><label>Organization</label><input type="text" id="mc-org" class="form-control"></div>
             <div class="form-group"><label>Address</label><textarea id="mc-addr" class="form-textarea"></textarea></div>
         `;
-        createModal('modal-new-client', 'Add New Client', html, async () => {
-            const data = {
-                name: document.getElementById('mc-name').value,
-                email: document.getElementById('mc-email').value,
-                phone: document.getElementById('mc-phone').value,
-                organization: document.getElementById('mc-org').value,
-                address: document.getElementById('mc-addr').value
-            };
-            if (!data.name || !data.email || !data.phone) throw new Error("Name, Email, and Phone are required. Phone must be 10+ digits.");
-            await window.ApiClient.createClient(data);
-            showToast('Client created successfully');
-            if (document.querySelector('h1').innerText.includes('Clients')) renderClients();
-        });
-    };
+            createModal('modal-new-client', 'Add New Client', html, async () => {
+                const data = {
+                    name: document.getElementById('mc-name').value,
+                    email: document.getElementById('mc-email').value,
+                    phone: document.getElementById('mc-phone').value,
+                    organization: document.getElementById('mc-org').value,
+                    address: document.getElementById('mc-addr').value
+                };
+                if (!data.name || !data.email || !data.phone) throw new Error("Name, Email, and Phone are required. Phone must be 10+ digits.");
+                await window.ApiClient.createClient(data);
+                showToast('Client created successfully');
+                if (document.querySelector('h1').innerText.includes('Clients')) renderClients();
+            });
+        };
 
-    // Modal: Log Visit
-    window.openLogVisitModal = async () => {
-        let shops = [];
-        try { shops = await window.ApiClient.getShops(); } catch (e) { }
+        // Modal: Log Visit
+        window.openLogVisitModal = async () => {
+            let shops = [];
+            try { shops = await window.ApiClient.getShops(); } catch (e) { }
 
-        const shopOptions = shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-        const html = `
+            const shopOptions = shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            const html = `
             <div class="form-group">
                 <label>Select Shop *</label>
                 <select id="mv-shop" class="form-control" required>
@@ -1617,58 +1617,58 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="file" id="mv-photo" class="form-control" accept="image/*">
             </div>
         `;
-        createModal('modal-log-visit', 'Log Field Visit', html, async () => {
+            createModal('modal-log-visit', 'Log Field Visit', html, async () => {
+                const user = window.ApiClient.getCurrentUser();
+                const isTelesales = user && user.role === 'TELESALES';
+
+                const shopId = document.getElementById('mv-shop').value;
+                if (!shopId) throw new Error("Please select a shop");
+
+                const formData = new FormData();
+                formData.append('shop_id', shopId);
+                formData.append('status', document.getElementById('mv-status').value);
+                formData.append('remarks', document.getElementById('mv-notes').value);
+
+                const vDate = document.getElementById('mv-date').value;
+                if (vDate) {
+                    formData.append('visit_date', new Date(vDate).toISOString());
+                }
+
+                const photoInput = document.getElementById('mv-photo');
+                if (photoInput.files.length > 0) {
+                    formData.append('photo', photoInput.files[0]);
+                }
+
+                const token = window.ApiClient.getAccessToken();
+                const res = await fetch(`${window.ApiClient.API_BASE_URL}/visits/`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Failed to log visit');
+                }
+                showToast('Visit logged successfully');
+                if (document.querySelector('h1').innerText.includes('Visits')) renderVisits();
+            }, "Log Visit");
+
+            // Hide photo upload for telesales
             const user = window.ApiClient.getCurrentUser();
-            const isTelesales = user && user.role === 'TELESALES';
-
-            const shopId = document.getElementById('mv-shop').value;
-            if (!shopId) throw new Error("Please select a shop");
-
-            const formData = new FormData();
-            formData.append('shop_id', shopId);
-            formData.append('status', document.getElementById('mv-status').value);
-            formData.append('remarks', document.getElementById('mv-notes').value);
-
-            const vDate = document.getElementById('mv-date').value;
-            if (vDate) {
-                formData.append('visit_date', new Date(vDate).toISOString());
+            if (user && user.role === 'TELESALES') {
+                const photoGrp = document.getElementById('visit-photo-group');
+                if (photoGrp) photoGrp.style.display = 'none';
             }
+        };
 
-            const photoInput = document.getElementById('mv-photo');
-            if (photoInput.files.length > 0) {
-                formData.append('photo', photoInput.files[0]);
-            }
+        // Modal: New Meeting
+        window.openNewMeetingModal = async (defaultClientId = '') => {
+            let clients = [];
+            try { clients = await window.ApiClient.getClients(); } catch (e) { }
 
-            const token = window.ApiClient.getAccessToken();
-            const res = await fetch(`${window.ApiClient.API_BASE_URL}/visits/`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData
-            });
-
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.detail || 'Failed to log visit');
-            }
-            showToast('Visit logged successfully');
-            if (document.querySelector('h1').innerText.includes('Visits')) renderVisits();
-        }, "Log Visit");
-
-        // Hide photo upload for telesales
-        const user = window.ApiClient.getCurrentUser();
-        if (user && user.role === 'TELESALES') {
-            const photoGrp = document.getElementById('visit-photo-group');
-            if (photoGrp) photoGrp.style.display = 'none';
-        }
-    };
-
-    // Modal: New Meeting
-    window.openNewMeetingModal = async (defaultClientId = '') => {
-        let clients = [];
-        try { clients = await window.ApiClient.getClients(); } catch (e) { }
-
-        const clientOptions = clients.map(c => `<option value="${c.id}" ${c.id == defaultClientId ? 'selected' : ''}>${c.name}</option>`).join('');
-        const html = `
+            const clientOptions = clients.map(c => `<option value="${c.id}" ${c.id == defaultClientId ? 'selected' : ''}>${c.name}</option>`).join('');
+            const html = `
             <div class="form-group">
                 <label>Client *</label>
                 <select id="mm-client" class="form-control" ${defaultClientId ? 'disabled' : ''} required>
@@ -1686,34 +1686,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 <textarea id="mm-notes" class="form-textarea"></textarea>
             </div>
         `;
-        createModal('modal-new-meeting', 'Schedule Meeting', html, async () => {
-            const clientId = document.getElementById('mm-client').value;
-            if (!clientId) throw new Error("Client is required");
-            const d = document.getElementById('mm-date').value;
-            const t = document.getElementById('mm-time').value;
-            const datetimeStr = d ? (t ? `${d}T${t}:00Z` : `${d}T00:00:00Z`) : null;
+            createModal('modal-new-meeting', 'Schedule Meeting', html, async () => {
+                const clientId = document.getElementById('mm-client').value;
+                if (!clientId) throw new Error("Client is required");
+                const d = document.getElementById('mm-date').value;
+                const t = document.getElementById('mm-time').value;
+                const datetimeStr = d ? (t ? `${d}T${t}:00Z` : `${d}T00:00:00Z`) : null;
 
-            const data = {
-                title: document.getElementById('mm-title').value,
-                date: datetimeStr,
-                status: "scheduled",
-                content: document.getElementById('mm-notes').value
-            };
-            if (!data.title) throw new Error("Title is required");
+                const data = {
+                    title: document.getElementById('mm-title').value,
+                    date: datetimeStr,
+                    status: "scheduled",
+                    content: document.getElementById('mm-notes').value
+                };
+                if (!data.title) throw new Error("Title is required");
 
-            await window.ApiClient.createMeeting(clientId, data);
-            showToast('Meeting scheduled successfully');
-            if (document.querySelector('h1').innerText.includes('Meetings')) renderMeetings();
-        });
-    };
+                await window.ApiClient.createMeeting(clientId, data);
+                showToast('Meeting scheduled successfully');
+                if (document.querySelector('h1').innerText.includes('Meetings')) renderMeetings();
+            });
+        };
 
-    // Modal: New Issue
-    window.openNewIssueModal = async (defaultClientId = '') => {
-        let clients = [];
-        try { clients = await window.ApiClient.getClients(); } catch (e) { }
+        // Modal: New Issue
+        window.openNewIssueModal = async (defaultClientId = '') => {
+            let clients = [];
+            try { clients = await window.ApiClient.getClients(); } catch (e) { }
 
-        const clientOptions = clients.map(c => `<option value="${c.id}" ${c.id == defaultClientId ? 'selected' : ''}>${c.name}</option>`).join('');
-        const html = `
+            const clientOptions = clients.map(c => `<option value="${c.id}" ${c.id == defaultClientId ? 'selected' : ''}>${c.name}</option>`).join('');
+            const html = `
             <div class="form-group">
                 <label>Client *</label>
                 <select id="mi-client" class="form-control" ${defaultClientId ? 'disabled' : ''} required>
@@ -1737,31 +1737,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 <textarea id="mi-desc" class="form-textarea"></textarea>
             </div>
         `;
-        createModal('modal-new-issue', 'Report Issue', html, async () => {
-            const clientId = document.getElementById('mi-client').value;
-            if (!clientId) throw new Error("Client is required");
+            createModal('modal-new-issue', 'Report Issue', html, async () => {
+                const clientId = document.getElementById('mi-client').value;
+                if (!clientId) throw new Error("Client is required");
 
-            const data = {
-                title: document.getElementById('mi-title').value,
-                description: document.getElementById('mi-desc').value,
-                severity: document.getElementById('mi-sev').value,
-                status: "OPEN"
-            };
-            if (!data.title) throw new Error("Title is required");
+                const data = {
+                    title: document.getElementById('mi-title').value,
+                    description: document.getElementById('mi-desc').value,
+                    severity: document.getElementById('mi-sev').value,
+                    status: "OPEN"
+                };
+                if (!data.title) throw new Error("Title is required");
 
-            await window.ApiClient.createIssue(clientId, data);
-            showToast('Issue created successfully');
-            if (document.querySelector('h1').innerText.includes('Issues')) renderIssues();
-        });
-    };
+                await window.ApiClient.createIssue(clientId, data);
+                showToast('Issue created successfully');
+                if (document.querySelector('h1').innerText.includes('Issues')) renderIssues();
+            });
+        };
 
-    // Modal: New Shop
-    window.openNewShopModal = async (defaultAreaId = '') => {
-        let areas = [];
-        try { areas = await window.ApiClient.getAreas(); } catch (e) { }
+        // Modal: New Shop
+        window.openNewShopModal = async (defaultAreaId = '') => {
+            let areas = [];
+            try { areas = await window.ApiClient.getAreas(); } catch (e) { }
 
-        const areaOptions = areas.map(a => `<option value="${a.id}" ${a.id == defaultAreaId ? 'selected' : ''}>${a.name}</option>`).join('');
-        const html = `
+            const areaOptions = areas.map(a => `<option value="${a.id}" ${a.id == defaultAreaId ? 'selected' : ''}>${a.name}</option>`).join('');
+            const html = `
             <div class="form-group"><label>Shop Name *</label><input type="text" id="ms-name" class="form-control" required></div>
             <div class="form-group"><label>Owner Name</label><input type="text" id="ms-owner" class="form-control"></div>
             <div class="form-group"><label>Phone</label><input type="text" id="ms-phone" class="form-control"></div>
@@ -1774,67 +1774,67 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="form-group"><label>Address</label><textarea id="ms-addr" class="form-textarea"></textarea></div>
         `;
-        createModal('modal-new-shop', 'Add New Shop', html, async () => {
-            const areaId = document.getElementById('ms-area').value || defaultAreaId;
-            if (!areaId) throw new Error("Area is required");
+            createModal('modal-new-shop', 'Add New Shop', html, async () => {
+                const areaId = document.getElementById('ms-area').value || defaultAreaId;
+                if (!areaId) throw new Error("Area is required");
 
-            const data = {
-                name: document.getElementById('ms-name').value,
-                owner_name: document.getElementById('ms-owner').value,
-                phone: document.getElementById('ms-phone').value,
-                address: document.getElementById('ms-addr').value,
-                status: "ACTIVE"
-            };
-            if (!data.name) throw new Error("Shop Name is required");
+                const data = {
+                    name: document.getElementById('ms-name').value,
+                    owner_name: document.getElementById('ms-owner').value,
+                    phone: document.getElementById('ms-phone').value,
+                    address: document.getElementById('ms-addr').value,
+                    status: "ACTIVE"
+                };
+                if (!data.name) throw new Error("Shop Name is required");
 
-            await window.ApiClient.createShop(areaId, data);
-            showToast('Shop created successfully');
-            if (document.querySelector('.page-header h1')?.innerText.includes('Shops')) renderShops(); // hypothetical shop view if exists
-        });
-    };
+                await window.ApiClient.createShop(areaId, data);
+                showToast('Shop created successfully');
+                if (document.querySelector('.page-header h1')?.innerText.includes('Shops')) renderShops(); // hypothetical shop view if exists
+            });
+        };
 
-    // Modal: New Area
-    window.openNewAreaModal = async () => {
-        const html = `
+        // Modal: New Area
+        window.openNewAreaModal = async () => {
+            const html = `
             <div class="form-group"><label>Area Name *</label><input type="text" id="ma-name" class="form-control" required></div>
             <div class="form-group"><label>City *</label><input type="text" id="ma-city" class="form-control" required></div>
             <div class="form-group"><label>State</label><input type="text" id="ma-state" class="form-control"></div>
             <div class="form-group"><label>Pincode</label><input type="text" id="ma-pin" class="form-control"></div>
         `;
-        createModal('modal-new-area', 'Add New Area', html, async () => {
-            const data = {
-                name: document.getElementById('ma-name').value,
-                city: document.getElementById('ma-city').value,
-                state: document.getElementById('ma-state').value,
-                pincode: document.getElementById('ma-pin').value
-            };
-            if (!data.name || !data.city) throw new Error("Area Name and City are required");
+            createModal('modal-new-area', 'Add New Area', html, async () => {
+                const data = {
+                    name: document.getElementById('ma-name').value,
+                    city: document.getElementById('ma-city').value,
+                    state: document.getElementById('ma-state').value,
+                    pincode: document.getElementById('ma-pin').value
+                };
+                if (!data.name || !data.city) throw new Error("Area Name and City are required");
 
-            await window.ApiClient.createArea(data);
-            showToast('Area created successfully');
-            if (document.querySelector('.page-header h1')?.innerText.includes('Areas')) renderAreas();
-        });
-    };
+                await window.ApiClient.createArea(data);
+                showToast('Area created successfully');
+                if (document.querySelector('.page-header h1')?.innerText.includes('Areas')) renderAreas();
+            });
+        };
 
-    // ─── Profile ──────────────────────────────────────────────────
-    async function renderProfile() {
-        const u = window.ApiClient.getCurrentUser();
-        if (!u) {
-            loadView('dashboard');
-            return;
-        }
+        // ─── Profile ──────────────────────────────────────────────────
+        async function renderProfile() {
+            const u = window.ApiClient.getCurrentUser();
+            if (!u) {
+                loadView('dashboard');
+                return;
+            }
 
-        const roleName = u.role.replace(/_/g, ' ');
-        const initials = u.name.slice(0, 2).toUpperCase();
+            const roleName = u.role.replace(/_/g, ' ');
+            const initials = u.name.slice(0, 2).toUpperCase();
 
-        // Check if user has an associated employee record for ID card
-        // For now, we'll assume admins and PMs can see their own if they have one
-        const canViewIdCard = ['ADMIN', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES', 'SALES', 'TELESALES'].includes(u.role);
+            // Check if user has an associated employee record for ID card
+            // For now, we'll assume admins and PMs can see their own if they have one
+            const canViewIdCard = ['ADMIN', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES', 'SALES', 'TELESALES'].includes(u.role);
 
-        // Referral code is for Sales/Telesales
-        const hasReferralCode = ['SALES', 'TELESALES', 'PROJECT_MANAGER_AND_SALES'].includes(u.role);
+            // Referral code is for Sales/Telesales
+            const hasReferralCode = ['SALES', 'TELESALES', 'PROJECT_MANAGER_AND_SALES'].includes(u.role);
 
-        mainContent.innerHTML = `
+            mainContent.innerHTML = `
             <div class="page-header">
                 <div><h1>My Profile</h1><p class="text-muted">Manage your personal information and credentials.</p></div>
             </div>
@@ -1910,19 +1910,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
-    }
+        }
 
-    // ─── Reports & Analytics ──────────────────────────────────────
-    async function renderReports() {
-        let stats = null;
-        try { stats = await window.ApiClient.getReportsDashboard(); } catch (e) { console.warn('Reports fetch failed', e); }
+        // ─── Reports & Analytics ──────────────────────────────────────
+        async function renderReports() {
+            let stats = null;
+            try { stats = await window.ApiClient.getReportsDashboard(); } catch (e) { console.warn('Reports fetch failed', e); }
 
-        const openIssues = stats?.open_issues_count ?? 0;
-        const totalClients = stats?.total_clients ?? 0;
-        const totalVisits = stats?.total_visits ?? 0;
-        const totalShops = stats?.total_shops ?? 0;
+            const openIssues = stats?.open_issues_count ?? 0;
+            const totalClients = stats?.total_clients ?? 0;
+            const totalVisits = stats?.total_visits ?? 0;
+            const totalShops = stats?.total_shops ?? 0;
 
-        mainContent.innerHTML = `
+            mainContent.innerHTML = `
         <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
             <div><h1>Reports & Analytics</h1><p class="text-muted">Comprehensive system overview and metrics.</p></div>
             <button class="btn btn-primary" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Report</button>
@@ -2004,17 +2004,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         </div>`;
-        window.renderReports = renderReports;
-    }
+            window.renderReports = renderReports;
+        }
 
-    async function renderTimetable() {
-        try {
-            const res = await window.ApiClient.getTimetable();
-            const events = res.events || [];
+        async function renderTimetable() {
+            try {
+                const res = await window.ApiClient.getTimetable();
+                const events = res.events || [];
 
-            const rows = events.length === 0
-                ? '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted);">No scheduled activities found.</td></tr>'
-                : events.map(e => `
+                const rows = events.length === 0
+                    ? '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted);">No scheduled activities found.</td></tr>'
+                    : events.map(e => `
                     <tr>
                         <td><div style="font-weight:500;">${e.title}</div><div style="font-size:12px;color:var(--text-muted);">${e.description || ''}</div></td>
                         <td>${new Date(e.date).toLocaleDateString()} ${new Date(e.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
@@ -2022,7 +2022,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td><span class="badge ${e.status === 'COMPLETED' ? 'badge-green-light' : 'badge-yellow-light'}">${e.status}</span></td>
                     </tr>`).join('');
 
-            mainContent.innerHTML = `
+                mainContent.innerHTML = `
                 <div class="page-header">
                     <div><h1>Timetable & Schedule</h1><p class="text-muted">Unified view of your activities.</p></div>
                 </div>
@@ -2035,17 +2035,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             `;
-        } catch (e) {
-            mainContent.innerHTML = '<div class="card text-danger">Failed to load timetable.</div>';
+            } catch (e) {
+                mainContent.innerHTML = '<div class="card text-danger">Failed to load timetable.</div>';
+            }
         }
-    }
 
-    async function renderBilling() {
-        try {
-            const bills = await window.ApiClient.getBills();
-            const rows = bills.length === 0
-                ? '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No bills found.</td></tr>'
-                : bills.map(b => `
+        async function renderBilling() {
+            try {
+                const bills = await window.ApiClient.getBills();
+                const rows = bills.length === 0
+                    ? '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No bills found.</td></tr>'
+                    : bills.map(b => `
                     <tr>
                         <td style="font-weight:600;">${b.invoice_number || 'PENDING'}</td>
                         <td>Shop #${b.shop_id}</td>
@@ -2054,7 +2054,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>${b.whatsapp_sent ? '<span class="badge badge-green-light"><i class="fa-brands fa-whatsapp"></i> Sent</span>' : '<span class="badge badge-red-light">Not Sent</span>'}</td>
                     </tr>`).join('');
 
-            mainContent.innerHTML = `
+                mainContent.innerHTML = `
                 <div class="page-header">
                     <div><h1>Billing & Invoices</h1><p class="text-muted">Manage payments and shop auto-conversions.</p></div>
                     <button class="btn btn-primary" onclick="openNewBillModal()"><i class="fa-solid fa-file-invoice-dollar"></i> Generate New Bill</button>
@@ -2068,17 +2068,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             `;
-        } catch (e) {
-            mainContent.innerHTML = '<div class="card text-danger">Failed to load billing records.</div>';
+            } catch (e) {
+                mainContent.innerHTML = '<div class="card text-danger">Failed to load billing records.</div>';
+            }
         }
-    }
 
-    window.openNewBillModal = async (shopId = null) => {
-        let shops = [];
-        try { shops = await window.ApiClient.getShops(); } catch (e) { }
+        window.openNewBillModal = async (shopId = null) => {
+            let shops = [];
+            try { shops = await window.ApiClient.getShops(); } catch (e) { }
 
-        const shopOptions = shops.map(s => `<option value="${s.id}" ${s.id == shopId ? 'selected' : ''}>${s.name}</option>`).join('');
-        const html = `
+            const shopOptions = shops.map(s => `<option value="${s.id}" ${s.id == shopId ? 'selected' : ''}>${s.name}</option>`).join('');
+            const html = `
             <div class="form-group">
                 <label>Select Shop *</label>
                 <select id="mb-shop" class="form-control" ${shopId ? 'disabled' : ''} required>
@@ -2092,32 +2092,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="number" id="mb-amount" class="form-control" placeholder="E.g. 5000" required>
             </div>
         `;
-        createModal('modal-new-bill', 'Generate Bill & Convert Shop', html, async () => {
-            const shopId = document.getElementById('mb-shop').value;
-            const amount = document.getElementById('mb-amount').value;
-            if (!shopId || !amount) throw new Error("All fields are required");
+            createModal('modal-new-bill', 'Generate Bill & Convert Shop', html, async () => {
+                const shopId = document.getElementById('mb-shop').value;
+                const amount = document.getElementById('mb-amount').value;
+                if (!shopId || !amount) throw new Error("All fields are required");
 
-            await window.ApiClient.generateBill({ shop_id: parseInt(shopId), amount: parseFloat(amount) });
-            showToast('Bill generated and WhatsApp invoice sent!');
-            renderBilling();
-        }, "Generate & Convert");
-    };
+                await window.ApiClient.generateBill({ shop_id: parseInt(shopId), amount: parseFloat(amount) });
+                showToast('Bill generated and WhatsApp invoice sent!');
+                renderBilling();
+            }, "Generate & Convert");
+        };
 
-<<<<<<< Updated upstream
-=======
-    async function renderTimetable() {
-        const today = new Date();
-        const dateStr = today.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        async function renderTimetable() {
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-        // Mock Data for Timetable (following Google Calendar inspiration)
-        const mockEvents = [
-            { id: 1, name: 'Morning Lead Follow-up', start: '09:00 AM', end: '10:30 AM', type: 'Call', loc: 'Office', recurrence: 'Daily', status: 'COMPLETED' },
-            { id: 2, name: 'Client Meeting - HCL', start: '11:00 AM', end: '12:30 PM', type: 'Meeting', loc: 'Main Street Office', recurrence: 'None', status: 'UPCOMING' },
-            { id: 3, name: 'Shop Visit - Metro Bazar', start: '02:00 PM', end: '04:00 PM', type: 'Field Visit', loc: 'Metro Area', recurrence: 'Weekly', status: 'UPCOMING' },
-            { id: 4, name: 'Team Sync', start: '05:00 PM', end: '06:00 PM', type: 'Internal', loc: 'Conference Room', recurrence: 'Daily', status: 'UPCOMING' },
-        ];
+            // Mock Data for Timetable (following Google Calendar inspiration)
+            const mockEvents = [
+                { id: 1, name: 'Morning Lead Follow-up', start: '09:00 AM', end: '10:30 AM', type: 'Call', loc: 'Office', recurrence: 'Daily', status: 'COMPLETED' },
+                { id: 2, name: 'Client Meeting - HCL', start: '11:00 AM', end: '12:30 PM', type: 'Meeting', loc: 'Main Street Office', recurrence: 'None', status: 'UPCOMING' },
+                { id: 3, name: 'Shop Visit - Metro Bazar', start: '02:00 PM', end: '04:00 PM', type: 'Field Visit', loc: 'Metro Area', recurrence: 'Weekly', status: 'UPCOMING' },
+                { id: 4, name: 'Team Sync', start: '05:00 PM', end: '06:00 PM', type: 'Internal', loc: 'Conference Room', recurrence: 'Daily', status: 'UPCOMING' },
+            ];
 
-        const rows = mockEvents.map(e => `
+            const rows = mockEvents.map(e => `
             <tr>
                 <td><div class="fw-bold">${e.name}</div><div class="text-muted small">${e.type}</div></td>
                 <td><div class="text-dark">${e.start} - ${e.end}</div></td>
@@ -2128,7 +2126,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </tr>
         `).join('');
 
-        mainContent.innerHTML = `
+            mainContent.innerHTML = `
             <div class="page-header d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="h3 fw-bold mb-1">Timetable & Schedule</h1>
@@ -2190,52 +2188,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
-    }
+        }
 
-    async function renderTodo() {
-        const today = new Date().toISOString().split('T')[0];
-        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        async function renderTodo() {
+            const today = new Date().toISOString().split('T')[0];
+            const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
-        const mockTodos = [
-            { id: 1, title: 'Finalize Proposal - TechCorp', priority: 'HIGH', status: 'PENDING', assigned: 'Nency Savaliya', due: `${tomorrow}T14:30:00`, related: 'Project Alpha' },
-            { id: 2, title: 'Follow-up with New Leads', priority: 'MEDIUM', status: 'IN_PROGRESS', assigned: 'Nency Savaliya', due: `${today}T10:00:00`, related: 'Tech Expo' },
-            { id: 3, title: 'Internal Security Audit', priority: 'LOW', status: 'PENDING', assigned: 'Admin', due: `${yesterday}T16:00:00`, related: 'System Admin' },
-            { id: 4, title: 'Client Feedback Analysis', priority: 'HIGH', status: 'COMPLETED', assigned: 'Nency Savaliya', due: '2026-02-26T12:00:00', related: 'CRM Feedback' },
-        ];
+            const mockTodos = [
+                { id: 1, title: 'Finalize Proposal - TechCorp', priority: 'HIGH', status: 'PENDING', assigned: 'Nency Savaliya', due: `${tomorrow}T14:30:00`, related: 'Project Alpha' },
+                { id: 2, title: 'Follow-up with New Leads', priority: 'MEDIUM', status: 'IN_PROGRESS', assigned: 'Nency Savaliya', due: `${today}T10:00:00`, related: 'Tech Expo' },
+                { id: 3, title: 'Internal Security Audit', priority: 'LOW', status: 'PENDING', assigned: 'Admin', due: `${yesterday}T16:00:00`, related: 'System Admin' },
+                { id: 4, title: 'Client Feedback Analysis', priority: 'HIGH', status: 'COMPLETED', assigned: 'Nency Savaliya', due: '2026-02-26T12:00:00', related: 'CRM Feedback' },
+            ];
 
-        const formatRelativeDate = (dateStr) => {
-            const date = new Date(dateStr);
-            const now = new Date();
-            const diffTime = date.getTime() - now.getTime();
-            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+            const formatRelativeDate = (dateStr) => {
+                const date = new Date(dateStr);
+                const now = new Date();
+                const diffTime = date.getTime() - now.getTime();
+                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-            const timeStr = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+                const timeStr = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-            let dateLabel = '';
-            if (diffDays === 0) dateLabel = 'Today';
-            else if (diffDays === 1) dateLabel = 'Tomorrow';
-            else if (diffDays === -1) dateLabel = 'Yesterday';
-            else dateLabel = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                let dateLabel = '';
+                if (diffDays === 0) dateLabel = 'Today';
+                else if (diffDays === 1) dateLabel = 'Tomorrow';
+                else if (diffDays === -1) dateLabel = 'Yesterday';
+                else dateLabel = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 
-            return `${dateLabel}, ${timeStr}`;
-        };
+                return `${dateLabel}, ${timeStr}`;
+            };
 
-        const sevBadge = s => ({
-            HIGH: '<span class="badge bg-danger">High</span>',
-            MEDIUM: '<span class="badge bg-warning text-dark">Medium</span>',
-            LOW: '<span class="badge bg-success">Low</span>'
-        })[s] || `<span class="badge bg-secondary">${s}</span>`;
+            const sevBadge = s => ({
+                HIGH: '<span class="badge bg-danger">High</span>',
+                MEDIUM: '<span class="badge bg-warning text-dark">Medium</span>',
+                LOW: '<span class="badge bg-success">Low</span>'
+            })[s] || `<span class="badge bg-secondary">${s}</span>`;
 
-        const statBadge = s => ({
-            PENDING: '<span class="badge badge-purple-light">Pending</span>',
-            IN_PROGRESS: '<span class="badge bg-info-subtle text-info border border-info-subtle">In Progress</span>',
-            COMPLETED: '<span class="badge badge-green-light">Completed</span>'
-        })[s] || `<span class="badge">${s}</span>`;
+            const statBadge = s => ({
+                PENDING: '<span class="badge badge-purple-light">Pending</span>',
+                IN_PROGRESS: '<span class="badge bg-info-subtle text-info border border-info-subtle">In Progress</span>',
+                COMPLETED: '<span class="badge badge-green-light">Completed</span>'
+            })[s] || `<span class="badge">${s}</span>`;
 
-        const rows = mockTodos.map(t => {
-            const initials = t.assigned.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-            return `
+            const rows = mockTodos.map(t => {
+                const initials = t.assigned.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                return `
             <tr>
                 <td class="px-4"><div class="fw-bold">${t.title}</div><div class="text-muted smaller">Assigned: ${t.assigned}</div></td>
                 <td>${sevBadge(t.priority)}</td>
@@ -2256,9 +2254,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
             </tr>
         `;
-        }).join('');
+            }).join('');
 
-        mainContent.innerHTML = `
+            mainContent.innerHTML = `
             <div class="page-header d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="h3 fw-bold mb-1">To-Do List</h1>
@@ -2313,10 +2311,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
-    }
+        }
 
-    window.openNewTodoModal = () => {
-        const html = `
+        window.openNewTodoModal = () => {
+            const html = `
             <div class="row g-3">
                 <div class="col-12"><label class="form-label fw-semibold">Task Title *</label><input type="text" id="td-title" class="form-control" placeholder="What needs to be done?"></div>
                 <div class="col-md-6"><label class="form-label fw-semibold">Priority Level</label><select id="td-priority" class="form-select"><option value="LOW">Low</option><option value="MEDIUM" selected>Medium</option><option value="HIGH">High</option></select></div>
@@ -2328,16 +2326,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="col-12"><label class="form-label fw-semibold">Evidence Upload</label><input type="file" id="td-evidence" class="form-control"></div>
             </div>
         `;
-        createModal('modal-new-todo', 'Create New Task', html, async () => {
-            const title = document.getElementById('td-title').value;
-            if (!title) throw new Error("Task title is required");
-            showToast('New task added successfully (Frontend Sync)');
-            renderTodo();
-        }, "Create Task");
-    };
+            createModal('modal-new-todo', 'Create New Task', html, async () => {
+                const title = document.getElementById('td-title').value;
+                if (!title) throw new Error("Task title is required");
+                showToast('New task added successfully (Frontend Sync)');
+                renderTodo();
+            }, "Create Task");
+        };
 
-    window.openNewTimetableModal = () => {
-        const html = `
+        window.openNewTimetableModal = () => {
+            const html = `
             <div class="row g-3">
                 <div class="col-12"><label class="form-label fw-semibold">Event Name *</label><input type="text" id="tt-name" class="form-control" placeholder="e.g., Client Follow-up"></div>
                 <div class="col-md-6"><label class="form-label fw-semibold">Start Time *</label><input type="datetime-local" id="tt-start" class="form-control"></div>
@@ -2349,20 +2347,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="col-12"><label class="form-label fw-semibold">Remarks</label><textarea id="tt-remarks" class="form-control" rows="2" placeholder="Any special notes..."></textarea></div>
             </div>
         `;
-        createModal('modal-new-timetable', 'Schedule Activity', html, async () => {
-            const name = document.getElementById('tt-name').value;
-            if (!name) throw new Error("Event name is required");
-            showToast('Activity scheduled successfully (Frontend Sync)');
-            renderTimetable();
-        }, "Schedule");
-    };
+            createModal('modal-new-timetable', 'Schedule Activity', html, async () => {
+                const name = document.getElementById('tt-name').value;
+                if (!name) throw new Error("Event name is required");
+                showToast('Activity scheduled successfully (Frontend Sync)');
+                renderTimetable();
+            }, "Schedule");
+        };
 
-    async function renderBilling() {
-        try {
-            const bills = await window.ApiClient.getBills();
-            const rows = bills.length === 0
-                ? '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No bills found.</td></tr>'
-                : bills.map(b => `
+        async function renderBilling() {
+            try {
+                const bills = await window.ApiClient.getBills();
+                const rows = bills.length === 0
+                    ? '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No bills found.</td></tr>'
+                    : bills.map(b => `
                     <tr>
                         <td style="font-weight:600;">${b.invoice_number || 'PENDING'}</td>
                         <td>Shop #${b.shop_id}</td>
@@ -2371,7 +2369,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>${b.whatsapp_sent ? '<span class="badge badge-green-light"><i class="fa-brands fa-whatsapp"></i> Sent</span>' : '<span class="badge badge-red-light">Not Sent</span>'}</td>
                     </tr>`).join('');
 
-            mainContent.innerHTML = `
+                mainContent.innerHTML = `
                 <div class="page-header">
                     <div><h1>Billing & Invoices</h1><p class="text-muted">Manage payments and shop auto-conversions.</p></div>
                     <button class="btn btn-primary" onclick="openNewBillModal()"><i class="fa-solid fa-file-invoice-dollar"></i> Generate New Bill</button>
@@ -2385,17 +2383,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             `;
-        } catch (e) {
-            mainContent.innerHTML = '<div class="card text-danger">Failed to load billing records.</div>';
+            } catch (e) {
+                mainContent.innerHTML = '<div class="card text-danger">Failed to load billing records.</div>';
+            }
         }
-    }
 
-    window.openNewBillModal = async () => {
-        let shops = [];
-        try { shops = await window.ApiClient.getShops(); } catch (e) { }
+        window.openNewBillModal = async () => {
+            let shops = [];
+            try { shops = await window.ApiClient.getShops(); } catch (e) { }
 
-        const shopOptions = shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-        const html = `
+            const shopOptions = shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            const html = `
             <div class="form-group">
                 <label>Select Shop *</label>
                 <select id="mb-shop" class="form-control" required>
@@ -2409,18 +2407,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="number" id="mb-amount" class="form-control" placeholder="E.g. 5000" required>
             </div>
         `;
-        createModal('modal-new-bill', 'Generate Bill & Convert Shop', html, async () => {
-            const shopId = document.getElementById('mb-shop').value;
-            const amount = document.getElementById('mb-amount').value;
-            if (!shopId || !amount) throw new Error("All fields are required");
+            createModal('modal-new-bill', 'Generate Bill & Convert Shop', html, async () => {
+                const shopId = document.getElementById('mb-shop').value;
+                const amount = document.getElementById('mb-amount').value;
+                if (!shopId || !amount) throw new Error("All fields are required");
 
-            await window.ApiClient.generateBill({ shop_id: parseInt(shopId), amount: parseFloat(amount) });
-            showToast('Bill generated and WhatsApp invoice sent!');
-            renderBilling();
-        }, "Generate & Convert");
-    };
+                await window.ApiClient.generateBill({ shop_id: parseInt(shopId), amount: parseFloat(amount) });
+                showToast('Bill generated and WhatsApp invoice sent!');
+                renderBilling();
+            }, "Generate & Convert");
+        };
 
->>>>>>> Stashed changes
-    // Kickoff
-    checkAuth();
-});
+        // Kickoff
+        checkAuth();
+    });
