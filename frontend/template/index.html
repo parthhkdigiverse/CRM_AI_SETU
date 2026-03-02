@@ -118,13 +118,13 @@
     </div>
 
     <script src="../js/utils.js"></script>
-    <script src="../js/components.js?v=2.1"></script>
+    <script src="../js/ui_components.js"></script>
 
-    <script src="../js/auth.js"></script>
+    <script src="../js/auth.js?v=2.3"></script>
     <script>
-        // auth.js now handles the global 'API' variable with caching.
+        // auth.js?v=2.3 now handles the global 'API' variable with caching.
 
-        // Instead of blindly clearing tokens, auth.js pageshow handles auto-redirecting
+        // Instead of blindly clearing tokens, auth.js?v=2.3 pageshow handles auto-redirecting
         // if the session is still valid. If it's invalid, it clears them.
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
