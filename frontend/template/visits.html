@@ -14,18 +14,66 @@
         <div id="sidebar"></div>
         <div class="flex-grow-1">
             <!-- The top header is automatically injected here by js/auth.js?v=2.3 -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-start mb-4">
                 <div>
-                    <h2 class="fw-bold fs-3 mb-1">Shops & Leads Tracker</h2>
-                    <small class="text-muted" id="visit-count"></small>
+                    <h2 class="fw-bold fs-3 mb-1">Visits</h2>
+                    <small class="text-muted">Track field visit schedules and outcomes.</small>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-outline-primary" onclick="loadVisits()">
-                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    <button id="add-visit-btn" class="btn btn-primary shadow-sm" data-bs-toggle="modal"
+                        data-bs-target="#logVisitModal"
+                        style="background-color: #6366f1; border-color: #6366f1; border-radius: 8px; font-weight: 500;">
+                        <i class="bi bi-plus-lg me-1"></i> Log Shop Visit
                     </button>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#logVisitModal">
-                        <i class="bi bi-plus-lg me-1"></i>Update Shop Status
-                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Tiles -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-4" style="border: 1px solid #f1f5f9 !important;">
+                        <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted fw-bold mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                                    TODAY'S VISITS</p>
+                                <h3 class="fw-bold fs-2 mb-0 text-dark" id="stat-today">0</h3>
+                            </div>
+                            <div class="rounded-circle d-flex justify-content-center align-items-center"
+                                style="width: 48px; height: 48px; background-color: #f3f0ff; color: #8b5cf6;">
+                                <i class="bi bi-calendar-event fs-5"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-4" style="border: 1px solid #f1f5f9 !important;">
+                        <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted fw-bold mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                                    COMPLETED THIS WEEK</p>
+                                <h3 class="fw-bold fs-2 mb-0 text-dark" id="stat-week">0</h3>
+                            </div>
+                            <div class="rounded-circle d-flex justify-content-center align-items-center"
+                                style="width: 48px; height: 48px; background-color: #ecfdf5; color: #10b981;">
+                                <i class="bi bi-clock-history fs-5"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-4" style="border: 1px solid #f1f5f9 !important;">
+                        <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted fw-bold mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                                    MISSED VISITS</p>
+                                <h3 class="fw-bold fs-2 mb-0 text-dark" id="stat-missed">0</h3>
+                            </div>
+                            <div class="rounded-circle d-flex justify-content-center align-items-center"
+                                style="width: 48px; height: 48px; background-color: #fef2f2; color: #ef4444;">
+                                <i class="bi bi-geo-alt fs-5"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -33,14 +81,15 @@
                 <div class="card-body p-0">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light">
-                            <tr>
-                                <th>Shop & Area</th>
-                                <th>Assigned To</th>
-                                <th>Last Activity</th>
-                                <th>Status</th>
-                                <th>Remarks</th>
-                                <th>Evidence</th>
-                                <th>Actions</th>
+                            <tr class="text-muted"
+                                style="font-size: 0.75rem; letter-spacing: 0.5px; border-bottom: 2px solid #f1f5f9;">
+                                <th class="fw-semibold border-0 py-3 px-4">SHOP</th>
+                                <th class="fw-semibold border-0 py-3">AREA</th>
+                                <th class="fw-semibold border-0 py-3">AGENT</th>
+                                <th class="fw-semibold border-0 py-3">DATE</th>
+                                <th class="fw-semibold border-0 py-3">TIME</th>
+                                <th class="fw-semibold border-0 py-3">STATUS</th>
+                                <th class="fw-semibold border-0 py-3">NOTES</th>
                             </tr>
                         </thead>
                         <tbody id="visits-table">
@@ -116,6 +165,23 @@
         const user = getUser();
         const isSales = user?.role === 'SALES' || user?.role === 'PROJECT_MANAGER_AND_SALES';
         const isTelesales = user?.role === 'TELESALES';
+        const isPM = user?.role === 'PROJECT_MANAGER';
+        const isAdmin = user?.role === 'ADMIN';
+
+        // Role-based button adjustments
+        const addBtn = document.getElementById('add-visit-btn');
+        if (addBtn) {
+            if (isPM && !isSales) {
+                // Pure Project Managers only have read_access according to backend
+                addBtn.style.display = 'none';
+            } else if (isTelesales) {
+                addBtn.innerHTML = '<i class="bi bi-plus-lg me-1"></i> Log Call Outcome';
+            } else if (isAdmin) {
+                addBtn.innerHTML = '<i class="bi bi-plus-lg me-1"></i> Add Visit Record';
+            } else {
+                addBtn.innerHTML = '<i class="bi bi-plus-lg me-1"></i> Add Visited Shop';
+            }
+        }
 
         // Hide photo upload for Telesales
         if (isTelesales) {
@@ -137,47 +203,62 @@
         async function loadVisits() {
             try {
                 const visits = await apiGet('/visits/?limit=200');
-                document.getElementById('visit-count').textContent = `${visits.length} tracked activities`;
+                // Calculate Stats
+                const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+                let todayCount = 0;
+                let completedWeekCount = 0; // Simple approximation for demo purposes
+                let missedCount = 0;
 
-                const statusBadge = s => {
-                    const map = {
-                        SATISFIED: 'info',
-                        ACCEPT: 'success',
-                        DECLINE: 'danger',
-                        THINKING: 'warning',
-                        OTHER: 'secondary',
-                        SCHEDULED: 'light text-dark border'
-                    };
-                    return map[s] || 'secondary';
+                visits.forEach(v => {
+                    const vDateStr = v.visit_date ? new Date(v.visit_date).toLocaleDateString('en-CA') : '';
+                    if (vDateStr === todayStr) todayCount++;
+                    if (v.status === 'SATISFIED' || v.status === 'ACCEPT') completedWeekCount++;
+                    if (v.status === 'DECLINE') missedCount++;
+                });
+
+                document.getElementById('stat-today').textContent = todayCount;
+                document.getElementById('stat-week').textContent = completedWeekCount;
+                document.getElementById('stat-missed').textContent = missedCount;
+
+                const statusUI = s => {
+                    if (s === 'SATISFIED' || s === 'ACCEPT') return { bg: '#dcfce7', text: '#166534', label: 'Completed' };
+                    if (s === 'DECLINE') return { bg: '#fee2e2', text: '#991b1b', label: 'Missed' };
+                    return { bg: '#ede9fe', text: '#5b21b6', label: 'Scheduled' }; // THINKING, SCHEDULED, OTHER
                 };
 
                 document.getElementById('visits-table').innerHTML = visits.length
-                    ? visits.map(v => `
-                    <tr>
-                        <td class="fw-semibold">
+                    ? visits.map(v => {
+                        const ui = statusUI(v.status);
+                        const vDate = v.visit_date ? new Date(v.visit_date) : null;
+                        const dateStr = vDate ? vDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+                        const timeStr = vDate ? vDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '—';
+
+                        return `
+                        <tr style="border-bottom: 1px solid #f8fafc; cursor: pointer;" onclick="if(window.editVisit) editVisit(${v.id})">
+                        <td class="fw-semibold text-dark px-4 py-3" style="font-size: 0.9rem;">
                             ${v.shop_name || 'Shop #' + v.shop_id}
-                            <div class="text-muted x-small fw-normal">ID: ${v.shop_id}</div>
                         </td>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center text-primary" style="width:24px;height:24px;font-size:10px;font-weight:700;">
-                                    ${(v.user_name || 'U')[0]}
-                                </div>
+                        <td class="text-muted py-3" style="font-size: 0.9rem;">
+                            ${v.area_name || '—'}
+                        </td>
+                        <td class="py-3">
+                            <div class="d-flex align-items-center gap-2 text-muted" style="font-size: 0.9rem;">
+                                <i class="bi bi-person text-secondary"></i>
                                 <span>${v.user_name || '—'}</span>
                             </div>
                         </td>
-                        <td>${v.visit_date ? new Date(v.visit_date).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : '—'}</td>
-                        <td><span class="badge bg-${statusBadge(v.status)}">${v.status || '—'}</span></td>
-                        <td class="text-muted small" style="max-width:200px; white-space: normal;">${v.notes || '—'}</td>
-                        <td>
-                            ${v.photo_url ? `<a href="${v.photo_url}" target="_blank" class="btn btn-sm btn-outline-primary py-0"><i class="bi bi-image"></i> View</a>` : '<span class="text-muted small">No photo</span>'}
+                        <td class="text-muted py-3" style="font-size: 0.9rem;">${dateStr}</td>
+                        <td class="text-muted py-3" style="font-size: 0.9rem;">${timeStr}</td>
+                        <td class="py-3">
+                            <span class="badge rounded-pill fw-semibold" style="background-color: ${ui.bg}; color: ${ui.text}; font-size: 0.75rem; letter-spacing: 0.3px; padding: 0.4em 0.8em;">
+                                ${ui.label}
+                            </span>
                         </td>
-                        <td>
-                            ${v.status === 'ACCEPT' ? `<a href="clients.html" class="btn btn-sm btn-success"><i class="bi bi-receipt me-1"></i>Bill</a>` : ''}
-                            <button class="btn btn-sm btn-light border" onclick="editVisit(${v.id})"><i class="bi bi-pencil"></i></button>
+                        <td class="text-muted py-3 text-truncate" style="max-width:200px; font-size: 0.9rem;" title="${v.remarks || ''}">
+                            ${v.remarks || '—'}
                         </td>
-                    </tr>`).join('')
-                    : '<tr><td colspan="7" class="text-center py-5 text-muted">No activities recorded yet. Start by updating a shop status.</td></tr>';
+                    </tr>`}).join('')
+                    : '<tr><td colspan="7" class="text-center py-5 text-muted">No activities recorded yet.</td></tr>';
             } catch (err) {
                 document.getElementById('visits-table').innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger">Failed to load data: ${err.message}</td></tr>`;
             }
@@ -210,7 +291,19 @@
             if (photo) fd.append('photo', photo);
 
             try {
-                await ApiClient.createVisit(fd);
+                // Use standard apiFetch since we're dealing with FormData
+                const res = await apiFetch('/visits/', {
+                    method: 'POST',
+                    body: fd,
+                    // Note: Don't set Content-Type header when sending FormData, 
+                    // the browser sets it automatically with the correct boundary
+                    headers: {}
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Failed to create visit');
+                }
 
                 if (status === 'ACCEPT') {
                     showToast('Lead Accepted! Converting to client flow...', 'success');

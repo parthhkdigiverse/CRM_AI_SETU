@@ -21,3 +21,4 @@ class User(Base):
     role = Column(Enum(UserRole), default=UserRole.TELESALES, nullable=False)
     referral_code = Column(String, unique=True, index=True, nullable=True)
     is_active = Column(Boolean, default=True)
+    is_deleted = Column(Boolean, default=False)

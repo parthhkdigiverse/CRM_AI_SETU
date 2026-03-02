@@ -127,3 +127,60 @@ small {
 ::-webkit-scrollbar-thumb:hover {
     background: #94A3B8;
 }
+
+/* Critical Issue Indicators */
+.has-critical-issue {
+    background-color: rgba(239, 68, 68, 0.05) !important;
+    border-left: 4px solid #EF4444 !important;
+}
+
+.global-critical-alert {
+    background-color: #FEF2F2;
+    border-left: 4px solid #EF4444;
+    color: #991B1B;
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.global-critical-alert .alert-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.global-critical-alert i {
+    font-size: 1.2rem;
+    color: #EF4444;
+}
+
+.global-critical-alert strong {
+    font-weight: 700;
+}
+
+.global-critical-alert .btn-close-alert {
+    background: none;
+    border: none;
+    color: #F87171;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 4px;
+    transition: color 0.2s;
+}
+
+.global-critical-alert .btn-close-alert:hover {
+    color: #991B1B;
+}
+
+/* Red Line on Issues Table Fix */
+.table>tbody>tr.critical-issue-row>td:first-child {
+    box-shadow: inset 4px 0 0 0 #dc3545 !important;
+}
+
+.critical-issue-row {
+    background-color: rgba(239, 68, 68, 0.02) !important;
+}

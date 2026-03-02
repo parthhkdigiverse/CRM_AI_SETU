@@ -139,6 +139,7 @@ async def register(
         )
     user = User(
         email=user_in.email,
+        name=user_in.name,
         hashed_password=get_password_hash(user_in.password),
         role=user_in.role,
         is_active=user_in.is_active,

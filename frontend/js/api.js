@@ -173,6 +173,9 @@ class ApiClient {
     static async updateUserRole(userId, role) {
         return this.request(`/users/${userId}/role`, { method: 'PATCH', body: { role } });
     }
+    static async updateUserStatus(userId, isActive) {
+        return this.request(`/users/${userId}/status`, { method: 'PATCH', body: { is_active: isActive } });
+    }
 
     // ─── Dashboard ───────────────────────────────────────────
     static async getDashboardStats() {

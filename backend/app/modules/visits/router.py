@@ -64,6 +64,10 @@ def read_visits(
     db: Session = Depends(get_db),
     current_user: User = Depends(read_access) 
 ) -> Any:
+    # If the user is Sales or Telesales, they can only view their own visits.
+    if current_user.role in [UserRole.SALES, UserRole.TELESALES]:
+        user_id = current_user.id
+        
     service = VisitService(db)
     return service.get_visits(skip, limit, user_id=user_id, shop_id=shop_id)
 
