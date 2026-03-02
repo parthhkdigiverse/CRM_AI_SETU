@@ -72,16 +72,17 @@ class ClientService:
             count_map = {row.pm_id: row.client_count for row in client_counts}
             
             # 3. Find the PM with the minimum count
-            # Start by assuming everyone has 0
-            best_pm_id = None
-            min_count = float('inf')
-            
+            # We sort by count and pick the first one to ensure equal distribution
+            # If multiple PMs have the same min count, we can pick randomly or first
+            pm_assignment_list = []
             for pm in active_pms:
                 count = count_map.get(pm.id, 0)
-                if count < min_count:
-                    min_count = count
-                    best_pm_id = pm.id
-                    
+                pm_assignment_list.append((pm.id, count))
+            
+            # Sort by count (ascending)
+            pm_assignment_list.sort(key=lambda x: x[1])
+            best_pm_id = pm_assignment_list[0][0]
+            
             # 4. Assign the selected PM
             db_client.pm_id = best_pm_id
         # --------------------------------------------------

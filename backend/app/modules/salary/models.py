@@ -22,8 +22,8 @@ class LeaveRecord(Base):
 
     approved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
 
-    employee = relationship("app.modules.employees.models.Employee", back_populates="leaves")
-    approver = relationship("app.modules.users.models.User", foreign_keys=[approved_by])
+    employee = relationship("Employee", back_populates="leaves")
+    approver = relationship("User", foreign_keys=[approved_by])
 
 class SalarySlip(Base):
     __tablename__ = "salary_slips"
@@ -42,4 +42,9 @@ class SalarySlip(Base):
     
     file_url = Column(String, nullable=True)
 
-    employee = relationship("app.modules.employees.models.Employee", backref="salary_slips")
+    employee = relationship("Employee", backref="salary_slips")
+
+# Import models at the end to ensure they are registered without circular dependency issues
+from app.modules.employees.models import Employee
+from app.modules.users.models import User
+

@@ -122,6 +122,10 @@ def get_issue_details(
     if current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES] and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
+    if current_user.id == db_client.pm_id and db_issue.opened_at is None:
+        from datetime import datetime
+        db_issue.opened_at = datetime.utcnow()
+        db.commit()
         
     return db_issue
 

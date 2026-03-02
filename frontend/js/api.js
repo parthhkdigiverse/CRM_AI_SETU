@@ -2,7 +2,12 @@ let API_BASE_URL = 'http://127.0.0.1:8000/api'; // Fallback
 // Try to load dynamically from the backend Python config endpoint
 fetch('http://127.0.0.1:8000/api/config')
     .then(r => r.json())
-    .then(data => { API_BASE_URL = data.API_BASE_URL; ApiClient.API_BASE_URL = data.API_BASE_URL; })
+    .then(data => {
+        if (data.API_BASE_URL) {
+            API_BASE_URL = data.API_BASE_URL;
+            ApiClient.API_BASE_URL = data.API_BASE_URL;
+        }
+    })
     .catch(e => console.warn('Using default API_BASE_URL due to config fetch error:', e));
 
 class ApiClient {
@@ -54,7 +59,10 @@ class ApiClient {
             headers,
         };
 
-        if (options.body && typeof options.body !== 'string') {
+        if (options.body instanceof FormData) {
+            config.body = options.body;
+            delete headers['Content-Type']; // Let browser set boundary
+        } else if (options.body && typeof options.body !== 'string') {
             config.body = JSON.stringify(options.body);
         } else if (options.body) {
             config.body = options.body;
@@ -62,6 +70,9 @@ class ApiClient {
 
         try {
             let response = await fetch(url, config);
+
+            // If we successfully get a response, hide offline banner if it exists
+            if (window.showOfflineBanner) window.showOfflineBanner(false);
 
             // Handle token expiry transparently
             if (response.status === 401 && !options.isRetry && this.getRefreshToken()) {
@@ -87,10 +98,16 @@ class ApiClient {
             return data;
 
         } catch (error) {
+            // Check if it's a network error (server down)
+            if (error instanceof TypeError && error.message === 'Failed to fetch') {
+                console.warn("Server appears to be offline:", error);
+                if (window.showOfflineBanner) window.showOfflineBanner(true);
+            }
             console.error("Network or parsing error:", error);
             throw error;
         }
     }
+
 
     static async refreshTokens() {
         const refresh_token = this.getRefreshToken();
@@ -217,8 +234,8 @@ class ApiClient {
     static async getVisits(params = '') {
         return this.request(`/visits/${params}`);
     }
-    static async createVisit(data) {
-        return this.request('/visits/', { method: 'POST', body: data });
+    static async createVisit(formData) {
+        return this.request('/visits/', { method: 'POST', body: formData });
     }
     static async updateVisit(visitId, data) {
         return this.request(`/visits/${visitId}`, { method: 'PATCH', body: data });

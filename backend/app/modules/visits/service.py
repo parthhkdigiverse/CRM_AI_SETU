@@ -81,7 +81,31 @@ class VisitService:
         self.db.add(visit)
         self.db.commit()
         self.db.refresh(visit)
-        
+
+        # --- Auto-transition Shop status based on visit outcome ---
+        from app.modules.shops.models import ShopStatus
+        shop = self.db.query(Shop).filter(Shop.id == visit_in.shop_id).first()
+        if shop:
+            current = shop.status
+            new_status = None
+
+            # Any visit: move NEW → CONTACTED
+            if current == ShopStatus.NEW:
+                new_status = ShopStatus.CONTACTED
+
+            # Visit outcome: ACCEPT → MEETING_SET
+            if visit.status == VisitStatus.ACCEPT and current == ShopStatus.CONTACTED:
+                new_status = ShopStatus.MEETING_SET
+
+            # Visit outcome: SATISFIED → CONVERTED (only from MEETING_SET)
+            if visit.status == VisitStatus.SATISFIED and current == ShopStatus.MEETING_SET:
+                new_status = ShopStatus.CONVERTED
+
+            if new_status and new_status != current:
+                shop.status = new_status
+                self.db.commit()
+        # ----------------------------------------------------------
+
         # Helper for activity logging
         
         await self.activity_logger.log_activity(

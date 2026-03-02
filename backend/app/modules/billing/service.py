@@ -40,6 +40,9 @@ class BillingService:
                 email=shop.email or f"client_{uuid.uuid4().hex[:8]}@placeholder.com",
                 phone=shop.phone,
                 organization=shop.name,
+                address=shop.address,
+                project_type=shop.project_type,
+                requirements=shop.requirements,
                 owner_id=current_user.id
             )
             client = await self.client_service.create_client(client_create, current_user, request)

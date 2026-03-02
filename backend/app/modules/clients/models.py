@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 
@@ -12,6 +12,9 @@ class Client(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     phone = Column(String, index=True)
     organization = Column(String)
+    address = Column(String, nullable=True)
+    project_type = Column(String, nullable=True)
+    requirements = Column(Text, nullable=True)
     referral_code = Column(String, nullable=True)
     referred_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True) # For assignment
