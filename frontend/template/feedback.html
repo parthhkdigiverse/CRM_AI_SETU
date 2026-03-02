@@ -4,53 +4,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Feedback — CRM AI SETU</title>
+    <title>Feedback Management — CRM AI SETU</title>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        :root {
+            --crm-primary: #4361ee;
+            --crm-bg: #f8f9fa;
+            --crm-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+            --crm-border: #e9ecef;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--crm-bg);
+        }
+
+        .main-content {
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        /* KPI Cards */
+        .kpi-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: var(--crm-card-shadow);
+            background: #fff;
+            padding: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .kpi-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        /* Filter Section */
+        .filter-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: var(--crm-card-shadow);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Table Design */
+        .table-container {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: var(--crm-card-shadow);
+            overflow: hidden;
+        }
+
+        .table thead {
+            background: #f8faff;
+        }
+
+        .table th {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666;
+        }
+
+        .star-rating {
+            color: #ffbc00;
+        }
+
+        .overall-score {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+        }
+
+        .bg-score-high {
+            background: #10b981;
+        }
+
+        .bg-score-mid {
+            background: #f59e0b;
+        }
+
+        .bg-score-low {
+            background: #ef4444;
+        }
+
+        /* Star Picker for Modal */
+        .star-picker {
+            display: flex;
+            gap: 5px;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+        }
+
+        .star-picker input {
+            display: none;
+        }
+
+        .star-picker label {
+            font-size: 1.5rem;
+            color: #e4e4e4;
+            cursor: pointer;
+        }
+
+        .star-picker label:hover,
+        .star-picker label:hover~label,
+        .star-picker input:checked~label {
+            color: #ffbc00;
+        }
+
+        .text-truncate-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: normal;
+        }
+
+        /* Agent Avatar */
+        .agent-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--crm-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+    </style>
 </head>
 
-<body class="bg-light">
+<body>
     <div class="d-flex">
         <div id="sidebar"></div>
-        <div class="flex-grow-1">
+        <div class="flex-grow-1 main-content">
+
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2 class="fw-bold mb-0">Client Feedback</h2><small class="text-muted">Select a client to view their
-                        feedback</small>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1">
+                            <li class="breadcrumb-item text-muted small">Client Relations</li>
+                            <li class="breadcrumb-item active small" aria-current="page">Feedback</li>
+                        </ol>
+                    </nav>
+                    <h2 class="fw-bold mb-0">Client Feedback</h2>
+                </div>
+                <button class="btn btn-primary px-4 shadow-sm" data-bs-toggle="modal"
+                    data-bs-target="#addFeedbackModal">
+                    <i class="bi bi-plus-lg me-2"></i>Add Feedback
+                </button>
+            </div>
+
+            <!-- Dashboard Stats -->
+            <div class="row g-4 mb-4" id="stats-container">
+                <div class="col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-primary bg-opacity-10 text-primary"><i
+                                class="bi bi-chat-left-quote"></i></div>
+                        <h4 class="fw-bold mb-1">1,280</h4>
+                        <div class="text-muted small">Total Feedback</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-star"></i></div>
+                        <h4 class="fw-bold mb-1">4.8</h4>
+                        <div class="text-muted small">Avg. Product Rating</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-info bg-opacity-10 text-info"><i class="bi bi-person-check"></i></div>
+                        <h4 class="fw-bold mb-1">4.6</h4>
+                        <div class="text-muted small">Avg. Sales Rating</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-success bg-opacity-10 text-success"><i class="bi bi-emoji-smile"></i>
+                        </div>
+                        <h4 class="fw-bold mb-1">94%</h4>
+                        <div class="text-muted small">Satisfaction Rate</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="row g-3 mb-3">
-                <div class="col-md-4">
-                    <select id="fb-client" class="form-select">
-                        <option value="">-- Select Client --</option>
-                    </select>
-                </div>
-                <div class="col-auto">
-                    <button class="btn btn-primary" onclick="loadFeedback()"><i class="bi bi-search me-1"></i>Load
-                        Feedback</button>
-                </div>
-                <div class="col-auto">
-                    <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addFeedbackModal">
-                        <i class="bi bi-plus-lg me-1"></i>Add Feedback
-                    </button>
+            <!-- Filters -->
+            <div class="filter-card">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Select Client</label>
+                        <select id="fb-filter-client" class="form-select border-0 bg-light">
+                            <option value="">All Clients</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Sales Person</label>
+                        <select id="fb-filter-agent" class="form-select border-0 bg-light">
+                            <option value="">All Agents</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Date Range</label>
+                        <div class="input-group">
+                            <input type="date" class="form-control border-0 bg-light">
+                            <span class="input-group-text bg-light border-0">to</span>
+                            <input type="date" class="form-control border-0 bg-light">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary w-100" onclick="loadFeedback()"><i
+                                class="bi bi-search me-2"></i>Filter</button>
+                    </div>
                 </div>
             </div>
 
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-0">
+            <!-- Table -->
+            <div class="table-container">
+                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold">Recent Feedback Records</h6>
+                    <div class="position-relative">
+                        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                        <input type="text" class="form-control form-control-sm ps-5" placeholder="Search..."
+                            id="fb-search">
+                    </div>
+                </div>
+                <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
+                        <thead>
                             <tr>
-                                <th>Rating</th>
-                                <th>Comment</th>
-                                <th>Date</th>
+                                <th>Client / Product</th>
+                                <th>Sales Agent</th>
+                                <th>Ratings</th>
+                                <th>Feedback</th>
+                                <th>Score</th>
+                                <th class="text-end">Date / Actions</th>
                             </tr>
                         </thead>
                         <tbody id="feedback-table">
                             <tr>
-                                <td colspan="3" class="text-center py-5 text-muted">Select a client above to view
-                                    feedback.</td>
+                                <td colspan="6" class="text-center py-5 text-muted">Loading feedback data...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -59,43 +276,62 @@
         </div>
     </div>
 
-    <!-- Add Feedback Modal -->
+    <!-- Modal: Add Feedback -->
     <div class="modal fade" id="addFeedbackModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Add Client Feedback</h5><button class="btn-close"
-                        data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title fw-bold">Add New Feedback</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="mb-3"><label class="form-label">Client *</label>
-                        <select id="fb-client-m" class="form-select">
-                            <option value="">-- Select --</option>
-                        </select>
-                    </div>
-                    <div class="mb-3"><label class="form-label">Rating (1-5) *</label>
-                        <div class="d-flex gap-2" id="star-rating">
-                            <i class="bi bi-star fs-4 text-muted" data-val="1" style="cursor:pointer;"
-                                onclick="setRating(1)"></i>
-                            <i class="bi bi-star fs-4 text-muted" data-val="2" style="cursor:pointer;"
-                                onclick="setRating(2)"></i>
-                            <i class="bi bi-star fs-4 text-muted" data-val="3" style="cursor:pointer;"
-                                onclick="setRating(3)"></i>
-                            <i class="bi bi-star fs-4 text-muted" data-val="4" style="cursor:pointer;"
-                                onclick="setRating(4)"></i>
-                            <i class="bi bi-star fs-4 text-muted" data-val="5" style="cursor:pointer;"
-                                onclick="setRating(5)"></i>
+                <div class="modal-body p-4">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Client *</label>
+                            <select id="fb-client-m" class="form-select bg-light border-0"></select>
                         </div>
-                        <input type="hidden" id="fb-rating" value="0">
-                    </div>
-                    <div class="mb-3"><label class="form-label">Comment</label>
-                        <textarea id="fb-comment" class="form-control" rows="3"
-                            placeholder="Customer feedback..."></textarea>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Sales Agent</label>
+                            <select class="form-select bg-light border-0">
+                                <option>Rahul Sharma</option>
+                                <option>Priya Patel</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Product</label>
+                            <select class="form-select bg-light border-0">
+                                <option>CRM Enterprise</option>
+                                <option>AI Analytics</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 border-end">
+                            <div class="mb-3 d-flex justify-content-between">
+                                <label class="small">Product Features</label>
+                                <div class="star-picker">
+                                    <input type="radio" id="p5" name="p" value="5"><label for="p5">★</label>
+                                    <input type="radio" id="p4" name="p" value="4"><label for="p4">★</label>
+                                    <input type="radio" id="p1" name="p" value="1"><label for="p1">★</label>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <label class="small">Meeting Quality</label>
+                                <div class="star-picker">
+                                    <input type="radio" id="m5" name="m" value="5"><label for="m5">★</label>
+                                    <input type="radio" id="m1" name="m" value="1"><label for="m1">★</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Feedback / Comment</label>
+                            <textarea id="fb-comment" class="form-control bg-light border-0" rows="3"></textarea>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-success" id="save-feedback-btn">Save Feedback</button>
+                <div class="modal-footer bg-light p-3">
+                    <button class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary px-4" id="save-feedback-btn">Save Record</button>
                 </div>
             </div>
         </div>
@@ -108,53 +344,92 @@
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('feedback');
 
-        // Star rating
-        window.setRating = (val) => {
-            document.getElementById('fb-rating').value = val;
-            document.querySelectorAll('#star-rating i').forEach((el, i) => {
-                el.className = `bi ${i < val ? 'bi-star-fill text-warning' : 'bi-star text-muted'} fs-4`;
+        // Expanded Dummy Data for Sorting Logic Demo
+        const baseData = [
+            { client: "Acme Corp", product: "CRM Enterprise", agent: "Rahul Sharma", rating: 4.8, helpful: "Yes", date: "02 Mar 2024", comment: "Excellent automation." },
+            { client: "Global Tech", product: "AI Analytics", agent: "Priya Patel", rating: 4.2, helpful: "Yes", date: "01 Mar 2024", comment: "Great insights but UI needs work." },
+            { client: "Nexus Labs", product: "ERP Solution", agent: "Amit Shah", rating: 3.5, helpful: "No", date: "28 Feb 2024", comment: "Support response was slow." },
+            { client: "Zenith Inc", product: "CRM Enterprise", agent: "Rahul Sharma", rating: 4.5, helpful: "Yes", date: "25 Feb 2024", comment: "Very good service." },
+            { client: "Beta Corp", product: "AI Analytics", agent: "Rahul Sharma", rating: 4.7, helpful: "Yes", date: "24 Feb 2024", comment: "Highly recommend." },
+            { client: "Delta Systems", product: "ERP Solution", agent: "Priya Patel", rating: 3.9, helpful: "No", date: "22 Feb 2024", comment: "Needs better docs." }
+        ];
+
+        // Function to populate Sales Person Filter based on Frequency (Popularity)
+        const populateAgentFilter = () => {
+            const agentCounts = baseData.reduce((acc, curr) => {
+                acc[curr.agent] = (acc[curr.agent] || 0) + 1;
+                return acc;
+            }, {});
+
+            // Sort agents by count (descending)
+            const sortedAgents = Object.keys(agentCounts).sort((a, b) => agentCounts[b] - agentCounts[a]);
+
+            const filterSelect = document.getElementById('fb-filter-agent');
+            filterSelect.innerHTML = '<option value="">All Agents</option>' +
+                sortedAgents.map(agent => `<option value="${agent}">${agent}</option>`).join('');
+        };
+
+        const loadFeedback = () => {
+            const agentFilter = document.getElementById('fb-filter-agent').value;
+            const searchTerm = document.getElementById('fb-search').value.toLowerCase();
+
+            const filteredData = baseData.filter(f => {
+                const matchesAgent = !agentFilter || f.agent === agentFilter;
+                const matchesSearch = f.client.toLowerCase().includes(searchTerm) ||
+                    f.agent.toLowerCase().includes(searchTerm) ||
+                    f.comment.toLowerCase().includes(searchTerm);
+                return matchesAgent && matchesSearch;
             });
-        };
 
-        // Load clients
-        apiGet('/clients/').then(clients => {
-            const opts = clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            document.getElementById('fb-client').innerHTML = '<option value="">-- Select Client --</option>' + opts;
-            document.getElementById('fb-client-m').innerHTML = '<option value="">-- Select Client --</option>' + opts;
-        });
-
-        window.loadFeedback = async () => {
-            const cid = document.getElementById('fb-client').value;
-            if (!cid) return showToast('Select a client first', 'error');
             const tbody = document.getElementById('feedback-table');
-            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-3 text-muted">Loading...</td></tr>';
-            try {
-                const feedbacks = await apiGet(`/clients/${cid}/feedback`);
-                const stars = n => '★'.repeat(n) + '☆'.repeat(5 - n);
-                tbody.innerHTML = feedbacks.length
-                    ? feedbacks.map(f => `
-                    <tr>
-                        <td class="text-warning fw-bold fs-5">${stars(f.rating)} <small class="text-muted fs-6">(${f.rating}/5)</small></td>
-                        <td>${f.comment || 'No comment'}</td>
-                        <td class="text-muted small">${f.created_at ? new Date(f.created_at).toLocaleString('en-IN') : '—'}</td>
-                    </tr>`).join('')
-                    : '<tr><td colspan="3" class="text-center py-5 text-muted">No feedback for this client yet.</td></tr>';
-            } catch (e) { tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4">${e.message}</td></tr>`; }
+            tbody.innerHTML = filteredData.map(f => {
+                const initials = f.agent.split(' ').map(n => n[0]).join('').toUpperCase();
+                return `
+                <tr>
+                    <td><div class="fw-bold">${f.client}</div><div class="text-muted small">${f.product}</div></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="agent-avatar bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">${initials}</div>
+                            <span class="fw-500">${f.agent}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="d-flex flex-column" style="gap: 2px;">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="text-muted" style="font-size: 0.8rem; font-weight: 600; width: 62px; display: inline-block;">Product</span>
+                                <div class="star-rating" style="font-size: 0.85rem; line-height: 1;">★★★★☆</div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="text-muted" style="font-size: 0.8rem; font-weight: 600; width: 62px; display: inline-block;">Sales</span>
+                                <div class="star-rating" style="font-size: 0.85rem; line-height: 1;">★★★★☆</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="max-width: 250px;"><div class="text-muted small text-truncate-2">${f.comment}</div></td>
+                    <td><div class="overall-score ${f.rating >= 4.5 ? 'bg-score-high' : 'bg-score-mid'}">${f.rating}</div></td>
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end align-items-center gap-3">
+                            <div class="text-end">
+                                <div class="text-muted small fw-600 mb-0" style="line-height: 1.1;">${f.date}</div>
+                                <div class="text-muted" style="font-size: 0.75rem; line-height: 1.1;">05:22 PM</div>
+                            </div>
+                            <button class="btn btn-link btn-sm p-0 mb-1" title="Delete"><i class="bi bi-trash text-danger"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
         };
 
-        document.getElementById('save-feedback-btn').addEventListener('click', async () => {
-            const cid = document.getElementById('fb-client-m').value;
-            const rating = parseInt(document.getElementById('fb-rating').value);
-            if (!cid) return showToast('Select a client', 'error');
-            if (!rating) return showToast('Please set a rating', 'error');
-            const btn = document.getElementById('save-feedback-btn');
-            btn.disabled = true;
-            try {
-                await apiPost(`/clients/${cid}/feedback`, { rating, comment: document.getElementById('fb-comment').value });
-                bootstrap.Modal.getInstance(document.getElementById('addFeedbackModal')).hide();
-                showToast('Feedback saved!');
-            } catch (e) { showToast(e.message, 'error'); }
-            finally { btn.disabled = false; }
+        // Initial Load
+        populateAgentFilter();
+        loadFeedback();
+
+        // Search logic
+        document.getElementById('fb-search').addEventListener('input', loadFeedback);
+
+        document.getElementById('save-feedback-btn').addEventListener('click', () => {
+            alert("Feedback saved locally! (Frontend Preview)");
+            bootstrap.Modal.getInstance(document.getElementById('addFeedbackModal')).hide();
         });
     </script>
 </body>
