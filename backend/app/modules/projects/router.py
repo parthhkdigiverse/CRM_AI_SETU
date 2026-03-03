@@ -42,7 +42,7 @@ def read_projects(
 ) -> Any:
     service = ProjectService(db)
     # PMs only see their own projects, Admins and Sales can see all (or configure as needed)
-    pm_id = current_user.id if current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES] else None
+    pm_id = current_user.id if (current_user and current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]) else None
     return service.get_projects(skip=skip, limit=limit, pm_id=pm_id)
 
 @router.get("/{project_id}", response_model=ProjectRead)

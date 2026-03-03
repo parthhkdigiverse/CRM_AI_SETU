@@ -203,34 +203,38 @@
         document.getElementById('save-handle-btn').addEventListener('click', async () => {
             const id = document.getElementById('h-issue-id').value;
             const hStatus = document.getElementById('h-status').value;
-            const hRemarks = document.getElementById('h-remarks').value;
+            const hRemarks = document.getElementById('h-remarks').value.trim();
 
-            if (!hRemarks.trim()) return showToast('Remarks are compulsory', 'error');
+            if (!hRemarks) {
+                document.getElementById('h-remarks').classList.add('is-invalid');
+                return showToast('Remarks are compulsory for any status update', 'error');
+            }
+            document.getElementById('h-remarks').classList.remove('is-invalid');
 
             const btn = document.getElementById('save-handle-btn');
-            btn.disabled = true; btn.textContent = 'Saving...';
+            btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
             try {
                 await apiPatch(`/clients/issues/${id}`, {
                     status: hStatus,
                     remarks: hRemarks
                 });
                 bootstrap.Modal.getInstance(document.getElementById('handleIssueModal')).hide();
-                showToast('Issue updated!');
+                showToast('Issue updated successfully!');
                 loadIssues();
-            } catch (e) { showToast(e.message, 'error'); }
+            } catch (e) { showToast(e.message || 'Failed to update issue', 'error'); }
             finally { btn.disabled = false; btn.textContent = 'Update Issue'; }
         });
 
         window.quickResolve = async (id) => {
-            const remarks = prompt("Please provide remarks for resolving this issue:");
-            if (remarks === null) return;
+            const remarks = prompt("Please provide mandatory remarks for resolving this issue:");
+            if (remarks === null) return; // User cancelled prompt
             if (!remarks.trim()) return showToast('Remarks are compulsory to resolve', 'error');
 
             try {
                 await apiPatch(`/clients/issues/${id}`, { status: 'SOLVED', remarks: remarks.trim() });
-                showToast('Issue resolved!');
+                showToast('Issue marked as Solved', 'success');
                 loadIssues();
-            } catch (e) { showToast(e.message, 'error'); }
+            } catch (e) { showToast(e.message || 'Failed to resolve issue', 'error'); }
         };
 
         window.deleteIssue = async (id) => {

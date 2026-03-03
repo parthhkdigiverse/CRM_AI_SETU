@@ -57,9 +57,32 @@ function requireAuth() {
         return;
     }
 
+    // --- ROLE BASED ROUTING GUARD ---
+    const ROLE_PERMISSIONS = {
+        'ADMIN': ['*'],
+        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'search.html', 'notifications.html'],
+        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'search.html', 'notifications.html'],
+        'PROJECT_MANAGER': ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'search.html', 'notifications.html'],
+        'PROJECT_MANAGER_AND_SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'search.html', 'notifications.html'],
+        'CLIENT': ['dashboard.html']
+    };
+
+    function enforceRoleAccess(role) {
+        if (!role || role === 'ADMIN') return;
+        const path = window.location.pathname.split('/').pop();
+        if (!path || path === 'index.html') return;
+
+        const allowed = ROLE_PERMISSIONS[role] || [];
+        if (!allowed.includes(path) && !allowed.includes('*')) {
+            alert(`Access Denied: Your role (${role.replace(/_/g, ' ')}) is not authorized to view this page.`);
+            window.location.replace('dashboard.html');
+        }
+    }
+
     // --- OPTIMISTIC UI ---
     // If we have a user in session, show the page IMMEDIATELY.
     if (user) {
+        enforceRoleAccess(user.role);
         document.body.style.visibility = 'visible';
         const el = document.getElementById('username-display');
         if (el) el.textContent = user.name || 'User';
@@ -94,6 +117,7 @@ function requireAuth() {
             const userData = { id: profile.id, name: profile.name || profile.email, role: profile.role };
             localStorage.setItem('crm_user', JSON.stringify(userData));
 
+            enforceRoleAccess(userData.role);
             document.body.style.visibility = 'visible';
             const el = document.getElementById('username-display');
             if (el) el.textContent = profile.name || 'User';

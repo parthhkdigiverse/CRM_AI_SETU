@@ -1,5 +1,5 @@
 from typing import List, Any, Optional
-from fastapi import APIRouter, Depends, status, Request, UploadFile, File, Form
+from fastapi import APIRouter, Depends, status, Request, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
@@ -65,7 +65,7 @@ def read_visits(
     current_user: User = Depends(read_access) 
 ) -> Any:
     # If the user is Sales or Telesales, they can only view their own visits.
-    if current_user.role in [UserRole.SALES, UserRole.TELESALES]:
+    if current_user and current_user.role in [UserRole.SALES, UserRole.TELESALES]:
         user_id = current_user.id
         
     service = VisitService(db)

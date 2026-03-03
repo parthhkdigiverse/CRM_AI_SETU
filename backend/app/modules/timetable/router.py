@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, UTC
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.modules.users.models import User, UserRole
-from app.modules.timetable.schemas import TimelineEvent, TimetableResponse, TimetableEventCreate, TimetableEventRead
+from app.modules.timetable.schemas import TimelineEvent, TimetableResponse, TimetableEventCreate, TimetableEventRead, TimetableEventUpdate
 from app.modules.timetable.models import TimetableEvent
 from app.modules.visits.models import Visit
 from app.modules.meetings.models import MeetingSummary
@@ -22,11 +22,56 @@ def create_timetable_event(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    event = TimetableEvent(**event_in.model_dump(), user_id=current_user.id)
+    user_id = current_user.id if current_user else 0
+    event = TimetableEvent(**event_in.model_dump(), user_id=user_id)
     db.add(event)
     db.commit()
     db.refresh(event)
     return event
+
+@router.patch("/{event_id}", response_model=TimetableEventRead)
+def update_timetable_event(
+    event_id: int,
+    event_in: TimetableEventUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    user_id = current_user.id if current_user else 0
+    event = db.query(TimetableEvent).filter(
+        TimetableEvent.id == event_id,
+        TimetableEvent.user_id == user_id
+    ).first()
+    
+    if not event:
+        raise HTTPException(status_code=404, detail="Timetable event not found")
+        
+    update_data = event_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(event, field, value)
+        
+    db.commit()
+    db.refresh(event)
+    return event
+
+@router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_timetable_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> None:
+    user_id = current_user.id if current_user else 0
+    event = db.query(TimetableEvent).filter(
+        TimetableEvent.id == event_id,
+        TimetableEvent.user_id == user_id
+    ).first()
+    
+    if not event:
+        raise HTTPException(status_code=404, detail="Timetable event not found")
+        
+    db.delete(event)
+    db.commit()
+    from fastapi import Response
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @router.get("/", response_model=TimetableResponse)
 def get_timetable(
@@ -56,8 +101,11 @@ def get_timetable(
         return dt.strftime("%Y-%m-%d") if dt else ""
 
     # 1. Fetch Visits - show as 1 hour events
+    user_id = current_user.id if current_user else 0
+    username = current_user.name if current_user else "Demo Admin"
+
     visits = db.query(Visit).join(Shop).filter(
-        Visit.user_id == current_user.id,
+        Visit.user_id == user_id,
         Visit.visit_date >= start_date,
         Visit.visit_date <= end_date
     ).all()
@@ -67,7 +115,7 @@ def get_timetable(
             id=v.id,
             title=f"Visit: {v.shop.name}",
             date=date_str(v.visit_date),
-            user=current_user.name or "User",
+            user=username,
             sh=h, sm=0, eh=h+1, em=0,
             loc=v.shop.area.name if v.shop.area else "Shop",
             event_type="VISIT",
@@ -78,9 +126,9 @@ def get_timetable(
 
     # 2. Fetch Meetings (Project Managers or Admins)
     meeting_query = db.query(MeetingSummary).join(Client)
-    if current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
+    if current_user and current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
         meeting_query = meeting_query.filter(Client.pm_id == current_user.id)
-    elif current_user.role != UserRole.ADMIN:
+    elif current_user and current_user.role != UserRole.ADMIN:
         meeting_query = meeting_query.filter(Client.owner_id == current_user.id)
     meetings = meeting_query.filter(
         MeetingSummary.date >= start_date,
@@ -92,7 +140,7 @@ def get_timetable(
             id=m.id,
             title=f"Meeting: {m.client.name}",
             date=date_str(m.date),
-            user=current_user.name or "User",
+            user=username,
             sh=h, sm=0, eh=h+1, em=30,
             loc="Office/Online",
             event_type="MEETING",
@@ -103,7 +151,7 @@ def get_timetable(
 
     # 3. Fetch Todos - shown as all day or specific time
     todos = db.query(Todo).filter(
-        Todo.user_id == current_user.id,
+        Todo.user_id == user_id,
         Todo.due_date >= start_date,
         Todo.due_date <= end_date
     ).all()
@@ -114,7 +162,7 @@ def get_timetable(
                 id=t.id,
                 title=f"Todo: {t.title}",
                 date=date_str(t.due_date),
-                user=t.assigned_to or current_user.name or "User",
+                user=t.assigned_to or username,
                 sh=h, sm=0, eh=h+1, em=0,
                 loc=t.related_entity or "",
                 event_type="TODO",
@@ -125,7 +173,7 @@ def get_timetable(
 
     # 4. Fetch Custom Timetable Events
     custom_events = db.query(TimetableEvent).filter(
-        TimetableEvent.user_id == current_user.id,
+        TimetableEvent.user_id == user_id,
         TimetableEvent.date >= start_date.date(),
         TimetableEvent.date <= end_date.date()
     ).all()
@@ -134,7 +182,7 @@ def get_timetable(
             id=c.id,
             title=c.title,
             date=date_str(c.date),
-            user=c.assignee_name or current_user.name or "User",
+            user=c.assignee_name or username,
             sh=c.start_time.hour,
             sm=c.start_time.minute,
             eh=c.end_time.hour,

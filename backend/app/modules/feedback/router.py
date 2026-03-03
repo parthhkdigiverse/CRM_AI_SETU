@@ -54,7 +54,8 @@ def create_user_feedback(
 ) -> Any:
     from app.modules.feedback.service import FeedbackService
     service = FeedbackService(db)
-    return service.create_user_feedback(current_user.id, feedback_in)
+    user_id = current_user.id if current_user else 0
+    return service.create_user_feedback(user_id, feedback_in)
 
 @router.get("/user", response_model=List[UserFeedbackRead])
 def read_user_feedbacks(
@@ -63,9 +64,9 @@ def read_user_feedbacks(
 ) -> Any:
     from app.modules.feedback.service import FeedbackService
     service = FeedbackService(db)
-    if current_user.role == UserRole.ADMIN:
+    if current_user and current_user.role == UserRole.ADMIN:
         return service.get_user_feedbacks()
     else:
-        # Filter in service ideally, but for now:
-        return [f for f in service.get_user_feedbacks() if f.user_id == current_user.id]
+        user_id = current_user.id if current_user else 0
+        return [f for f in service.get_user_feedbacks() if f.user_id == user_id]
 

@@ -5,7 +5,6 @@ from typing import List, Dict, Any
 from app.modules.clients.models import Client
 from app.modules.issues.models import Issue
 from app.modules.projects.models import Project
-from app.modules.employees.models import Employee
 from app.modules.shops.models import Shop
 
 from app.modules.users.models import User
@@ -53,9 +52,10 @@ class SearchService:
         ).limit(limit).all()
         results["projects"] = [{"id": p.id, "name": p.name, "type": "project", "subtext": p.status.value if hasattr(p.status, 'value') else str(p.status)} for p in projects]
 
-        # 4. Search Employees (Join with User for name/email)
-        employees = self.db.query(User).join(Employee, Employee.user_id == User.id).filter(
+        # 4. Search Users (formerly "employees")
+        employees = self.db.query(User).filter(
             User.is_active == True,
+            User.is_deleted == False,
             or_(
                 User.name.ilike(search_pattern),
                 User.email.ilike(search_pattern)

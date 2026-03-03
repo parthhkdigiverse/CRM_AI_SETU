@@ -39,8 +39,8 @@ def read_kanban_shops(
     # Automatically scope to current user if they are a sales/telesales employee (not admin/PM)
     employee_roles = {UserRole.SALES, UserRole.TELESALES}
     owner_id = None
-    if current_user.role in employee_roles or my_view:
-        owner_id = current_user.id
+    if (current_user and current_user.role in employee_roles) or my_view:
+        owner_id = current_user.id if current_user else 0
     return ShopService.list_kanban_shops(db, owner_id=owner_id)
 
 @router.get("/", response_model=List[ShopRead])

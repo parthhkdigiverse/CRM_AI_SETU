@@ -39,7 +39,7 @@ def create_meeting(
     if not db_client:
         raise HTTPException(status_code=404, detail="Client not found")
     
-    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+    if current_user and current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied to this client")
 
     db_meeting = MeetingSummary(**meeting_in.model_dump(), client_id=client_id)
@@ -58,7 +58,7 @@ def read_client_meetings(
     if not db_client:
         raise HTTPException(status_code=404, detail="Client not found")
         
-    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+    if current_user and current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     return db.query(MeetingSummary).filter(MeetingSummary.client_id == client_id).all()
@@ -75,7 +75,7 @@ def update_meeting(
         raise HTTPException(status_code=404, detail="Meeting not found")
     
     db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
-    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+    if current_user and current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     update_data = meeting_in.model_dump(exclude_unset=True)
@@ -97,7 +97,7 @@ def delete_meeting(
     if not db_meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
 
-    if current_user.role != UserRole.ADMIN:
+    if current_user and current_user.role != UserRole.ADMIN:
         db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
         if not db_client or db_client.pm_id != current_user.id:
             raise HTTPException(status_code=403, detail="Access denied")
@@ -121,7 +121,7 @@ def cancel_meeting(
         raise HTTPException(status_code=404, detail="Meeting not found")
     
     db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
-    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+    if current_user and current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     db_meeting.status = MeetingStatus.CANCELLED
@@ -144,7 +144,7 @@ def reschedule_meeting(
         raise HTTPException(status_code=404, detail="Meeting not found")
     
     db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
-    if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+    if current_user and current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     # Auto reschedule logic (Placeholder: Move to next day same time)

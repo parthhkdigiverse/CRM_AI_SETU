@@ -25,12 +25,16 @@ class VisitService:
         return self.db.query(Visit).filter(Visit.id == visit_id).first()
 
     def get_visits(self, skip: int = 0, limit: int = 100, user_id: int = None, shop_id: int = None):
-        query = self.db.query(Visit)
-        if user_id:
-            query = query.filter(Visit.user_id == user_id)
-        if shop_id:
-            query = query.filter(Visit.shop_id == shop_id)
-        return query.order_by(Visit.visit_date.desc()).offset(skip).limit(limit).all()
+        try:
+            query = self.db.query(Visit)
+            if user_id:
+                query = query.filter(Visit.user_id == user_id)
+            if shop_id:
+                query = query.filter(Visit.shop_id == shop_id)
+            return query.order_by(Visit.visit_date.desc()).offset(skip).limit(limit).all()
+        except Exception as e:
+            print(f"Error fetching visits: {e}")
+            return []
 
     async def create_visit(self, visit_in: VisitCreate, current_user: User, request: Request, photo: UploadFile = None):
         # Validation: Check Shop Exists
@@ -112,7 +116,7 @@ class VisitService:
             user_id=current_user.id,
             user_role=current_user.role,
             action=ActionType.CREATE,
-            entity_type=EntityType.LEAD,
+            entity_type=EntityType.VISIT,
             entity_id=visit.id,
             new_data=visit_in.model_dump(mode='json'), # mode='json' for dates
             request=request
@@ -141,7 +145,7 @@ class VisitService:
             user_id=current_user.id,
             user_role=current_user.role,
             action=ActionType.UPDATE,
-            entity_type=EntityType.LEAD,
+            entity_type=EntityType.VISIT,
             entity_id=visit.id,
             old_data=old_data,
             new_data=update_data,

@@ -129,22 +129,6 @@
             color: #92400e;
         }
 
-        .linked-pill {
-            padding: 4px 12px;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .linked-yes {
-            background-color: #d1fae5;
-            color: #065f46;
-        }
-
-        .linked-no {
-            background-color: #fee2e2;
-            color: #991b1b;
-        }
 
         .action-btn {
             color: #94a3b8;
@@ -191,13 +175,12 @@
                                 <th>Email</th>
                                 <th>Role</th>
                                 <th>Status</th>
-                                <th>Linked</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="users-table">
                             <tr>
-                                <td colspan="6" class="text-center py-5">
+                                <td colspan="5" class="text-center py-5">
                                     <div class="spinner-border spinner-border-sm text-primary"></div>
                                     <span class="ms-2 text-muted">Loading users...</span>
                                 </td>
@@ -244,8 +227,20 @@
                                     <option value="PROJECT_MANAGER">Project Manager</option>
                                     <option value="SALES">Sales</option>
                                     <option value="TELESALES">Telesales</option>
-                                    <option value="PROJECT_MANAGER_AND_SALES">PM & Sales</option>
+                                    <option value="PROJECT_MANAGER_AND_SALES">PM &amp; Sales</option>
                                 </select>
+                            </div>
+                            <div class="mb-3" id="empCodeField">
+                                <label class="form-label text-muted small fw-bold">EMPLOYEE CODE</label>
+                                <input type="text" class="form-control" id="userEmpCode" placeholder="e.g. EMP-001">
+                            </div>
+                            <div class="mb-3" id="joiningDateField">
+                                <label class="form-label text-muted small fw-bold">JOINING DATE</label>
+                                <input type="date" class="form-control" id="userJoiningDate">
+                            </div>
+                            <div class="mb-4" id="departmentField">
+                                <label class="form-label text-muted small fw-bold">DEPARTMENT</label>
+                                <input type="text" class="form-control" id="userDepartment" placeholder="e.g. Sales">
                             </div>
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-add-user justify-content-center py-2"
@@ -279,22 +274,35 @@
                                 <label class="form-label text-muted small fw-bold">EMAIL ADDRESS (READ-ONLY)</label>
                                 <input type="email" class="form-control bg-light" id="editUserEmail" disabled>
                             </div>
-                            <div class="mb-4">
+                            <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">SYSTEM ROLE</label>
                                 <select class="form-select" id="editUserRole" required>
                                     <option value="ADMIN">Admin</option>
                                     <option value="PROJECT_MANAGER">Project Manager</option>
                                     <option value="SALES">Sales</option>
                                     <option value="TELESALES">Telesales</option>
-                                    <option value="PROJECT_MANAGER_AND_SALES">PM & Sales</option>
+                                    <option value="PROJECT_MANAGER_AND_SALES">PM &amp; Sales</option>
                                 </select>
                             </div>
-                            <div class="mb-4">
+                            <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">STATUS</label>
                                 <select class="form-select" id="editUserStatus" required>
                                     <option value="true">Active</option>
                                     <option value="false">Inactive</option>
                                 </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">EMPLOYEE CODE</label>
+                                <input type="text" class="form-control" id="editUserEmpCode" placeholder="e.g. EMP-001">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">JOINING DATE</label>
+                                <input type="date" class="form-control" id="editUserJoiningDate">
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label text-muted small fw-bold">DEPARTMENT</label>
+                                <input type="text" class="form-control" id="editUserDepartment"
+                                    placeholder="e.g. Sales">
                             </div>
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-add-user justify-content-center py-2"
@@ -328,36 +336,25 @@
 
             async function loadData() {
                 try {
-                    // Fetch both users and employees to show "Linked" status
-                    const [users, emps] = await Promise.all([
-                        apiGet('/users/'),
-                        apiGet('/employees/')
-                    ]);
+                    const users = await apiGet('/users/');
 
                     loadedUsers = users;
-                    const empUserIds = emps.map(e => e.user_id);
 
                     const tableBody = document.getElementById('users-table');
                     if (!users.length) {
-                        tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No users found.</td></tr>';
+                        tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No users found.</td></tr>';
                         return;
                     }
 
                     tableBody.innerHTML = users.map(u => {
                         const role = roleMeta[u.role] || { cls: '', label: u.role };
-                        const isLinked = empUserIds.includes(u.id);
-                        // Fallback to employee name if the User profile doesn't have a name yet (legacy users)
-                        let displayName = u.name;
-                        if (!displayName) {
-                            const associatedEmp = emps.find(e => e.user_id === u.id);
-                            if (associatedEmp) displayName = associatedEmp.name || associatedEmp.user_name;
-                        }
+                        let displayName = u.name || '—';
 
                         return `
                     <tr>
                         <td>
                             <div class="d-flex align-items-center gap-3">
-                                <div class="fw-bold text-dark">${displayName || '—'}</div>
+                                <div class="fw-bold text-dark">${displayName}</div>
                             </div>
                         </td>
                         <td class="text-muted small">${u.email}</td>
@@ -366,9 +363,6 @@
                         </td>
                         <td>
                             <span class="status-pill ${u.is_active ? 'status-active' : 'status-inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span>
-                        </td>
-                        <td>
-                            <span class="linked-pill ${isLinked ? 'linked-yes' : 'linked-no'}">${isLinked ? 'Linked' : 'Unlinked'}</span>
                         </td>
                         <td>
                             <div class="d-flex gap-2">
@@ -381,7 +375,7 @@
 
                 } catch (err) {
                     console.error(err);
-                    document.getElementById('users-table').innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger">Error loading data: ${err.message}</td></tr>`;
+                    document.getElementById('users-table').innerHTML = `<tr><td colspan="5" class="text-center py-4 text-danger">Error loading data: ${err.message}</td></tr>`;
                 }
             }
 
@@ -419,6 +413,13 @@
                                 is_active: true
                             };
                             if (name) payload.name = name;
+
+                            const empCode = document.getElementById('userEmpCode').value.trim();
+                            const joiningDate = document.getElementById('userJoiningDate').value;
+                            const department = document.getElementById('userDepartment').value.trim();
+                            if (empCode) payload.employee_code = empCode;
+                            if (joiningDate) payload.joining_date = joiningDate;
+                            if (department) payload.department = department;
 
                             await ApiClient.request('/auth/register', { method: 'POST', body: payload });
 
@@ -523,6 +524,9 @@
                 document.getElementById('editUserEmail').value = user.email || '';
                 document.getElementById('editUserRole').value = user.role || '';
                 document.getElementById('editUserStatus').value = user.is_active ? 'true' : 'false';
+                document.getElementById('editUserEmpCode').value = user.employee_code || '';
+                document.getElementById('editUserJoiningDate').value = user.joining_date || '';
+                document.getElementById('editUserDepartment').value = user.department || '';
 
                 if (editUserModalInstance) {
                     editUserModalInstance.show();

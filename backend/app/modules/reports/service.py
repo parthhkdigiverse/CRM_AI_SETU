@@ -49,7 +49,7 @@ class ReportService:
             revenue_prev = db.query(func.sum(Payment.amount)).filter(Payment.status == PaymentStatus.VERIFIED, extract('month', Payment.verified_at) == prev_month, extract('year', Payment.verified_at) == prev_year).scalar() or 0.0
             revenue_mom_pct = get_mom_pct(revenue_mtd, revenue_prev)
 
-            open_issues = db.query(func.count(Issue.id)).filter(Issue.status.in_([IssueStatus.OPEN, IssueStatus.PENDING])).scalar() or 0
+            open_issues = db.query(func.count(Issue.id)).filter(Issue.status.in_([IssueStatus.PENDING])).scalar() or 0
 
             month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
             

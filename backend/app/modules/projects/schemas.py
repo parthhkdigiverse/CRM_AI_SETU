@@ -31,6 +31,10 @@ class ProjectRead(ProjectBase):
     created_at: datetime
     updated_at: datetime
     
+    # Extra names for UI
+    client_name: Optional[str] = None
+    pm_name: Optional[str] = None
+
     # Progress metrics (calculated in service)
     total_issues: Optional[int] = 0
     resolved_issues: Optional[int] = 0

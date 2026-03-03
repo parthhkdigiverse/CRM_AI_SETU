@@ -84,7 +84,7 @@ function renderSidebar(active) {
     if (isAdmin || isSales || isTelesales || isPM) {
         const crItems = [
             { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
-            { id: 'payment', href: 'javascript:void(0)', onclick: "if(window.loadView) window.loadView('billing');", icon: 'bi-file-earmark-medical', label: 'Payment' }
+            { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' }
         ];
         if (isAdmin || isPM) {
             crItems.push({ id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' });

@@ -920,85 +920,130 @@ document.addEventListener('DOMContentLoaded', () => {
     // ─── Projects (Native Backend Module) ─────────────────────────────────────────────
     async function renderProjects() {
         let projects = [];
-        try { projects = await window.ApiClient.getProjects(); } catch (e) { console.error('Projects fetch failed', e); }
+        try {
+            projects = await window.ApiClient.getProjects();
+        } catch (e) {
+            console.error('Projects fetch failed', e);
+        }
+
+        // Cache projects and current state for filtering
+        window._projectsCache = projects;
+        window._projectFilter = window._projectFilter || 'ALL';
+        window._projectSearch = window._projectSearch || '';
 
         const statusBadge = (s) => ({
-            'PLANNING': '<span class="badge badge-yellow-light">Planned</span>',
-            'IN_PROGRESS': '<span class="badge badge-purple-light">Ongoing</span>',
-            'COMPLETED': '<span class="badge badge-green-light">Completed</span>',
-            'ON_HOLD': '<span class="badge badge-red-light">On Hold</span>',
-        }[s] || `<span class="badge badge-purple-light">${s}</span>`);
+            'PLANNING': '<span class="badge badge-warning">Planned</span>',
+            'IN_PROGRESS': '<span class="badge badge-primary">Ongoing</span>',
+            'COMPLETED': '<span class="badge badge-success">Completed</span>',
+            'ON_HOLD': '<span class="badge badge-danger">On Hold</span>',
+        }[s] || `<span class="badge badge-primary">${s}</span>`);
 
-        const pmanagerIcon = (pm) => pm ? `<div style="display:flex;align-items:center;gap:8px;color:var(--text-muted);"><i class="bi bi-person text-muted"></i> <span>PM #${pm}</span></div>` : '<span class="text-muted">—</span>';
-        const formatBudget = (btn) => btn ? `₹${(btn / 100000).toFixed(1)}L` : '—';
+        const pmanagerIcon = (pm_name) => pm_name ? `
+            <div style="display:flex; flex-direction:column; gap:2px;">
+                <div style="display:flex; align-items:center; gap:8px; color:var(--text-main); font-weight:500;">
+                    <i class="bi bi-person text-muted" style="font-size: 1rem;"></i> 
+                    <span>${pm_name}</span>
+                </div>
+            </div>` : '<span class="text-muted">—</span>';
 
-        // Mock progress for now based on status
-        const getProgress = (s) => {
-            if (s === 'COMPLETED') return 100;
-            if (s === 'IN_PROGRESS') return 65;
-            if (s === 'PLANNING') return 0;
-            return 30;
+        const formatBudget = (btn) => btn ? `₹${(btn / 100000).toFixed(0)}L` : '—';
+
+        const formatDateRange = (p) => {
+            if (!p.start_date && !p.end_date) return '<span class="text-muted">TBD</span>';
+            const start = p.start_date ? new Date(p.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD';
+            const end = p.end_date ? new Date(p.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD';
+            return `<div class="text-muted" style="font-size:0.85rem;"><i class="bi bi-calendar3 me-1"></i> ${start} — ${end}</div>`;
         };
 
-        const rows = projects.length ? projects.map(p => {
-            const prog = getProgress(p.status);
-            return `
-            <tr style="vertical-align: middle;">
-                <td style="font-weight:600; color:var(--text); padding: 20px 24px;">${p.name}</td>
-                <td class="text-muted" style="padding: 20px 24px;">Client #${p.client_id}</td>
-                <td style="padding: 20px 24px;">${pmanagerIcon(p.p_manager_id)}</td>
-                <td class="text-muted" style="padding: 20px 24px;"><i class="bi bi-calendar3 me-1"></i> ${p.start_date || 'TBD'} — ${p.end_date || 'TBD'}</td>
-                <td style="padding: 20px 24px;">${statusBadge(p.status)}</td>
-                <td style="font-weight:600; color:var(--text); padding: 20px 24px;">${formatBudget(p.budget || Math.floor(Math.random() * 2000000 + 500000))}</td>
-                <td style="width: 150px; padding: 20px 24px;">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <div style="flex-grow:1; height:6px; background:#f1f5f9; border-radius:10px; overflow:hidden;">
-                            <div style="width:${prog}%; height:100%; background:var(--primary); border-radius:10px;"></div>
+        const renderTableRows = (filtered) => {
+            return filtered.length ? filtered.map(p => {
+                const prog = p.progress_percentage || 0;
+                return `
+                <tr style="vertical-align: middle;">
+                    <td style="font-weight:600; color:var(--text-main); padding: 20px 24px;">${p.name}</td>
+                    <td class="text-muted" style="padding: 20px 24px;">${p.client_name || 'Client #' + p.client_id}</td>
+                    <td style="padding: 20px 24px;">${pmanagerIcon(p.pm_name)}</td>
+                    <td style="padding: 20px 24px;">${formatDateRange(p)}</td>
+                    <td style="padding: 20px 24px;">${statusBadge(p.status)}</td>
+                    <td style="font-weight:600; color:var(--text-main); padding: 20px 24px;">${formatBudget(p.budget)}</td>
+                    <td style="width: 180px; padding: 20px 24px;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="flex-grow:1; height:6px; background:#f1f5f9; border-radius:10px; overflow:hidden;">
+                                <div style="width:${prog}%; height:100%; background:var(--primary); border-radius:10px;"></div>
+                            </div>
+                            <span style="font-size:0.8rem; font-weight:600; color:var(--text-muted); min-width:32px;">${prog.toFixed(0)}%</span>
                         </div>
-                        <span style="font-size:0.8rem; font-weight:600; color:var(--text-muted); min-width:32px;">${prog}%</span>
-                    </div>
-                </td>
-            </tr>`;
-        }).join('') : `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No projects found. Create one!</td></tr>`;
+                    </td>
+                </tr>`;
+            }).join('') : `<tr><td colspan="7" style="text-align:center;padding:60px;color:var(--text-muted); font-size: 0.9rem;">No projects matching the criteria.</td></tr>`;
+        };
+
+        const applyFilters = () => {
+            let filtered = window._projectsCache;
+            if (window._projectFilter !== 'ALL') {
+                filtered = filtered.filter(p => p.status === window._projectFilter);
+            }
+            if (window._projectSearch) {
+                const s = window._projectSearch.toLowerCase();
+                filtered = filtered.filter(p =>
+                    p.name.toLowerCase().includes(s) ||
+                    (p.client_name && p.client_name.toLowerCase().includes(s)) ||
+                    (p.pm_name && p.pm_name.toLowerCase().includes(s))
+                );
+            }
+            const tbody = mainContent.querySelector('tbody');
+            if (tbody) tbody.innerHTML = renderTableRows(filtered);
+        };
 
         mainContent.innerHTML = `
-        <div class="page-header" style="margin-bottom:24px;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 24px;">
+        <div class="projects-container">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 32px;">
                 <div>
                     <h1 style="margin-bottom:8px; font-weight:700; font-size:2rem; letter-spacing:-0.5px;">Projects</h1>
-                    <p class="text-muted m-0">Overview of all delivery projects.</p>
+                    <p class="text-muted m-0" style="font-size:1.1rem;">Overview of all delivery projects.</p>
                 </div>
-                <button class="btn btn-primary" onclick="window.alert('Create Project Modal Template Pending')" style="padding: 10px 20px; font-weight: 600; border-radius: 8px;">
-                    <i class="bi bi-plus-lg me-2"></i> Create Project
+                <button class="btn btn-primary" onclick="window.alert('Create Project functionality coming soon')" style="padding: 12px 24px; font-weight: 600; border-radius: 10px; display:flex; align-items:center; gap:8px;">
+                    <i class="bi bi-plus-lg" style="font-size:1.1rem;"></i> Create Project
                 </button>
             </div>
             
-            <div style="display:flex; gap:12px; margin-bottom: 8px;">
-                <button class="btn btn-primary" style="border-radius:20px; padding: 6px 20px; font-size:0.9rem; font-weight:600;">All</button>
-                <button class="btn btn-light text-muted" style="border-radius:20px; padding: 6px 20px; font-size:0.9rem; font-weight:500; background:#f8fafc; border:none;">Planned</button>
-                <button class="btn btn-light text-muted" style="border-radius:20px; padding: 6px 20px; font-size:0.9rem; font-weight:500; background:#f8fafc; border:none;">Ongoing</button>
-                <button class="btn btn-light text-muted" style="border-radius:20px; padding: 6px 20px; font-size:0.9rem; font-weight:500; background:#f8fafc; border:none;">Completed</button>
-                <button class="btn btn-light text-muted" style="border-radius:20px; padding: 6px 20px; font-size:0.9rem; font-weight:500; background:#f8fafc; border:none;">On Hold</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px; gap: 16px;">
+                <div style="display:flex; gap:8px; flex-wrap: wrap;">
+                    ${['ALL', 'PLANNING', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD'].map(f => {
+            const labels = { ALL: 'All', PLANNING: 'Planned', IN_PROGRESS: 'Ongoing', COMPLETED: 'Completed', ON_HOLD: 'On Hold' };
+            const active = window._projectFilter === f;
+            return `<button class="btn ${active ? 'btn-primary' : 'btn-light'}" 
+                                   onclick="window._projectFilter='${f}'; renderProjects();"
+                                   style="border-radius:24px; padding: 6px 20px; font-size:0.9rem; font-weight:${active ? '600' : '500'}; 
+                                          ${!active ? 'background:#f8fafc; border:none; color:var(--text-body);' : ''}">${labels[f]}</button>`;
+        }).join('')}
+                </div>
             </div>
-        </div>
-        <div class="card" style="padding:0; border:1px solid #f1f5f9; border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">
-            <div class="table-container">
-                <table class="table" style="margin-bottom:0;">
-                    <thead style="background:#f8fafc;">
-                        <tr>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">PROJECT</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">CLIENT</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">PM</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">TIMELINE</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">STATUS</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">BUDGET</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">PROGRESS</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                </table>
+
+            <div class="card" style="padding:0; border-radius:12px; overflow:hidden;">
+                <div class="table-container">
+                    <table class="table" style="margin-bottom:0;">
+                        <thead>
+                            <tr>
+                                <th>PROJECT</th>
+                                <th>CLIENT</th>
+                                <th>PM</th>
+                                <th>TIMELINE</th>
+                                <th>STATUS</th>
+                                <th>BUDGET</th>
+                                <th>PROGRESS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${renderTableRows(projects)}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>`;
+
+        // Initial filter application in case filter was already set
+        if (window._projectFilter !== 'ALL' || window._projectSearch) applyFilters();
     }
 
     // ─── HR & Payroll Modules ─────────────────────────────────────────────

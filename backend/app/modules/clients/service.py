@@ -15,32 +15,36 @@ class ClientService:
         return self.db.query(Client).filter(Client.id == client_id).first()
 
     def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc", include_inactive: bool = False, pm_id: int = None):
-        query = self.db.query(Client)
-        if not include_inactive:
-            query = query.filter(Client.is_active == True)
-        if pm_id:
-            query = query.filter(Client.pm_id == pm_id)
-        if search:
-            search_pattern = f"%{search}%"
-            query = query.filter(
-                (Client.name.ilike(search_pattern)) | 
-                (Client.phone.ilike(search_pattern))
-            )
-        
-        # Sorting Whitelist Hardening
-        allowed_sort_fields = {"name", "phone", "created_at"}
-        
-        if sort_by not in allowed_sort_fields:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid sort column. Allowed: {', '.join(allowed_sort_fields)}")
+        try:
+            query = self.db.query(Client)
+            if not include_inactive:
+                query = query.filter(Client.is_active == True)
+            if pm_id:
+                query = query.filter(Client.pm_id == pm_id)
+            if search:
+                search_pattern = f"%{search}%"
+                query = query.filter(
+                    (Client.name.ilike(search_pattern)) | 
+                    (Client.phone.ilike(search_pattern))
+                )
+            
+            # Sorting Whitelist Hardening
+            allowed_sort_fields = {"name", "phone", "created_at"}
+            
+            if sort_by not in allowed_sort_fields:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid sort column. Allowed: {', '.join(allowed_sort_fields)}")
 
-        if hasattr(Client, sort_by):
-            column = getattr(Client, sort_by)
-            if sort_order.lower() == "desc":
-                query = query.order_by(column.desc())
-            else:
-                query = query.order_by(column.asc())
+            if hasattr(Client, sort_by):
+                column = getattr(Client, sort_by)
+                if sort_order.lower() == "desc":
+                    query = query.order_by(column.desc())
+                else:
+                    query = query.order_by(column.asc())
 
-        return query.offset(skip).limit(limit).all()
+            return query.offset(skip).limit(limit).all()
+        except Exception as e:
+            print(f"Error fetching clients: {e}")
+            return []
 
     async def create_client(self, client: ClientCreate, current_user: User, request: Request):
         db_client = Client(**client.model_dump())

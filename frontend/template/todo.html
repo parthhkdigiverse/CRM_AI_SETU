@@ -220,17 +220,63 @@
         </div>
     </div>
 
-    <!-- ─── Add Task Modal ────────────────────────────────── -->
+    <!-- ─── Unified Schedule/Task Modal ──────────────────────── -->
     <div class="modal-custom-overlay" id="taskModal">
-        <div class="modal-custom-box">
-            <button class="modal-custom-close" onclick="closeModal()">&times;</button>
-            <h5><i class="bi bi-plus-circle-fill text-primary me-2"></i>Create New Task</h5>
+        <div class="modal-custom-box" style="max-width:550px;">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-calendar-plus-fill text-primary me-2"></i><span id="modal-title-text">Create
+                        Task</span>
+                </h5>
+                <button class="modal-custom-close position-static m-0" onclick="closeModal()">&times;</button>
+            </div>
+
+            <!-- Type Toggle -->
+            <div class="d-flex bg-light p-1 rounded-3 mb-4" style="border: 1px solid #e2e8f0;">
+                <input type="radio" class="btn-check" name="activityType" id="typeEvent" value="EVENT"
+                    autocomplete="off" onchange="toggleModalType()">
+                <label class="btn btn-outline-primary border-0 flex-1 w-50 fw-semibold" for="typeEvent">Event /
+                    Meeting</label>
+
+                <input type="radio" class="btn-check" name="activityType" id="typeTask" value="TASK" checked
+                    autocomplete="off" onchange="toggleModalType()">
+                <label class="btn btn-outline-primary border-0 flex-1 w-50 fw-semibold" for="typeTask">To-Do
+                    Task</label>
+            </div>
+
             <div class="row g-3">
+                <!-- Common Fields -->
                 <div class="col-12">
-                    <label class="form-label fw-semibold small">Task Title <span class="text-danger">*</span></label>
-                    <input type="text" id="td-title" class="form-control" placeholder="What needs to be done?">
+                    <label class="form-label fw-semibold small">Title <span class="text-danger">*</span></label>
+                    <input type="text" id="ev-title" class="form-control" placeholder="What needs to be done?">
                 </div>
                 <div class="col-md-6">
+                    <label class="form-label fw-semibold small">Assignee</label>
+                    <select id="ev-user" class="form-select">
+                        <option value="">— Loading users... —</option>
+                    </select>
+                </div>
+
+                <!-- EVENT specific fields -->
+                <div class="col-md-6 event-fields" style="display: none;">
+                    <label class="form-label fw-semibold small">Date <span class="text-danger">*</span></label>
+                    <input type="date" id="ev-date" class="form-control">
+                </div>
+                <div class="col-md-6 event-fields" style="display: none;">
+                    <label class="form-label fw-semibold small">Start Time <span class="text-danger">*</span></label>
+                    <input type="time" id="ev-start" class="form-control">
+                </div>
+                <div class="col-md-6 event-fields" style="display: none;">
+                    <label class="form-label fw-semibold small">End Time <span class="text-danger">*</span></label>
+                    <input type="time" id="ev-end" class="form-control">
+                </div>
+                <div class="col-12 event-fields" style="display: none;">
+                    <label class="form-label fw-semibold small">Location / Notes</label>
+                    <input type="text" id="ev-loc" class="form-control" placeholder="Office, online, etc.">
+                </div>
+
+                <!-- TASK specific fields -->
+                <div class="col-md-6 task-fields">
                     <label class="form-label fw-semibold small">Priority</label>
                     <select id="td-priority" class="form-select">
                         <option value="LOW">Low</option>
@@ -238,39 +284,28 @@
                         <option value="HIGH">High</option>
                     </select>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold small">Status</label>
-                    <select id="td-status" class="form-select">
-                        <option value="PENDING">Pending</option>
-                        <option value="IN_PROGRESS">In Progress</option>
-                        <option value="COMPLETED">Completed</option>
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold small">Assigned To</label>
-                    <input type="text" id="td-assigned" class="form-control" placeholder="User full name">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold small">Due Date &amp; Time</label>
+                <div class="col-md-6 task-fields">
+                    <label class="form-label fw-semibold small">Due Date & Time</label>
                     <input type="datetime-local" id="td-due" class="form-control">
                 </div>
-                <div class="col-12">
+                <div class="col-12 task-fields">
                     <label class="form-label fw-semibold small">Related Entity</label>
                     <input type="text" id="td-related" class="form-control" placeholder="Project, Client or Lead name">
                 </div>
-                <div class="col-12">
+                <div class="col-12 task-fields">
                     <label class="form-label fw-semibold small">Description</label>
                     <textarea id="td-desc" class="form-control" rows="2" placeholder="Additional details..."></textarea>
                 </div>
-                <div class="col-12">
-                    <label class="form-label fw-semibold small">Evidence Upload</label>
-                    <input type="file" id="td-evidence" class="form-control">
-                </div>
-                <div class="col-12 d-flex gap-2 justify-content-end pt-1">
-                    <button class="btn btn-light border" onclick="closeModal()">Cancel</button>
-                    <button class="btn btn-primary px-4" onclick="saveTask()"><i class="bi bi-check-lg me-1"></i>Create
-                        Task</button>
-                </div>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end mt-4 pt-3 border-top">
+                <button class="btn btn-outline-danger me-auto" id="btn-delete-event" style="display: none;"
+                    onclick="deleteTask(editingTaskId)">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+                <button class="btn btn-light border" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary px-4" onclick="saveActivity()"><i
+                        class="bi bi-check-lg me-1"></i>Save</button>
             </div>
         </div>
     </div>
@@ -454,44 +489,99 @@
         }
         function closeModal() {
             document.getElementById('taskModal').classList.remove('show');
-            ['td-title', 'td-assigned', 'td-related', 'td-desc', 'td-due', 'td-evidence'].forEach(id => {
+            // Reset all form fields safely
+            ['ev-title', 'td-related', 'td-desc', 'td-due', 'ev-loc', 'ev-date', 'ev-start', 'ev-end'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.value = '';
             });
-            document.getElementById('td-priority').value = 'MEDIUM';
-            document.getElementById('td-status').value = 'PENDING';
+            const pri = document.getElementById('td-priority');
+            if (pri) pri.value = 'MEDIUM';
         }
-        async function saveTask() {
-            const title = document.getElementById('td-title').value.trim();
-            const priority = document.getElementById('td-priority').value;
-            const status = document.getElementById('td-status').value;
-            const assigned_to = document.getElementById('td-assigned').value.trim() || 'Unassigned';
-            const due_date = document.getElementById('td-due').value ? new Date(document.getElementById('td-due').value).toISOString() : null;
-            const related_entity = document.getElementById('td-related').value.trim() || null;
-            const description = document.getElementById('td-desc').value.trim() || null;
+        function toggleModalType() {
+            const isEvent = document.getElementById('typeEvent').checked;
+            document.querySelectorAll('.event-fields').forEach(el => el.style.display = isEvent ? 'block' : 'none');
+            document.querySelectorAll('.task-fields').forEach(el => el.style.display = isEvent ? 'none' : 'block');
+            document.getElementById('modal-title-text').innerText = isEvent ? 'Schedule Event' : 'Create Task';
+        }
 
-            if (!title) {
-                document.getElementById('td-title').classList.add('is-invalid');
-                document.getElementById('td-title').style.borderColor = '#ef4444';
-                return;
-            }
+        async function saveActivity() {
+            const isEvent = document.getElementById('typeEvent').checked;
 
-            try {
-                const eventData = { title, priority, status, assigned_to, related_entity, description };
-                if (due_date) eventData.due_date = due_date;
-                await ApiClient.createTodo(eventData);
-                closeModal();
-                loadTasks();
+            if (isEvent) {
+                // Event Creation
+                const title = document.getElementById('ev-title').value.trim();
+                const user = document.getElementById('ev-user').value;
+                const date = document.getElementById('ev-date').value;
+                const start = document.getElementById('ev-start').value;
+                const end = document.getElementById('ev-end').value;
 
-                // Show a simple success toast
-                const toast = document.createElement('div');
-                toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#22c55e;color:#fff;padding:12px 20px;border-radius:10px;font-size:0.875rem;font-weight:500;z-index:9999;box-shadow:0 4px 12px rgba(34,197,94,.4);';
-                toast.innerHTML = '<i class="bi bi-check-circle me-2"></i>Task created successfully!';
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 3000);
-            } catch (error) {
-                console.error("Failed to save task", error);
-                alert("Failed to save task");
+                if (!title || !date || !start || !end) {
+                    document.getElementById('ev-title').style.borderColor = '#ef4444';
+                    setTimeout(() => document.getElementById('ev-title').style.borderColor = '', 2000);
+                    return;
+                }
+
+                if (start >= end) {
+                    alert('End time must be after start time.');
+                    return;
+                }
+
+                const eventData = {
+                    title: title,
+                    assignee_name: user,
+                    date: date,
+                    start_time: start,
+                    end_time: end,
+                    location: document.getElementById('ev-loc').value.trim() || ''
+                };
+
+                try {
+                    await ApiClient.createTimetableEvent(eventData);
+                    closeModal();
+                    alert('Activity scheduled!'); // Simple alert for To-Do page
+                } catch (error) {
+                    console.error("Failed to schedule event", error);
+                    alert("Failed to schedule event.");
+                }
+            } else {
+                // Task Creation
+                const title = document.getElementById('ev-title').value.trim();
+                const user = document.getElementById('ev-user').value;
+                const priority = document.getElementById('td-priority').value;
+                const due = document.getElementById('td-due').value;
+                const related = document.getElementById('td-related').value.trim();
+                const desc = document.getElementById('td-desc').value.trim();
+
+                if (!title) {
+                    document.getElementById('ev-title').style.borderColor = '#ef4444';
+                    setTimeout(() => document.getElementById('ev-title').style.borderColor = '', 2000);
+                    return;
+                }
+
+                const payload = {
+                    title: title,
+                    description: desc || null,
+                    priority: priority,
+                    assigned_to: user,
+                    due_date: due ? new Date(due).toISOString() : null,
+                    related_entity: related || null
+                };
+
+                try {
+                    await ApiClient.createTodo(payload);
+                    closeModal();
+                    loadTasks();
+
+                    const toast = document.createElement('div');
+                    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#22c55e;color:#fff;padding:12px 20px;border-radius:10px;font-size:0.875rem;font-weight:500;z-index:9999;box-shadow:0 4px 12px rgba(34,197,94,.4);';
+                    toast.innerHTML = '<i class="bi bi-check-circle me-2"></i>Task created successfully!';
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                } catch (error) {
+                    console.error("Failed to create task", error);
+                    const detail = error?.data?.detail || (typeof error?.data === 'string' ? error.data : null) || error?.message || 'Failed to create task';
+                    alert(detail);
+                }
             }
         }
         async function deleteTask(id) {
@@ -516,6 +606,16 @@
         // Close modal on backdrop click
         document.getElementById('taskModal').addEventListener('click', function (e) {
             if (e.target === this) closeModal();
+        });
+
+        // ── Load assignees into dropdown ────────────────────────
+        ApiClient.getEmployees().then(emps => {
+            const sel = document.getElementById('ev-user');
+            sel.innerHTML = '<option value="">— Unassigned —</option>' +
+                emps.map(e => `<option value="${e.full_name || e.email}">${e.full_name || e.email}</option>`).join('');
+        }).catch(() => {
+            // Fallback: keep loading placeholder but don't block
+            document.getElementById('ev-user').innerHTML = '<option value="">— Unassigned —</option>';
         });
 
         // ── Init ─────────────────────────────────────────────────

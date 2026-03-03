@@ -168,7 +168,7 @@ class ApiClient {
 
     // ─── Users ───────────────────────────────────────────────
     static async getUsers() {
-        return this.request('/employees/');
+        return this.request('/users/');
     }
     static async updateUserRole(userId, role) {
         return this.request(`/users/${userId}/role`, { method: 'PATCH', body: { role } });
@@ -295,10 +295,10 @@ class ApiClient {
 
     // ─── Employees / HR ──────────────────────────────────────
     static async getEmployees() {
-        return this.request('/employees/');
+        return this.request('/users/');
     }
     static async getEmployee(employeeId) {
-        return this.request(`/employees/${employeeId}`);
+        return this.request(`/users/${employeeId}`);
     }
     static async createEmployee(data) {
         return this.request('/employees/', { method: 'POST', body: data });
@@ -394,6 +394,12 @@ class ApiClient {
     }
     static async createTimetableEvent(data) {
         return this.request('/timetable/', { method: 'POST', body: data });
+    }
+    static async updateTimetableEvent(eventId, data) {
+        return this.request(`/timetable/${eventId}`, { method: 'PATCH', body: data });
+    }
+    static async deleteTimetableEvent(eventId) {
+        return this.request(`/timetable/${eventId}`, { method: 'DELETE' });
     }
 
     // ─── Activity Logs ───────────────────────────────────────
