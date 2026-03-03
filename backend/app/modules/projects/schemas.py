@@ -7,7 +7,7 @@ class ProjectBase(BaseModel):
     name: str
     description: Optional[str] = None
     client_id: int
-    pm_id: int
+    pm_id: Optional[int] = None
     status: Optional[ProjectStatus] = ProjectStatus.PLANNING
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
