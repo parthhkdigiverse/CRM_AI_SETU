@@ -392,6 +392,9 @@ class ApiClient {
         if (endDate) params += (params ? '&' : '?') + `end_date=${endDate}`;
         return this.request(`/timetable/${params}`);
     }
+    static async createTimetableEvent(data) {
+        return this.request('/timetable/', { method: 'POST', body: data });
+    }
 
     // ─── Activity Logs ───────────────────────────────────────
     static async getActivityLogs() {
