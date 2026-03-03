@@ -606,11 +606,17 @@
             renderAreaList(document.getElementById('area-search').value);
             const shops = allShops.filter(s => s.area_id === areaId);
             document.getElementById('shops-panel-title').innerHTML =
-                `<i class="bi bi-shop"></i> Shops in ${areaName}
-                 <button class="btn btn-sm btn-outline-secondary ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
-                    onclick="openEditAreaModal(${areaId})" title="Edit area & discover more shops">
-                    <i class="bi bi-pencil-fill"></i> Edit
-                 </button>`;
+                `<div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-shop"></i> Shops in ${areaName}
+                    <button class="btn btn-sm btn-outline-secondary ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                        onclick="openEditAreaModal(${areaId})" title="Edit area">
+                        <i class="bi bi-pencil-fill"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                        onclick="deleteArea(${areaId}, '${areaName.replace(/'/g, "\\'")}')" title="Delete area">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                 </div>`;
             document.getElementById('shops-panel-count').textContent = `${shops.length} shop${shops.length !== 1 ? 's' : ''}`;
             const body = document.getElementById('shops-panel-body');
             if (!shops.length) {
@@ -863,6 +869,27 @@
                 }
             } catch (e) {
                 toast(e?.data?.detail || 'Failed to delete', 'error');
+            }
+        }
+
+        // ── Delete Area ──
+        async function deleteArea(id, name) {
+            if (!confirm(`Are you sure you want to delete the area "${name}"?\nThis action cannot be undone and will delete all associated shops.`)) return;
+            try {
+                await ApiClient.deleteArea(id);
+                toast(`Area "${name}" deleted`);
+                selectedAreaId = null;
+                // Reset right-hand panel to empty default
+                document.getElementById('shops-panel-title').innerHTML = '<i class="bi bi-shop text-muted"></i> Select an area';
+                document.getElementById('shops-panel-count').textContent = '';
+                document.getElementById('shops-panel-body').innerHTML = `
+                    <div class="h-100 d-flex flex-column align-items-center justify-content-center p-5 text-muted opacity-50">
+                        <i class="bi bi-geo-alt" style="font-size:4rem;display:block;margin-bottom:1rem;"></i>
+                        <p>Click an area on the left to view its shops</p>
+                    </div>`;
+                await loadAll();
+            } catch (e) {
+                toast(e?.data?.detail || e?.message || 'Failed to delete area', 'error');
             }
         }
 

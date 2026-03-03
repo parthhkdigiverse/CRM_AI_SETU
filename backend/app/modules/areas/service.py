@@ -47,3 +47,16 @@ class AreaService:
         self.db.commit()
         self.db.refresh(area)
         return area
+
+    def delete_area(self, area_id: int):
+        area = self.db.query(Area).filter(Area.id == area_id).first()
+        if not area:
+            raise HTTPException(status_code=404, detail="Area not found")
+        
+        # Cascading delete: Remove all shops associated with this area
+        from app.modules.shops.models import Shop
+        self.db.query(Shop).filter(Shop.area_id == area_id).delete()
+        
+        self.db.delete(area)
+        self.db.commit()
+        return {"detail": "Area and associated shops deleted"}

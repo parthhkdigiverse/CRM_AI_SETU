@@ -59,3 +59,15 @@ def assign_area(
     """
     service = AreaService(db)
     return service.assign_area(area_id, assign_in.assigned_user_id)
+
+@router.delete("/{area_id}", status_code=status.HTTP_200_OK)
+def delete_area(
+    area_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_access)
+) -> Any:
+    """
+    Delete an area and all associated shops. Admin only.
+    """
+    service = AreaService(db)
+    return service.delete_area(area_id)
