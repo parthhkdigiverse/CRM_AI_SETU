@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
 from app.modules.users.models import User, UserRole
-from app.modules.areas.schemas import AreaCreate, AreaRead, AreaAssign
+from app.modules.areas.schemas import AreaCreate, AreaRead, AreaAssign, AreaUpdate
 from app.modules.areas.service import AreaService
 
 router = APIRouter()
@@ -23,6 +23,19 @@ def create_area(
     """
     service = AreaService(db)
     return service.create_area(area_in)
+
+@router.patch("/{area_id}", response_model=AreaRead)
+def update_area(
+    area_id: int,
+    area_in: AreaUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_access)
+) -> Any:
+    """
+    Update an existing Area's name, description, or coordinates. Admin only.
+    """
+    service = AreaService(db)
+    return service.update_area(area_id, area_in)
 
 @router.get("/", response_model=List[AreaRead])
 def read_areas(

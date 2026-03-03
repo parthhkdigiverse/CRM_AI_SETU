@@ -406,6 +406,7 @@
                                     </div>
                                     <input type="hidden" id="a-lat">
                                     <input type="hidden" id="a-lng">
+                                    <input type="hidden" id="a-id" value="">
                                     <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i>Pin a
                                         location to auto-discover nearby shops after saving.</p>
                                 </div>
@@ -453,6 +454,7 @@
 
                     <!-- Shop Form -->
                     <div id="form-shop" style="display:none;">
+                        <input type="hidden" id="s-id" value="">
                         <div class="mb-3">
                             <label class="form-label">Shop / Client Name *</label>
                             <input id="s-name" class="form-control" placeholder="e.g. Krishna Electronics">
@@ -486,6 +488,7 @@
                                     <option>Reference</option>
                                     <option>Cold Call</option>
                                     <option>Online</option>
+                                    <option>Google Maps</option>
                                     <option>Other</option>
                                 </select>
                             </div>
@@ -501,8 +504,18 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer" id="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <!-- Back to Edit button: only shown when in discovery mode from edit flow -->
+                    <button class="btn btn-outline-secondary" id="modal-back-btn" style="display:none;"
+                        onclick="backToEditArea()">
+                        <i class="bi bi-arrow-left"></i> Back to Edit
+                    </button>
+                    <!-- Discover Shops button: only shown in edit mode on the area tab -->
+                    <button class="btn btn-outline-primary" id="modal-discover-btn" style="display:none;"
+                        onclick="discoverShopsFromEdit()">
+                        <i class="bi bi-search"></i> Discover Nearby Shops
+                    </button>
                     <button class="btn btn-primary" id="modal-save-btn" onclick="saveModalForm()">Create Area</button>
                 </div>
             </div>
@@ -523,6 +536,36 @@
         let allShops = [];
         let selectedAreaId = null;
         let modalTab = 'area';
+
+        // ── Reset modal to Create mode whenever it opens normally ──
+        document.getElementById('addModal').addEventListener('show.bs.modal', function () {
+            // Only reset if NOT triggered by openEditAreaModal (which pre-fills a-id)
+            // We detect this by checking if the call came from the Add button (a-id is empty)
+            // openEditAreaModal already calls switchModalTab and pre-fills before show(), so
+            // here we only reset if a-id is still empty at this point.
+            if (!document.getElementById('a-id').value) {
+                document.querySelector('#addModal .modal-title').textContent = 'Add Area / Shop';
+                document.getElementById('a-name').value = '';
+                document.getElementById('a-desc').value = '';
+                document.getElementById('a-lat').value = '';
+                document.getElementById('a-lng').value = '';
+                document.getElementById('area-step-1').style.display = '';
+                document.getElementById('discovered-shops-container').style.display = 'none';
+                document.getElementById('modal-save-btn').style.display = '';
+                document.getElementById('modal-save-btn').textContent = 'Create Area';
+            }
+        });
+
+        // Clear all edit IDs once the modal is fully hidden so the next fresh open is clean
+        document.getElementById('addModal').addEventListener('hidden.bs.modal', function () {
+            document.getElementById('a-id').value = '';
+            document.getElementById('s-id').value = '';
+            // Reset save button to its default neutral state
+            document.getElementById('modal-save-btn').textContent = 'Create Area';
+            document.getElementById('modal-save-btn').style.display = '';
+            document.getElementById('modal-discover-btn').style.display = 'none';
+            document.getElementById('modal-back-btn').style.display = 'none';
+        });
 
         // ── Load Data ──
         async function loadAll() {
@@ -549,7 +592,8 @@
             ul.innerHTML = filtered.map(a => {
                 const shopCount = allShops.filter(s => s.area_id === a.id).length;
                 const isActive = a.id === selectedAreaId;
-                return `<li class="area-item ${isActive ? 'active' : ''}" onclick="selectArea(${a.id}, '${a.name.replace(/'/g, "\\'")}')">
+                return `<li class="area-item ${isActive ? 'active' : ''}" onclick="selectArea(${a.id}, '${a.name.replace(/'/g, "\\'")}')"
+                        ondblclick="openEditAreaModal(${a.id})" title="Double-click to edit">
                     <span class="area-info"><i class="bi bi-geo-alt-fill"></i>${a.name}</span>
                     <span class="area-count-pill">${shopCount} shops</span>
                 </li>`;
@@ -561,7 +605,12 @@
             selectedAreaId = areaId;
             renderAreaList(document.getElementById('area-search').value);
             const shops = allShops.filter(s => s.area_id === areaId);
-            document.getElementById('shops-panel-title').innerHTML = `<i class="bi bi-shop"></i> Shops in ${areaName}`;
+            document.getElementById('shops-panel-title').innerHTML =
+                `<i class="bi bi-shop"></i> Shops in ${areaName}
+                 <button class="btn btn-sm btn-outline-secondary ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                    onclick="openEditAreaModal(${areaId})" title="Edit area & discover more shops">
+                    <i class="bi bi-pencil-fill"></i> Edit
+                 </button>`;
             document.getElementById('shops-panel-count').textContent = `${shops.length} shop${shops.length !== 1 ? 's' : ''}`;
             const body = document.getElementById('shops-panel-body');
             if (!shops.length) {
@@ -580,7 +629,12 @@
                         <td><div class="d-flex align-items-center gap-2"><div class="avatar-owner">${ownerInit}</div><span class="fw-medium">${s.owner_name || 'Unassigned'}</span></div></td>
                         <td><a href="tel:${s.phone}" class="phone-link"><i class="bi bi-telephone"></i>${s.phone || '—'}</a><div class="shop-name-sub ps-4">${s.contact_person || ''}</div></td>
                         <td class="text-muted small">${lastVisit}</td>
-                        <td><button class="btn-action" onclick="deleteShop(${s.id}, '${s.name.replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i></button></td>
+                        <td>
+                            <div class="d-flex justify-content-end gap-2">
+                                <button class="btn-action text-primary" onclick="editShop(${s.id})" title="Edit shop"><i class="bi bi-pencil"></i></button>
+                                <button class="btn-action" onclick="deleteShop(${s.id}, '${s.name.replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </td>
                     </tr>`;
             }).join('')}</tbody>
             </table>`;
@@ -600,12 +654,32 @@
             document.getElementById('tab-shop-btn').style.cssText = tab === 'shop'
                 ? 'border-radius:8px;background:#eef2ff;color:#4f46e5;border:none;padding:7px 18px;'
                 : 'border-radius:8px;background:#f1f5f9;color:#64748b;border:none;padding:7px 18px;';
-            document.getElementById('modal-save-btn').textContent = tab === 'area' ? 'Create Area' : 'Add Shop';
-            // When switching TO area tab, trigger map resize to fix 0×0 pixel issue
+            const saveBtn = document.getElementById('modal-save-btn');
+            const discoverBtn = document.getElementById('modal-discover-btn');
+            const backBtn = document.getElementById('modal-back-btn');
+            const isEditMode = !!document.getElementById('a-id').value;
+            // Keep save button hidden when on area tab AND in discovery view (step-1 hidden)
+            if (tab === 'area' && document.getElementById('area-step-1').style.display === 'none') {
+                saveBtn.style.display = 'none';
+            } else {
+                saveBtn.style.display = '';
+                // Only update the text if NOT being explicitly set by openEditAreaModal / editShop
+                if (!isEditMode && !document.getElementById('s-id').value) {
+                    saveBtn.textContent = tab === 'area' ? 'Create Area' : 'Add Shop';
+                } else if (!isEditMode) {
+                    // Switching tabs while in shop edit mode — keep 'Update Shop'
+                }
+            }
+            // Discover button only meaningful on the area tab in edit mode
+            if (discoverBtn) discoverBtn.style.display = (tab === 'area' && isEditMode) ? '' : 'none';
+            // Back button only shown when user explicitly entered discovery from edit
+            if (backBtn && tab !== 'area') backBtn.style.display = 'none';
+            // When switching TO area tab, trigger map resize
             if (tab === 'area' && typeof map !== 'undefined' && map) {
                 setTimeout(() => google.maps.event.trigger(map, 'resize'), 100);
             }
         }
+
 
         function switchAddShopForArea(areaId) {
             switchModalTab('shop');
@@ -613,6 +687,83 @@
             modal.show();
             setTimeout(() => { document.getElementById('s-area').value = areaId; }, 300);
         }
+
+        // ── Open modal in Edit Mode for an existing area ──
+        function openEditAreaModal(areaId) {
+            const area = allAreas.find(a => a.id === areaId);
+            if (!area) return;
+
+            // Pre-fill hidden ID FIRST so show.bs.modal handler knows this is edit mode
+            document.getElementById('a-id').value = area.id;
+
+            // Pre-fill form fields
+            document.getElementById('a-name').value = area.name;
+            document.getElementById('a-desc').value = area.description || '';
+            document.getElementById('a-lat').value = area.lat;
+            document.getElementById('a-lng').value = area.lng;
+
+            // Show EDIT FORM (step 1), hide discovery panel
+            document.getElementById('area-step-1').style.display = '';
+            document.getElementById('discovered-shops-container').style.display = 'none';
+
+            // Update modal title & tab
+            document.querySelector('#addModal .modal-title').textContent = `Edit Area: ${area.name}`;
+            switchModalTab('area');
+
+            // Footer: "Update Area" save btn + "Discover" btn, hide Back btn
+            document.getElementById('modal-save-btn').textContent = 'Update Area';
+            document.getElementById('modal-save-btn').style.display = '';
+            document.getElementById('modal-discover-btn').style.display = '';
+            document.getElementById('modal-back-btn').style.display = 'none';
+
+            // Open modal
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('addModal')).show();
+
+            // After animation, center map on saved coordinates
+            setTimeout(() => {
+                if (typeof window.loadMapForEdit === 'function') {
+                    window.loadMapForEdit(area.lat, area.lng);
+                }
+            }, 400);
+        }
+
+        // ── Transition: Edit Form → Discover Shops (user-initiated) ──
+        function discoverShopsFromEdit() {
+            const areaId = parseInt(document.getElementById('a-id').value);
+            const area = allAreas.find(a => a.id === areaId);
+            if (!area) return;
+
+            const lat = parseFloat(document.getElementById('a-lat').value) || area.lat;
+            const lng = parseFloat(document.getElementById('a-lng').value) || area.lng;
+
+            document.getElementById('area-step-1').style.display = 'none';
+            document.getElementById('discovered-shops-container').style.display = 'block';
+            document.getElementById('area-saved-msg').textContent = `Discovering nearby businesses for "${area.name}":`;
+
+            // Footer: hide Save + Discover, show Back
+            document.getElementById('modal-save-btn').style.display = 'none';
+            document.getElementById('modal-discover-btn').style.display = 'none';
+            document.getElementById('modal-back-btn').style.display = '';
+
+            window._discoverShops(area.id, { lat, lng });
+        }
+
+        // ── Transition: Discover view → Edit Form (back button) ──
+        function backToEditArea() {
+            document.getElementById('area-step-1').style.display = '';
+            document.getElementById('discovered-shops-container').style.display = 'none';
+
+            // Footer: restore Save + Discover, hide Back
+            document.getElementById('modal-save-btn').style.display = '';
+            document.getElementById('modal-discover-btn').style.display = '';
+            document.getElementById('modal-back-btn').style.display = 'none';
+
+            // Resize map since it became visible again
+            setTimeout(() => {
+                if (window.map) google.maps.event.trigger(window.map, 'resize');
+            }, 100);
+        }
+
 
         // ── Area Dropdown ──
         function populateAreaDropdown() {
@@ -631,24 +782,40 @@
                     if (typeof handleModalSave === 'function') { handleModalSave(); }
                     return; // handleModalSave manages btn.disabled itself
                 } else {
+                    const shopEditId = document.getElementById('s-id').value;
                     const name = document.getElementById('s-name').value.trim();
                     const areaId = parseInt(document.getElementById('s-area').value);
                     if (!name || !areaId) { toast('Shop name and area are required', 'error'); btn.disabled = false; return; }
-                    await ApiClient.createShop({
+                    const payload = {
                         name, area_id: areaId,
                         contact_person: document.getElementById('s-contact').value,
                         phone: document.getElementById('s-phone').value,
                         address: document.getElementById('s-addr').value,
                         source: document.getElementById('s-source').value || 'Other',
                         project_type: document.getElementById('s-project').value || null,
-                    });
-                    toast('Shop added!');
+                    };
+                    if (shopEditId) {
+                        await ApiClient.updateShop(parseInt(shopEditId), payload);
+                        toast('Shop updated!');
+                    } else {
+                        await ApiClient.createShop(payload);
+                        toast('Shop added!');
+                    }
+                    // Clear all shop form fields including the hidden ID
+                    document.getElementById('s-id').value = '';
                     ['s-name', 's-contact', 's-phone', 's-addr'].forEach(id => document.getElementById(id).value = '');
-                    bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+                    document.getElementById('s-source').value = '';
+                    document.getElementById('s-project').value = '';
                     await loadAll();
                     if (selectedAreaId) {
                         const a = allAreas.find(x => x.id === selectedAreaId);
                         if (a) selectArea(a.id, a.name);
+                    }
+                    // If from Discovered Shops list → go back to list; otherwise close modal
+                    if (!shopEditId && document.getElementById('area-step-1').style.display === 'none') {
+                        switchModalTab('area');
+                    } else {
+                        bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
                     }
                 }
             } catch (e) {
@@ -656,6 +823,31 @@
             } finally {
                 btn.disabled = false;
             }
+        }
+
+        // ── Edit Shop ──
+        function editShop(shopId) {
+            const shop = allShops.find(s => s.id === shopId);
+            if (!shop) return;
+
+            // Pre-fill hidden ID so saveModalForm knows edit mode
+            document.getElementById('s-id').value = shop.id;
+
+            // Pre-fill form fields
+            document.getElementById('s-name').value = shop.name || '';
+            document.getElementById('s-area').value = shop.area_id || '';
+            document.getElementById('s-contact').value = shop.contact_person || '';
+            document.getElementById('s-phone').value = shop.phone || '';
+            document.getElementById('s-addr').value = shop.address || '';
+            document.getElementById('s-source').value = shop.source || '';
+            document.getElementById('s-project').value = shop.project_type || '';
+
+            // Update button label and switch tab
+            switchModalTab('shop');
+            document.getElementById('modal-save-btn').textContent = 'Update Shop';
+
+            // Open modal
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('addModal')).show();
         }
 
         // ── Delete Shop ──
@@ -682,7 +874,7 @@
         });
     </script>
     <script async
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBygpEQiPfF15EghJWMWFlmejZ19b3mVzE&libraries=places&callback=initMap"></script>
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBygpEQiPfF15EghJWMWFlmejZ19b3mVzE&loading=async&v=week&libraries=places,marker&callback=initMap"></script>
     <script src="../js/areas.js"></script>
 </body>
 

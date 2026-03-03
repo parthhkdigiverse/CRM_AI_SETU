@@ -7,6 +7,7 @@ class Area(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
+    description = Column(String, nullable=True)
     pincode = Column(String, index=True, nullable=True)
     city = Column(String, index=True, nullable=True)
     assigned_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)

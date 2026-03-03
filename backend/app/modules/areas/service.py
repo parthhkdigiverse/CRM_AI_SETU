@@ -22,6 +22,18 @@ class AreaService:
         self.db.refresh(area)
         return area
 
+    def update_area(self, area_id: int, area_in):
+        area = self.db.query(Area).filter(Area.id == area_id).first()
+        if not area:
+            raise HTTPException(status_code=404, detail="Area not found")
+        update_data = area_in.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(area, field, value)
+        self.db.commit()
+        self.db.refresh(area)
+        setattr(area, 'shops_count', len(area.shops) if area.shops else 0)
+        return area
+
     def assign_area(self, area_id: int, user_id: int):
         area = self.db.query(Area).filter(Area.id == area_id).first()
         if not area:
