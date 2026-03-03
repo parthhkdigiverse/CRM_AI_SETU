@@ -278,55 +278,25 @@
 
     <!-- Modal: Add Feedback -->
     <div class="modal fade" id="addFeedbackModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold">Add New Feedback</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body p-4">
-                    <div class="row g-4">
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold">Client *</label>
-                            <select id="fb-client-m" class="form-select bg-light border-0"></select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold">Sales Agent</label>
-                            <select class="form-select bg-light border-0">
-                                <option>Rahul Sharma</option>
-                                <option>Priya Patel</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold">Product</label>
-                            <select class="form-select bg-light border-0">
-                                <option>CRM Enterprise</option>
-                                <option>AI Analytics</option>
-                            </select>
-                        </div>
+                <div class="modal-body p-5 text-center">
+                    <div class="bg-light p-4 rounded-4 mb-4 d-inline-block shadow-sm">
+                        <img id="agent-qr-code"
+                            src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=example" alt="QR Code"
+                            style="width: 200px; height: 200px;">
+                    </div>
 
-                        <div class="col-md-6 border-end">
-                            <div class="mb-3 d-flex justify-content-between">
-                                <label class="small">Product Features</label>
-                                <div class="star-picker">
-                                    <input type="radio" id="p5" name="p" value="5"><label for="p5">★</label>
-                                    <input type="radio" id="p4" name="p" value="4"><label for="p4">★</label>
-                                    <input type="radio" id="p1" name="p" value="1"><label for="p1">★</label>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <label class="small">Meeting Quality</label>
-                                <div class="star-picker">
-                                    <input type="radio" id="m5" name="m" value="5"><label for="m5">★</label>
-                                    <input type="radio" id="m1" name="m" value="1"><label for="m1">★</label>
-                                </div>
-                            </div>
-                        </div>
+                    <h5 class="fw-bold mb-2">QR Code</h5>
+                    <p class="text-muted px-4">Scan this QR code submit your feedback.</p>
 
-                        <div class="col-12">
-                            <label class="form-label small fw-bold">Feedback / Comment</label>
-                            <textarea id="fb-comment" class="form-control bg-light border-0" rows="3"></textarea>
-                        </div>
+                    <div class="mt-3">
+                        <span class="small text-muted">Referral Code:</span>
+                        <div id="ref-code-display" class="badge bg-primary-subtle text-primary ms-1">REF-RS-101</div>
                     </div>
                 </div>
                 <div class="modal-footer bg-light p-3">
@@ -346,12 +316,12 @@
 
         // Expanded Dummy Data for Sorting Logic Demo
         const baseData = [
-            { client: "Acme Corp", product: "CRM Enterprise", agent: "Rahul Sharma", rating: 4.8, helpful: "Yes", date: "02 Mar 2024", comment: "Excellent automation." },
-            { client: "Global Tech", product: "AI Analytics", agent: "Priya Patel", rating: 4.2, helpful: "Yes", date: "01 Mar 2024", comment: "Great insights but UI needs work." },
-            { client: "Nexus Labs", product: "ERP Solution", agent: "Amit Shah", rating: 3.5, helpful: "No", date: "28 Feb 2024", comment: "Support response was slow." },
-            { client: "Zenith Inc", product: "CRM Enterprise", agent: "Rahul Sharma", rating: 4.5, helpful: "Yes", date: "25 Feb 2024", comment: "Very good service." },
-            { client: "Beta Corp", product: "AI Analytics", agent: "Rahul Sharma", rating: 4.7, helpful: "Yes", date: "24 Feb 2024", comment: "Highly recommend." },
-            { client: "Delta Systems", product: "ERP Solution", agent: "Priya Patel", rating: 3.9, helpful: "No", date: "22 Feb 2024", comment: "Needs better docs." }
+            { client: "Acme Corp", product: "CRM Enterprise", agent: "Rahul Sharma", rating: 4.8, helpful: "Yes", date: "02 Mar 2024", comment: "Excellent automation.", ref: "REF-RS-101" },
+            { client: "Global Tech", product: "AI Analytics", agent: "Priya Patel", rating: 4.2, helpful: "Yes", date: "01 Mar 2024", comment: "Great insights but UI needs work.", ref: "REF-PP-102" },
+            { client: "Nexus Labs", product: "ERP Solution", agent: "Amit Shah", rating: 3.5, helpful: "No", date: "28 Feb 2024", comment: "Support response was slow.", ref: "REF-AS-103" },
+            { client: "Zenith Inc", product: "CRM Enterprise", agent: "Rahul Sharma", rating: 4.5, helpful: "Yes", date: "25 Feb 2024", comment: "Very good service.", ref: "REF-RS-101" },
+            { client: "Beta Corp", product: "AI Analytics", agent: "Rahul Sharma", rating: 4.7, helpful: "Yes", date: "24 Feb 2024", comment: "Highly recommend.", ref: "REF-RS-101" },
+            { client: "Delta Systems", product: "ERP Solution", agent: "Priya Patel", rating: 3.9, helpful: "No", date: "22 Feb 2024", comment: "Needs better docs.", ref: "REF-PP-102" }
         ];
 
         // Function to populate Sales Person Filter based on Frequency (Popularity)
@@ -426,6 +396,23 @@
 
         // Search logic
         document.getElementById('fb-search').addEventListener('input', loadFeedback);
+
+        // QR Code Logic for Modal
+        const updateModalQR = () => {
+            const refCode = "REF-RS-101"; // Default referral code
+            const qrImg = document.getElementById('agent-qr-code');
+            const refDisplay = document.getElementById('ref-code-display');
+
+            // Construct the feedback URL
+            const feedbackUrl = `${window.location.origin}/frontend/template/client_feedback.html?ref=${refCode}`;
+
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(feedbackUrl)}`;
+            refDisplay.textContent = refCode;
+        };
+
+        // Update QR on modal show
+        const addFeedbackModalElement = document.getElementById('addFeedbackModal');
+        addFeedbackModalElement.addEventListener('shown.bs.modal', updateModalQR);
 
         document.getElementById('save-feedback-btn').addEventListener('click', () => {
             alert("Feedback saved locally! (Frontend Preview)");
