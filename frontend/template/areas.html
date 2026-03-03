@@ -687,7 +687,7 @@
                 return;
             }
             body.innerHTML = `<table class="shops-table">
-                <thead><tr><th>Shop Details</th><th>Assigned To</th><th>Contact</th><th>Last Visit</th><th></th></tr></thead>
+                <thead><tr><th>Shop Details</th><th>Assigned To</th><th>Location</th><th>Last Visit</th><th></th></tr></thead>
                 <tbody>${shops.map(s => {
                 const lastVisit = s.last_visit_date
                     ? new Date(s.last_visit_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -696,7 +696,14 @@
                 return `<tr>
                         <td><span class="shop-name-primary">${s.name}</span><span class="shop-name-sub">${s.address || 'No address set'}</span></td>
                         <td><div class="d-flex align-items-center gap-2"><div class="avatar-owner">${ownerInit}</div><span class="fw-medium">${s.owner_name || 'Unassigned'}</span></div></td>
-                        <td><a href="tel:${s.phone}" class="phone-link"><i class="bi bi-telephone"></i>${s.phone || '—'}</a><div class="shop-name-sub ps-4">${s.contact_person || ''}</div></td>
+                        <td>
+                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.name + ' ' + (s.address || ''))}" 
+                               target="_blank" 
+                               class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
+                               title="Open in Google Maps">
+                                <i class="bi bi-map-fill"></i> Map
+                            </a>
+                        </td>
                         <td class="text-muted small">${lastVisit}</td>
                         <td>
                             <div class="d-flex justify-content-end gap-2">
