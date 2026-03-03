@@ -1025,13 +1025,15 @@
                 return;
             }
 
-            // If ALL shops are selected and "Select All" is checked, we do a full Area Assignment (shopIds = [])
-            // This ensures the Area's assigned_user_id also gets updated on the backend.
-            const shopIds = (selectAll && checkedCbs.length === allCbs.length) ? [] : Array.from(checkedCbs).map(cb => parseInt(cb.value));
+            // Strict Logic:
+            // 1. If "Select All" is checked AND (all shops are checked OR no shops exist), we send null 
+            //    to trigger the cascading logic (Area + All Shops).
+            // 2. Otherwise, we send ONLY the checked shop IDs.
+            const shopIds = (selectAll && checkedCbs.length === allCbs.length) ? null : Array.from(checkedCbs).map(cb => parseInt(cb.value));
 
             try {
                 await ApiClient.assignArea(assigningAreaId, userId, shopIds);
-                toast(shopIds.length > 0 ? 'Shops successfully assigned' : 'Area and all shops successfully assigned');
+                toast(shopIds ? 'Specific shops successfully assigned' : 'Area and all shops successfully assigned');
 
                 const modalEl = document.getElementById('assignModal');
                 const modal = bootstrap.Modal.getInstance(modalEl);

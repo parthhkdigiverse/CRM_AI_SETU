@@ -45,7 +45,7 @@ class AreaService:
 
         from app.modules.shops.models import Shop
         
-        if shop_ids:
+        if shop_ids is not None:
             # Granular assignment: Update owner_id ONLY for specific shops
             # Ensure the shops belong to the specified area
             self.db.query(Shop).filter(

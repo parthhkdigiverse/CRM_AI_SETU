@@ -1,5 +1,5 @@
 from typing import List, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
@@ -26,15 +26,17 @@ pm_checker = RoleChecker([
 ])
 
 @router.post("/{client_id}/meetings", response_model=MeetingSummaryRead)
-def create_meeting(
+async def create_meeting(
     client_id: int,
     meeting_in: MeetingSummaryCreate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(pm_checker)
 ) -> Any:
     """
     PMs or Admins only. PMs can only add to their own assigned clients.
     """
+    from app.modules.meetings.service import MeetingService
     db_client = db.query(Client).filter(Client.id == client_id).first()
     if not db_client:
         raise HTTPException(status_code=404, detail="Client not found")
@@ -42,10 +44,19 @@ def create_meeting(
     if current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied to this client")
 
-    db_meeting = MeetingSummary(**meeting_in.model_dump(), client_id=client_id)
-    db.add(db_meeting)
-    db.commit()
-    db.refresh(db_meeting)
+    # Use the service to handle business logic (like Meet link generation)
+    service = MeetingService(db)
+    # Inject client_id into payload for service
+    meeting_data = meeting_in.model_dump()
+    meeting_data["client_id"] = client_id
+    
+    from app.modules.meetings.schemas import MeetingSummaryBase
+    # We might need a slightly different schema or just pass dict
+    # Let's just update the service to handle it or pass manually
+    # However, create_meeting in service expects MeetingSummaryCreate
+    # Let's just manually set client_id on the model after creation or fix service
+    # I will fix service create_meeting to accept client_id
+    db_meeting = await service.create_meeting(meeting_in, client_id, current_user, request)
     return db_meeting
 
 @router.get("/{client_id}/meetings", response_model=List[MeetingSummaryRead])
@@ -170,3 +181,24 @@ async def import_meeting_summary(
     from app.modules.meetings.service import MeetingService
     service = MeetingService(db)
     return await service.import_meeting_summary(meeting_id)
+
+@router.post("/meetings/{meeting_id}/initialize-meet", response_model=MeetingSummaryRead)
+async def init_meeting_link(
+    meeting_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(pm_checker)
+) -> Any:
+    """
+    Manually generate a Google Meet link for an existing meeting.
+    """
+    from app.modules.meetings.service import MeetingService
+    service = MeetingService(db)
+    # This calls the logic in your service.py
+    updated_meeting = await service.initialize_google_meet(meeting_id) 
+    return updated_meeting
+
+@router.post("/meetings/{meeting_id}/generate-ai-summary")
+async def trigger_ai_summary(meeting_id: int, db: Session = Depends(get_db)):
+    service = MeetingService(db)
+    return await service.get_ai_analysis(meeting_id)
+    

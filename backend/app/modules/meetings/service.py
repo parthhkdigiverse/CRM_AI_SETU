@@ -1,10 +1,13 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Request
+from fastapi.encoders import jsonable_encoder
 from app.modules.meetings.models import MeetingSummary, MeetingStatus
 from app.modules.meetings.schemas import MeetingSummaryCreate, MeetingSummaryUpdateBase
 from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
 from app.modules.users.models import User
+# Add this import at the top
+from app.utils.ai_summarizer import analyze_meeting_content, generate_ai_summary
 
 class MeetingService:
     def __init__(self, db: Session):
@@ -17,8 +20,18 @@ class MeetingService:
     def get_meetings(self, skip: int = 0, limit: int = 100):
         return self.db.query(MeetingSummary).offset(skip).limit(limit).all()
 
-    async def create_meeting(self, meeting: MeetingSummaryCreate, current_user: User, request: Request):
-        db_meeting = MeetingSummary(**meeting.model_dump())
+    async def create_meeting(self, meeting: MeetingSummaryCreate, client_id: int, current_user: User, request: Request):
+        from app.modules.meetings.models import MeetingType
+        from app.utils.google_meet import generate_google_meet_link
+        
+        meeting_data = meeting.model_dump()
+        meeting_data["client_id"] = client_id
+        
+        # Generate Meet link if type is Google Meet or Virtual
+        if meeting_data.get("meeting_type") in [MeetingType.GOOGLE_MEET, MeetingType.VIRTUAL]:
+            meeting_data["meet_link"] = generate_google_meet_link()
+            
+        db_meeting = MeetingSummary(**meeting_data)
 
         self.db.add(db_meeting)
         self.db.commit()
@@ -31,8 +44,7 @@ class MeetingService:
             entity_type=EntityType.MEETING,
             entity_id=db_meeting.id,
             old_data=None,
-            new_data=meeting.model_dump(),
-
+            new_data=jsonable_encoder(meeting_data),
             request=request
         )
 
@@ -95,3 +107,56 @@ class MeetingService:
         self.db.commit()
         self.db.refresh(db_meeting)
         return db_meeting
+
+    async def initialize_google_meet(self, meeting_id: int):
+        db_meeting = self.get_meeting(meeting_id)
+        if not db_meeting:
+            raise HTTPException(status_code=404, detail="Meeting not found")
+        
+        from app.utils.google_meet import generate_google_meet_link
+        db_meeting.meet_link = generate_google_meet_link()
+        self.db.commit()
+        self.db.refresh(db_meeting)
+        return db_meeting
+
+    # async def get_real_ai_summary(self, meeting_id: int):
+    #     db_meeting = self.get_meeting(meeting_id)
+    #     if not db_meeting:
+    #         raise HTTPException(status_code=404, detail="Meeting not found")
+
+    #     # 1. Get the actual transcript or notes
+    #     meeting_content = db_meeting.content or "No notes provided for this session."
+
+    #     # 2. Call your AI Utility (Placeholder for real Gemini call)
+    #     # In the next step, we can connect this to the real Gemini API
+    #     highlights = [
+    #         f"Discussed: {db_meeting.title}",
+    #         "Reviewed client requirements for 'Antigravity' integration.",
+    #         "Confirmed budget and project timeline."
+    #     ]
+    #     next_steps = "Follow up with a detailed proposal by EOD Friday."
+
+    #     return {
+    #         "highlights": highlights,
+    #         "next_steps": next_steps
+    #     }
+
+    # Inside your MeetingService class
+    async def get_ai_analysis(self, meeting_id: int):
+        db_meeting = self.get_meeting(meeting_id)
+        if not db_meeting:
+            return {"error": "Meeting not found"}
+
+        # Use the actual text you typed in the 'content' field
+        source_text = db_meeting.content or "No notes provided."
+
+        try:
+            # This calls the real Gemini API with transcript fallback
+            analysis = await generate_ai_summary(meeting_id, db_meeting.content)
+            return analysis
+        except Exception as e:
+            print(f"AI Error: {e}")
+            return {
+                "highlights": ["Error processing AI analysis"],
+                "next_steps": "Please check your API key and connection."
+            }

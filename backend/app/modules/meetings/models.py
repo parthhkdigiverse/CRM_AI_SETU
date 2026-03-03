@@ -5,6 +5,11 @@ from datetime import datetime, UTC
 
 from app.core.database import Base
 
+class MeetingType(str, enum.Enum):
+    IN_PERSON = "In-Person"
+    GOOGLE_MEET = "Google Meet"
+    VIRTUAL = "Virtual"
+
 class MeetingStatus(str, enum.Enum):
     SCHEDULED = "SCHEDULED"
     COMPLETED = "COMPLETED"
@@ -19,6 +24,9 @@ class MeetingSummary(Base):
     date = Column(DateTime, default=lambda: datetime.now(UTC))
 
     status = Column(Enum(MeetingStatus), default=MeetingStatus.SCHEDULED)
+    meeting_type = Column(Enum(MeetingType), default=MeetingType.IN_PERSON)
+    meet_link = Column(String, nullable=True)
+    
     cancellation_reason = Column(Text, nullable=True)
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
 
