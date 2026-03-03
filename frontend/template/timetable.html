@@ -770,28 +770,56 @@
             return Math.max(((eh - sh) * 60 + (em - sm)) / 60 * HOUR_H, 20);
         }
 
-        // ── Build mock events relative to current week ──────────
-        function buildEvents() {
-            const d = (n) => dStr(addDays(weekStart, n));
-            return [
-                { id: 1, title: 'Morning Lead Follow-up', user: 'Nency Savaliya', date: d(1), sh: 9, sm: 0, eh: 10, em: 30, loc: 'Office' },
-                { id: 2, title: 'Weekly Planning', user: 'Admin', date: d(1), sh: 14, sm: 0, eh: 15, em: 0, loc: 'Board Room' },
-                { id: 3, title: 'Client Meeting — HCL', user: 'Tisha Chauhan', date: d(2), sh: 11, sm: 0, eh: 12, em: 30, loc: 'Main Street Office' },
-                { id: 4, title: 'Staff Briefing', user: 'Admin', date: d(2), sh: 9, sm: 30, eh: 10, em: 30, loc: 'Conference Room' },
-                { id: 5, title: 'Shop Visit — Metro Bazar', user: 'Rahul Mehta', date: d(3), sh: 14, sm: 0, eh: 16, em: 0, loc: 'Metro Area' },
-                { id: 6, title: 'Design Review', user: 'Tisha Chauhan', date: d(3), sh: 10, sm: 0, eh: 11, em: 0, loc: 'Office' },
-                { id: 7, title: 'Team Sync', user: 'Admin', date: d(4), sh: 17, sm: 0, eh: 18, em: 0, loc: 'Conference Room' },
-                { id: 8, title: 'Rahul — Field Report', user: 'Rahul Mehta', date: d(4), sh: 10, sm: 0, eh: 11, em: 30, loc: 'Field Area' },
-                { id: 9, title: 'Project Review', user: 'Nency Savaliya', date: d(5), sh: 10, sm: 0, eh: 11, em: 0, loc: 'Office' },
-                { id: 10, title: 'Sales Call', user: 'Tisha Chauhan', date: d(5), sh: 14, sm: 30, eh: 15, em: 30, loc: 'Online' },
-                { id: 11, title: 'Team Training', user: 'Rahul Mehta', date: d(6), sh: 9, sm: 0, eh: 12, em: 0, loc: 'Training Room' },
-            ];
+        // ── Load events from API ────────────────────────────────
+        async function fetchEvents(startStr, endStr) {
+            try {
+                const data = await ApiClient.getTimetable(startStr, endStr);
+                return data.events || [];
+            } catch (error) {
+                console.error("Failed to load timetable events:", error);
+                return [];
+            }
         }
 
         // ── Event actions ───────────────────────────────────────
-        function saveEvent() {
-            // For demo, just close modal
-            bsModal.hide();
+        async function saveEvent() {
+            const title = document.getElementById('ev-title').value.trim();
+            const user = document.getElementById('ev-user').value;
+            const date = document.getElementById('ev-date').value;
+            const start = document.getElementById('ev-start').value;
+            const end = document.getElementById('ev-end').value;
+
+            if (!title || !date || !start || !end) {
+                document.getElementById('ev-title').classList.add('is-invalid');
+                setTimeout(() => document.getElementById('ev-title').classList.remove('is-invalid'), 2000);
+                return;
+            }
+
+            const eventData = {
+                title: title,
+                assignee_name: user,
+                date: date,
+                start_time: start,
+                end_time: end,
+                location: document.getElementById('ev-loc').value.trim() || ''
+            };
+
+            try {
+                await ApiClient.createTimetableEvent(eventData);
+
+                // Reset form
+                ['ev-title', 'ev-date', 'ev-start', 'ev-end', 'ev-loc'].forEach(id => {
+                    const el = document.getElementById(id); if (el) el.value = '';
+                });
+                document.getElementById('ev-user').value = 'Nency Savaliya';
+
+                bsModal.hide();
+                await renderCalendar();
+                showToastMsg('Activity scheduled!');
+            } catch (error) {
+                console.error("Failed to schedule event", error);
+                alert("Failed to schedule event");
+            }
         }
 
         function completeEvent(id) {
@@ -800,7 +828,9 @@
             } else {
                 completedIds.add(id);
             }
-            renderCalendar();
+            // For a real app, this would be an API call to mark it complete.
+            // But we don't have a status on timetable_events currently.
+            renderCalendarLocal();
         }
 
         // ── Navigation functions ────────────────────────────────
@@ -945,8 +975,29 @@
         }
 
         // ── Render calendar ─────────────────────────────────────
-        function renderCalendar() {
-            events = buildEvents();
+        async function renderCalendar() {
+            let startD, endD;
+            if (currentView === 'day') {
+                startD = dStr(selectedDate);
+                endD = dStr(selectedDate);
+            } else {
+                startD = dStr(weekStart);
+                endD = dStr(addDays(weekStart, 6)); // Week view
+            }
+
+            // Allow larger ranges for Tasks view
+            if (showTaskView) {
+                events = await fetchEvents(
+                    dStr(addDays(new Date(), -30)),
+                    dStr(addDays(new Date(), 30))
+                );
+            } else {
+                events = await fetchEvents(startD, endD);
+            }
+            renderCalendarLocal();
+        }
+
+        function renderCalendarLocal() {
 
             const today = new Date();
             const todayStr = dStr(today);
