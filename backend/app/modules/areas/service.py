@@ -34,7 +34,7 @@ class AreaService:
         setattr(area, 'shops_count', len(area.shops) if area.shops else 0)
         return area
 
-    def assign_area(self, area_id: int, user_id: int):
+    def assign_area(self, area_id: int, user_id: int, shop_ids: List[int] = None):
         area = self.db.query(Area).filter(Area.id == area_id).first()
         if not area:
             raise HTTPException(status_code=404, detail="Area not found")
@@ -43,7 +43,20 @@ class AreaService:
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        area.assigned_user_id = user_id
+        from app.modules.shops.models import Shop
+        
+        if shop_ids:
+            # Granular assignment: Update owner_id ONLY for specific shops
+            # Ensure the shops belong to the specified area
+            self.db.query(Shop).filter(
+                Shop.area_id == area_id,
+                Shop.id.in_(shop_ids)
+            ).update({"owner_id": user_id}, synchronize_session=False)
+        else:
+            # Full assignment: Update area and ALL shops
+            area.assigned_user_id = user_id
+            self.db.query(Shop).filter(Shop.area_id == area_id).update({"owner_id": user_id}, synchronize_session=False)
+        
         self.db.commit()
         self.db.refresh(area)
         return area

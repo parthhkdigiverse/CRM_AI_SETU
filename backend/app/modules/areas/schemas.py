@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, ConfigDict
 
 class AreaBase(BaseModel):
@@ -22,6 +22,7 @@ class AreaUpdate(BaseModel):
 
 class AreaAssign(BaseModel):
     assigned_user_id: int
+    shop_ids: Optional[List[int]] = None
 
 class AreaRead(AreaBase):
     id: int
