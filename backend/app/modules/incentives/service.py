@@ -8,7 +8,6 @@ from app.modules.incentives.models import (
     IncentiveTarget, IncentiveSlab, IncentiveSlip
 )
 from app.modules.incentives.schemas import IncentiveCalculationRequest
-from app.modules.employees.models import Employee
 from app.modules.users.models import User, UserRole
 from app.modules.clients.models import Client
 
@@ -17,32 +16,29 @@ class IncentiveService:
         self.db = db
 
     def calculate_incentive(self, calc_in: IncentiveCalculationRequest):
-        employee = self.db.query(Employee).filter(Employee.id == calc_in.employee_id).first()
-        if not employee:
-            raise HTTPException(status_code=404, detail="Employee not found")
+        user = self.db.query(User).filter(User.id == calc_in.user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
         existing_slip = self.db.query(IncentiveSlip).filter(
-            IncentiveSlip.employee_id == calc_in.employee_id,
+            IncentiveSlip.user_id == calc_in.user_id,
             IncentiveSlip.period == calc_in.period
         ).first()
         if existing_slip:
             raise HTTPException(status_code=400, detail="Incentive slip for this period already exists")
 
-        user = self.db.query(User).filter(User.id == employee.user_id).first()
-        
-        # Determined Target
-        target = employee.target
-        if target == 0 and user:
-            # Fallback to Role based target
+        # Determine Target: use user's own target, fallback to role-based target
+        target = user.target or 0
+        if target == 0:
             role_target = self.db.query(IncentiveTarget).filter(
                 IncentiveTarget.role == user.role,
                 IncentiveTarget.period == "Monthly"
             ).first()
             if role_target:
                 target = role_target.target_count
-                
+
         if target == 0:
-            raise HTTPException(status_code=400, detail="Target not set for employee or role")
+            raise HTTPException(status_code=400, detail="Target not set for user or role")
 
         if calc_in.closed_units is not None:
             achieved = calc_in.closed_units
@@ -61,25 +57,25 @@ class IncentiveService:
                     extract('year', Client.created_at) == year,
                     extract('month', Client.created_at) == month
                 ).count()
-                
+
         percentage = (achieved / target) * 100
-        
+
         # Find Slab
         applied_slab = self.db.query(IncentiveSlab).filter(
             IncentiveSlab.min_percentage <= percentage
         ).order_by(IncentiveSlab.min_percentage.desc()).first()
-        
+
         amount_per_unit = 0.0
         total_incentive = 0.0
         applied_slab_val = 0.0
-        
+
         if applied_slab:
             amount_per_unit = applied_slab.amount_per_unit
             total_incentive = achieved * amount_per_unit
             applied_slab_val = applied_slab.min_percentage
-            
+
         db_slip = IncentiveSlip(
-            employee_id=calc_in.employee_id,
+            user_id=calc_in.user_id,
             period=calc_in.period,
             target=target,
             achieved=achieved,
@@ -92,8 +88,14 @@ class IncentiveService:
         self.db.add(db_slip)
         self.db.commit()
         self.db.refresh(db_slip)
-        
+
         return db_slip
 
-    def get_employee_incentive_slips(self, employee_id: int):
-        return self.db.query(IncentiveSlip).filter(IncentiveSlip.employee_id == employee_id).all()
+    def get_user_incentive_slips(self, user_id: int):
+        try:
+            return self.db.query(IncentiveSlip).filter(IncentiveSlip.user_id == user_id).all()
+        except Exception as e:
+            print(f"Error fetching incentive slips: {e}")
+            return []
+
+

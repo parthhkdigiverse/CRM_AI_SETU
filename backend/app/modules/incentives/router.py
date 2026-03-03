@@ -6,7 +6,6 @@ from datetime import datetime, UTC
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
 from app.modules.users.models import User, UserRole
-from app.modules.employees.models import Employee
 from app.modules.incentives.models import (
     IncentiveTarget, IncentiveSlab, IncentiveSlip, EmployeePerformance
 )
@@ -73,12 +72,12 @@ def calculate_incentive(
     service = IncentiveService(db)
     return service.calculate_incentive(calc_in)
 
-@router.get("/slips/{employee_id}", response_model=List[IncentiveSlipRead])
+@router.get("/slips/{user_id}", response_model=List[IncentiveSlipRead])
 def read_incentive_slips(
-    employee_id: int,
+    user_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(pro_checker)
 ) -> Any:
     from app.modules.incentives.service import IncentiveService
     service = IncentiveService(db)
-    return service.get_employee_incentive_slips(employee_id)
+    return service.get_user_incentive_slips(user_id)

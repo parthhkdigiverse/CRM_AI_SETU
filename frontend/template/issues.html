@@ -123,9 +123,9 @@
         </div>
     </div>
 
-    <script src="../js/api.js"></script>
-    <script src="../js/ui_components.js"></script>
-    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/api.js?v=2.6"></script>
+    <script src="../js/ui_components.js?v=2.6"></script>
+    <script src="../js/auth.js?v=2.6"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
@@ -163,8 +163,12 @@
                     const stLabel = (i.status || 'PENDING').replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
                     const stBadge = `<span class="badge rounded-pill fw-medium px-3 py-2" style="${stStyle[i.status] || stStyle.PENDING}">${stLabel}</span>`;
 
+                    // Check if critical
+                    const isCritical = i.severity === 'HIGH' && i.status === 'PENDING';
+                    const criticalClass = isCritical ? 'critical-issue-row' : '';
+
                     return `
-                <tr class="bg-white align-middle" style="height: 60px; cursor: pointer;" onclick="openHandleModal(${i.id}, '${i.status}', '${(i.remarks || '').replace(/'/g, "\\'")}')">
+                <tr class="bg-white align-middle ${criticalClass}" style="height: 60px; cursor: pointer;" onclick="openHandleModal(${i.id}, '${i.status}', '${(i.remarks || '').replace(/'/g, "\\'")}')">
                     <td class="fw-semibold text-dark">
                         ${icon} ${i.title}
                         ${i.remarks ? `<div class="text-muted small ms-4" style="font-size:0.75rem;"><i class="bi bi-chat-left-text me-1"></i>${i.remarks}</div>` : ''}
@@ -199,34 +203,38 @@
         document.getElementById('save-handle-btn').addEventListener('click', async () => {
             const id = document.getElementById('h-issue-id').value;
             const hStatus = document.getElementById('h-status').value;
-            const hRemarks = document.getElementById('h-remarks').value;
+            const hRemarks = document.getElementById('h-remarks').value.trim();
 
-            if (!hRemarks.trim()) return showToast('Remarks are compulsory', 'error');
+            if (!hRemarks) {
+                document.getElementById('h-remarks').classList.add('is-invalid');
+                return showToast('Remarks are compulsory for any status update', 'error');
+            }
+            document.getElementById('h-remarks').classList.remove('is-invalid');
 
             const btn = document.getElementById('save-handle-btn');
-            btn.disabled = true; btn.textContent = 'Saving...';
+            btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
             try {
                 await apiPatch(`/clients/issues/${id}`, {
                     status: hStatus,
                     remarks: hRemarks
                 });
                 bootstrap.Modal.getInstance(document.getElementById('handleIssueModal')).hide();
-                showToast('Issue updated!');
+                showToast('Issue updated successfully!');
                 loadIssues();
-            } catch (e) { showToast(e.message, 'error'); }
+            } catch (e) { showToast(e.message || 'Failed to update issue', 'error'); }
             finally { btn.disabled = false; btn.textContent = 'Update Issue'; }
         });
 
         window.quickResolve = async (id) => {
-            const remarks = prompt("Please provide remarks for resolving this issue:");
-            if (remarks === null) return;
+            const remarks = prompt("Please provide mandatory remarks for resolving this issue:");
+            if (remarks === null) return; // User cancelled prompt
             if (!remarks.trim()) return showToast('Remarks are compulsory to resolve', 'error');
 
             try {
                 await apiPatch(`/clients/issues/${id}`, { status: 'SOLVED', remarks: remarks.trim() });
-                showToast('Issue resolved!');
+                showToast('Issue marked as Solved', 'success');
                 loadIssues();
-            } catch (e) { showToast(e.message, 'error'); }
+            } catch (e) { showToast(e.message || 'Failed to resolve issue', 'error'); }
         };
 
         window.deleteIssue = async (id) => {

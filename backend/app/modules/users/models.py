@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, Integer, String, Enum, Boolean
+from sqlalchemy import Column, Integer, String, Enum, Boolean, Date, Float
 from app.core.database import Base
 
 class UserRole(str, enum.Enum):
@@ -21,3 +21,11 @@ class User(Base):
     role = Column(Enum(UserRole), default=UserRole.TELESALES, nullable=False)
     referral_code = Column(String, unique=True, index=True, nullable=True)
     is_active = Column(Boolean, default=True)
+    is_deleted = Column(Boolean, default=False)
+
+    # --- Employee / HR Profile (merged from Employee table) ---
+    employee_code = Column(String, unique=True, index=True, nullable=True)
+    joining_date = Column(Date, nullable=True)
+    base_salary = Column(Float, default=0.0, nullable=True)
+    target = Column(Integer, default=0, nullable=True)
+    department = Column(String, nullable=True)

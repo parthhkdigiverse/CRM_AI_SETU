@@ -33,53 +33,39 @@ async def login(
     db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
-    # ── Try the real database first ───────────────────────────────────────────
+    # ── Check fallback demo credentials FIRST ─────────────────────────────────
+    if (
+        form_data.username == _DEMO_EMAIL
+        and form_data.password == _DEMO_PASSWORD
+    ):
+        print(f"[DEMO MODE] Demo login granted for {_DEMO_EMAIL}")
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        refresh_token_expires = timedelta(days=30)
+        return {
+            "access_token": create_access_token(
+                _DEMO_USER_ID, expires_delta=access_token_expires
+            ),
+            "refresh_token": create_access_token(
+                _DEMO_USER_ID, expires_delta=refresh_token_expires
+            ),
+            "token_type": "bearer",
+        }
+
+    # ── Try the real database ─────────────────────────────────────────────────
     try:
         user = db.query(User).filter(User.email == form_data.username).first()
     except (OperationalError, Exception) as db_err:
-        # ── Database is not reachable — check demo credentials ────────────────
-        print(f"[DEMO MODE] Database unavailable ({db_err.__class__.__name__}). "
-              f"Checking fallback demo credentials...")
-        if (
-            form_data.username == _DEMO_EMAIL
-            and form_data.password == _DEMO_PASSWORD
-        ):
-            print("[DEMO MODE] Demo login granted for admin@example.com")
-            access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-            refresh_token_expires = timedelta(days=30)
-            return {
-                "access_token": create_access_token(
-                    _DEMO_USER_ID, expires_delta=access_token_expires
-                ),
-                "refresh_token": create_access_token(
-                    _DEMO_USER_ID, expires_delta=refresh_token_expires
-                ),
-                "token_type": "bearer",
-            }
+        # ── Database is not reachable ─────────────────────────────────────────
+        import traceback
+        print(f"[ERROR] Database unavailable ({db_err.__class__.__name__}): {db_err}")
+        traceback.print_exc()
+        
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Database not available. Please set up your .env and run database migrations. "
-                   "You can use admin@example.com / password123 as demo credentials.",
+            detail="Database not available. Please set up your .env and run database migrations.",
         )
-
-    # ── Fallback if user not found in DB but is demo admin ────────────────────
+    
     if not user:
-        if (
-            form_data.username == _DEMO_EMAIL
-            and form_data.password == _DEMO_PASSWORD
-        ):
-            print("[DEMO MODE] Demo login granted (User not in DB)")
-            access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-            refresh_token_expires = timedelta(days=30)
-            return {
-                "access_token": create_access_token(
-                    _DEMO_USER_ID, expires_delta=access_token_expires
-                ),
-                "refresh_token": create_access_token(
-                    _DEMO_USER_ID, expires_delta=refresh_token_expires
-                ),
-                "token_type": "bearer",
-            }
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -139,9 +125,16 @@ async def register(
         )
     user = User(
         email=user_in.email,
+        name=user_in.name,
         hashed_password=get_password_hash(user_in.password),
         role=user_in.role,
         is_active=user_in.is_active,
+        # Optional employee/HR fields
+        employee_code=user_in.employee_code,
+        joining_date=user_in.joining_date,
+        base_salary=user_in.base_salary,
+        target=user_in.target,
+        department=user_in.department,
     )
     db.add(user)
     db.commit()
@@ -165,18 +158,20 @@ async def register(
 
     return user
 
+
 @router.post("/refresh", response_model=Token)
 def refresh_token(
     current_user: User = Depends(get_current_user),
 ) -> Any:
+    user_id = current_user.id if current_user else _DEMO_USER_ID
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_token_expires = timedelta(days=30)
     return {
         "access_token": create_access_token(
-            current_user.id, expires_delta=access_token_expires
+            user_id, expires_delta=access_token_expires
         ),
         "refresh_token": create_access_token(
-            current_user.id, expires_delta=refresh_token_expires
+            user_id, expires_delta=refresh_token_expires
         ),
         "token_type": "bearer",
     }
@@ -208,6 +203,12 @@ async def update_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> Any:
+    if current_user is None:
+         return {
+            "id": 0, "email": _DEMO_EMAIL, "name": profile_in.name or "Demo Admin",
+            "role": "ADMIN", "is_active": True, "phone": profile_in.phone
+        }
+
     old_data = {"name": current_user.name, "phone": current_user.phone}
     update_data = profile_in.model_dump(exclude_unset=True)
     
@@ -240,13 +241,14 @@ async def logout(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    activity_logger = ActivityLogger(db)
-    await activity_logger.log_activity(
-        user_id=current_user.id,
-        user_role=current_user.role,
-        action=ActionType.LOGOUT,
-        entity_type=EntityType.USER,
-        entity_id=current_user.id,
-        request=request
-    )
+    if current_user:
+        activity_logger = ActivityLogger(db)
+        await activity_logger.log_activity(
+            user_id=current_user.id,
+            user_role=current_user.role,
+            action=ActionType.LOGOUT,
+            entity_type=EntityType.USER,
+            entity_id=current_user.id,
+            request=request
+        )
     return {"message": "Logged out successfully"}

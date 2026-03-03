@@ -1,4 +1,5 @@
 from typing import Optional, Any
+from datetime import date
 from pydantic import BaseModel, EmailStr, field_validator
 from app.modules.users.models import UserRole
 
@@ -19,6 +20,12 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     email: EmailStr
     password: str
+    # Optional employee/HR fields (filled by Admin at creation time)
+    employee_code: Optional[str] = None
+    joining_date: Optional[date] = None
+    base_salary: Optional[float] = None
+    target: Optional[int] = None
+    department: Optional[str] = None
 
     @field_validator("password")
     @classmethod
@@ -40,6 +47,12 @@ class UserProfileUpdate(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
     password: Optional[str] = None
+    # Admin-editable employee fields
+    employee_code: Optional[str] = None
+    joining_date: Optional[date] = None
+    base_salary: Optional[float] = None
+    target: Optional[int] = None
+    department: Optional[str] = None
 
     @field_validator("password")
     @classmethod
@@ -58,6 +71,13 @@ class UserProfileUpdate(BaseModel):
 
 class UserRead(UserBase):
     id: int
+    employee_code: Optional[str] = None
+    joining_date: Optional[date] = None
+    base_salary: Optional[float] = None
+    target: Optional[int] = None
+    department: Optional[str] = None
+    referral_code: Optional[str] = None
 
     class Config:
         from_attributes = True
+

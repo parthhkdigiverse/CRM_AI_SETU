@@ -5,34 +5,440 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Salary & Leaves — CRM AI SETU</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .grid-card {
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            letter-spacing: 0.06em;
+            padding: 13px 16px;
+        }
+
+        .table tbody td {
+            padding: 13px 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+        }
+
+        .table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 11px;
+            border-radius: 100px;
+            font-size: 0.74rem;
+            font-weight: 600;
+        }
+
+        .nav-tabs .nav-link {
+            border-radius: 10px 10px 0 0;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #6366f1;
+            border-color: #e2e8f0 #e2e8f0 #fff;
+            font-weight: 600;
+        }
+
+        .crm-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(4px);
+            z-index: 1055;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+
+        .crm-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .crm-box {
+            background: #fff;
+            border-radius: 18px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            padding: 28px 32px;
+            transform: translateY(16px) scale(0.97);
+            transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .crm-overlay.show .crm-box {
+            transform: none;
+        }
+    </style>
 </head>
 
-<body class="bg-light">
+<body>
     <div class="d-flex">
         <div id="sidebar"></div>
-        <div class="flex-grow-1">
-            <div id="main-content">
-                <!-- Handled by app.js?v=2.4 renderSalary() -->
+        <div class="flex-grow-1" style="padding:28px 36px; max-width:1400px;">
+
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                <div>
+                    <h1 class="fw-bold h3 mb-1" style="color:#1e293b;">Salary & Leaves</h1>
+                    <p class="text-muted mb-0" style="font-size:0.93rem;">Manage leave applications, approvals, and
+                        generate employee salary slips.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" style="border-radius:10px;" onclick="openLeaveModal()">
+                        <i class="bi bi-calendar-minus me-2"></i>Apply Leave
+                    </button>
+                    <button class="btn btn-primary fw-semibold" style="border-radius:10px;" id="gen-salary-btn"
+                        onclick="openSalaryModal()">
+                        <i class="bi bi-file-earmark-text me-2"></i>Generate Slip
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-4" id="salaryTab">
+                <li class="nav-item"><button class="nav-link active" onclick="switchTab('leaves')">Leave
+                        Requests</button></li>
+                <li class="nav-item"><button class="nav-link" onclick="switchTab('slips')">Salary Slips</button></li>
+            </ul>
+
+            <!-- Leaves Table -->
+            <div id="tab-leaves" class="grid-card">
+                <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
+                    <h6 class="fw-bold mb-0" style="color:#334155;">All Leave Applications</h6>
+                    <button class="btn btn-sm btn-light border" onclick="loadLeaves()"><i
+                            class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>From Date</th>
+                                <th>To Date</th>
+                                <th>Days</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaves-tbody">
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted"><span
+                                        class="spinner-border spinner-border-sm me-2"></span>Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Salary Slips Table -->
+            <div id="tab-slips" class="grid-card" style="display:none;">
+                <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
+                    <h6 class="fw-bold mb-0" style="color:#334155;">Generated Salary Slips</h6>
+                    <div class="d-flex gap-2">
+                        <select id="slip-user-filter" class="form-select form-select-sm" style="width:auto;"
+                            onchange="loadSlips()">
+                            <option value="">All Employees</option>
+                        </select>
+                        <button class="btn btn-sm btn-light border" onclick="loadSlips()"><i
+                                class="bi bi-arrow-clockwise"></i></button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Month</th>
+                                <th>Base Salary</th>
+                                <th>Deductions</th>
+                                <th>Net Salary (₹)</th>
+                                <th>Paid / Unpaid Leaves</th>
+                            </tr>
+                        </thead>
+                        <tbody id="slips-tbody">
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">Select an employee and click Refresh
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="../js/ui_components.js"></script>
-    <script src="../js/auth.js?v=2.3"></script>
-    <script src="../js/api.js"></script>
-    <script src="../js/app.js?v=2.4"></script>
+    <!-- ─── Apply Leave Modal ─────────────────────────────────── -->
+    <div class="crm-overlay" id="leaveModal">
+        <div class="crm-box">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                <h5 class="fw-bold mb-0"><i class="bi bi-calendar-minus text-primary me-2"></i>Apply for Leave</h5>
+                <button class="btn-close" onclick="closeLeaveModal()"></button>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-6">
+                    <label class="form-label fw-semibold small">From Date <span class="text-danger">*</span></label>
+                    <input type="date" id="l-start" class="form-control">
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-semibold small">To Date <span class="text-danger">*</span></label>
+                    <input type="date" id="l-end" class="form-control">
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-semibold small">Reason / Note</label>
+                <textarea id="l-reason" class="form-control" rows="3"
+                    placeholder="e.g. Family function, medical appointment..."></textarea>
+            </div>
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                <button class="btn btn-light border" onclick="closeLeaveModal()">Cancel</button>
+                <button class="btn btn-primary px-4 fw-semibold" id="leave-submit-btn" onclick="submitLeave()">Submit
+                    Request</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Generate Salary Slip Modal ───────────────────────── -->
+    <div class="crm-overlay" id="salaryModal">
+        <div class="crm-box">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                <h5 class="fw-bold mb-0"><i class="bi bi-file-earmark-text text-success me-2"></i>Generate Salary Slip
+                </h5>
+                <button class="btn-close" onclick="closeSalaryModal()"></button>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-12">
+                    <label class="form-label fw-semibold small">Employee <span class="text-danger">*</span></label>
+                    <select id="s-user" class="form-select">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold small">Month (YYYY-MM) <span
+                            class="text-danger">*</span></label>
+                    <input type="month" id="s-month" class="form-control">
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-semibold small">Paid Leaves</label>
+                    <input type="number" id="s-paid-leaves" class="form-control" value="0" min="0">
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-semibold small">Unpaid Leaves</label>
+                    <input type="number" id="s-unpaid-leaves" class="form-control" value="0" min="0">
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold small">Extra Deductions (₹)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">₹</span>
+                        <input type="number" id="s-deduction" class="form-control" value="0" min="0" step="0.01">
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                <button class="btn btn-light border" onclick="closeSalaryModal()">Cancel</button>
+                <button class="btn btn-success px-4 fw-semibold" id="salary-gen-btn"
+                    onclick="generateSalarySlip()">Generate Slip</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/api.js?v=2.6"></script>
+    <script src="../js/ui_components.js?v=2.6"></script>
+    <script src="../js/auth.js?v=2.6"></script>
     <script>
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('salary');
 
-        // Load real view logic
-        if (window.loadView) {
-            window.loadView('salary');
+        const user = getUser();
+        const isAdmin = user?.role === 'ADMIN';
+
+        // Non-admins can't generate salary slips
+        if (!isAdmin) document.getElementById('gen-salary-btn').style.display = 'none';
+
+        // ── Tab switching ────────────────────────────────────────
+        function switchTab(tab) {
+            document.querySelectorAll('#salaryTab .nav-link').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#salaryTab .nav-link').forEach((b, i) => {
+                if ((i === 0 && tab === 'leaves') || (i === 1 && tab === 'slips')) b.classList.add('active');
+            });
+            document.getElementById('tab-leaves').style.display = tab === 'leaves' ? '' : 'none';
+            document.getElementById('tab-slips').style.display = tab === 'slips' ? '' : 'none';
         }
+
+        // ── Modal controls ────────────────────────────────────────
+        function openLeaveModal() { document.getElementById('leaveModal').classList.add('show'); }
+        function closeLeaveModal() { document.getElementById('leaveModal').classList.remove('show'); }
+        function openSalaryModal() { document.getElementById('salaryModal').classList.add('show'); }
+        function closeSalaryModal() { document.getElementById('salaryModal').classList.remove('show'); }
+        ['leaveModal', 'salaryModal'].forEach(id => {
+            document.getElementById(id).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+        });
+
+        // ── Load Employees for dropdowns ──────────────────────────
+        ApiClient.getEmployees().then(emps => {
+            const opts = '<option value="">— Select Employee —</option>' + emps.map(e => `<option value="${e.id}">${e.full_name || e.email}</option>`).join('');
+            document.getElementById('s-user').innerHTML = opts;
+            document.getElementById('slip-user-filter').innerHTML = '<option value="">All Employees</option>' + emps.map(e => `<option value="${e.id}">${e.full_name || e.email}</option>`).join('');
+        }).catch(() => { });
+
+        // ── Leave Status Styling ──────────────────────────────────
+        const leaveStatusMap = {
+            PENDING: { bg: '#fef3c7', color: '#d97706', label: 'Pending', icon: 'bi-hourglass-split' },
+            APPROVED: { bg: '#dcfce7', color: '#16a34a', label: 'Approved', icon: 'bi-check-circle' },
+            REJECTED: { bg: '#fee2e2', color: '#dc2626', label: 'Rejected', icon: 'bi-x-circle' },
+        };
+
+        // ── Load Leaves ───────────────────────────────────────────
+        async function loadLeaves() {
+            const tbody = document.getElementById('leaves-tbody');
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+            try {
+                // Admin: load all (via employees loop); regular user: own leaves
+                const leaves = await apiGet('/hrm/leave');
+                if (!leaves.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted"><i class="bi bi-calendar-x" style="font-size:2rem;display:block;margin-bottom:8px;color:#cbd5e1;"></i>No leave requests found.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = leaves.map(l => {
+                    const st = leaveStatusMap[l.status] || leaveStatusMap.PENDING;
+                    const start = new Date(l.start_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const end = new Date(l.end_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const days = Math.ceil((new Date(l.end_date) - new Date(l.start_date)) / 86400000) + 1;
+                    const actionBtns = isAdmin && l.status === 'PENDING'
+                        ? `<div class="d-flex gap-1 justify-content-end">
+                          <button class="btn btn-sm btn-outline-success" onclick="approveLeave(${l.id}, 'APPROVED')"><i class="bi bi-check"></i></button>
+                          <button class="btn btn-sm btn-outline-danger" onclick="approveLeave(${l.id}, 'REJECTED')"><i class="bi bi-x"></i></button>
+                       </div>`
+                        : `<span class="text-muted small">—</span>`;
+                    return `<tr>
+                    <td class="fw-semibold text-dark">${l.user_name || 'User #' + l.user_id}</td>
+                    <td class="text-muted">${start}</td>
+                    <td class="text-muted">${end}</td>
+                    <td class="fw-semibold">${days}</td>
+                    <td class="text-muted text-truncate" style="max-width:200px;" title="${l.reason || ''}">${l.reason || '—'}</td>
+                    <td><span class="status-pill" style="background:${st.bg}; color:${st.color};"><i class="bi ${st.icon} me-1"></i>${st.label}</span></td>
+                    <td class="text-end">${actionBtns}</td>
+                </tr>`;
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>${e.message}</td></tr>`;
+            }
+        }
+
+        // ── Submit Leave ──────────────────────────────────────────
+        async function submitLeave() {
+            const start = document.getElementById('l-start').value;
+            const end = document.getElementById('l-end').value;
+            const btn = document.getElementById('leave-submit-btn');
+            if (!start || !end) { showToast('Please select start and end dates', 'error'); return; }
+            if (new Date(end) < new Date(start)) { showToast('End date must be after start date', 'error'); return; }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+            try {
+                await apiPost('/hrm/leave', { start_date: start, end_date: end, reason: document.getElementById('l-reason').value });
+                closeLeaveModal();
+                showToast('Leave request submitted!', 'success');
+                loadLeaves();
+            } catch (e) { showToast(e.message || 'Failed to apply leave', 'error'); }
+            finally { btn.disabled = false; btn.innerHTML = 'Submit Request'; }
+        }
+
+        // ── Approve/Reject Leave ──────────────────────────────────
+        async function approveLeave(id, status) {
+            const label = status === 'APPROVED' ? 'Approve' : 'Reject';
+            if (!confirm(`${label} this leave request?`)) return;
+            try {
+                await apiPatch(`/hrm/leave/${id}/approve`, { status });
+                showToast(`Leave ${status.toLowerCase()}!`, 'success');
+                loadLeaves();
+            } catch (e) { showToast(e.message || 'Action failed', 'error'); }
+        }
+
+        // ── Load Salary Slips ─────────────────────────────────────
+        async function loadSlips() {
+            const userId = document.getElementById('slip-user-filter').value;
+            const tbody = document.getElementById('slips-tbody');
+            if (!userId) { tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">Select an employee to view slips.</td></tr>'; return; }
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+            try {
+                const slips = await ApiClient.getSalaryRecords(userId);
+                if (!slips.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No salary slips found for this employee.</td></tr>'; return; }
+                tbody.innerHTML = slips.map(s => `<tr>
+                <td class="fw-semibold text-dark">${s.user_name || 'User #' + s.user_id}</td>
+                <td class="text-muted">${s.month}</td>
+                <td>₹${Number(s.base_salary).toLocaleString('en-IN')}</td>
+                <td class="text-danger">-₹${Number(s.deduction_amount).toLocaleString('en-IN')}</td>
+                <td class="fw-bold text-dark fs-6">₹${Number(s.final_salary).toLocaleString('en-IN')}</td>
+                <td class="text-muted">${s.paid_leaves} paid / ${s.unpaid_leaves} unpaid</td>
+            </tr>`).join('');
+            } catch (e) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger">${e.message}</td></tr>`; }
+        }
+
+        // ── Generate Salary Slip ──────────────────────────────────
+        async function generateSalarySlip() {
+            const userId = document.getElementById('s-user').value;
+            const month = document.getElementById('s-month').value;
+            const btn = document.getElementById('salary-gen-btn');
+            if (!userId || !month) { showToast('Select an employee and month', 'error'); return; }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating...';
+            try {
+                await ApiClient.generateSalary({
+                    user_id: parseInt(userId),
+                    month,
+                    paid_leaves: parseInt(document.getElementById('s-paid-leaves').value) || 0,
+                    unpaid_leaves: parseInt(document.getElementById('s-unpaid-leaves').value) || 0,
+                    deduction_amount: parseFloat(document.getElementById('s-deduction').value) || 0
+                });
+                closeSalaryModal();
+                showToast('Salary slip generated!', 'success');
+                // Switch to slips tab and load
+                document.getElementById('slip-user-filter').value = userId;
+                switchTab('slips');
+                loadSlips();
+            } catch (e) { showToast(e.data?.detail || e.message || 'Failed', 'error'); }
+            finally { btn.disabled = false; btn.innerHTML = 'Generate Slip'; }
+        }
+
+        loadLeaves();
     </script>
 </body>
 

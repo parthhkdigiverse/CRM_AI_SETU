@@ -23,6 +23,9 @@ class VisitRead(VisitBase):
 
     id: int
     user_id: int
+    shop_name: Optional[str] = None
+    area_name: Optional[str] = None
+    user_name: Optional[str] = None
     photo_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime

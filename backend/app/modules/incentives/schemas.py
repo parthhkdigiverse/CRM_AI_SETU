@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional
 from pydantic import BaseModel
 from datetime import datetime
 from app.modules.users.models import UserRole
@@ -6,7 +6,7 @@ from app.modules.users.models import UserRole
 # Targets
 class IncentiveTargetBase(BaseModel):
     role: UserRole
-    period: str # Monthly/Quarterly
+    period: str  # Monthly/Quarterly
     target_count: int
 
 class IncentiveTargetCreate(IncentiveTargetBase):
@@ -32,13 +32,13 @@ class IncentiveSlabRead(IncentiveSlabBase):
 
 # Calculation & Slips
 class IncentiveCalculationRequest(BaseModel):
-    employee_id: int
-    period: str # YYYY-MM
+    user_id: int
+    period: str  # YYYY-MM
     closed_units: Optional[int] = None
 
 class IncentiveSlipRead(BaseModel):
     id: int
-    employee_id: int
+    user_id: int
     period: str
     target: int
     achieved: int
@@ -50,3 +50,4 @@ class IncentiveSlipRead(BaseModel):
 
     class Config:
         from_attributes = True
+

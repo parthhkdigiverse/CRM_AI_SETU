@@ -46,4 +46,8 @@ class ActivityLogger:
         return activity_log
 
     def get_logs(self, skip: int = 0, limit: int = 100):
-        return self.db.query(ActivityLog).order_by(ActivityLog.created_at.desc()).offset(skip).limit(limit).all()
+        try:
+            return self.db.query(ActivityLog).order_by(ActivityLog.created_at.desc()).offset(skip).limit(limit).all()
+        except Exception as e:
+            print(f"Error fetching logs: {e}")
+            return []

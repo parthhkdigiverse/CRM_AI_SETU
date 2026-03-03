@@ -34,7 +34,10 @@ def get_current_user(
     from sqlalchemy.exc import OperationalError
     try:
         user = db.query(User).filter(User.id == user_id_int).first()
-    except OperationalError:
+    except OperationalError as db_err:
+        import traceback
+        print(f"DATABASE ERROR in get_current_user: {db_err}")
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Database not available. Please configure your .env and run migrations.",
@@ -57,6 +60,8 @@ class RoleChecker:
         self.allowed_roles = allowed_roles
 
     def __call__(self, user: User = Depends(get_current_active_user)):
+        if user is None:  # Demo Mode: synthetic admin has all privileges
+            return None
         if user.role not in self.allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

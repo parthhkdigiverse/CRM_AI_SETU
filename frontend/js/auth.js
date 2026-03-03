@@ -13,9 +13,9 @@ fetch('http://127.0.0.1:8000/api/config')
     .catch(e => console.warn('Config fetch error:', e));
 
 // Inject global theme styles
-document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/theme.css">');
-document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/components.css">');
-document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/global.css">');
+document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/theme.css?v=2.6">');
+document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/components.css?v=2.6">');
+document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/global.css?v=2.6">');
 
 function getToken() {
     const t = localStorage.getItem('access_token');
@@ -57,9 +57,32 @@ function requireAuth() {
         return;
     }
 
+    // --- ROLE BASED ROUTING GUARD ---
+    const ROLE_PERMISSIONS = {
+        'ADMIN': ['*'],
+        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'search.html', 'notifications.html'],
+        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'search.html', 'notifications.html'],
+        'PROJECT_MANAGER': ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'search.html', 'notifications.html'],
+        'PROJECT_MANAGER_AND_SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'search.html', 'notifications.html'],
+        'CLIENT': ['dashboard.html']
+    };
+
+    function enforceRoleAccess(role) {
+        if (!role || role === 'ADMIN') return;
+        const path = window.location.pathname.split('/').pop();
+        if (!path || path === 'index.html') return;
+
+        const allowed = ROLE_PERMISSIONS[role] || [];
+        if (!allowed.includes(path) && !allowed.includes('*')) {
+            alert(`Access Denied: Your role (${role.replace(/_/g, ' ')}) is not authorized to view this page.`);
+            window.location.replace('dashboard.html');
+        }
+    }
+
     // --- OPTIMISTIC UI ---
     // If we have a user in session, show the page IMMEDIATELY.
     if (user) {
+        enforceRoleAccess(user.role);
         document.body.style.visibility = 'visible';
         const el = document.getElementById('username-display');
         if (el) el.textContent = user.name || 'User';
@@ -94,12 +117,16 @@ function requireAuth() {
             const userData = { id: profile.id, name: profile.name || profile.email, role: profile.role };
             localStorage.setItem('crm_user', JSON.stringify(userData));
 
+            enforceRoleAccess(userData.role);
             document.body.style.visibility = 'visible';
             const el = document.getElementById('username-display');
             if (el) el.textContent = profile.name || 'User';
 
             let pageName = document.title.split('—')[0].trim();
             if (typeof injectTopHeader === 'function') injectTopHeader(pageName);
+
+            // Fetch and check for critical issues across the app
+            checkCriticalIssues();
         })
         .catch((err) => {
             console.warn('Background auth check failed:', err);
@@ -144,6 +171,77 @@ window.addEventListener('pageshow', (event) => {
 function logout() {
     clearTokens();
     window.location.replace('index.html');
+}
+
+// Global Critical Issue Check
+async function checkCriticalIssues() {
+    // Only check if we are on a valid inner page
+    const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
+    if (isLoginPage) return;
+
+    try {
+        const issues = await apiGet('/issues/?limit=100');
+        const criticalIssues = issues.filter(i => i.severity === 'HIGH' && i.status === 'PENDING');
+
+        if (criticalIssues.length > 0) {
+            // 1. Highlight the sidebar link
+            // Wait for sidebar to render just in case
+            setTimeout(() => {
+                const issuesLink = document.querySelector('a.sb-link[href="issues.html"]');
+                if (issuesLink) {
+                    issuesLink.classList.add('has-critical-issue');
+                    // Optional: auto-expand the PM section if it's hidden
+                    const parentSection = issuesLink.closest('.sb-section');
+                    if (parentSection) {
+                        const hdr = parentSection.querySelector('.sb-section-header');
+                        const lst = parentSection.querySelector('.sb-section-items');
+                        if (hdr && !hdr.classList.contains('open')) {
+                            hdr.classList.add('open');
+                            if (lst) lst.classList.add('open');
+                        }
+                    }
+                }
+            }, 500);
+
+            // 2. Inject into the notification dropdown
+            setTimeout(() => {
+                const bellIcon = document.querySelector('.bi-bell')?.parentElement;
+                if (bellIcon) {
+                    // Make sure the red dot is visible
+                    let dot = bellIcon.querySelector('.bg-danger');
+                    if (!dot) {
+                        bellIcon.insertAdjacentHTML('beforeend', '<span class="position-absolute bg-danger border border-white rounded-circle" style="width:10px;height:10px;top:8px;right:8px;"></span>');
+                    }
+
+                    // Update the dropdown menu content
+                    const dropdownMenu = bellIcon.nextElementSibling;
+                    if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
+                        const notifCountBadge = dropdownMenu.querySelector('.badge.bg-danger');
+                        if (notifCountBadge) {
+                            notifCountBadge.textContent = criticalIssues.length;
+                        }
+
+                        // Replace the "No new alerts" text with the critical issue alert
+                        const contentBody = dropdownMenu.querySelector('.p-3.text-center');
+                        if (contentBody) {
+                            contentBody.className = 'p-0';
+                            contentBody.innerHTML = `
+                                <div class="px-3 py-3 border-bottom d-flex gap-3 align-items-start" style="background-color: #FEF2F2; cursor: pointer;" onclick="window.location.href='issues.html'">
+                                    <i class="bi bi-exclamation-octagon-fill text-danger mt-1 fs-5"></i>
+                                    <div>
+                                        <div class="fw-bold text-dark mb-1">Critical Issue Alert</div>
+                                        <p class="mb-0 text-muted small" style="line-height: 1.4;">There ${criticalIssues.length === 1 ? 'is' : 'are'} ${criticalIssues.length} unresolved high-severity issue(s) requiring immediate attention.</p>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+            }, 600);
+        }
+    } catch (e) {
+        console.warn("Could not check critical issues", e);
+    }
 }
 
 // Session Management (Inactivity Timeout)
