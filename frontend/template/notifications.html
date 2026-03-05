@@ -31,52 +31,10 @@
                     <div class="card-body p-0">
                         <!-- Feed -->
                         <div id="notif-list">
-                            <!-- Placeholder Data -->
-                            <div class="d-flex align-items-start gap-3 p-4 border-bottom position-relative hover-light">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-warning-subtle text-warning"
-                                    style="width: 42px; height: 42px; z-index: 2;">
-                                    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span class="fw-bold text-dark fs-6">Critical Issue Alert</span>
-                                        <span class="text-muted small">Just now</span>
-                                    </div>
-                                    <p class="text-secondary mb-1">Issue #12 - API Downtime in Production. It has been
-                                        untouched by the Project Manager for over 2 days.</p>
-                                    <span class="badge bg-danger rounded-pill">System Alert</span>
-                                </div>
-                            </div>
-
-                            <div class="d-flex align-items-start gap-3 p-4 border-bottom position-relative hover-light">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-success-subtle text-success"
-                                    style="width: 42px; height: 42px; z-index: 2;">
-                                    <i class="bi bi-currency-dollar fs-5"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span class="fw-bold text-dark fs-6">Payment Verified</span>
-                                        <span class="text-muted small">2 hours ago</span>
-                                    </div>
-                                    <p class="text-secondary mb-1">A payment of ₹5,000 for "Client ABC" has been
-                                        successfully verified.</p>
-                                    <span class="badge bg-primary rounded-pill">Billing</span>
-                                </div>
-                            </div>
-
-                            <div class="d-flex align-items-start gap-3 p-4 border-bottom position-relative hover-light">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-info-subtle text-info"
-                                    style="width: 42px; height: 42px; z-index: 2;">
-                                    <i class="bi bi-person-plus-fill fs-5"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span class="fw-bold text-dark fs-6">New Client Assigned</span>
-                                        <span class="text-muted small">Yesterday at 14:30</span>
-                                    </div>
-                                    <p class="text-secondary mb-1">You have been assigned as the Project Manager for the
-                                        new client "XYZ Corp".</p>
-                                    <span class="badge bg-secondary rounded-pill">Management</span>
+                            <!-- Dynamically loaded -->
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
                                 </div>
                             </div>
                         </div>
@@ -90,20 +48,11 @@
     <script src="../js/api.js"></script>
     <script src="../js/ui_components.js"></script>
     <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/notifications.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('notifications');
-
-        function clearAlerts() {
-            showToast('Cleared alerts', 'success');
-            document.getElementById('notif-list').innerHTML = `
-                <div class="text-center py-5">
-                    <i class="bi bi-bell-slash text-muted" style="font-size: 3rem;"></i>
-                    <p class="text-muted mt-3">All caught up.</p>
-                </div>
-            `;
-        }
     </script>
 </body>
 

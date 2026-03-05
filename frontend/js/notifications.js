@@ -1,0 +1,127 @@
+/**
+ * CRM AI SETU — Notifications Page Logic
+ * Handles fetching, rendering, and marking notifications as read.
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadNotifications();
+
+    // Hook up the clear alerts button
+    const clearBtn = document.querySelector('button[onclick="clearAlerts()"]');
+    if (clearBtn) {
+        clearBtn.setAttribute('onclick', 'clearNotifications()');
+    }
+});
+
+async function loadNotifications() {
+    const list = document.getElementById('notif-list');
+    if (!list) return;
+
+    try {
+        const notifications = await apiGet('/notifications/');
+
+        // Filter for unread only to ensure 'Master Feed' reflects current pending alerts
+        const unreadOnly = (Array.isArray(notifications) ? notifications : []).filter(n => !n.is_read);
+
+        if (unreadOnly.length === 0) {
+            renderEmptyState();
+            return;
+        }
+
+        renderNotifications(unreadOnly);
+    } catch (error) {
+        console.error('Failed to load notifications:', error);
+        list.innerHTML = `
+            <div class="text-center py-5">
+                <i class="bi bi-exclamation-circle text-danger" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-3">Failed to load notifications. Please try again later.</p>
+            </div>
+        `;
+    }
+}
+
+function renderNotifications(notifications) {
+    const list = document.getElementById('notif-list');
+
+    list.innerHTML = notifications.map(n => {
+        // Dynamic title formatting similar to the dropdown
+        let displayTitle = n.title;
+        let iconClass = "bi-bell-fill";
+        let iconBg = "bg-primary-subtle text-primary";
+
+        if (n.title === "⏰ Upcoming Meeting") {
+            const match = n.message.match(/with (.*?) starts/);
+            const clientName = match ? match[1] : "Client";
+            displayTitle = `Upcoming Session: ${clientName}`;
+            iconClass = "bi-calendar-event";
+            iconBg = "bg-warning-subtle text-warning";
+        }
+
+        // Force UTC parsing
+        const dateObj = new Date(n.created_at.endsWith('Z') || n.created_at.includes('+') ? n.created_at : n.created_at + 'Z');
+
+        return `
+            <div class="d-flex align-items-start gap-3 p-4 border-bottom position-relative hover-light bg-primary-subtle" 
+                 style="transition: background 0.2s;">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 ${iconBg}"
+                    style="width: 42px; height: 42px; z-index: 2;">
+                    <i class="bi ${iconClass} fs-5"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-bold text-dark fs-6">${displayTitle}</span>
+                        <span class="text-muted small">${formatTimeAgo(n.created_at)}</span>
+                    </div>
+                    <p class="text-secondary mb-1">${n.message}</p>
+                    <div class="mt-2 text-end">
+                        <span class="text-muted me-2 small"><i class="bi bi-clock me-1"></i>${dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                        <span class="badge bg-light text-dark border rounded-pill small">${n.title.replace(/⏰\s*/, '')}</span>
+                        <span class="badge bg-primary rounded-pill ms-1">New</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderEmptyState() {
+    const list = document.getElementById('notif-list');
+    list.innerHTML = `
+        <div class="text-center py-5">
+            <i class="bi bi-bell-slash text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-3">All caught up.</p>
+        </div>
+    `;
+}
+
+async function clearNotifications() {
+    try {
+        await apiPost('/notifications/mark-all-read');
+        showToast('All notifications marked as read', 'success');
+
+        // Update local DOM
+        renderEmptyState();
+
+        // Sync the nav bell immediately
+        if (window.refreshBell) {
+            window.refreshBell();
+        }
+    } catch (error) {
+        console.error('Failed to clear notifications:', error);
+        showToast('Failed to clear notifications', 'error');
+    }
+}
+
+function formatTimeAgo(dateString) {
+    // Force UTC parsing
+    const date = new Date(dateString.endsWith('Z') || dateString.includes('+') ? dateString : dateString + 'Z');
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 0) return 'Just now'; // Handle clock skew
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+
+    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
