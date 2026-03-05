@@ -21,33 +21,36 @@ class IssueService:
         return self.db.query(Issue).offset(skip).limit(limit).all()
 
     def get_all_issues(self, skip: int = 0, limit: int = 100, status=None, severity=None, client_id=None, assigned_to_id=None, pm_id=None):
-        query = self.db.query(Issue)
-        if pm_id: 
-            query = query.join(Client).filter(Client.pm_id == pm_id)
-        if status:
-            query = query.filter(Issue.status == status)
-        if severity:
-            query = query.filter(Issue.severity == severity)
-        if client_id:
-            query = query.filter(Issue.client_id == client_id)
-        if assigned_to_id:
-            query = query.filter(Issue.assigned_to_id == assigned_to_id)
+        try:
+            query = self.db.query(Issue)
+            if pm_id: 
+                query = query.join(Client).filter(Client.pm_id == pm_id)
+            if status:
+                query = query.filter(Issue.status == status)
+            if severity:
+                query = query.filter(Issue.severity == severity)
+            if client_id:
+                query = query.filter(Issue.client_id == client_id)
+            if assigned_to_id:
+                query = query.filter(Issue.assigned_to_id == assigned_to_id)
+                
+            issues = query.order_by(Issue.id.desc()).offset(skip).limit(limit).all()
             
-        issues = query.order_by(Issue.id.desc()).offset(skip).limit(limit).all()
-        
-        # Populate logical properties manually since SQLA joins can be complex for simple Pydantic dicts
-        for issue in issues:
-            if issue.assigned_to:
-                issue.pm_name = issue.assigned_to.name
-            if issue.project:
-                issue.project_name = issue.project.name
-            elif issue.client:
-                # Fallback to Client name if no specific project
-                issue.project_name = issue.client.name
-            if issue.reporter:
-                issue.reporter_name = issue.reporter.name
-            
-        return issues
+            # Populate logical properties manually
+            for issue in issues:
+                if issue.assigned_to:
+                    issue.pm_name = issue.assigned_to.name
+                if issue.project:
+                    issue.project_name = issue.project.name
+                elif issue.client:
+                    issue.project_name = issue.client.name
+                if issue.reporter:
+                    issue.reporter_name = issue.reporter.name
+                
+            return issues
+        except Exception as e:
+            print(f"Error fetching issues: {e}")
+            return []
 
     async def create_issue(self, issue: IssueCreate, client_id: int, current_user: User, request: Request, background_tasks: BackgroundTasks = None):
         client = self.db.query(Client).filter(Client.id == client_id).first()

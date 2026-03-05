@@ -463,6 +463,106 @@
             opacity: .6;
         }
 
+        /* ── Month view ─────────── */
+        .month-header .cal-dh {
+            padding: 8px 0;
+            border: none;
+            border-right: 1px solid #e2e8f0;
+        }
+
+        .month-header .cal-dh:last-child {
+            border-right: none;
+        }
+
+        .month-grid {
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+            border-left: 1px solid #e2e8f0;
+        }
+
+        .month-row {
+            display: flex;
+            flex: 1;
+            min-height: 120px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .month-cell {
+            flex: 1;
+            border-right: 1px solid #e2e8f0;
+            padding: 4px;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: background .1s;
+        }
+
+        .month-cell:hover {
+            background: #f8fafc;
+        }
+
+        .month-cell.off-month {
+            background: #fafafa;
+            opacity: .7;
+        }
+
+        .month-cell.today-cell {
+            background: rgba(79, 70, 229, .02);
+        }
+
+        .month-cell-num {
+            font-size: .85rem;
+            font-weight: 500;
+            color: #475569;
+            padding: 4px;
+            text-align: center;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            line-height: 18px;
+            margin: 0 auto 4px auto;
+        }
+
+        .month-cell-num.today-num {
+            background: #4f46e5;
+            color: #fff;
+        }
+
+        .month-cell-evts {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .month-evt {
+            font-size: .7rem;
+            padding: 2px 4px;
+            border-radius: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+
+        .month-evt:hover {
+            filter: brightness(.9);
+        }
+
+        .month-evt.evt-done {
+            text-decoration: line-through;
+            opacity: .6;
+        }
+
+        .month-evt-more {
+            font-size: .65rem;
+            color: #64748b;
+            text-align: center;
+            margin-top: 2px;
+            font-weight: 600;
+        }
+
         /* ── Legend pill ─────────────────────────────────────── */
         .leg-dot {
             width: 10px;
@@ -649,25 +749,39 @@
         </div>
     </div>
 
-    <!-- ─── Schedule Activity Modal ──────────────────────── -->
+    <!-- ─── Unified Schedule/Task Modal ──────────────────────── -->
     <div class="modal fade" id="scheduleModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" style="max-width:500px;">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:550px;">
             <div class="modal-content shadow-lg">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold">
-                        <i class="bi bi-calendar-plus-fill text-primary me-2"></i>Schedule New Activity
+                <div class="modal-header align-items-center">
+                    <h5 class="modal-title fw-bold mb-0">
+                        <i class="bi bi-calendar-plus-fill text-primary me-2"></i><span id="modal-title-text">Create
+                            Activity</span>
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body pb-2">
+                    <!-- Type Toggle -->
+                    <div class="d-flex bg-light p-1 rounded-3 mb-4" style="border: 1px solid #e2e8f0;">
+                        <input type="radio" class="btn-check" name="activityType" id="typeEvent" value="EVENT" checked
+                            autocomplete="off" onchange="toggleModalType()">
+                        <label class="btn btn-outline-primary border-0 flex-1 w-50 fw-semibold" for="typeEvent">Event /
+                            Meeting</label>
+
+                        <input type="radio" class="btn-check" name="activityType" id="typeTask" value="TASK"
+                            autocomplete="off" onchange="toggleModalType()">
+                        <label class="btn btn-outline-primary border-0 flex-1 w-50 fw-semibold" for="typeTask">To-Do
+                            Task</label>
+                    </div>
+
                     <div class="row g-3">
+                        <!-- Common Fields -->
                         <div class="col-12">
-                            <label class="form-label fw-semibold small">Event Title <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" id="ev-title" class="form-control" placeholder="e.g., Client Follow-up">
+                            <label class="form-label fw-semibold small">Title <span class="text-danger">*</span></label>
+                            <input type="text" id="ev-title" class="form-control" placeholder="What needs to be done?">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold small">User / Assignee <span
+                            <label class="form-label fw-semibold small">Assignee <span
                                     class="text-danger">*</span></label>
                             <select id="ev-user" class="form-select">
                                 <option>Nency Savaliya</option>
@@ -676,30 +790,60 @@
                                 <option>Admin</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+
+                        <!-- EVENT specific fields -->
+                        <div class="col-md-6 event-fields">
                             <label class="form-label fw-semibold small">Date <span class="text-danger">*</span></label>
                             <input type="date" id="ev-date" class="form-control">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 event-fields">
                             <label class="form-label fw-semibold small">Start Time <span
                                     class="text-danger">*</span></label>
                             <input type="time" id="ev-start" class="form-control">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 event-fields">
                             <label class="form-label fw-semibold small">End Time <span
                                     class="text-danger">*</span></label>
                             <input type="time" id="ev-end" class="form-control">
                         </div>
-                        <div class="col-12">
+                        <div class="col-12 event-fields">
                             <label class="form-label fw-semibold small">Location / Notes</label>
                             <input type="text" id="ev-loc" class="form-control" placeholder="Office, online, etc.">
                         </div>
+
+                        <!-- TASK specific fields -->
+                        <div class="col-md-6 task-fields" style="display: none;">
+                            <label class="form-label fw-semibold small">Priority</label>
+                            <select id="td-priority" class="form-select">
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HIGH">High</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 task-fields" style="display: none;">
+                            <label class="form-label fw-semibold small">Due Date & Time</label>
+                            <input type="datetime-local" id="td-due" class="form-control">
+                        </div>
+                        <div class="col-12 task-fields" style="display: none;">
+                            <label class="form-label fw-semibold small">Related Entity</label>
+                            <input type="text" id="td-related" class="form-control"
+                                placeholder="Project, Client or Lead name">
+                        </div>
+                        <div class="col-12 task-fields" style="display: none;">
+                            <label class="form-label fw-semibold small">Description</label>
+                            <textarea id="td-desc" class="form-control" rows="2"
+                                placeholder="Additional details..."></textarea>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer gap-2">
-                    <button class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary px-4" onclick="saveEvent()">
-                        <i class="bi bi-check-lg me-1"></i>Schedule
+                <div class="modal-footer gap-2 border-top">
+                    <!-- Added an extra delete button container that can be toggled via JS -->
+                    <button class="btn btn-outline-danger me-auto" id="btn-delete-event" style="display: none;">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                    <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary px-4" id="btn-save-event" onclick="saveActivity()">
+                        <i class="bi bi-check-lg me-1"></i>Save
                     </button>
                 </div>
             </div>
@@ -740,6 +884,7 @@
         let taskFilter = 'all';          // 'all' | 'pending' | 'done'
         let bsModal;
         const completedIds = new Set();
+        let miniMonthOffset = 0;
 
         // ── Computed week events ─────────────────────────────────
         let events = [];
@@ -770,28 +915,58 @@
             return Math.max(((eh - sh) * 60 + (em - sm)) / 60 * HOUR_H, 20);
         }
 
-        // ── Build mock events relative to current week ──────────
-        function buildEvents() {
-            const d = (n) => dStr(addDays(weekStart, n));
-            return [
-                { id: 1, title: 'Morning Lead Follow-up', user: 'Nency Savaliya', date: d(1), sh: 9, sm: 0, eh: 10, em: 30, loc: 'Office' },
-                { id: 2, title: 'Weekly Planning', user: 'Admin', date: d(1), sh: 14, sm: 0, eh: 15, em: 0, loc: 'Board Room' },
-                { id: 3, title: 'Client Meeting — HCL', user: 'Tisha Chauhan', date: d(2), sh: 11, sm: 0, eh: 12, em: 30, loc: 'Main Street Office' },
-                { id: 4, title: 'Staff Briefing', user: 'Admin', date: d(2), sh: 9, sm: 30, eh: 10, em: 30, loc: 'Conference Room' },
-                { id: 5, title: 'Shop Visit — Metro Bazar', user: 'Rahul Mehta', date: d(3), sh: 14, sm: 0, eh: 16, em: 0, loc: 'Metro Area' },
-                { id: 6, title: 'Design Review', user: 'Tisha Chauhan', date: d(3), sh: 10, sm: 0, eh: 11, em: 0, loc: 'Office' },
-                { id: 7, title: 'Team Sync', user: 'Admin', date: d(4), sh: 17, sm: 0, eh: 18, em: 0, loc: 'Conference Room' },
-                { id: 8, title: 'Rahul — Field Report', user: 'Rahul Mehta', date: d(4), sh: 10, sm: 0, eh: 11, em: 30, loc: 'Field Area' },
-                { id: 9, title: 'Project Review', user: 'Nency Savaliya', date: d(5), sh: 10, sm: 0, eh: 11, em: 0, loc: 'Office' },
-                { id: 10, title: 'Sales Call', user: 'Tisha Chauhan', date: d(5), sh: 14, sm: 30, eh: 15, em: 30, loc: 'Online' },
-                { id: 11, title: 'Team Training', user: 'Rahul Mehta', date: d(6), sh: 9, sm: 0, eh: 12, em: 0, loc: 'Training Room' },
-            ];
+        // ── Load events from API ────────────────────────────────
+        async function fetchEvents(startStr, endStr) {
+            try {
+                const data = await ApiClient.getTimetable(startStr, endStr);
+                const evts = data.events || [];
+                evts.forEach(e => { e._uid = e.event_type + '_' + e.id; });
+                return evts;
+            } catch (error) {
+                console.error("Failed to load timetable events:", error);
+                return [];
+            }
         }
 
         // ── Event actions ───────────────────────────────────────
-        function saveEvent() {
-            // For demo, just close modal
-            bsModal.hide();
+        async function saveEvent() {
+            const title = document.getElementById('ev-title').value.trim();
+            const user = document.getElementById('ev-user').value;
+            const date = document.getElementById('ev-date').value;
+            const start = document.getElementById('ev-start').value;
+            const end = document.getElementById('ev-end').value;
+
+            if (!title || !date || !start || !end) {
+                document.getElementById('ev-title').classList.add('is-invalid');
+                setTimeout(() => document.getElementById('ev-title').classList.remove('is-invalid'), 2000);
+                return;
+            }
+
+            const eventData = {
+                title: title,
+                assignee_name: user,
+                date: date,
+                start_time: start,
+                end_time: end,
+                location: document.getElementById('ev-loc').value.trim() || ''
+            };
+
+            try {
+                await ApiClient.createTimetableEvent(eventData);
+
+                // Reset form
+                ['ev-title', 'ev-date', 'ev-start', 'ev-end', 'ev-loc'].forEach(id => {
+                    const el = document.getElementById(id); if (el) el.value = '';
+                });
+                document.getElementById('ev-user').value = 'Nency Savaliya';
+
+                bsModal.hide();
+                await renderCalendar();
+                showToastMsg('Activity scheduled!');
+            } catch (error) {
+                console.error("Failed to schedule event", error);
+                alert("Failed to schedule event");
+            }
         }
 
         function completeEvent(id) {
@@ -800,7 +975,9 @@
             } else {
                 completedIds.add(id);
             }
-            renderCalendar();
+            // For a real app, this would be an API call to mark it complete.
+            // But we don't have a status on timetable_events currently.
+            renderCalendarLocal();
         }
 
         // ── Navigation functions ────────────────────────────────
@@ -882,8 +1059,15 @@
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            // Let's use the 'weekStart' month to show the mini calendar correctly
-            const mMonthDate = currentView === 'day' ? selectedDate : weekStart;
+            let mMonthDate;
+            if (currentView === 'day' || currentView === 'month') {
+                mMonthDate = new Date(selectedDate);
+            } else {
+                mMonthDate = new Date(weekStart);
+            }
+            mMonthDate.setDate(1);
+            mMonthDate.setMonth(mMonthDate.getMonth() + miniMonthOffset);
+
             const moStr = mMonthDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
             const firstDay = new Date(mMonthDate.getFullYear(), mMonthDate.getMonth(), 1);
@@ -897,12 +1081,12 @@
                     const isM = (cur.getMonth() === mMonthDate.getMonth());
                     const isT = (cur.getTime() === today.getTime());
 
-                    // Selected week logic
+                    // Selected week/day logic
                     let isSel = false;
                     if (currentView === 'week') {
                         isSel = cur >= weekStart && cur < addDays(weekStart, 7);
-                    } else if (currentView === 'day') {
-                        isSel = cur.getTime() === selectedDate.getTime();
+                    } else if (currentView === 'day' || currentView === 'month') {
+                        isSel = cur.getTime() === selectedDate.getTime() || (currentView === 'month' && cur.getMonth() === selectedDate.getMonth() && cur.getFullYear() === selectedDate.getFullYear());
                     }
 
                     const c = `mc ${isM ? '' : 'off'} ${isT ? 't' : ''} ${isSel && !isT ? 's' : ''}`;
@@ -920,8 +1104,8 @@
                 <div class="d-flex align-items-center justify-content-between px-1 mb-2">
                     <span style="font-size:.875rem; font-weight:500; color:#3c4043;">${moStr}</span>
                     <div>
-                        <i class="bi bi-chevron-left me-3 text-muted" style="cursor:pointer;font-size:.8rem;"></i>
-                        <i class="bi bi-chevron-right text-muted" style="cursor:pointer;font-size:.8rem;"></i>
+                        <i class="bi bi-chevron-left me-3 text-muted" style="cursor:pointer;font-size:.8rem;" onclick="navMini(-1)"></i>
+                        <i class="bi bi-chevron-right text-muted" style="cursor:pointer;font-size:.8rem;" onclick="navMini(1)"></i>
                     </div>
                 </div>
                 <div class="mini-grid">
@@ -944,9 +1128,70 @@
             </div>`;
         }
 
+        // ── Helper: Pack overlapping events ────────────────────────
+        function packEvents(eventsList) {
+            eventsList.sort((a, b) => {
+                const sA = a.sh * 60 + a.sm, eA = a.eh * 60 + a.em;
+                const sB = b.sh * 60 + b.sm, eB = b.eh * 60 + b.em;
+                if (sA !== sB) return sA - sB;
+                return eB - eA;
+            });
+            const placed = [];
+            let columns = [];
+            let lastEnd = null;
+            function flush() {
+                const numCols = columns.length;
+                columns.forEach((col, c) => col.forEach(ev => placed.push({ ev, slot: c, slots: numCols })));
+            }
+            eventsList.forEach(ev => {
+                const evS = ev.sh * 60 + ev.sm, evE = ev.eh * 60 + ev.em;
+                if (lastEnd !== null && evS >= lastEnd) {
+                    flush(); columns = []; lastEnd = null;
+                }
+                let placedInCol = false;
+                for (let c = 0; c < columns.length; c++) {
+                    const col = columns[c];
+                    const lastEv = col[col.length - 1];
+                    if (evS >= lastEv.eh * 60 + lastEv.em) {
+                        col.push(ev); placedInCol = true; break;
+                    }
+                }
+                if (!placedInCol) columns.push([ev]);
+                if (lastEnd === null || evE > lastEnd) lastEnd = evE;
+            });
+            if (columns.length > 0) flush();
+            return placed;
+        }
+
         // ── Render calendar ─────────────────────────────────────
-        function renderCalendar() {
-            events = buildEvents();
+        async function renderCalendar() {
+            let startD, endD;
+            if (currentView === 'day') {
+                startD = dStr(selectedDate);
+                endD = dStr(selectedDate);
+            } else if (currentView === 'month') {
+                const centerDate = selectedDate || new Date();
+                const mStart = new Date(centerDate.getFullYear(), centerDate.getMonth(), 1);
+                startD = dStr(addDays(mStart, -mStart.getDay()));
+                endD = dStr(addDays(mStart, 42)); // 6 weeks cover
+            } else {
+                startD = dStr(weekStart);
+                endD = dStr(addDays(weekStart, 6)); // Week view
+            }
+
+            // Allow larger ranges for Tasks view
+            if (showTaskView) {
+                events = await fetchEvents(
+                    dStr(addDays(new Date(), -30)),
+                    dStr(addDays(new Date(), 30))
+                );
+            } else {
+                events = await fetchEvents(startD, endD);
+            }
+            renderCalendarLocal();
+        }
+
+        function renderCalendarLocal() {
 
             const today = new Date();
             const todayStr = dStr(today);
@@ -986,17 +1231,17 @@
                         const rows = grouped[d].map(ev => {
                             const u = USERS[ev.user] || { color: '#6b7280' };
                             const timeLbl = `${fmtH(ev.sh, ev.sm)} – ${fmtH(ev.eh, ev.em)}`;
-                            const isDone = completedIds.has(ev.id);
+                            const isDone = ev.event_type === 'TODO' ? ev.status === 'COMPLETED' : completedIds.has(ev._uid);
                             return `
                             <div class="task-row ${isDone ? 'done-row' : ''}" style="border-left-color:${u.color};">
                                 <div class="t-circle ${isDone ? 't-done' : ''}" style="color:${u.color};"
-                                    onclick="completeEvent(${ev.id})" title="${isDone ? 'Mark incomplete' : 'Mark complete'}"></div>
+                                    onclick="completeEvent('${ev._uid}')" title="${isDone ? 'Mark incomplete' : 'Mark complete'}"></div>
                                 <div class="t-info">
                                     <div class="t-title">${ev.title}</div>
                                     <div class="t-meta"><i class="bi bi-clock me-1"></i>${timeLbl} <span class="mx-2">•</span> <i class="bi bi-geo-alt me-1"></i>${ev.loc} <span class="mx-2">•</span> <i class="bi bi-person me-1"></i>${ev.user}</div>
                                 </div>
                                 <div class="t-actions">
-                                    <button class="btn btn-sm btn-light border rounded-pill px-3" onclick="bsModal.show()" style="font-size:.75rem;">Edit</button>
+                                    <button class="btn btn-sm btn-light border rounded-pill px-3" onclick="openEditModal('${ev._uid}')" style="font-size:.75rem;">Edit</button>
                                 </div>
                             </div>`;
                         }).join('');
@@ -1063,26 +1308,25 @@
 
                 // Events for this day
                 const dayEvts = events.filter(e => e.date === sdStr);
-                const placed = [];
-                dayEvts.forEach(ev => {
-                    const evS = ev.sh * 60 + ev.sm, evE = ev.eh * 60 + ev.em;
-                    const over = placed.filter(p => { const ps = p.ev.sh * 60 + p.ev.sm, pe = p.ev.eh * 60 + p.ev.em; return evS < pe && evE > ps; });
-                    const slot = over.length;
-                    over.forEach((p, idx) => { p.slots = over.length + 1; p.slot = idx; });
-                    placed.push({ ev, slot, slots: over.length + 1 });
-                });
+                const placed = packEvents(dayEvts);
                 const evHtml = placed.map(({ ev, slot, slots }) => {
                     const u = USERS[ev.user] || { color: '#6b7280', bg: '#f9fafb', initials: '?' };
                     const t = Math.max(topPx(ev.sh, ev.sm), 0);
                     const h = Math.max(hPx(ev.sh, ev.sm, ev.eh, ev.em), 22);
-                    const wPct = 96 / slots, lPct = 2 + slot * wPct, rPct = 2 + (slots - slot - 1) * wPct;
+                    const wPct = 96 / slots;
+                    const lPct = 2 + slot * wPct;
+                    const rPct = 2 + (slots - slot - 1) * wPct;
                     const timeLbl = `${fmtH(ev.sh, ev.sm)} – ${fmtH(ev.eh, ev.em)}`;
+                    const isDone = ev.event_type === 'TODO' ? ev.status === 'COMPLETED' : completedIds.has(ev._uid);
                     return `
-                    <div class="cal-evt" style="top:${t}px;height:${h}px;left:${lPct}%;right:${rPct}%;background:${u.bg};border-left:3px solid ${u.color};"
-                         title="${ev.title} (${ev.user})\n${timeLbl}\n${ev.loc}">
-                        <div class="evt-title" style="color:${u.color};font-size:.82rem;">${ev.title}</div>
-                        <div class="evt-time"  style="color:${u.color};">${timeLbl}</div>
-                        <div style="font-size:.72rem;color:${u.color};opacity:.7;margin-top:2px;"><i class="bi bi-person me-1"></i>${ev.user}</div>
+                    <div class="cal-evt${isDone ? ' evt-done' : ''}" style="top:${t}px;height:${h}px;left:${lPct}%;right:${rPct}%;background:${u.bg};border-left:3px solid ${u.color};display:flex;flex-direction:column;padding-left:17px;overflow:hidden;"
+                         title="${ev.title} (${ev.user})\n${timeLbl}\n${ev.loc}"
+                         onclick="event.stopPropagation();openEditModal('${ev._uid}')">
+                        <button class="evt-complete-btn${isDone ? ' done' : ''}" style="color:${u.color};"
+                            onclick="event.stopPropagation();completeEvent('${ev._uid}')" title="${isDone ? 'Mark incomplete' : 'Mark complete'}"></button>
+                        <div class="evt-inner-title" style="color:${u.color};font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ev.title}</div>
+                        ${h > 30 ? `<div class="evt-time" style="color:${u.color};font-size:0.7rem;">${timeLbl}</div>` : ''}
+                        <div style="font-size:.72rem;color:${u.color};opacity:.7;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><i class="bi bi-person me-1"></i>${ev.user}</div>
                     </div>`;
                 }).join('');
 
@@ -1107,6 +1351,10 @@
                             <button onclick="setView('week')">Week</button>
                             <button onclick="setView('month')">Month</button>
                         </div>
+                        <button class="task-toggle-btn ${showTaskView ? 'active' : ''}" onclick="toggleTaskView()">
+                            <i class="bi bi-ui-checks"></i>
+                            <span class="tt-tip">Switch to Tasks</span>
+                        </button>
                     </div>
                 </div>
 
@@ -1137,6 +1385,82 @@
                 const sb = document.getElementById('calScrollBody');
                 if (sb) sb.scrollTop = showNow ? Math.max(nowTop - 120, 0) : HOUR_H;
                 return; // exit — week view not needed
+            }
+
+            // ── MONTH VIEW ─────────────────────────────────────────
+            if (currentView === 'month') {
+                const centerDate = selectedDate || new Date();
+                const mStart = new Date(centerDate.getFullYear(), centerDate.getMonth(), 1);
+                let cur = addDays(mStart, -mStart.getDay()); // Sunday
+
+                const mo1 = mStart.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+                const navTitle = mo1;
+
+                const dayHeaders = DAY_NAMES.map(dn => `<div class="cal-dh"><div class="dn">${dn}</div></div>`).join('');
+
+                let rowsHtml = '';
+                for (let r = 0; r < 6; r++) {
+                    let cellsHtml = '';
+                    for (let c = 0; c < 7; c++) {
+                        const ds = dStr(cur);
+                        const isToday = ds === todayStr;
+                        const isCurMonth = cur.getMonth() === mStart.getMonth();
+
+                        const dayEvts = events.filter(e => e.date === ds);
+                        const evHtml = dayEvts.slice(0, 4).map(ev => {
+                            const u = USERS[ev.user] || { color: '#6b7280', bg: '#f9fafb' };
+                            const isDone = ev.event_type === 'TODO' ? ev.status === 'COMPLETED' : completedIds.has(ev._uid);
+                            return `<div class="month-evt ${isDone ? 'evt-done' : ''}" style="background:${u.bg}; border-left:2px solid ${u.color}; color:${u.color};" onclick="event.stopPropagation();openEditModal('${ev._uid}')">${fmtH(ev.sh, ev.sm).replace(' AM', 'a').replace(' PM', 'p')} ${ev.title}</div>`;
+                        }).join('');
+                        const extra = dayEvts.length > 4 ? `<div class="month-evt-more">+${dayEvts.length - 4} more</div>` : '';
+
+                        cellsHtml += `
+                        <div class="month-cell ${!isCurMonth ? 'off-month' : ''} ${isToday ? 'today-cell' : ''}" onclick="selectDay('${ds}')">
+                            <div class="month-cell-num ${isToday ? 'today-num' : ''}">${cur.getDate()}</div>
+                            <div class="month-cell-evts">${evHtml}${extra}</div>
+                        </div>`;
+                        cur = addDays(cur, 1);
+                    }
+                    rowsHtml += `<div class="month-row">${cellsHtml}</div>`;
+                    if (cur.getMonth() !== mStart.getMonth() && cur > mStart) {
+                        break;
+                    }
+                }
+
+                document.getElementById('main-content').innerHTML = `
+                <!-- Toolbar -->
+                <div class="cal-toolbar">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="nav-btn" onclick="navMonth(-1)" title="Previous month"><i class="bi bi-chevron-left"></i></button>
+                        <button class="nav-btn" onclick="navMonth(1)"  title="Next month"><i class="bi bi-chevron-right"></i></button>
+                        <button class="btn btn-sm btn-light border px-3" onclick="goToday()">Today</button>
+                        <span class="nav-title">${navTitle}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <div class="view-pill">
+                            <button onclick="setView('day')">Day</button>
+                            <button onclick="setView('week')">Week</button>
+                            <button class="active">Month</button>
+                        </div>
+                        <button class="task-toggle-btn ${showTaskView ? 'active' : ''}" onclick="toggleTaskView()"><i class="bi bi-ui-checks"></i></button>
+                    </div>
+                </div>
+                <div class="cal-wrapper">
+                    ${buildSidebar()}
+                    <div class="cal-root">
+                        <!-- header -->
+                        <div class="cal-day-header-row month-header" style="height:auto;">
+                            <div class="cal-gutter-head" style="width:16px;"></div>
+                            ${dayHeaders}
+                        </div>
+                        <div class="cal-scroll month-scroll">
+                            <div class="month-grid" style="padding-left:16px;">
+                                ${rowsHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+                return;
             }
 
             // ── WEEK VIEW (continued below) ───────────────────────
@@ -1182,32 +1506,18 @@
                 const ds = dStr(d);
                 const isToday = ds === todayStr;
 
-                // Hour lines
+                // Hour lines with click-to-create capability
                 let lines = '';
                 for (let r = 0; r < (END_HR - START_HR); r++) {
-                    lines += `<div class="cal-hline"     style="top:${r * HOUR_H}px"></div>`;
-                    lines += `<div class="cal-hline-half" style="top:${r * HOUR_H + HOUR_H / 2}px"></div>`;
+                    const h = START_HR + r;
+                    const hStr = h.toString().padStart(2, '0');
+                    lines += `<div class="cal-hline"      style="top:${r * HOUR_H}px; height:${HOUR_H / 2}px; pointer-events:auto; cursor:pointer;" onclick="openCreateModal('${ds}', '${hStr}:00', '${hStr}:30')"></div>`;
+                    lines += `<div class="cal-hline-half" style="top:${r * HOUR_H + HOUR_H / 2}px; height:${HOUR_H / 2}px; pointer-events:auto; cursor:pointer;" onclick="openCreateModal('${ds}', '${hStr}:30', '${(h + 1).toString().padStart(2, '0')}:00')"></div>`;
                 }
 
-                // Events for this day — handle basic overlap (split by user)
+                // Events for this day — handle robust overlap packing
                 const dayEvts = events.filter(e => e.date === ds);
-                // Group overlap: simple approach — if 2 events overlap, show side by side
-                const placed = []; // {ev, left%, width%}
-                dayEvts.forEach(ev => {
-                    const evStart = ev.sh * 60 + ev.sm;
-                    const evEnd = ev.eh * 60 + ev.em;
-                    // Find existing placed events that overlap
-                    const overlapping = placed.filter(p => {
-                        const ps = p.ev.sh * 60 + p.ev.sm, pe = p.ev.eh * 60 + p.ev.em;
-                        return evStart < pe && evEnd > ps;
-                    });
-                    // Assign a slot
-                    const slot = overlapping.length;
-                    const total = overlapping.length + 1;
-                    // Adjust all overlapping events
-                    overlapping.forEach((p, idx) => { p.slots = total; p.slot = idx; });
-                    placed.push({ ev, slot, slots: total });
-                });
+                const placed = packEvents(dayEvts);
 
                 const evHtml = placed.map(({ ev, slot, slots }) => {
                     const u = USERS[ev.user] || { color: '#6b7280', bg: '#f9fafb', initials: '?' };
@@ -1217,14 +1527,15 @@
                     const l = 2 + slot * w;
                     const r = 2 + (slots - slot - 1) * w;
                     const timeLbl = `${fmtH(ev.sh, ev.sm)} – ${fmtH(ev.eh, ev.em)}`;
-                    const isDone = completedIds.has(ev.id);
+                    const isDone = ev.event_type === 'TODO' ? ev.status === 'COMPLETED' : completedIds.has(ev._uid);
                     return `
             <div class="cal-evt${isDone ? ' evt-done' : ''}" title="${ev.title} (${ev.user})\n${timeLbl}\n${ev.loc}"
-                style="top:${t}px;height:${h}px;left:${l}%;right:${r}%;background:${u.bg};border-left:3px solid ${u.color};padding-left:20px;">
+                style="top:${t}px;height:${h}px;left:${l}%;width:${w}%;background:${u.bg};border-left:3px solid ${u.color};padding-left:17px;min-width:40px;display:flex;flex-direction:column;"
+                onclick="event.stopPropagation();openEditModal('${ev._uid}')">
                 <button class="evt-complete-btn${isDone ? ' done' : ''}" style="color:${u.color};"
-                    onclick="event.stopPropagation();completeEvent(${ev.id})" title="${isDone ? 'Mark incomplete' : 'Mark complete'}"></button>
-                <div class="evt-inner-title" style="color:${u.color};font-size:.72rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ev.title}</div>
-                ${h > 30 ? `<div class="evt-time">${timeLbl}</div>` : ''}
+                    onclick="event.stopPropagation();completeEvent('${ev._uid}')" title="${isDone ? 'Mark incomplete' : 'Mark complete'}"></button>
+                <div class="evt-inner-title" style="color:${u.color};font-size:.7rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ev.title}</div>
+                ${h > 30 ? `<div class="evt-time" style="font-size:0.6rem;white-space:nowrap;overflow:hidden;">${timeLbl}</div>` : ''}
                 <div class="evt-user" style="color:${u.color};">${u.initials}</div>
             </div>`;
                 }).join('');
@@ -1234,7 +1545,7 @@
             <div class="now-line" style="top:${nowTop}px;"></div>` : '';
 
                 return `
-        <div class="cal-col${isToday ? ' today-col' : ''}" style="height:${TOTAL_H}px;">
+        <div class="cal-col${isToday ? ' today-col' : ''}" style="height:${TOTAL_H}px; position:relative;">
             ${lines}${evHtml}${nowHtml}
         </div>`;
             }).join('');
@@ -1294,20 +1605,39 @@
 
         // ── Navigation ──────────────────────────────────────────
         function navWeek(dir) {
+            miniMonthOffset = 0;
             if (currentView === 'day') {
                 selectedDate = addDays(selectedDate, dir);
-                renderCalendar();
             } else {
                 weekStart = addDays(weekStart, dir * 7);
-                renderCalendar();
             }
+            renderCalendar();
+        }
+        function navMonth(dir) {
+            miniMonthOffset = 0;
+            const refDate = currentView === 'month' ? selectedDate : weekStart;
+            selectedDate = new Date(refDate.getFullYear(), refDate.getMonth() + dir, 1);
+            weekStart = getWeekStart(selectedDate);
+            renderCalendar();
+        }
+        function navMini(dir) {
+            miniMonthOffset += dir;
+            renderCalendarLocal();
         }
         function goToday() {
+            miniMonthOffset = 0;
             selectedDate = new Date();
             weekStart = getWeekStart(new Date());
             renderCalendar();
         }
-        function setView(v) { currentView = v; renderCalendar(); }
+        function setView(v) {
+            miniMonthOffset = 0;
+            currentView = v;
+            if (v === 'month') {
+                selectedDate = new Date(weekStart.getFullYear(), weekStart.getMonth(), 1);
+            }
+            renderCalendar();
+        }
 
         // ── Select a day (click on day number) → switch to day view ──
         function selectDay(ds) {
@@ -1328,57 +1658,247 @@
             renderCalendar();
         }
 
+        // ── Actions ─────────────────────────────────────────────
+        function openCreateModal(dateStr, startStr, endStr) {
+            document.getElementById('ev-date').value = dateStr;
+            document.getElementById('ev-start').value = startStr;
+            document.getElementById('ev-end').value = endStr;
+            document.getElementById('ev-title').value = '';
+            document.getElementById('ev-loc').value = '';
+
+            document.getElementById('typeEvent').checked = true;
+            toggleModalType();
+
+            // Reconfigure modal for Create
+            const saveBtn = document.getElementById('btn-save-event');
+            saveBtn.onclick = saveActivity;
+            saveBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Schedule';
+
+            const delBtn = document.getElementById('btn-delete-event');
+            if (delBtn) delBtn.style.display = 'none';
+
+            bsModal.show();
+        }
+
+        function openEditModal(eventUid) {
+            const ev = events.find(e => e._uid === eventUid);
+            if (!ev) return;
+
+            if (ev.event_type === 'VISIT' || ev.event_type === 'MEETING') {
+                showToastMsg(`Cannot edit synced ${ev.event_type.toLowerCase()}s from the calendar.`);
+                return;
+            }
+            if (ev.event_type === 'TODO') {
+                showToastMsg('Please edit Todos from the Todo list page. You can only mark them complete here.');
+                return;
+            }
+
+            document.getElementById('ev-date').value = ev.date;
+            document.getElementById('ev-start').value = `${String(ev.sh).padStart(2, '0')}:${String(ev.sm).padStart(2, '0')}`;
+            document.getElementById('ev-end').value = `${String(ev.eh).padStart(2, '0')}:${String(ev.em).padStart(2, '0')}`;
+            document.getElementById('ev-title').value = ev.title;
+            document.getElementById('ev-loc').value = ev.loc || '';
+
+            // Try to set user if available in dropdown
+            const userSelect = document.getElementById('ev-user');
+            Array.from(userSelect.options).forEach(opt => {
+                if (opt.value === ev.user) userSelect.value = ev.user;
+            });
+
+            document.getElementById('modal-title-text').innerText = 'Edit Event';
+            document.getElementById('typeEvent').checked = true;
+            toggleModalType();
+
+            // Reconfigure modal for Update
+            const saveBtn = document.getElementById('btn-save-event');
+            saveBtn.onclick = () => updateEvent(ev.id);
+            saveBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Update';
+
+            // Show delete button
+            let delBtn = document.getElementById('btn-delete-event');
+            if (!delBtn) {
+                // Create delete button if it doesn't exist yet
+                const footer = document.querySelector('#scheduleModal .modal-footer');
+                delBtn = document.createElement('button');
+                delBtn.id = 'btn-delete-event';
+                delBtn.className = 'btn btn-outline-danger me-auto';
+                delBtn.innerHTML = '<i class="bi bi-trash"></i> Delete';
+                footer.prepend(delBtn);
+            }
+            delBtn.style.display = 'block';
+            delBtn.onclick = () => deleteEvent(ev.id);
+
+            bsModal.show();
+        }
+
         // ── Save event from modal ────────────────────────────────
-        function saveEvent() {
+        // ── Modal UI Toggles ─────────────────────────────────────
+        function toggleModalType() {
+            const isEvent = document.getElementById('typeEvent').checked;
+            document.querySelectorAll('.event-fields').forEach(el => el.style.display = isEvent ? 'block' : 'none');
+            document.querySelectorAll('.task-fields').forEach(el => el.style.display = isEvent ? 'none' : 'block');
+            document.getElementById('modal-title-text').innerText = isEvent ? 'Schedule Event' : 'Create Task';
+        }
+
+        // ── Save logic (Unified Event/Task) ──────────────────────
+        async function saveActivity() {
+            const isEvent = document.getElementById('typeEvent').checked;
+
+            if (isEvent) {
+                // Event Creation
+                const title = document.getElementById('ev-title').value.trim();
+                const user = document.getElementById('ev-user').value;
+                const date = document.getElementById('ev-date').value;
+                const start = document.getElementById('ev-start').value;
+                const end = document.getElementById('ev-end').value;
+
+                if (!title || !date || !start || !end) {
+                    document.getElementById('ev-title').classList.add('is-invalid');
+                    setTimeout(() => document.getElementById('ev-title').classList.remove('is-invalid'), 2000);
+                    return;
+                }
+
+                if (start >= end) {
+                    showToastMsg('End time must be after start time.');
+                    return;
+                }
+
+                const eventData = {
+                    title: title,
+                    assignee_name: user,
+                    date: date,
+                    start_time: start,
+                    end_time: end,
+                    location: document.getElementById('ev-loc').value.trim() || ''
+                };
+
+                try {
+                    await ApiClient.createTimetableEvent(eventData);
+                    bsModal.hide();
+                    await renderCalendar();
+                    showToastMsg('Activity scheduled!');
+                } catch (error) {
+                    console.error("Failed to schedule event", error);
+                    alert("Failed to schedule event. Note: You can only edit custom API Timetable events.");
+                }
+            } else {
+                // Task Creation
+                const title = document.getElementById('ev-title').value.trim();
+                const user = document.getElementById('ev-user').value;
+                const priority = document.getElementById('td-priority').value;
+                const due = document.getElementById('td-due').value;
+                const related = document.getElementById('td-related').value.trim();
+                const desc = document.getElementById('td-desc').value.trim();
+
+                if (!title) {
+                    document.getElementById('ev-title').classList.add('is-invalid');
+                    setTimeout(() => document.getElementById('ev-title').classList.remove('is-invalid'), 2000);
+                    return;
+                }
+
+                const payload = {
+                    title: title,
+                    description: desc || null,
+                    priority: priority,
+                    assigned_to: user,
+                    due_date: due ? new Date(due).toISOString() : null,
+                    related_entity: related || null
+                };
+
+                try {
+                    await ApiClient.createTodo(payload);
+                    bsModal.hide();
+                    await renderCalendar();
+                    showToastMsg('To-Do Task created!');
+                } catch (error) {
+                    console.error("Failed to create task", error);
+                    alert("Failed to create task");
+                }
+            }
+        }
+
+        async function updateEvent(eventId) {
             const title = document.getElementById('ev-title').value.trim();
             const user = document.getElementById('ev-user').value;
             const date = document.getElementById('ev-date').value;
             const start = document.getElementById('ev-start').value;
             const end = document.getElementById('ev-end').value;
 
-            if (!title || !date || !start || !end) {
-                document.getElementById('ev-title').classList.add('is-invalid');
-                setTimeout(() => document.getElementById('ev-title').classList.remove('is-invalid'), 2000);
+            if (!title || !date || !start || !end) return;
+
+            if (start >= end) {
+                showToastMsg('End time must be after start time.');
                 return;
             }
 
-            const [sh, sm] = start.split(':').map(Number);
-            const [eh, em] = end.split(':').map(Number);
-            const newId = events.length ? Math.max(...events.map(e => e.id)) + 1 : 1;
+            const eventData = {
+                title: title,
+                assignee_name: user,
+                date: date,
+                start_time: start,
+                end_time: end,
+                location: document.getElementById('ev-loc').value.trim() || ''
+            };
 
-            events.push({
-                id: newId, title, user, date, sh, sm, eh, em,
-                loc: document.getElementById('ev-loc').value.trim() || '—'
-            });
+            try {
+                await ApiClient.updateTimetableEvent(eventId, eventData);
+                bsModal.hide();
+                await renderCalendar();
+                showToastMsg('Activity updated!');
+            } catch (error) {
+                console.error("Failed to update event", error);
+                alert("Failed to update event. Note: You can only edit custom Timetable events, not Visits or Meetings.");
+            }
+        }
 
-            // Reset form
-            ['ev-title', 'ev-date', 'ev-start', 'ev-end', 'ev-loc'].forEach(id => {
-                const el = document.getElementById(id); if (el) el.value = '';
-            });
-            document.getElementById('ev-user').value = 'Nency Savaliya';
+        async function deleteEvent(eventId) {
+            if (!confirm("Are you sure you want to delete this activity?")) return;
 
-            bsModal.hide();
-            renderCalendar();
-            showToastMsg('Activity scheduled!');
+            try {
+                await ApiClient.deleteTimetableEvent(eventId);
+                bsModal.hide();
+                await renderCalendar();
+                showToastMsg('Activity deleted!');
+            } catch (error) {
+                console.error("Failed to delete event", error);
+                alert("Failed to delete event. Note: You can only delete custom Timetable events.");
+            }
         }
 
         // ── Complete event (circle button click) ────────────────────
-        function completeEvent(id) {
-            const wasCompleted = completedIds.has(id);
-            if (wasCompleted) {
-                completedIds.delete(id);
-                renderCalendar();
-                showToastMsg('Task marked as incomplete.', null);
+        async function completeEvent(uid) {
+            const ev = events.find(e => e._uid === uid);
+            if (!ev) return;
+
+            if (ev.event_type === 'TODO') {
+                const isCompleted = ev.status === 'COMPLETED';
+                const newStatus = isCompleted ? 'PENDING' : 'COMPLETED';
+                try {
+                    await ApiClient.updateTodo(ev.id, { status: newStatus });
+                    ev.status = newStatus;
+                    renderCalendarLocal();
+                    if (!isCompleted) showCompletedToast(uid);
+                } catch (e) {
+                    console.error("Failed to update Todo status.", e);
+                    showToastMsg("Failed to update Todo");
+                }
             } else {
-                completedIds.add(id);
-                renderCalendar();
-                showCompletedToast(id);
+                const wasCompleted = completedIds.has(uid);
+                if (wasCompleted) {
+                    completedIds.delete(uid);
+                    renderCalendarLocal();
+                    showToastMsg('Task marked as incomplete.');
+                } else {
+                    completedIds.add(uid);
+                    renderCalendarLocal();
+                    showCompletedToast(uid);
+                }
             }
         }
 
         // Google Calendar-style completed toast with Undo
         let _toastEl = null;
-        function showCompletedToast(id) {
+        function showCompletedToast(uid) {
             if (_toastEl) _toastEl.remove();
             _toastEl = document.createElement('div');
             _toastEl.style.cssText = [
@@ -1390,7 +1910,7 @@
             ].join('');
             _toastEl.innerHTML = `
                 <span>Task completed</span>
-                <button onclick="undoComplete(${id})" style="background:none;border:none;color:#8ab4f8;
+                <button onclick="undoComplete('${uid}')" style="background:none;border:none;color:#8ab4f8;
                     font-size:.875rem;font-weight:600;cursor:pointer;padding:0;">Undo</button>
                 <button onclick="this.closest('div').remove()" style="background:none;border:none;
                     color:#9aa0a6;font-size:1rem;cursor:pointer;padding:0;line-height:1;">&times;</button>`;
@@ -1398,10 +1918,18 @@
             setTimeout(() => { if (_toastEl) { _toastEl.remove(); _toastEl = null; } }, 5000);
         }
 
-        function undoComplete(id) {
-            completedIds.delete(id);
+        async function undoComplete(uid) {
+            const ev = events.find(e => e._uid === uid);
+            if (ev && ev.event_type === 'TODO') {
+                try {
+                    await ApiClient.updateTodo(ev.id, { status: 'PENDING' });
+                    ev.status = 'PENDING';
+                } catch (e) { console.error("Could not undo Todo status:", e); }
+            } else {
+                completedIds.delete(uid);
+            }
             if (_toastEl) { _toastEl.remove(); _toastEl = null; }
-            renderCalendar();
+            renderCalendarLocal();
         }
 
         // ── Toast ────────────────────────────────────────────────

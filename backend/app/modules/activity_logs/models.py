@@ -22,6 +22,7 @@ class EntityType(str, enum.Enum):
     ISSUE = "ISSUE"
     MEETING = "MEETING"
     LEAD = "LEAD"
+    VISIT = "VISIT"
     REASSIGN = "REASSIGN"
     FEEDBACK = "FEEDBACK"
     USER = "USER"

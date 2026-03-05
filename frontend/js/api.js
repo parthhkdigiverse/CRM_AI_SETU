@@ -173,6 +173,9 @@ class ApiClient {
     static async updateUserRole(userId, role) {
         return this.request(`/users/${userId}/role`, { method: 'PATCH', body: { role } });
     }
+    static async updateUserStatus(userId, isActive) {
+        return this.request(`/users/${userId}/status`, { method: 'PATCH', body: { is_active: isActive } });
+    }
 
     // ─── Dashboard ───────────────────────────────────────────
     static async getDashboardStats() {
@@ -298,10 +301,10 @@ class ApiClient {
 
     // ─── Employees / HR ──────────────────────────────────────
     static async getEmployees() {
-        return this.request('/employees/');
+        return this.request('/users/');
     }
     static async getEmployee(employeeId) {
-        return this.request(`/employees/${employeeId}`);
+        return this.request(`/users/${employeeId}`);
     }
     static async createEmployee(data) {
         return this.request('/employees/', { method: 'POST', body: data });
@@ -394,6 +397,15 @@ class ApiClient {
         if (startDate) params += `?start_date=${startDate}`;
         if (endDate) params += (params ? '&' : '?') + `end_date=${endDate}`;
         return this.request(`/timetable/${params}`);
+    }
+    static async createTimetableEvent(data) {
+        return this.request('/timetable/', { method: 'POST', body: data });
+    }
+    static async updateTimetableEvent(eventId, data) {
+        return this.request(`/timetable/${eventId}`, { method: 'PATCH', body: data });
+    }
+    static async deleteTimetableEvent(eventId) {
+        return this.request(`/timetable/${eventId}`, { method: 'DELETE' });
     }
 
     // ─── Activity Logs ───────────────────────────────────────

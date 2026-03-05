@@ -9,7 +9,7 @@ class IncentiveTarget(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     role = Column(Enum(UserRole), nullable=False)
-    period = Column(String, nullable=False) # Monthly/Quarterly
+    period = Column(String, nullable=False)  # Monthly/Quarterly
     target_count = Column(Integer, nullable=False)
 
 class IncentiveSlab(Base):
@@ -23,28 +23,29 @@ class EmployeePerformance(Base):
     __tablename__ = "employee_performances"
 
     id = Column(Integer, primary_key=True, index=True)
-    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
-    period = Column(String, nullable=False) # YYYY-MM
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    period = Column(String, nullable=False)  # YYYY-MM
     closed_units = Column(Integer, default=0)
 
-    employee = relationship("Employee", backref="performances")
+    user = relationship("User", backref="performances")
 
 class IncentiveSlip(Base):
     __tablename__ = "incentive_slips"
 
     id = Column(Integer, primary_key=True, index=True)
-    employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
-    period = Column(String, nullable=False) # YYYY-MM
-    
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    period = Column(String, nullable=False)  # YYYY-MM
+
     target = Column(Integer, nullable=False)
     achieved = Column(Integer, nullable=False)
     percentage = Column(Float, nullable=False)
     applied_slab = Column(Float, nullable=True)
     amount_per_unit = Column(Float, default=0.0)
     total_incentive = Column(Float, nullable=False)
-    
+
     generated_at = Column(DateTime, default=datetime.utcnow)
 
-    employee = relationship("Employee", backref="incentive_slips")
+    user = relationship("User", backref="incentive_slips")
 
-from app.modules.employees.models import Employee
+from app.modules.users.models import User
+

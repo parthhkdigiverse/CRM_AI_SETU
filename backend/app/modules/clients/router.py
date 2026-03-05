@@ -53,7 +53,7 @@ def read_clients(
     """
     service = ClientService(db)
     pm_id = None
-    if current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
+    if current_user and current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
         pm_id = current_user.id
         
     return service.get_clients(

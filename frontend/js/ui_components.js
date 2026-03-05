@@ -84,7 +84,7 @@ function renderSidebar(active) {
     if (isAdmin || isSales || isTelesales || isPM) {
         const crItems = [
             { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
-            { id: 'payment', href: 'javascript:void(0)', onclick: "if(window.loadView) window.loadView('billing');", icon: 'bi-file-earmark-medical', label: 'Payment' }
+            { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' }
         ];
         if (isAdmin || isPM) {
             crItems.push({ id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' });
@@ -195,7 +195,7 @@ function injectTopHeader(pageTitle) {
         <div class="fw-bold fs-4 text-dark" style="text-transform: capitalize; letter-spacing: -0.5px; white-space: nowrap;">${pageTitle}</div>
     `;
 
-    const alertsRedDot = '<span class="position-absolute bg-danger border border-white rounded-circle" style="width:10px;height:10px;top:8px;right:8px;"></span>';
+    const alertsRedDot = '<span id="nav-notif-dot" class="position-absolute bg-danger border border-white rounded-circle d-none" style="width:10px;height:10px;top:8px;right:8px;"></span>';
 
     const headerHtml = `
     <div class="top-header" style="padding: 0.75rem 1.5rem; background: #fff; border-bottom: 1px solid #f1f5f9; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 70px;">

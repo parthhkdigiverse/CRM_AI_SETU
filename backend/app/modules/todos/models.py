@@ -10,6 +10,11 @@ class TodoStatus(str, enum.Enum):
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
 
+class TodoPriority(str, enum.Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+
 class Todo(Base):
     __tablename__ = "todos"
 
@@ -21,6 +26,10 @@ class Todo(Base):
     
     due_date = Column(DateTime, nullable=True)
     status = Column(Enum(TodoStatus), default=TodoStatus.PENDING)
+    priority = Column(Enum(TodoPriority), default=TodoPriority.MEDIUM)
+    assigned_to = Column(String, nullable=True)
+    related_entity = Column(String, nullable=True)
+    evidence_url = Column(String, nullable=True)
     
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))

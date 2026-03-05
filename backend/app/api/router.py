@@ -5,7 +5,6 @@ from app.modules.auth import router as auth
 from app.modules.issues import router as issues
 from app.modules.issues.router import global_router as issues_global_router
 from app.modules.meetings import router as meetings
-from app.modules.employees import router as employees
 from app.modules.feedback import router as feedback
 from app.modules.salary import router as salary
 from app.modules.incentives import router as incentives
@@ -45,7 +44,6 @@ api_router.include_router(visits.router, prefix="/visits", tags=["visits"])
 api_router.include_router(shops.router, prefix="/shops", tags=["shops"])
 
 # HR & Payroll
-api_router.include_router(employees.router, prefix="/employees", tags=["employees"])
 api_router.include_router(salary.router, prefix="/hrm", tags=["salary_leave"])
 api_router.include_router(incentives.router, prefix="/incentives", tags=["incentives"])
 

@@ -33,3 +33,15 @@ class Visit(Base):
     shop = relationship("app.modules.shops.models.Shop", backref="visits")
     user = relationship("app.modules.users.models.User", backref="visits")
 
+    @property
+    def shop_name(self) -> str:
+        return self.shop.name if self.shop else None
+        
+    @property
+    def user_name(self) -> str:
+        return self.user.name if self.user else None
+
+    @property
+    def area_name(self) -> str:
+        return self.shop.area.name if self.shop and self.shop.area else None
+
