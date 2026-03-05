@@ -181,3 +181,45 @@ def fetch_meeting_transcript(meeting_id: int) -> str:
     Use fetch_transcript_from_drive(calendar_event_id) instead.
     """
     return f"[Legacy mock] No real transcript available for meeting_id={meeting_id}."
+
+# ── Google Calendar Reschedule ────────────────────────────────
+def reschedule_google_calendar_event(
+    calendar_event_id: str,
+    new_start_time: datetime,
+    duration_minutes: int = 60
+) -> bool:
+    """
+    Updates the start/end time of an existing Google Calendar event.
+    """
+    if not calendar_event_id:
+        return False
+
+    try:
+        scopes = ['https://www.googleapis.com/auth/calendar']
+        creds = get_google_creds(scopes)
+        service = build('calendar', 'v3', credentials=creds)
+
+        # 1. Fetch existing event
+        event = service.events().get(calendarId='primary', eventId=calendar_event_id).execute()
+
+        # 2. Update times
+        end_time = new_start_time + timedelta(minutes=duration_minutes)
+        start_iso = new_start_time.strftime('%Y-%m-%dT%H:%M:%S')
+        end_iso   = end_time.strftime('%Y-%m-%dT%H:%M:%S')
+        timezone  = 'Asia/Kolkata'
+
+        event['start'] = {'dateTime': start_iso, 'timeZone': timezone}
+        event['end']   = {'dateTime': end_iso,   'timeZone': timezone}
+
+        # 3. Patch the event
+        service.events().patch(
+            calendarId='primary',
+            eventId=calendar_event_id,
+            body=event
+        ).execute()
+
+        return True
+
+    except Exception as e:
+        print(f"[google_meet] reschedule_google_calendar_event error: {e}")
+        return False

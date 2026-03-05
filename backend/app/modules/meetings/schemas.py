@@ -31,6 +31,9 @@ class MeetingSummaryUpdate(MeetingSummaryUpdateBase):
 class MeetingCancel(BaseModel):
     reason: Optional[str] = None
 
+class MeetingReschedule(BaseModel):
+    new_date: datetime
+
 class MeetingSummaryRead(MeetingSummaryBase):
     id: int
     status: MeetingStatus

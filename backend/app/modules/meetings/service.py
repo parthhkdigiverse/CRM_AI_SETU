@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Request
 from fastapi.encoders import jsonable_encoder
@@ -6,7 +7,6 @@ from app.modules.meetings.schemas import MeetingSummaryCreate, MeetingSummaryUpd
 from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
 from app.modules.users.models import User
-# Add this import at the top
 from app.utils.ai_summarizer import analyze_meeting_content, generate_ai_summary
 
 class MeetingService:
@@ -203,3 +203,39 @@ class MeetingService:
                 "highlights": ["Error processing AI analysis"],
                 "next_steps": "Please check your API key and connection."
             }
+
+    async def reschedule_meeting(self, meeting_id: int, new_date: datetime, current_user: User, request: Request):
+        db_meeting = self.get_meeting(meeting_id)
+        if not db_meeting:
+             raise HTTPException(status_code=404, detail="Meeting not found")
+
+        old_data = {
+            "date": db_meeting.date.isoformat() if db_meeting.date else None,
+            "status": db_meeting.status.value if hasattr(db_meeting.status, 'value') else str(db_meeting.status)
+        }
+
+        # 1. Update Meeting in Local DB
+        db_meeting.date = new_date
+        db_meeting.status = MeetingStatus.SCHEDULED
+        db_meeting.cancellation_reason = None
+        self.db.commit()
+        self.db.refresh(db_meeting)
+
+        # 2. Sync with Google Calendar if event exists
+        if db_meeting.calendar_event_id:
+            from app.utils.google_meet import reschedule_google_calendar_event
+            reschedule_google_calendar_event(db_meeting.calendar_event_id, new_date)
+
+        # 3. Log activity
+        await self.activity_logger.log_activity(
+            user_id=current_user.id,
+            user_role=current_user.role,
+            action=ActionType.UPDATE,
+            entity_type=EntityType.MEETING,
+            entity_id=meeting_id,
+            old_data=old_data,
+            new_data={"date": new_date.isoformat(), "status": MeetingStatus.SCHEDULED.value},
+            request=request
+        )
+
+        return db_meeting

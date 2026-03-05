@@ -7,7 +7,8 @@ from app.modules.users.models import User, UserRole
 from app.modules.clients.models import Client
 from app.modules.meetings.models import MeetingSummary
 from app.modules.meetings.service import MeetingService
-from app.modules.meetings.schemas import MeetingSummaryCreate, MeetingSummaryRead, MeetingSummaryUpdate
+from app.modules.meetings.schemas import MeetingSummaryCreate, MeetingSummaryRead, MeetingSummaryUpdate, MeetingCancel, MeetingReschedule
+from app.modules.meetings.models import MeetingStatus
 
 router = APIRouter()
 
@@ -25,6 +26,23 @@ pm_checker = RoleChecker([
     UserRole.PROJECT_MANAGER, 
     UserRole.PROJECT_MANAGER_AND_SALES
 ])
+
+global_router = APIRouter()
+
+@global_router.get("/", response_model=List[MeetingSummaryRead])
+def read_all_meetings(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """
+    Get all meetings. PMs only see meetings for their assigned clients.
+    """
+    query = db.query(MeetingSummary).join(Client)
+    
+    if current_user.role == UserRole.PROJECT_MANAGER:
+        query = query.filter(Client.pm_id == current_user.id)
+    
+    return query.all()
 
 @router.post("/{client_id}/meetings", response_model=MeetingSummaryRead)
 async def create_meeting(
@@ -117,9 +135,6 @@ def delete_meeting(
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-from app.modules.meetings.schemas import MeetingCancel
-from app.modules.meetings.models import MeetingStatus
-
 @router.post("/meetings/{meeting_id}/cancel", response_model=MeetingSummaryRead)
 def cancel_meeting(
     meeting_id: int,
@@ -135,68 +150,57 @@ def cancel_meeting(
     if current_user and current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
+    # Business Logic: Cannot cancel a finished meeting
+    if db_meeting.status in [MeetingStatus.COMPLETED, MeetingStatus.DONE]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Cannot cancel a completed meeting."
+        )
+
     db_meeting.status = MeetingStatus.CANCELLED
     db_meeting.cancellation_reason = cancel_in.reason
     db.commit()
     db.refresh(db_meeting)
     return db_meeting
 
-@router.post("/meetings/{meeting_id}/reschedule", response_model=MeetingSummaryRead)
-def reschedule_meeting(
+# --- GLOBAL WRAPPERS FOR MEETING ACTIONS ---
+
+@global_router.post("/{meeting_id}/reschedule", response_model=MeetingSummaryRead)
+async def reschedule_meeting_global(
     meeting_id: int,
-    # Allow optional body for new date, or just auto logic placeholder
-    # For now, we assume simple status reset or date change if provided in query/body
-    # User said "Auto", implying some logic. I'll just reset status to SCHEDULED for now.
+    reschedule_in: MeetingReschedule,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(pm_checker)
 ) -> Any:
-    db_meeting = db.query(MeetingSummary).filter(MeetingSummary.id == meeting_id).first()
-    if not db_meeting:
-        raise HTTPException(status_code=404, detail="Meeting not found")
-    
-    db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
-    if current_user and current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    service = MeetingService(db)
+    return await service.reschedule_meeting(
+        meeting_id=meeting_id,
+        new_date=reschedule_in.new_date,
+        current_user=current_user,
+        request=request
+    )
 
-    # Auto reschedule logic (Placeholder: Move to next day same time)
-    # from datetime import timedelta
-    # db_meeting.date = db_meeting.date + timedelta(days=1)
-    
-    db_meeting.status = MeetingStatus.SCHEDULED
-    db_meeting.cancellation_reason = None # Clear reason
-    
-    db.commit()
-    db.refresh(db_meeting)
-    return db_meeting
-
-@router.post("/meetings/{meeting_id}/import-summary", response_model=MeetingSummaryRead)
-async def import_meeting_summary(
+@global_router.post("/{meeting_id}/import-summary", response_model=MeetingSummaryRead)
+async def import_meeting_summary_global(
     meeting_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(pm_checker)
 ) -> Any:
-    """
-    Import meeting summary from Google Meet.
-    """
     service = MeetingService(db)
     return await service.import_meeting_summary(meeting_id)
 
-@router.post("/meetings/{meeting_id}/initialize-meet", response_model=MeetingSummaryRead)
-async def init_meeting_link(
+@global_router.post("/{meeting_id}/initialize-meet", response_model=MeetingSummaryRead)
+async def init_meeting_link_global(
     meeting_id: int, 
     db: Session = Depends(get_db),
     current_user: User = Depends(pm_checker)
 ) -> Any:
-    """
-    Manually generate a Google Meet link for an existing meeting.
-    """
     service = MeetingService(db)
-    # This calls the logic in your service.py
-    updated_meeting = await service.initialize_google_meet(meeting_id) 
-    return updated_meeting
+    return await service.initialize_google_meet(meeting_id)
 
-@router.post("/meetings/{meeting_id}/generate-ai-summary")
-async def trigger_ai_summary(meeting_id: int, db: Session = Depends(get_db)):
+@global_router.post("/{meeting_id}/generate-ai-summary")
+async def trigger_ai_summary_global(meeting_id: int, db: Session = Depends(get_db)):
     service = MeetingService(db)
     return await service.get_ai_analysis(meeting_id)
     
