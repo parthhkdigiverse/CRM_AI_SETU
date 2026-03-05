@@ -117,3 +117,6 @@ CRM AI SETU/
 │   └── js/              # JavaScript files
 └── README.md
 ```
+
+<!-- do not forget to create this for google meet or env file -->
+credentials.json.sample

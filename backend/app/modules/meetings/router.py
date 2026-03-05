@@ -6,6 +6,7 @@ from app.core.dependencies import RoleChecker
 from app.modules.users.models import User, UserRole
 from app.modules.clients.models import Client
 from app.modules.meetings.models import MeetingSummary
+from app.modules.meetings.service import MeetingService
 from app.modules.meetings.schemas import MeetingSummaryCreate, MeetingSummaryRead, MeetingSummaryUpdate
 
 router = APIRouter()
@@ -36,7 +37,6 @@ async def create_meeting(
     """
     PMs or Admins only. PMs can only add to their own assigned clients.
     """
-    from app.modules.meetings.service import MeetingService
     db_client = db.query(Client).filter(Client.id == client_id).first()
     if not db_client:
         raise HTTPException(status_code=404, detail="Client not found")
@@ -178,7 +178,6 @@ async def import_meeting_summary(
     """
     Import meeting summary from Google Meet.
     """
-    from app.modules.meetings.service import MeetingService
     service = MeetingService(db)
     return await service.import_meeting_summary(meeting_id)
 
@@ -191,7 +190,6 @@ async def init_meeting_link(
     """
     Manually generate a Google Meet link for an existing meeting.
     """
-    from app.modules.meetings.service import MeetingService
     service = MeetingService(db)
     # This calls the logic in your service.py
     updated_meeting = await service.initialize_google_meet(meeting_id) 

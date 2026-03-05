@@ -25,6 +25,7 @@ from app.modules.timetable import router as timetable
 from app.modules.search import router as search
 from app.modules.idcards import router as idcards
 
+
 api_router = APIRouter()
 
 # Auth & Users

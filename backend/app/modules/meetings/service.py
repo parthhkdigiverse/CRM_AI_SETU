@@ -29,7 +29,15 @@ class MeetingService:
         
         # Generate Meet link if type is Google Meet or Virtual
         if meeting_data.get("meeting_type") in [MeetingType.GOOGLE_MEET, MeetingType.VIRTUAL]:
-            meeting_data["meet_link"] = generate_google_meet_link()
+            meeting_date = meeting_data.get("date") or datetime.now()
+            result = generate_google_meet_link(
+                title=meeting_data.get("title", "Meeting"),
+                start_time=meeting_date,
+                description=meeting_data.get("content", "")
+            )
+            # Unpack both values from the returned dict
+            meeting_data["meet_link"] = result.get("meet_link")
+            meeting_data["calendar_event_id"] = result.get("calendar_event_id")
             
         db_meeting = MeetingSummary(**meeting_data)
 
@@ -90,19 +98,34 @@ class MeetingService:
 
         return db_meeting
     async def import_meeting_summary(self, meeting_id: int):
+        """
+        Fetches the real Google Meet transcript from Drive, runs it through
+        Gemini AI, and stores the results in transcript + ai_summary columns.
+        """
         db_meeting = self.get_meeting(meeting_id)
         if not db_meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
         
-        # In a real app, this would call Google Meet API or analyze a transcript.
-        # Here we simulate the extraction.
-        summary_text = (
-            f"Imported Google Meet Summary for Meeting {meeting_id}:\n"
-            f"- Discussed project timeline.\n"
-            f"- Agreed on next steps."
-        )
-        
-        db_meeting.content = summary_text
+        from app.utils.google_meet import fetch_transcript_from_drive
+
+        # Step 1: Try to get real transcript from Google Drive
+        transcript_text = None
+        if db_meeting.calendar_event_id:
+            transcript_text = fetch_transcript_from_drive(db_meeting.calendar_event_id)
+
+        # Step 2: Fallback to manual notes if no transcript available yet
+        if not transcript_text:
+            transcript_text = db_meeting.content or "No transcript or notes available."
+            print(f"[MeetingService] No Drive transcript found for meeting {meeting_id}, using manual notes.")
+        else:
+            # Persist the raw transcript
+            db_meeting.transcript = transcript_text
+
+        # Step 3: Generate AI summary with Gemini
+        ai_result = await generate_ai_summary(meeting_id, transcript_text)
+
+        # Step 4: Persist everything and mark as COMPLETED
+        db_meeting.ai_summary = ai_result
         db_meeting.status = MeetingStatus.COMPLETED
         self.db.commit()
         self.db.refresh(db_meeting)
@@ -114,7 +137,17 @@ class MeetingService:
             raise HTTPException(status_code=404, detail="Meeting not found")
         
         from app.utils.google_meet import generate_google_meet_link
-        db_meeting.meet_link = generate_google_meet_link()
+        from datetime import datetime
+        
+        meeting_date = db_meeting.date or datetime.now()
+        result = generate_google_meet_link(
+            title=db_meeting.title,
+            start_time=meeting_date,
+            description=db_meeting.content or ""
+        )
+        # Persist both link and calendar event ID
+        db_meeting.meet_link = result.get("meet_link")
+        db_meeting.calendar_event_id = result.get("calendar_event_id")
         self.db.commit()
         self.db.refresh(db_meeting)
         return db_meeting
@@ -143,19 +176,29 @@ class MeetingService:
 
     # Inside your MeetingService class
     async def get_ai_analysis(self, meeting_id: int):
+        """
+        Returns the stored ai_summary if available, otherwise generates one
+        from the transcript or manual notes.
+        """
         db_meeting = self.get_meeting(meeting_id)
         if not db_meeting:
             return {"error": "Meeting not found"}
 
-        # Use the actual text you typed in the 'content' field
-        source_text = db_meeting.content or "No notes provided."
+        # Return cached result if already stored
+        if db_meeting.ai_summary:
+            return db_meeting.ai_summary
+
+        # Build source text: prefer stored transcript, fall back to manual notes
+        source_text = db_meeting.transcript or db_meeting.content or "No notes provided."
 
         try:
-            # This calls the real Gemini API with transcript fallback
-            analysis = await generate_ai_summary(meeting_id, db_meeting.content)
+            analysis = await generate_ai_summary(meeting_id, source_text)
+            # Cache the result to avoid repeated Gemini calls
+            db_meeting.ai_summary = analysis
+            self.db.commit()
             return analysis
         except Exception as e:
-            print(f"AI Error: {e}")
+            print(f"[MeetingService] AI Error: {e}")
             return {
                 "highlights": ["Error processing AI analysis"],
                 "next_steps": "Please check your API key and connection."

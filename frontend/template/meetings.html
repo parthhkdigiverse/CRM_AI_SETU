@@ -342,7 +342,7 @@
         };
 
         window.deleteMeeting = async (id) => {
-            if (!confirm('Permanently delete this session record?')) return;
+            if (!window.confirm('Are you sure you want to delete this meeting? This action cannot be undone.')) return;
             try {
                 await apiDelete(`/clients/meetings/${id}`);
                 showToast('Meeting removed', 'success');
