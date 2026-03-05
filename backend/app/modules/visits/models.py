@@ -31,10 +31,6 @@ class Visit(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-<<<<<<< Updated upstream
-    shop = relationship("app.modules.shops.models.Shop", backref="visits")
-    user = relationship("app.modules.users.models.User", backref="visits")
-=======
     shop = relationship("Shop", backref="visits")
     user = relationship("User", backref="visits")
 
