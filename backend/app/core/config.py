@@ -15,6 +15,13 @@ class Settings(BaseSettings):
     encryption_key: str = "default_placeholder_if_missing"
     google_api_key: str = "default_placeholder_if_missing"
 
+    # SMTP Settings
+    SMTP_SERVER: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SENDER_EMAIL: str = ""
+
     model_config = SettingsConfigDict(
         env_file=env_file_path,
         extra="allow"

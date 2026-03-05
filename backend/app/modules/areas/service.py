@@ -1,8 +1,10 @@
+from typing import List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.modules.areas.models import Area
 from app.modules.areas.schemas import AreaCreate
 from app.modules.users.models import User
+from app.modules.shops.models import Shop 
 
 class AreaService:
     def __init__(self, db: Session):

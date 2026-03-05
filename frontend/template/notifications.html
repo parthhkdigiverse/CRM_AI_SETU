@@ -14,34 +14,33 @@
     <div class="d-flex">
         <div id="sidebar"></div>
         <div class="flex-grow-1">
-            <!-- Header injected by JS -->
-
-            <div class="container-fluid p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h2 class="fw-bold fs-3 mb-1">Master Notifications Feed</h2>
-                        <small class="text-muted">A timeline of recent system alerts and critical updates.</small>
+            <div class="page-content">
+                <div class="container-fluid p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="fw-bold fs-3 mb-1">Master Notifications Feed</h2>
+                            <small class="text-muted">A timeline of recent system alerts and critical updates.</small>
+                        </div>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="clearAlerts()">
+                            <i class="bi bi-check2-all me-1"></i> Mark All as Read
+                        </button>
                     </div>
-                    <button class="btn btn-outline-secondary btn-sm" onclick="clearAlerts()">
-                        <i class="bi bi-check2-all me-1"></i> Mark All as Read
-                    </button>
-                </div>
 
-                <div class="card shadow-sm border-0" style="border-radius: 12px; max-width: 800px;">
-                    <div class="card-body p-0">
-                        <!-- Feed -->
-                        <div id="notif-list">
-                            <!-- Dynamically loaded -->
-                            <div class="text-center py-5">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
+                    <div class="card shadow-sm border-0" style="border-radius: 12px; max-width: 800px;">
+                        <div class="card-body p-0">
+                            <!-- Feed -->
+                            <div id="notif-list">
+                                <!-- Dynamically loaded -->
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
+            </div><!-- /page-content -->
         </div>
     </div>
 

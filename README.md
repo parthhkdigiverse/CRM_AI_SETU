@@ -61,7 +61,7 @@ Open `backend/.env` and fill in your values:
 
 ```env
 PROJECT_NAME="CRM AI SETU"
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/crm_ai_setu"
+DATABASE_URL="postgresql://AI%20SETU:0412@localhost:5432/crm_ai_setu"
 SECRET_KEY="your_long_random_secret_key_here"
 ```
 

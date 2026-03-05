@@ -23,6 +23,7 @@ from app.modules.billing import router as billing
 from app.modules.timetable import router as timetable
 from app.modules.search import router as search
 from app.modules.idcards import router as idcards
+from app.modules.employees import router as employees
 
 
 api_router = APIRouter()
@@ -30,6 +31,7 @@ api_router = APIRouter()
 # Auth & Users
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
+api_router.include_router(employees.router, prefix="/employees", tags=["employees"])
 
 # Clients & Related (Issues, Meetings, Feedback)
 api_router.include_router(clients.router, prefix="/clients", tags=["clients"])

@@ -1,10 +1,13 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Request
-from app.modules.clients.models import Client
+from app.modules.clients.models import Client, ClientPMHistory
 from app.modules.clients.schemas import ClientCreate, ClientUpdate
 from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
-from app.modules.users.models import User
+from app.modules.users.models import User, UserRole
+from app.modules.notifications.service import EmailService
+from sqlalchemy import func
+from typing import List, Dict
 
 class ClientService:
     def __init__(self, db: Session):
@@ -49,51 +52,58 @@ class ClientService:
     async def create_client(self, client: ClientCreate, current_user: User, request: Request):
         db_client = Client(**client.model_dump())
 
-        
-        # --- Round-robin / Load-balanced PM Assignment ---
-        from app.modules.users.models import User, UserRole
-        from sqlalchemy import func
-        
-        # 1. Get all active Project Managers (or PM & Sales)
+        # --- Workload-balanced PM Auto-Assignment ---
         active_pms = self.db.query(User).filter(
             User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]),
             User.is_active == True
         ).all()
-        
+
+        assigned_pm: User = None
+
         if active_pms:
-            # 2. Count active clients per PM
             pm_ids = [pm.id for pm in active_pms]
-            
-            # Subquery to count active clients per pm_id
+
+            # Count active clients per PM
             client_counts = self.db.query(
-                Client.pm_id, 
-                func.count(Client.id).label('client_count')
+                Client.pm_id,
+                func.count(Client.id).label("client_count")
             ).filter(
                 Client.pm_id.in_(pm_ids),
                 Client.is_active == True
             ).group_by(Client.pm_id).all()
-            
+
             count_map = {row.pm_id: row.client_count for row in client_counts}
-            
-            # 3. Find the PM with the minimum count
-            # We sort by count and pick the first one to ensure equal distribution
-            # If multiple PMs have the same min count, we can pick randomly or first
-            pm_assignment_list = []
-            for pm in active_pms:
-                count = count_map.get(pm.id, 0)
-                pm_assignment_list.append((pm.id, count))
-            
-            # Sort by count (ascending)
-            pm_assignment_list.sort(key=lambda x: x[1])
-            best_pm_id = pm_assignment_list[0][0]
-            
-            # 4. Assign the selected PM
-            db_client.pm_id = best_pm_id
-        # --------------------------------------------------
+
+            # Build list of (pm, workload) and pick the least-loaded PM
+            pm_workloads = [(pm, count_map.get(pm.id, 0)) for pm in active_pms]
+            pm_workloads.sort(key=lambda x: x[1])
+            assigned_pm = pm_workloads[0][0]
+
+            db_client.pm_id = assigned_pm.id
+        # -------------------------------------------
 
         self.db.add(db_client)
         self.db.commit()
         self.db.refresh(db_client)
+
+        # Record PM assignment history
+        if assigned_pm:
+            history = ClientPMHistory(client_id=db_client.id, pm_id=assigned_pm.id)
+            self.db.add(history)
+            self.db.commit()
+
+            # Notify the assigned PM by email (non-blocking; errors are swallowed)
+            try:
+                email_svc = EmailService()
+                email_svc.send_pm_assignment_notification(
+                    pm_email=assigned_pm.email,
+                    pm_name=assigned_pm.name or assigned_pm.email,
+                    client_name=db_client.name,
+                    client_org=db_client.organization or "-",
+                    client_phone=db_client.phone or "-",
+                )
+            except Exception as e:
+                print(f"[PM Notify] Email failed (non-fatal): {e}")
 
         await self.activity_logger.log_activity(
             user_id=current_user.id,
@@ -102,12 +112,56 @@ class ClientService:
             entity_type=EntityType.CLIENT,
             entity_id=db_client.id,
             old_data=None,
-            new_data=client.model_dump(),
-
+            new_data={**client.model_dump(), "auto_assigned_pm_id": assigned_pm.id if assigned_pm else None},
             request=request
         )
 
         return db_client
+
+    # ------------------------------------------------------------------
+    # PM Workload helpers
+    # ------------------------------------------------------------------
+
+    def get_pm_workload(self) -> List[Dict]:
+        """Return a list of all active PMs with their current active-client counts."""
+        active_pms = self.db.query(User).filter(
+            User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]),
+            User.is_active == True
+        ).all()
+
+        if not active_pms:
+            return []
+
+        pm_ids = [pm.id for pm in active_pms]
+        client_counts = self.db.query(
+            Client.pm_id,
+            func.count(Client.id).label("client_count")
+        ).filter(
+            Client.pm_id.in_(pm_ids),
+            Client.is_active == True
+        ).group_by(Client.pm_id).all()
+
+        count_map = {row.pm_id: row.client_count for row in client_counts}
+
+        return [
+            {
+                "pm_id": pm.id,
+                "pm_name": pm.name or pm.email,
+                "pm_email": pm.email,
+                "role": pm.role,
+                "active_client_count": count_map.get(pm.id, 0),
+            }
+            for pm in sorted(active_pms, key=lambda p: count_map.get(p.id, 0))
+        ]
+
+    def get_pm_history(self, client_id: int) -> List[ClientPMHistory]:
+        """Return the full PM assignment history for a given client."""
+        return (
+            self.db.query(ClientPMHistory)
+            .filter(ClientPMHistory.client_id == client_id)
+            .order_by(ClientPMHistory.assigned_at.asc())
+            .all()
+        )
 
     async def update_client(self, client_id: int, client_update: ClientUpdate, current_user: User, request: Request):
         db_client = self.get_client(client_id)

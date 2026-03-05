@@ -14,40 +14,42 @@
         <div id="sidebar"></div>
         <div class="flex-grow-1">
             <!-- The top header is automatically injected here by js/auth.js?v=2.3 -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2 class="fw-bold fs-3 mb-1">Issues</h2>
-                    <small class="text-muted" id="issue-count"></small>
+            <div class="page-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="fw-bold fs-3 mb-1">Issues</h2>
+                        <small class="text-muted" id="issue-count"></small>
+                    </div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addIssueModal">
+                        <i class="bi bi-plus-lg me-1"></i>Report Issue
+                    </button>
                 </div>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addIssueModal">
-                    <i class="bi bi-plus-lg me-1"></i>Report Issue
-                </button>
-            </div>
-            <div class="card shadow-sm">
-                <div class="card-body p-0">
-                    <table class="table align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th class="text-secondary fw-semibold">ISSUE</th>
-                                <th class="text-secondary fw-semibold">SEVERITY</th>
-                                <th class="text-secondary fw-semibold">STATUS</th>
-                                <th class="text-secondary fw-semibold">PROJECT & PM</th>
-                                <th class="text-secondary fw-semibold">REPORTED BY</th>
-                                <th class="text-secondary fw-semibold">DATE</th>
-                                <th class="text-secondary fw-semibold text-end">ACTION</th>
-                            </tr>
-                        </thead>
-                        <tbody id="issues-table">
-                            <tr>
-                                <td colspan="7" class="text-center py-5 text-muted">
-                                    <i class="bi bi-arrow-clockwise" style="font-size:2rem;"></i>
-                                    <p class="mt-2">Loading...</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="card shadow-sm">
+                    <div class="card-body p-0">
+                        <table class="table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-secondary fw-semibold">ISSUE</th>
+                                    <th class="text-secondary fw-semibold">SEVERITY</th>
+                                    <th class="text-secondary fw-semibold">STATUS</th>
+                                    <th class="text-secondary fw-semibold">PROJECT & PM</th>
+                                    <th class="text-secondary fw-semibold">REPORTED BY</th>
+                                    <th class="text-secondary fw-semibold">DATE</th>
+                                    <th class="text-secondary fw-semibold text-end">ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="issues-table">
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="bi bi-arrow-clockwise" style="font-size:2rem;"></i>
+                                        <p class="mt-2">Loading...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
+            </div><!-- /page-content -->
         </div>
     </div>
 
