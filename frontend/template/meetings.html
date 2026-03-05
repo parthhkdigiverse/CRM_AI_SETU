@@ -189,6 +189,33 @@
         </div>
     </div>
 
+    <!-- AI Summary Modal -->
+    <div class="modal fade" id="aiSummaryModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header border-0 pb-0"
+                    style="background: linear-gradient(135deg,#4f46e5,#7c3aed); border-radius: 20px 20px 0 0;">
+                    <div>
+                        <h5 class="modal-title fw-bold text-white">
+                            <i class="bi bi-robot me-2"></i>AI Meeting Summary
+                        </h5>
+                        <p class="text-white-50 small mb-0" id="ai-meeting-label">Analysing notes...</p>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4" id="ai-summary-body">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="text-muted mt-2">Generating AI analysis...</p>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="../js/utils.js"></script>
     <script src="../js/ui_components.js"></script>
@@ -307,6 +334,45 @@
                 document.getElementById('meetings-table').innerHTML = '<tr><td colspan="6" class="text-center py-5 text-danger">Failed to load sessions. Please try refreshing.</td></tr>';
             }
         }
+
+        // AI Summary Viewer
+        window.fetchAISummary = async (id) => {
+            const modal = new bootstrap.Modal(document.getElementById('aiSummaryModal'));
+            document.getElementById('ai-meeting-label').textContent = `Meeting ID: ${id}`;
+            document.getElementById('ai-summary-body').innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted mt-2">Generating AI analysis...</p>
+                </div>`;
+            modal.show();
+
+            try {
+                const result = await apiPost(`/meetings/${id}/generate-ai-summary`, {});
+                const highlights = result.highlights || [];
+                const nextSteps = result.next_steps || result.action_items || 'No action items found.';
+                document.getElementById('ai-summary-body').innerHTML = `
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-primary mb-3"><i class="bi bi-lightbulb me-2"></i>Key Highlights</h6>
+                        <ul class="list-group list-group-flush">
+                            ${highlights.map(h => `
+                                <li class="list-group-item border-0 d-flex gap-2 px-0">
+                                    <i class="bi bi-check2-circle text-success mt-1 flex-shrink-0"></i>
+                                    <span>${h}</span>
+                                </li>`).join('')}
+                        </ul>
+                    </div>
+                    <div class="p-3 rounded-3" style="background:#f0fdf4;border-left:4px solid #22c55e;">
+                        <h6 class="fw-bold text-success mb-2"><i class="bi bi-arrow-right-circle me-2"></i>Next Steps</h6>
+                        <p class="mb-0 text-dark">${nextSteps}</p>
+                    </div>`;
+            } catch (e) {
+                document.getElementById('ai-summary-body').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Failed to fetch AI summary: ${e?.data?.detail || e?.message || 'Unknown error'}
+                    </div>`;
+            }
+        };
 
         // Action Handlers
         window.initializeMeet = async (id) => {
