@@ -743,9 +743,10 @@
     <!-- ─── App Layout ───────────────────────────────────── -->
     <div class="d-flex" style="height:100vh; overflow:hidden;">
         <div id="sidebar" style="flex-shrink:0;"></div>
-        <div class="flex-grow-1 d-flex flex-column" style="min-width:0; overflow:hidden;">
-            <!-- Top header injected by auth.js?v=2.3 -->
-            <div id="main-content" style="flex:1; display:flex; flex-direction:column; overflow:hidden;"></div>
+        <div class="flex-grow-1">
+            <div class="page-content">
+                <div id="main-content" style="flex:1; display:flex; flex-direction:column; overflow:hidden;"></div>
+            </div>
         </div>
     </div>
 
@@ -885,6 +886,33 @@
         let bsModal;
         const completedIds = new Set();
         let miniMonthOffset = 0;
+
+        // ── Status colour palette ───────────────────────────────
+        const STATUS_COLORS = {
+            'PENDING': { color: '#007bff', bg: 'rgba(0,123,255,0.13)' },
+            'SCHEDULED': { color: '#007bff', bg: 'rgba(0,123,255,0.13)' },
+            'COMPLETED': { color: '#28a745', bg: 'rgba(40,167,69,0.13)' },
+            'DONE': { color: '#28a745', bg: 'rgba(40,167,69,0.13)' },
+            'CANCELLED': { color: '#dc3545', bg: 'rgba(220,53,69,0.13)' },
+            'CANCEL': { color: '#dc3545', bg: 'rgba(220,53,69,0.13)' },
+            'RESCHEDULE': { color: '#17a2b8', bg: 'rgba(23,162,184,0.13)' }
+        };
+
+        function getEventStyles(ev) {
+            const status = (ev.status || '').toUpperCase();
+            const baseUser = USERS[ev.user] || { color: '#6b7280', bg: 'rgba(107,114,128,0.13)', initials: '?' };
+
+            // Priority for Meetings or if status is explicitly actionable (Done/Cancelled)
+            if (ev.event_type === 'MEETING' || status === 'COMPLETED' || status === 'CANCELLED' || status === 'DONE' || status === 'CANCEL') {
+                if (STATUS_COLORS[status]) {
+                    return {
+                        ...STATUS_COLORS[status],
+                        initials: baseUser.initials
+                    };
+                }
+            }
+            return baseUser;
+        }
 
         // ── Computed week events ─────────────────────────────────
         let events = [];
@@ -1229,15 +1257,16 @@
                         grouped[d].sort((a, b) => (a.sh * 60 + a.sm) - (b.sh * 60 + b.sm));
 
                         const rows = grouped[d].map(ev => {
-                            const u = USERS[ev.user] || { color: '#6b7280' };
+                            const u = getEventStyles(ev);
                             const timeLbl = `${fmtH(ev.sh, ev.sm)} – ${fmtH(ev.eh, ev.em)}`;
-                            const isDone = ev.event_type === 'TODO' ? ev.status === 'COMPLETED' : completedIds.has(ev._uid);
+                            const s = (ev.status || '').toUpperCase();
+                            const isDone = (s === 'COMPLETED' || s === 'DONE' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
                             return `
                             <div class="task-row ${isDone ? 'done-row' : ''}" style="border-left-color:${u.color};">
-                                <div class="t-circle ${isDone ? 't-done' : ''}" style="color:${u.color};"
-                                    onclick="completeEvent('${ev._uid}')" title="${isDone ? 'Mark incomplete' : 'Mark complete'}"></div>
+                                ${ev.event_type === 'TODO' ? `<div class="t-circle ${isDone ? 't-done' : ''}" style="color:${u.color};"
+                                    onclick="completeEvent('${ev._uid}')" title="${isDone ? 'Mark incomplete' : 'Mark complete'}"></div>` : '<div style="width:24px; flex-shrink:0;"></div>'}
                                 <div class="t-info">
-                                    <div class="t-title">${ev.title}</div>
+                                    <div class="t-title">${ev.event_type === 'MEETING' ? '<i class="bi bi-camera-video me-1"></i>' : ''}${ev.title}</div>
                                     <div class="t-meta"><i class="bi bi-clock me-1"></i>${timeLbl} <span class="mx-2">•</span> <i class="bi bi-geo-alt me-1"></i>${ev.loc} <span class="mx-2">•</span> <i class="bi bi-person me-1"></i>${ev.user}</div>
                                 </div>
                                 <div class="t-actions">
@@ -1310,21 +1339,24 @@
                 const dayEvts = events.filter(e => e.date === sdStr);
                 const placed = packEvents(dayEvts);
                 const evHtml = placed.map(({ ev, slot, slots }) => {
-                    const u = USERS[ev.user] || { color: '#6b7280', bg: '#f9fafb', initials: '?' };
+                    const u = getEventStyles(ev);
                     const t = Math.max(topPx(ev.sh, ev.sm), 0);
                     const h = Math.max(hPx(ev.sh, ev.sm, ev.eh, ev.em), 22);
                     const wPct = 96 / slots;
                     const lPct = 2 + slot * wPct;
                     const rPct = 2 + (slots - slot - 1) * wPct;
                     const timeLbl = `${fmtH(ev.sh, ev.sm)} – ${fmtH(ev.eh, ev.em)}`;
-                    const isDone = ev.event_type === 'TODO' ? ev.status === 'COMPLETED' : completedIds.has(ev._uid);
+                    const s = (ev.status || '').toUpperCase();
+                    const isDone = (s === 'COMPLETED' || s === 'DONE' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
                     return `
-                    <div class="cal-evt${isDone ? ' evt-done' : ''}" style="top:${t}px;height:${h}px;left:${lPct}%;right:${rPct}%;background:${u.bg};border-left:3px solid ${u.color};display:flex;flex-direction:column;padding-left:17px;overflow:hidden;"
+                    <div class="cal-evt${isDone ? ' evt-done' : ''}" style="top:${t}px;height:${h}px;left:${lPct}%;right:${rPct}%;background:${u.bg};border-left:3px solid ${u.color};display:flex;flex-direction:column;padding-left:${ev.event_type === 'TODO' ? '17px' : '8px'};overflow:hidden;"
                          title="${ev.title} (${ev.user})\n${timeLbl}\n${ev.loc}"
                          onclick="event.stopPropagation();openEditModal('${ev._uid}')">
-                        <button class="evt-complete-btn${isDone ? ' done' : ''}" style="color:${u.color};"
-                            onclick="event.stopPropagation();completeEvent('${ev._uid}')" title="${isDone ? 'Mark incomplete' : 'Mark complete'}"></button>
-                        <div class="evt-inner-title" style="color:${u.color};font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ev.title}</div>
+                        ${ev.event_type === 'TODO' ? `<button class="evt-complete-btn${isDone ? ' done' : ''}" style="color:${u.color};"
+                            onclick="event.stopPropagation();completeEvent('${ev._uid}')" title="${isDone ? 'Mark incomplete' : 'Mark complete'}"></button>` : ''}
+                        <div class="evt-inner-title" style="color:${u.color};font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            ${ev.event_type === 'MEETING' ? '<i class="bi bi-camera-video me-1"></i>' : ''}${ev.title}
+                        </div>
                         ${h > 30 ? `<div class="evt-time" style="color:${u.color};font-size:0.7rem;">${timeLbl}</div>` : ''}
                         <div style="font-size:.72rem;color:${u.color};opacity:.7;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><i class="bi bi-person me-1"></i>${ev.user}</div>
                     </div>`;
@@ -1408,9 +1440,11 @@
 
                         const dayEvts = events.filter(e => e.date === ds);
                         const evHtml = dayEvts.slice(0, 4).map(ev => {
-                            const u = USERS[ev.user] || { color: '#6b7280', bg: '#f9fafb' };
-                            const isDone = ev.event_type === 'TODO' ? ev.status === 'COMPLETED' : completedIds.has(ev._uid);
-                            return `<div class="month-evt ${isDone ? 'evt-done' : ''}" style="background:${u.bg}; border-left:2px solid ${u.color}; color:${u.color};" onclick="event.stopPropagation();openEditModal('${ev._uid}')">${fmtH(ev.sh, ev.sm).replace(' AM', 'a').replace(' PM', 'p')} ${ev.title}</div>`;
+                            const u = getEventStyles(ev);
+                            const s = (ev.status || '').toUpperCase();
+                            const isDone = (s === 'COMPLETED' || s === 'DONE' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
+                            const icon = ev.event_type === 'MEETING' ? '<i class="bi bi-camera-video me-1"></i>' : '';
+                            return `<div class="month-evt ${isDone ? 'evt-done' : ''}" style="background:${u.bg}; border-left:2px solid ${u.color}; color:${u.color};" onclick="event.stopPropagation();openEditModal('${ev._uid}')">${fmtH(ev.sh, ev.sm).replace(' AM', 'a').replace(' PM', 'p')} ${icon}${ev.title}</div>`;
                         }).join('');
                         const extra = dayEvts.length > 4 ? `<div class="month-evt-more">+${dayEvts.length - 4} more</div>` : '';
 
@@ -1520,21 +1554,24 @@
                 const placed = packEvents(dayEvts);
 
                 const evHtml = placed.map(({ ev, slot, slots }) => {
-                    const u = USERS[ev.user] || { color: '#6b7280', bg: '#f9fafb', initials: '?' };
+                    const u = getEventStyles(ev);
                     const t = Math.max(topPx(ev.sh, ev.sm), 0);
                     const h = Math.max(hPx(ev.sh, ev.sm, ev.eh, ev.em), 22);
                     const w = 96 / slots;
                     const l = 2 + slot * w;
                     const r = 2 + (slots - slot - 1) * w;
                     const timeLbl = `${fmtH(ev.sh, ev.sm)} – ${fmtH(ev.eh, ev.em)}`;
-                    const isDone = ev.event_type === 'TODO' ? ev.status === 'COMPLETED' : completedIds.has(ev._uid);
+                    const s = (ev.status || '').toUpperCase();
+                    const isDone = (s === 'COMPLETED' || s === 'DONE' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
                     return `
             <div class="cal-evt${isDone ? ' evt-done' : ''}" title="${ev.title} (${ev.user})\n${timeLbl}\n${ev.loc}"
-                style="top:${t}px;height:${h}px;left:${l}%;width:${w}%;background:${u.bg};border-left:3px solid ${u.color};padding-left:17px;min-width:40px;display:flex;flex-direction:column;"
+                style="top:${t}px;height:${h}px;left:${l}%;width:${w}%;background:${u.bg};border-left:3px solid ${u.color};padding-left:${ev.event_type === 'TODO' ? '17px' : '8px'};min-width:40px;display:flex;flex-direction:column;"
                 onclick="event.stopPropagation();openEditModal('${ev._uid}')">
-                <button class="evt-complete-btn${isDone ? ' done' : ''}" style="color:${u.color};"
-                    onclick="event.stopPropagation();completeEvent('${ev._uid}')" title="${isDone ? 'Mark incomplete' : 'Mark complete'}"></button>
-                <div class="evt-inner-title" style="color:${u.color};font-size:.7rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ev.title}</div>
+                ${ev.event_type === 'TODO' ? `<button class="evt-complete-btn${isDone ? ' done' : ''}" style="color:${u.color};"
+                    onclick="event.stopPropagation();completeEvent('${ev._uid}')" title="${isDone ? 'Mark incomplete' : 'Mark complete'}"></button>` : ''}
+                <div class="evt-inner-title" style="color:${u.color};font-size:.7rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    ${ev.event_type === 'MEETING' ? '<i class="bi bi-camera-video me-1"></i>' : ''}${ev.title}
+                </div>
                 ${h > 30 ? `<div class="evt-time" style="font-size:0.6rem;white-space:nowrap;overflow:hidden;">${timeLbl}</div>` : ''}
                 <div class="evt-user" style="color:${u.color};">${u.initials}</div>
             </div>`;

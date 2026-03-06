@@ -41,3 +41,5 @@ backend/static/uploads/
 
 # Temp scripts
 resolve.py
+
+credentials.json

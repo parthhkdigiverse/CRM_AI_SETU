@@ -33,33 +33,33 @@ async def login(
     db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
-    # ── Check fallback demo credentials FIRST ─────────────────────────────────
-    if (
-        form_data.username == _DEMO_EMAIL
-        and form_data.password == _DEMO_PASSWORD
-    ):
-        print(f"[DEMO MODE] Demo login granted for {_DEMO_EMAIL}")
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        refresh_token_expires = timedelta(days=30)
-        return {
-            "access_token": create_access_token(
-                _DEMO_USER_ID, expires_delta=access_token_expires
-            ),
-            "refresh_token": create_access_token(
-                _DEMO_USER_ID, expires_delta=refresh_token_expires
-            ),
-            "token_type": "bearer",
-        }
-
-    # ── Try the real database ─────────────────────────────────────────────────
+    # ── Try the real database first ───────────────────────────────────────────
     try:
         user = db.query(User).filter(User.email == form_data.username).first()
     except (OperationalError, Exception) as db_err:
-        # ── Database is not reachable ─────────────────────────────────────────
+        # ── Database is not reachable — fall back to demo account ─────────────
         import traceback
         print(f"[ERROR] Database unavailable ({db_err.__class__.__name__}): {db_err}")
         traceback.print_exc()
-        
+
+        # Only grant demo access if credentials match the demo account
+        if (
+            form_data.username == _DEMO_EMAIL
+            and form_data.password == _DEMO_PASSWORD
+        ):
+            print(f"[DEMO MODE] DB unreachable — demo login granted for {_DEMO_EMAIL}")
+            access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+            refresh_token_expires = timedelta(days=30)
+            return {
+                "access_token": create_access_token(
+                    _DEMO_USER_ID, expires_delta=access_token_expires
+                ),
+                "refresh_token": create_access_token(
+                    _DEMO_USER_ID, expires_delta=refresh_token_expires
+                ),
+                "token_type": "bearer",
+            }
+
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Database not available. Please set up your .env and run database migrations.",

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
 from app.modules.users.models import User, UserRole
-from app.modules.areas.schemas import AreaCreate, AreaRead, AreaAssign
+from app.modules.areas.schemas import AreaCreate, AreaRead, AreaAssign, AreaUpdate
 from app.modules.areas.service import AreaService
 
 router = APIRouter()
@@ -23,6 +23,19 @@ def create_area(
     """
     service = AreaService(db)
     return service.create_area(area_in)
+
+@router.patch("/{area_id}", response_model=AreaRead)
+def update_area(
+    area_id: int,
+    area_in: AreaUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_access)
+) -> Any:
+    """
+    Update an existing Area's name, description, or coordinates. Admin only.
+    """
+    service = AreaService(db)
+    return service.update_area(area_id, area_in)
 
 @router.get("/", response_model=List[AreaRead])
 def read_areas(
@@ -45,4 +58,16 @@ def assign_area(
     Assign an area to a user. Admin only.
     """
     service = AreaService(db)
-    return service.assign_area(area_id, assign_in.assigned_user_id)
+    return service.assign_area(area_id, assign_in.assigned_user_id, assign_in.shop_ids)
+
+@router.delete("/{area_id}", status_code=status.HTTP_200_OK)
+def delete_area(
+    area_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_access)
+) -> Any:
+    """
+    Delete an area and all associated shops. Admin only.
+    """
+    service = AreaService(db)
+    return service.delete_area(area_id)

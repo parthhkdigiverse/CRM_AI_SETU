@@ -168,9 +168,11 @@ function injectTopHeader(pageTitle) {
         'Visits': 'Field Operations',
         'Areas & Shops': 'Field Operations',
         'Projects': 'Project Management',
+        'Meeting Strategy': 'Project Management',
         'Meetings': 'Project Management',
         'Issues': 'Project Management',
         'Clients': 'Client Relations',
+        'Billing & Invoices': 'Client Relations',
         'Payment': 'Client Relations',
         'Feedback': 'Client Relations',
         'Employees': 'HR & Payroll',
@@ -180,6 +182,7 @@ function injectTopHeader(pageTitle) {
         'Timetable': 'Dashboard',
         'To-Do List': 'Dashboard',
         'Overview': 'Dashboard',
+        'Dashboard': 'Home',
         'Profile': 'Dashboard',
         'Search Results': 'Search'
     };
@@ -198,15 +201,15 @@ function injectTopHeader(pageTitle) {
     const alertsRedDot = '<span id="nav-notif-dot" class="position-absolute bg-danger border border-white rounded-circle d-none" style="width:10px;height:10px;top:8px;right:8px;"></span>';
 
     const headerHtml = `
-    <div class="top-header" style="padding: 0.75rem 1.5rem; background: #fff; border-bottom: 1px solid #f1f5f9; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 70px;">
+    <div class="top-header">
         <!-- Left: Breadcrumb Title -->
         <div class="d-flex align-items-center">
             ${breadcrumbHtml}
         </div>
 
         <!-- Center: Global Search -->
-        <div class="d-flex justify-content-center" style="min-width: 300px; width: 40%;">
-            <div class="position-relative w-100" style="max-width: 500px;">
+        <div class="top-header-search">
+            <div class="position-relative w-100">
                 <button class="btn p-0 position-absolute text-muted" style="left:12px; top:50%; transform:translateY(-50%); border:none; background:none; z-index:5;" onclick="const val = document.getElementById('global-search-input').value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val);">
                     <i class="bi bi-search" style="font-size:0.9rem;"></i>
                 </button>
@@ -216,18 +219,20 @@ function injectTopHeader(pageTitle) {
 
         <!-- Right: Actions & Profile -->
         <div class="d-flex align-items-center justify-content-end gap-3">
+            <!-- Add New Dropdown -->
             <div class="dropdown">
-                <button class="btn btn-primary d-flex align-items-center gap-2 px-3 dropdown-toggle shadow-sm" type="button" id="addNewDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:0.875rem; border-radius: 8px; height: 40px;">
+                <button class="btn btn-primary d-flex align-items-center gap-2 px-3 dropdown-toggle shadow-sm" type="button" id="addNewDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:0.875rem; border-radius: 8px; height: 40px; white-space: nowrap;">
                     <i class="bi bi-plus-lg"></i> Add New
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px;">
-                    <li><a class="dropdown-item py-2" href="leads.html?add=true" style="border-radius:8px;"><i class="bi bi-bullseye me-2 text-primary"></i> New Project</a></li>
-                    <li><a class="dropdown-item py-2" href="areas.html?add=true" style="border-radius:8px;"><i class="bi bi-building me-2 text-primary" style="color: #6366f1 !important;"></i> New Area/Shop</a></li>
-                    <li><a class="dropdown-item py-2" href="clients.html" style="border-radius:8px;"><i class="bi bi-people me-2 text-info"></i> New Client</a></li>
-                    <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="if(window.openNewBillModal) window.openNewBillModal();" style="border-radius:8px;"><i class="bi bi-file-invoice-dollar me-2 text-danger"></i> New Payment</a></li>
-                    <li><a class="dropdown-item py-2" href="issues.html" style="border-radius:8px;"><i class="bi bi-exclamation-triangle me-2 text-warning"></i> New Issue</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item py-2" href="admin.html" style="border-radius:8px;"><i class="bi bi-person-plus me-2 text-success"></i> New User</a></li>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px; min-width:210px;">
+                    <li><a class="dropdown-item rounded-2 py-2" href="leads.html?add=true"><i class="bi bi-bullseye me-2 text-primary"></i> New Project Lead</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="areas.html?add=true"><i class="bi bi-building me-2" style="color:#6366f1;"></i> New Area / Shop</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="clients.html"><i class="bi bi-people me-2 text-info"></i> New Client</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="meetings.html"><i class="bi bi-calendar-event me-2 text-success"></i> New Meeting</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="javascript:void(0)" onclick="if(window.openNewBillModal) window.openNewBillModal();"><i class="bi bi-file-invoice-dollar me-2 text-danger"></i> New Payment</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="issues.html"><i class="bi bi-exclamation-triangle me-2 text-warning"></i> New Issue</a></li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="admin.html"><i class="bi bi-person-plus me-2 text-secondary"></i> New User</a></li>
                 </ul>
             </div>
             <div class="dropdown">
@@ -238,46 +243,139 @@ function injectTopHeader(pageTitle) {
                 <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-0" style="width: 320px; border-radius: 12px; overflow: hidden; z-index: 9999;">
                     <div class="bg-light px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
                         <span class="fw-bold fs-6">Notifications</span>
-                        <span class="badge bg-danger rounded-pill">Sys</span>
                     </div>
-                    <div class="p-3 text-center">
-                        <i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i>
-                        <p class="text-muted small mt-2 mb-0">No new system alerts right now.</p>
+                    <div id="bell-notif-list">
+                        <div class="p-3 text-center">
+                            <i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i>
+                            <p class="text-muted small mt-2 mb-0">No new system alerts right now.</p>
+                        </div>
                     </div>
                     <div class="bg-light px-3 py-2 border-top text-center" style="cursor: pointer;" onclick="window.location.href='notifications.html'">
                         <a href="notifications.html" class="text-decoration-none small fw-semibold">View Master Feed</a>
                     </div>
                 </div>
             </div>
-            <div class="d-flex align-items-center gap-2 ps-2 dropdown border-start pl-3 ms-1">
+            <!-- Profile Dropdown -->
+            <div class="d-flex align-items-center gap-2 ps-2 dropdown border-start ms-1">
                 <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold dropdown-toggle shadow-sm" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="width:38px;height:38px;font-size:13px;cursor:pointer;">${initials}</div>
                 <div class="d-none d-lg-block">
                     <div class="fw-bold text-dark" style="font-size:0.85rem; line-height:1;">${u?.name || 'Admin'}</div>
                     <div class="text-muted small" style="font-size:0.70rem; line-height:1.5;">${role}</div>
                 </div>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="profileDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px; z-index: 9999;">
-                    <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="if(window.loadView) window.loadView('profile');" style="border-radius:8px;"><i class="bi bi-person me-2 text-primary"></i> My Profile</a></li>
+                    <li><a class="dropdown-item py-2 rounded-2" href="javascript:void(0)" onclick="if(window.loadView) window.loadView('profile');"><i class="bi bi-person me-2 text-primary"></i> My Profile</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="logout()" style="border-radius:8px; color:var(--danger);"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
+                    <li><a class="dropdown-item py-2 rounded-2" href="javascript:void(0)" onclick="logout()" style="color:var(--danger);"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
                 </ul>
             </div>
         </div>
     </div>`;
     const rightSide = document.querySelector('.flex-grow-1');
     if (rightSide) {
+        // ENFORCE STANDARDS: Remove any conflicting inline paddings or styles
+        rightSide.style.setProperty('padding', '0', 'important');
+        rightSide.style.height = '100vh';
+        rightSide.style.overflowY = 'auto';
+        rightSide.style.display = 'flex';
+        rightSide.style.flexDirection = 'column';
         rightSide.classList.remove('p-4');
-        rightSide.classList.add('d-flex', 'flex-column', 'bg-light');
-        rightSide.style.minHeight = '100vh';
+        rightSide.classList.add('bg-light');
+
+        // Inject header at top of the column
         rightSide.insertAdjacentHTML('afterbegin', headerHtml);
-        const nodesToMove = [];
-        for (const child of rightSide.childNodes) {
-            if (child.nodeType === 1 && child.classList.contains('top-header')) continue;
-            nodesToMove.push(child);
+
+        // Only wrap content in page-content if one doesn't already exist.
+        // This prevents double-wrapping on pages that already have .page-content.
+        let existingPageContent = rightSide.querySelector('.page-content');
+        if (!existingPageContent) {
+            const nodesToMove = [];
+            for (const child of rightSide.childNodes) {
+                if (child.nodeType === 1 && child.classList.contains('top-header')) continue;
+                nodesToMove.push(child);
+            }
+            const contentContainer = document.createElement('div');
+            contentContainer.className = 'page-content';
+            contentContainer.style.flexGrow = '1';
+            nodesToMove.forEach(node => contentContainer.appendChild(node));
+            rightSide.appendChild(contentContainer);
         }
-        const contentContainer = document.createElement('div');
-        contentContainer.className = 'page-content';
-        contentContainer.style.flexGrow = '1';
-        nodesToMove.forEach(node => contentContainer.appendChild(node));
-        rightSide.appendChild(contentContainer);
     }
+
+    startNotificationPolling();
+}
+
+// ─── NOTIFICATION BELL POLLING ────────────────────────────────────────
+// State to track if polling is already active
+window._notifPollStarted = window._notifPollStarted || false;
+
+// Expose refreshBell globally so other pages (like notifications.html) can trigger an instant sync.
+window.refreshBell = async function () {
+    // Only fetch if we have a token
+    if (!localStorage.getItem('access_token')) return;
+
+    try {
+        const { unread } = await apiGet('/notifications/unread-count');
+        const dot = document.getElementById('nav-notif-dot');
+        if (dot) {
+            if (unread > 0) dot.classList.remove('d-none');
+            else dot.classList.add('d-none');
+        }
+
+        // Populate the dropdown preview (unread only, top 5 max)
+        const all = await apiGet('/notifications/?limit=100');
+        const bellBody = document.getElementById('bell-notif-list');
+        if (!bellBody) return;
+
+        // Filter for unread only
+        const unreadList = (Array.isArray(all) ? all : []).filter(n => !n.is_read).slice(0, 5);
+
+        // Protect against no unread alerts
+        if (unreadList.length === 0) {
+            bellBody.innerHTML = `
+                <div class="p-3 text-center">
+                    <i class="bi bi-bell-slash text-muted" style="font-size:2rem;"></i>
+                    <p class="text-muted small mt-2 mb-0">No new alerts right now.</p>
+                </div>`;
+            return;
+        }
+
+        bellBody.innerHTML = unreadList.map(n => {
+            // Determine client name from message if possible, or fallback
+            let displayTitle = n.title;
+            if (n.title === "⏰ Upcoming Meeting") {
+                const match = n.message.match(/with (.*?) starts/);
+                const clientName = match ? match[1] : "Client";
+                displayTitle = `Upcoming Session: ${clientName}`;
+            }
+
+            // Force UTC parsing: Append 'Z' if missing to ensure browser converts correctly to local time
+            const dateObj = new Date(n.created_at.endsWith('Z') || n.created_at.includes('+') ? n.created_at : n.created_at + 'Z');
+
+            return `
+            <div class="d-flex gap-2 px-3 py-2 border-bottom bg-primary-subtle"
+                 style="cursor:default; transition: background 0.2s;">
+                <i class="bi bi-bell-fill text-primary mt-1 flex-shrink-0" style="font-size:.85rem;"></i>
+                <div class="w-100 overflow-hidden">
+                    <div class="fw-bold text-truncate text-dark" style="font-size:.82rem;">${displayTitle}</div>
+                    <div class="text-muted text-wrap small mt-1" style="line-height: 1.3;">${n.message}</div>
+                    <div class="text-muted mt-1 d-flex align-items-center gap-1" style="font-size:.68rem;">
+                        <i class="bi bi-clock" style="font-size:.65rem;"></i>
+                        ${dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        // silently ignore — user may not be on a page that loads auth yet
+    }
+};
+
+function startNotificationPolling() {
+    if (window._notifPollStarted) return;
+    window._notifPollStarted = true;
+
+    // Run immediately
+    window.refreshBell();
+    // Then every 30 seconds
+    setInterval(window.refreshBell, 30000);
 }

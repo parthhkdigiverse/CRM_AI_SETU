@@ -315,6 +315,17 @@ async function apiPatch(path, body) {
     return res.json();
 }
 
+// DELETE shorthand
+async function apiDelete(path) {
+    const res = await apiFetch(path, { method: 'DELETE' });
+    if (!res || !res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `DELETE ${path} failed`);
+    }
+    // DELETE often returns 204 No Content, so we don't always expect JSON
+    return res.status === 204 ? null : res.json();
+}
+
 // Show bootstrap toast
 function showToast(msg, type = 'success') {
     const bg = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';

@@ -16,6 +16,11 @@
             box-sizing: border-box;
         }
 
+        /* Forces Google Autocomplete to appear IN FRONT of Bootstrap modals */
+        .pac-container {
+            z-index: 1055 !important;
+        }
+
         body {
             background: #f8fafc;
             margin: 0;
@@ -300,74 +305,81 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="../css/theme.css">
 </head>
 
 <body>
     <div class="d-flex">
         <div id="sidebar"></div>
         <div class="flex-grow-1">
-            <div class="px-4">
-                <div class="d-flex justify-content-between align-items-center mb-4 pt-4">
-                    <div>
-                        <h2 class="fw-bold fs-3 text-dark mb-1">Areas & Shops</h2>
-                        <span class="text-muted small" id="area-count-label">Loading areas...</span>
+            <div class="page-content">
+                <div class="px-0">
+                    <div class="d-flex justify-content-between align-items-center mb-4 pt-0">
+                        <div>
+                            <h2 class="fw-bold fs-3 text-dark mb-1">Areas & Shops</h2>
+                            <span class="text-muted small" id="area-count-label">Loading areas...</span>
+                        </div>
+                        <button class="btn btn-primary d-flex align-items-center gap-2 px-3 shadow-sm" type="button"
+                            onclick="new bootstrap.Modal(document.getElementById('addModal')).show()"
+                            style="font-size:0.875rem; border-radius: 8px; height: 40px;">
+                            <i class="bi bi-plus-lg"></i> Add Area/Shop
+                        </button>
                     </div>
-                    <button class="btn btn-primary d-flex align-items-center gap-2 px-3 shadow-sm" type="button"
-                        onclick="new bootstrap.Modal(document.getElementById('addModal')).show()"
-                        style="font-size:0.875rem; border-radius: 8px; height: 40px;">
-                        <i class="bi bi-plus-lg"></i> Add Area/Shop
-                    </button>
-                </div>
 
-                <!-- Main Content Card -->
-                <div class="card shadow-sm border-0 mb-5" style="border-radius: 12px; overflow: hidden;">
-                    <div class="card-body p-0">
-                        <div class="split-panel">
-                            <!-- Left: Area Sidebar -->
-                            <div class="area-sidebar">
-                                <div class="area-search-container">
-                                    <input type="text" id="area-search" placeholder="Search areas...">
+                    <!-- Main Content Card -->
+                    <div class="card shadow-sm border-0 mb-5" style="border-radius: 12px; overflow: hidden;">
+                        <div class="card-body p-0">
+                            <div class="split-panel">
+                                <!-- Left: Area Sidebar -->
+                                <div class="panel-sidebar">
+                                    <div class="area-search-container"
+                                        style="padding: 1.25rem; border-bottom: 1px solid var(--border);">
+                                        <input type="text" id="area-search" placeholder="Search areas..."
+                                            style="width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px 9px 38px; font-size: 0.875rem; font-weight: 500; outline: none; background: var(--bg-app) url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E&quot;) no-repeat 14px center;">
+                                    </div>
+                                    <ul class="area-list" id="area-list"
+                                        style="list-style: none; padding: 10px; margin: 0;">
+                                        <li class="area-list-empty p-4 text-center text-muted">Loading areas...</li>
+                                    </ul>
                                 </div>
-                                <ul class="area-list" id="area-list">
-                                    <li class="area-list-empty p-4 text-center text-muted">Loading areas...</li>
-                                </ul>
-                            </div>
 
-                            <!-- Right: Shops Area -->
-                            <div class="shops-container">
-                                <div class="shops-header">
-                                    <h3 id="shops-panel-title"><i class="bi bi-shop text-muted"></i> Select an area</h3>
-                                    <span id="shops-panel-count" class="text-muted small"></span>
-                                </div>
-                                <div id="shops-panel-body" class="flex-grow-1">
-                                    <div
-                                        class="h-100 d-flex flex-column align-items-center justify-content-center p-5 text-muted opacity-50">
-                                        <i class="bi bi-geo-alt"
-                                            style="font-size: 4rem; display: block; margin-bottom: 1rem;"></i>
-                                        <p>Click an area on the left to view its shops</p>
+                                <!-- Right: Shops Area -->
+                                <div class="panel-content d-flex flex-column">
+                                    <div class="shops-header"
+                                        style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: #fff;">
+                                        <h3 id="shops-panel-title" class="mb-0 fs-5"><i
+                                                class="bi bi-shop text-muted me-2"></i> Select an area</h3>
+                                        <span id="shops-panel-count" class="text-muted small"></span>
+                                    </div>
+                                    <div id="shops-panel-body" class="flex-grow-1">
+                                        <div
+                                            class="h-100 d-flex flex-column align-items-center justify-content-center p-5 text-muted opacity-50">
+                                            <i class="bi bi-geo-alt"
+                                                style="font-size: 4rem; display: block; margin-bottom: 1rem;"></i>
+                                            <p>Click an area on the left to view its shops</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </div><!-- /page-content -->
         </div>
     </div>
-
     <!-- Toast Container -->
     <div id="toast-container"></div>
 
     <!-- Add Area / Shop Modal (tabbed) -->
     <div class="modal fade" id="addModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add Area / Shop</h5>
+                    <h5 class="modal-title fw-bold">Add Area / Shop</h5>
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Toggle -->
+                    <!-- Tab Toggle -->
                     <div class="d-flex gap-2 mb-4">
                         <button class="btn btn-sm fw-semibold" id="tab-area-btn"
                             style="border-radius:8px;background:#eef2ff;color:#4f46e5;border:none;padding:7px 18px;"
@@ -379,19 +391,78 @@
 
                     <!-- Area Form -->
                     <div id="form-area">
-                        <div class="mb-3">
-                            <label class="form-label">Area Name *</label>
-                            <input id="a-name" class="form-control" placeholder="e.g. North District">
+
+                        <!-- STEP 1: Name + Map -->
+                        <div id="area-step-1">
+                            <div class="row g-3">
+                                <!-- Left: form fields -->
+                                <div class="col-md-5">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Area Name *</label>
+                                        <input id="a-name" class="form-control" placeholder="e.g. North District">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Description</label>
+                                        <textarea id="a-desc" class="form-control" rows="2"
+                                            placeholder="Brief description..."></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold"><i class="bi bi-search me-1"></i>Search
+                                            Location on Map</label>
+                                        <input id="map-search" class="form-control" type="text"
+                                            placeholder="Search a neighborhood or city..." autocomplete="off">
+                                    </div>
+                                    <input type="hidden" id="a-lat">
+                                    <input type="hidden" id="a-lng">
+                                    <input type="hidden" id="a-id" value="">
+                                    <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i>Pin a
+                                        location to auto-discover nearby shops after saving.</p>
+                                </div>
+                                <!-- Right: Google Map -->
+                                <div class="col-md-7">
+                                    <label class="form-label fw-semibold">Map</label>
+                                    <div id="area-map"
+                                        style="height:350px;width:100%;border-radius:8px;border:1px solid #dee2e6;">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Description</label>
-                            <textarea id="a-desc" class="form-control" rows="2"
-                                placeholder="Brief description..."></textarea>
+
+                        <!-- STEP 2: Discovered Shops (shown after area is saved) -->
+                        <div id="discovered-shops-container" style="display:none;">
+                            <div class="d-flex align-items-center mb-3 p-3 rounded"
+                                style="background:#f0fdf4;border:1px solid #bbf7d0;">
+                                <i class="bi bi-check-circle-fill text-success me-2 fs-5"></i>
+                                <div>
+                                    <div class="fw-bold text-success" id="area-saved-msg">Area saved!</div>
+                                    <small class="text-muted">Nearby shops discovered via Google Maps. Click "Add to
+                                        CRM" to import them.</small>
+                                </div>
+                            </div>
+                            <div class="table-responsive rounded border" style="max-height:300px;overflow-y:auto;">
+                                <table class="table table-hover align-middle mb-0 small">
+                                    <thead class="table-light position-sticky top-0">
+                                        <tr>
+                                            <th>Shop Name</th>
+                                            <th>Address</th>
+                                            <th class="text-end">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="discovered-shops-table">
+                                        <tr>
+                                            <td colspan="3" class="text-center py-4 text-muted">Shops will appear here
+                                                after you save the area.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
+
                     </div>
 
                     <!-- Shop Form -->
                     <div id="form-shop" style="display:none;">
+                        <input type="hidden" id="s-id" value="">
                         <div class="mb-3">
                             <label class="form-label">Shop / Client Name *</label>
                             <input id="s-name" class="form-control" placeholder="e.g. Krishna Electronics">
@@ -425,6 +496,7 @@
                                     <option>Reference</option>
                                     <option>Cold Call</option>
                                     <option>Online</option>
+                                    <option>Google Maps</option>
                                     <option>Other</option>
                                 </select>
                             </div>
@@ -440,9 +512,63 @@
                         </div>
                     </div>
                 </div>
+                <div class="modal-footer" id="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <!-- Back to Edit button: only shown when in discovery mode from edit flow -->
+                    <button class="btn btn-outline-secondary" id="modal-back-btn" style="display:none;"
+                        onclick="backToEditArea()">
+                        <i class="bi bi-arrow-left"></i> Back to Edit
+                    </button>
+                    <!-- Discover Shops button: only shown in edit mode on the area tab -->
+                    <button class="btn btn-outline-primary" id="modal-discover-btn" style="display:none;"
+                        onclick="discoverShopsFromEdit()">
+                        <i class="bi bi-search"></i> Discover Nearby Shops
+                    </button>
+                    <button class="btn btn-primary" id="modal-save-btn" onclick="saveModalForm()">Create Area</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Assign Area Modal -->
+    <div class="modal fade" id="assignModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-plus me-2"></i>Assign Area</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">Select a user to assign this area or specific shops to.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select User</label>
+                        <select id="assign-user-select" class="form-select">
+                            <option value="">— Select User —</option>
+                        </select>
+                    </div>
+
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label fw-semibold mb-0">Select Shops to Assign</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="assign-select-all" checked
+                                    onchange="window.toggleAllAssignShops(this)">
+                                <label class="form-check-label small text-muted" for="assign-select-all">Select
+                                    All</label>
+                            </div>
+                        </div>
+                        <div id="assign-shops-list" class="border rounded p-2"
+                            style="max-height: 200px; overflow-y: auto; background: #f8fafc;">
+                            <!-- Dynamically populated -->
+                        </div>
+                        <p class="text-muted small mt-2"><i class="bi bi-info-circle"></i> Uncheck shops to assign them
+                            individually. Leave all checked to assign the entire area.</p>
+                    </div>
+                </div>
                 <div class="modal-footer">
-                    <button class="btn-modal-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn-modal-primary" id="modal-save-btn" onclick="saveModalForm()">Create Area</button>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" onclick="window.saveAreaAssignment()">Save Assignment</button>
                 </div>
             </div>
         </div>
@@ -450,8 +576,6 @@
 
     <script src="../js/utils.js"></script>
     <script src="../js/api.js"></script>
-
-
     <script src="../js/ui_components.js"></script>
     <script src="../js/auth.js?v=2.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -462,19 +586,58 @@
 
         let allAreas = [];
         let allShops = [];
+        let allUsers = [];
         let selectedAreaId = null;
+        let assigningAreaId = null;
         let modalTab = 'area';
 
+        // ── Reset modal to Create mode whenever it opens normally ──
+        document.getElementById('addModal').addEventListener('show.bs.modal', function () {
+            // Only reset if NOT triggered by openEditAreaModal (which pre-fills a-id)
+            // We detect this by checking if the call came from the Add button (a-id is empty)
+            // openEditAreaModal already calls switchModalTab and pre-fills before show(), so
+            // here we only reset if a-id is still empty at this point.
+            if (!document.getElementById('a-id').value) {
+                document.querySelector('#addModal .modal-title').textContent = 'Add Area / Shop';
+                document.getElementById('a-name').value = '';
+                document.getElementById('a-desc').value = '';
+                document.getElementById('a-lat').value = '';
+                document.getElementById('a-lng').value = '';
+                document.getElementById('area-step-1').style.display = '';
+                document.getElementById('discovered-shops-container').style.display = 'none';
+                document.getElementById('modal-save-btn').style.display = '';
+                document.getElementById('modal-save-btn').textContent = 'Create Area';
+            }
+        });
+
+        // Clear all edit IDs once the modal is fully hidden so the next fresh open is clean
+        document.getElementById('addModal').addEventListener('hidden.bs.modal', function () {
+            document.getElementById('a-id').value = '';
+            document.getElementById('s-id').value = '';
+            // Reset save button to its default neutral state
+            document.getElementById('modal-save-btn').textContent = 'Create Area';
+            document.getElementById('modal-save-btn').style.display = '';
+            document.getElementById('modal-discover-btn').style.display = 'none';
+            document.getElementById('modal-back-btn').style.display = 'none';
+        });
 
         // ── Load Data ──
         async function loadAll() {
             try {
-                [allAreas, allShops] = await Promise.all([
+                const [areasRes, shopsRes, usersRes] = await Promise.all([
                     ApiClient.getAreas(),
-                    ApiClient.getShops('?limit=1000')
+                    ApiClient.getShops('?limit=1000'),
+                    ApiClient.getUsers()
                 ]);
+                allAreas = areasRes;
+                allShops = shopsRes;
+
+                // Defensively extract user array from common response wrappers
+                allUsers = Array.isArray(usersRes) ? usersRes : (usersRes.data || usersRes.items || usersRes.users || []);
+                console.log("Defensively loaded users:", allUsers);
             } catch (e) {
-                console.error(e);
+                console.error("Error loading data:", e);
+                allUsers = allUsers || [];
             }
             renderAreaList();
             populateAreaDropdown();
@@ -491,8 +654,8 @@
             ul.innerHTML = filtered.map(a => {
                 const shopCount = allShops.filter(s => s.area_id === a.id).length;
                 const isActive = a.id === selectedAreaId;
-                return `
-                <li class="area-item ${isActive ? 'active' : ''}" onclick="selectArea(${a.id}, '${a.name.replace(/'/g, "\\'")}')">
+                return `<li class="area-item ${isActive ? 'active' : ''}" onclick="selectArea(${a.id}, '${a.name.replace(/'/g, "\\'")}')"
+                        ondblclick="openEditAreaModal(${a.id})" title="Double-click to edit">
                     <span class="area-info"><i class="bi bi-geo-alt-fill"></i>${a.name}</span>
                     <span class="area-count-pill">${shopCount} shops</span>
                 </li>`;
@@ -503,59 +666,61 @@
         async function selectArea(areaId, areaName) {
             selectedAreaId = areaId;
             renderAreaList(document.getElementById('area-search').value);
-
             const shops = allShops.filter(s => s.area_id === areaId);
-            document.getElementById('shops-panel-title').innerHTML = `<i class="bi bi-shop"></i> Shops in ${areaName}`;
-            document.getElementById('shops-panel-count').textContent = `${shops.length} shop${shops.length !== 1 ? 's' : ''}`;
+            const user = ApiClient.getCurrentUser();
+            const isAdmin = user && user.role && user.role.toUpperCase() === 'ADMIN';
 
+            document.getElementById('shops-panel-title').innerHTML =
+                `<div class="d-flex align-items-center gap-2" style="flex-wrap:wrap;">
+                    <i class="bi bi-shop"></i> Shops in ${areaName}
+                    ${isAdmin ? `
+                        <button class="btn btn-sm btn-outline-info ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                            onclick="openAssignModal(${areaId})" title="Assign area to user">
+                            <i class="bi bi-person-plus-fill"></i> Assign
+                        </button>
+                    ` : ''}
+                    <button class="btn btn-sm btn-outline-secondary ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                        onclick="openEditAreaModal(${areaId})" title="Edit area">
+                        <i class="bi bi-pencil-fill"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                        onclick="deleteArea(${areaId})" title="Delete area">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                 </div>`;
+            document.getElementById('shops-panel-count').textContent = `${shops.length} shop${shops.length !== 1 ? 's' : ''}`;
             const body = document.getElementById('shops-panel-body');
             if (!shops.length) {
                 body.innerHTML = `<div class="p-5 text-center"><i class="bi bi-shop opacity-25" style="font-size:3rem;"></i><p class="text-muted mt-3">No shops in this area yet.<br><a href="javascript:void(0)" onclick="switchAddShopForArea(${areaId})" class="text-primary fw-bold">Add one now?</a></p></div>`;
                 return;
             }
-
-            body.innerHTML = `
-            <table class="shops-table">
-                <thead>
-                    <tr>
-                        <th>Shop Details</th>
-                        <th>Assigned PM / Owner</th>
-                        <th>Contact</th>
-                        <th>Last Visit</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${shops.map(s => {
+            body.innerHTML = `<table class="shops-table">
+                <thead><tr><th>Shop Details</th><th>Assigned To</th><th>Location</th><th>Last Visit</th><th></th></tr></thead>
+                <tbody>${shops.map(s => {
                 const lastVisit = s.last_visit_date
                     ? new Date(s.last_visit_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
                     : 'Not visited';
                 const ownerInit = (s.owner_name || s.contact_person || 'U')[0].toUpperCase();
-                return `
-                        <tr>
-                            <td>
-                                <span class="shop-name-primary">${s.name}</span>
-                                <span class="shop-name-sub">${s.address || 'No address set'}</span>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="avatar-owner">${ownerInit}</div>
-                                    <span class="fw-medium">${s.owner_name || 'Unassigned'}</span>
-                                </div>
-                            </td>
-                            <td>
-                                <a href="tel:${s.phone}" class="phone-link"><i class="bi bi-telephone"></i>${s.phone || '—'}</a>
-                                <div class="shop-name-sub ps-4">${s.contact_person || ''}</div>
-                            </td>
-                            <td class="text-muted small">${lastVisit}</td>
-                            <td>
-                                <button class="btn-action" onclick="deleteShop(${s.id}, '${s.name.replace(/'/g, "\\'")}')">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </td>
-                        </tr>`;
-            }).join('')}
-                </tbody>
+                return `<tr>
+                        <td><span class="shop-name-primary">${s.name}</span><span class="shop-name-sub">${s.address || 'No address set'}</span></td>
+                        <td><div class="d-flex align-items-center gap-2"><div class="avatar-owner">${ownerInit}</div><span class="fw-medium">${s.owner_name || 'Unassigned'}</span></div></td>
+                        <td>
+                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.name + ' ' + (s.address || ''))}" 
+                               target="_blank" 
+                               class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
+                               title="Open in Google Maps">
+                                <i class="bi bi-map-fill"></i> Map
+                            </a>
+                        </td>
+                        <td class="text-muted small">${lastVisit}</td>
+                        <td>
+                            <div class="d-flex justify-content-end gap-2">
+                                <button class="btn-action text-primary" onclick="editShop(${s.id})" title="Edit shop"><i class="bi bi-pencil"></i></button>
+                                <button class="btn-action" onclick="deleteShop(${s.id}, '${s.name.replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>`;
+            }).join('')}</tbody>
             </table>`;
         }
 
@@ -573,14 +738,116 @@
             document.getElementById('tab-shop-btn').style.cssText = tab === 'shop'
                 ? 'border-radius:8px;background:#eef2ff;color:#4f46e5;border:none;padding:7px 18px;'
                 : 'border-radius:8px;background:#f1f5f9;color:#64748b;border:none;padding:7px 18px;';
-            document.getElementById('modal-save-btn').textContent = tab === 'area' ? 'Create Area' : 'Add Shop';
+            const saveBtn = document.getElementById('modal-save-btn');
+            const discoverBtn = document.getElementById('modal-discover-btn');
+            const backBtn = document.getElementById('modal-back-btn');
+            const isEditMode = !!document.getElementById('a-id').value;
+            // Keep save button hidden when on area tab AND in discovery view (step-1 hidden)
+            if (tab === 'area' && document.getElementById('area-step-1').style.display === 'none') {
+                saveBtn.style.display = 'none';
+            } else {
+                saveBtn.style.display = '';
+                // Only update the text if NOT being explicitly set by openEditAreaModal / editShop
+                if (!isEditMode && !document.getElementById('s-id').value) {
+                    saveBtn.textContent = tab === 'area' ? 'Create Area' : 'Add Shop';
+                } else if (!isEditMode) {
+                    // Switching tabs while in shop edit mode — keep 'Update Shop'
+                }
+            }
+            // Discover button only meaningful on the area tab in edit mode
+            if (discoverBtn) discoverBtn.style.display = (tab === 'area' && isEditMode) ? '' : 'none';
+            // Back button only shown when user explicitly entered discovery from edit
+            if (backBtn && tab !== 'area') backBtn.style.display = 'none';
+            // When switching TO area tab, trigger map resize
+            if (tab === 'area' && typeof map !== 'undefined' && map) {
+                setTimeout(() => google.maps.event.trigger(map, 'resize'), 100);
+            }
         }
 
+
         function switchAddShopForArea(areaId) {
-            document.getElementById('s-area').value = areaId;
             switchModalTab('shop');
-            new bootstrap.Modal(document.getElementById('addModal')).show();
+            const modal = new bootstrap.Modal(document.getElementById('addModal'));
+            modal.show();
+            setTimeout(() => { document.getElementById('s-area').value = areaId; }, 300);
         }
+
+        // ── Open modal in Edit Mode for an existing area ──
+        function openEditAreaModal(areaId) {
+            const area = allAreas.find(a => a.id === areaId);
+            if (!area) return;
+
+            // Pre-fill hidden ID FIRST so show.bs.modal handler knows this is edit mode
+            document.getElementById('a-id').value = area.id;
+
+            // Pre-fill form fields
+            document.getElementById('a-name').value = area.name;
+            document.getElementById('a-desc').value = area.description || '';
+            document.getElementById('a-lat').value = area.lat;
+            document.getElementById('a-lng').value = area.lng;
+
+            // Show EDIT FORM (step 1), hide discovery panel
+            document.getElementById('area-step-1').style.display = '';
+            document.getElementById('discovered-shops-container').style.display = 'none';
+
+            // Update modal title & tab
+            document.querySelector('#addModal .modal-title').textContent = `Edit Area: ${area.name}`;
+            switchModalTab('area');
+
+            // Footer: "Update Area" save btn + "Discover" btn, hide Back btn
+            document.getElementById('modal-save-btn').textContent = 'Update Area';
+            document.getElementById('modal-save-btn').style.display = '';
+            document.getElementById('modal-discover-btn').style.display = '';
+            document.getElementById('modal-back-btn').style.display = 'none';
+
+            // Open modal
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('addModal')).show();
+
+            // After animation, center map on saved coordinates
+            setTimeout(() => {
+                if (typeof window.loadMapForEdit === 'function') {
+                    window.loadMapForEdit(area.lat, area.lng);
+                }
+            }, 400);
+        }
+
+        // ── Transition: Edit Form → Discover Shops (user-initiated) ──
+        function discoverShopsFromEdit() {
+            const areaId = parseInt(document.getElementById('a-id').value);
+            const area = allAreas.find(a => a.id === areaId);
+            if (!area) return;
+
+            const lat = parseFloat(document.getElementById('a-lat').value) || area.lat;
+            const lng = parseFloat(document.getElementById('a-lng').value) || area.lng;
+
+            document.getElementById('area-step-1').style.display = 'none';
+            document.getElementById('discovered-shops-container').style.display = 'block';
+            document.getElementById('area-saved-msg').textContent = `Discovering nearby businesses for "${area.name}":`;
+
+            // Footer: hide Save + Discover, show Back
+            document.getElementById('modal-save-btn').style.display = 'none';
+            document.getElementById('modal-discover-btn').style.display = 'none';
+            document.getElementById('modal-back-btn').style.display = '';
+
+            window._discoverShops(area.id, { lat, lng });
+        }
+
+        // ── Transition: Discover view → Edit Form (back button) ──
+        function backToEditArea() {
+            document.getElementById('area-step-1').style.display = '';
+            document.getElementById('discovered-shops-container').style.display = 'none';
+
+            // Footer: restore Save + Discover, hide Back
+            document.getElementById('modal-save-btn').style.display = '';
+            document.getElementById('modal-discover-btn').style.display = '';
+            document.getElementById('modal-back-btn').style.display = 'none';
+
+            // Resize map since it became visible again
+            setTimeout(() => {
+                if (window.map) google.maps.event.trigger(window.map, 'resize');
+            }, 100);
+        }
+
 
         // ── Area Dropdown ──
         function populateAreaDropdown() {
@@ -589,45 +856,82 @@
                 allAreas.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
         }
 
-        // ── Save Form ──
+        // ── Save Form ── (delegates to areas.js for area tab, handles shop tab inline)
         async function saveModalForm() {
             const btn = document.getElementById('modal-save-btn');
             btn.disabled = true;
             try {
                 if (modalTab === 'area') {
-                    const name = document.getElementById('a-name').value.trim();
-                    if (!name) { toast('Area name is required', 'error'); return; }
-                    await ApiClient.createArea({ name, description: document.getElementById('a-desc').value });
-                    toast('Area created!');
-                    document.getElementById('a-name').value = '';
-                    document.getElementById('a-desc').value = '';
+                    // 2-step Maps flow is handled entirely in areas.js
+                    if (typeof handleModalSave === 'function') { handleModalSave(); }
+                    return; // handleModalSave manages btn.disabled itself
                 } else {
+                    const shopEditId = document.getElementById('s-id').value;
                     const name = document.getElementById('s-name').value.trim();
                     const areaId = parseInt(document.getElementById('s-area').value);
-                    if (!name || !areaId) { toast('Shop name and area are required', 'error'); return; }
-                    await ApiClient.createShop({
-                        name,
-                        area_id: areaId,
+                    if (!name || !areaId) { toast('Shop name and area are required', 'error'); btn.disabled = false; return; }
+                    const payload = {
+                        name, area_id: areaId,
                         contact_person: document.getElementById('s-contact').value,
                         phone: document.getElementById('s-phone').value,
                         address: document.getElementById('s-addr').value,
-                        source: document.getElementById('s-source').value || "Other",
+                        source: document.getElementById('s-source').value || 'Other',
                         project_type: document.getElementById('s-project').value || null,
-                    });
-                    toast('Shop added!');
+                    };
+                    if (shopEditId) {
+                        await ApiClient.updateShop(parseInt(shopEditId), payload);
+                        toast('Shop updated!');
+                    } else {
+                        await ApiClient.createShop(payload);
+                        toast('Shop added!');
+                    }
+                    // Clear all shop form fields including the hidden ID
+                    document.getElementById('s-id').value = '';
                     ['s-name', 's-contact', 's-phone', 's-addr'].forEach(id => document.getElementById(id).value = '');
-                }
-                bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
-                await loadAll();
-                if (selectedAreaId) {
-                    const a = allAreas.find(x => x.id === selectedAreaId);
-                    if (a) selectArea(a.id, a.name);
+                    document.getElementById('s-source').value = '';
+                    document.getElementById('s-project').value = '';
+                    await loadAll();
+                    if (selectedAreaId) {
+                        const a = allAreas.find(x => x.id === selectedAreaId);
+                        if (a) selectArea(a.id, a.name);
+                    }
+                    // If from Discovered Shops list → go back to list; otherwise close modal
+                    if (!shopEditId && document.getElementById('area-step-1').style.display === 'none') {
+                        switchModalTab('area');
+                    } else {
+                        bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+                    }
                 }
             } catch (e) {
                 toast(e?.data?.detail || e?.message || 'Failed to save', 'error');
             } finally {
                 btn.disabled = false;
             }
+        }
+
+        // ── Edit Shop ──
+        function editShop(shopId) {
+            const shop = allShops.find(s => s.id === shopId);
+            if (!shop) return;
+
+            // Pre-fill hidden ID so saveModalForm knows edit mode
+            document.getElementById('s-id').value = shop.id;
+
+            // Pre-fill form fields
+            document.getElementById('s-name').value = shop.name || '';
+            document.getElementById('s-area').value = shop.area_id || '';
+            document.getElementById('s-contact').value = shop.contact_person || '';
+            document.getElementById('s-phone').value = shop.phone || '';
+            document.getElementById('s-addr').value = shop.address || '';
+            document.getElementById('s-source').value = shop.source || '';
+            document.getElementById('s-project').value = shop.project_type || '';
+
+            // Update button label and switch tab
+            switchModalTab('shop');
+            document.getElementById('modal-save-btn').textContent = 'Update Shop';
+
+            // Open modal
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('addModal')).show();
         }
 
         // ── Delete Shop ──
@@ -646,6 +950,111 @@
             }
         }
 
+        // ── Delete Area ──
+        async function deleteArea(id, name) {
+            if (!confirm(`Are you sure you want to delete the area "${name}"?\nThis action cannot be undone and will delete all associated shops.`)) return;
+            try {
+                await ApiClient.deleteArea(id);
+                toast(`Area "${name}" deleted`);
+                selectedAreaId = null;
+                // Reset right-hand panel to empty default
+                document.getElementById('shops-panel-title').innerHTML = '<i class="bi bi-shop text-muted"></i> Select an area';
+                document.getElementById('shops-panel-count').textContent = '';
+                document.getElementById('shops-panel-body').innerHTML = `
+                    <div class="h-100 d-flex flex-column align-items-center justify-content-center p-5 text-muted opacity-50">
+                        <i class="bi bi-geo-alt" style="font-size:4rem;display:block;margin-bottom:1rem;"></i>
+                        <p>Click an area on the left to view its shops</p>
+                    </div>`;
+                await loadAll();
+            } catch (e) {
+                toast(e?.data?.detail || e?.message || 'Failed to delete area', 'error');
+            }
+        }
+
+        // ── Assign Area ──
+        window.toggleAllAssignShops = function (masterCb) {
+            const list = document.getElementById('assign-shops-list');
+            const cbs = list.querySelectorAll('input[type="checkbox"]');
+            cbs.forEach(cb => cb.checked = masterCb.checked);
+        };
+
+        window.openAssignModal = function (areaId) {
+            assigningAreaId = areaId;
+            const select = document.getElementById('assign-user-select');
+            if (!select) return;
+
+            // Reset user dropdown
+            select.innerHTML = '<option value="">— Select User —</option>';
+            if (Array.isArray(allUsers) && allUsers.length > 0) {
+                allUsers.forEach(u => {
+                    const option = document.createElement('option');
+                    option.value = u.user_id || u.id;
+                    option.textContent = `${u.name || u.full_name || u.email || 'Unknown User'} (${u.role || 'No Role'})`;
+                    select.appendChild(option);
+                });
+            }
+
+            // Populate Shops List for this area
+            const shopsList = document.getElementById('assign-shops-list');
+            const areaShops = allShops.filter(s => s.area_id === areaId);
+            document.getElementById('assign-select-all').checked = true;
+
+            if (areaShops.length > 0) {
+                shopsList.innerHTML = areaShops.map(s => `
+                    <div class="form-check mb-1">
+                        <input class="form-check-input assign-shop-cb" type="checkbox" value="${s.id}" id="chk-shop-${s.id}" checked>
+                        <label class="form-check-label small d-flex justify-content-between" for="chk-shop-${s.id}">
+                            <span>${s.name}</span>
+                            <span class="text-muted opacity-75">${s.owner_name ? `(Assigned to: ${s.owner_name})` : ''}</span>
+                        </label>
+                    </div>
+                `).join('');
+            } else {
+                shopsList.innerHTML = '<p class="text-center text-muted small my-3">No shops in this area</p>';
+            }
+
+            const modalEl = document.getElementById('assignModal');
+            if (modalEl) new bootstrap.Modal(modalEl).show();
+        };
+
+        window.saveAreaAssignment = async function () {
+            const userId = document.getElementById('assign-user-select').value;
+            if (!userId) {
+                toast('Please select a user', 'warning');
+                return;
+            }
+
+            const checkedCbs = document.querySelectorAll('.assign-shop-cb:checked');
+            const allCbs = document.querySelectorAll('.assign-shop-cb');
+            const selectAll = document.getElementById('assign-select-all').checked;
+
+            if (allCbs.length > 0 && checkedCbs.length === 0) {
+                toast('Please select at least one shop to assign', 'warning');
+                return;
+            }
+
+            // Strict Logic:
+            // 1. If "Select All" is checked AND (all shops are checked OR no shops exist), we send null 
+            //    to trigger the cascading logic (Area + All Shops).
+            // 2. Otherwise, we send ONLY the checked shop IDs.
+            const shopIds = (selectAll && checkedCbs.length === allCbs.length) ? null : Array.from(checkedCbs).map(cb => parseInt(cb.value));
+
+            try {
+                await ApiClient.assignArea(assigningAreaId, userId, shopIds);
+                toast(shopIds ? 'Specific shops successfully assigned' : 'Area and all shops successfully assigned');
+
+                const modalEl = document.getElementById('assignModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+
+                await loadAll();
+                const area = allAreas.find(a => a.id === assigningAreaId);
+                if (area) selectArea(area.id, area.name);
+            } catch (e) {
+                toast(e?.data?.detail || e?.message || 'Failed to assign', 'error');
+            }
+        };
+
         loadAll().then(() => {
             const params = new URLSearchParams(window.location.search);
             if (params.get('add') === 'true') {
@@ -653,6 +1062,9 @@
             }
         });
     </script>
+    <script async
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBygpEQiPfF15EghJWMWFlmejZ19b3mVzE&loading=async&v=week&libraries=places,marker&callback=initMap"></script>
+    <script src="../js/areas.js"></script>
 </body>
 
 </html>

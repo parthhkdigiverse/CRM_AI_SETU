@@ -35,11 +35,11 @@ class ApiClient {
     }
 
     static setCurrentUser(user) {
-        localStorage.setItem('current_user', JSON.stringify(user));
+        localStorage.setItem('crm_user', JSON.stringify(user));
     }
 
     static getCurrentUser() {
-        try { return JSON.parse(localStorage.getItem('current_user')); } catch { return null; }
+        try { return JSON.parse(localStorage.getItem('crm_user')); } catch { return null; }
     }
 
     static async request(path, options = {}) {
@@ -212,8 +212,14 @@ class ApiClient {
     static async createArea(data) {
         return this.request('/areas/', { method: 'POST', body: data });
     }
-    static async assignAreaAgents(areaId, userId) {
-        return this.request(`/areas/${areaId}/assign`, { method: 'PATCH', body: { user_id: userId } });
+    static async updateArea(areaId, data) {
+        return this.request(`/areas/${areaId}`, { method: 'PATCH', body: data });
+    }
+    static async deleteArea(areaId) {
+        return this.request(`/areas/${areaId}`, { method: 'DELETE' });
+    }
+    static async assignArea(areaId, userId, shopIds = []) {
+        return this.request(`/areas/${areaId}/assign`, { method: 'PATCH', body: { assigned_user_id: userId, shop_ids: shopIds } });
     }
 
     // ─── Shops ───────────────────────────────────────────────

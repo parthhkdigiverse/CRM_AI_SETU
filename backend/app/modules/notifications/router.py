@@ -16,9 +16,28 @@ def read_notifications(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    """Get all notifications for current user"""
-    return db.query(Notification).filter(Notification.user_id == current_user.id).order_by(Notification.created_at.desc()).offset(skip).limit(limit).all()
+    """Get all notifications for current user, newest first."""
+    return (
+        db.query(Notification)
+        .filter(Notification.user_id == current_user.id)
+        .order_by(Notification.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
+@router.get("/unread-count")
+def get_unread_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> dict:
+    """Returns the count of unread notifications — used by the bell badge."""
+    count = (
+        db.query(Notification)
+        .filter(Notification.user_id == current_user.id, Notification.is_read == False)  # noqa: E712
+        .count()
+    )
+    return {"unread": count}
 
 @router.patch("/{notification_id}/read", response_model=NotificationRead)
 def mark_notification_as_read(
@@ -26,11 +45,26 @@ def mark_notification_as_read(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    notification = db.query(Notification).filter(Notification.id == notification_id, Notification.user_id == current_user.id).first()
+    notification = db.query(Notification).filter(
+        Notification.id == notification_id,
+        Notification.user_id == current_user.id
+    ).first()
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
-        
     notification.is_read = True
     db.commit()
     db.refresh(notification)
     return notification
+
+@router.post("/mark-all-read")
+def mark_all_read(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> dict:
+    """Mark all of the current user's notifications as read."""
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False  # noqa: E712
+    ).update({"is_read": True})
+    db.commit()
+    return {"status": "ok"}

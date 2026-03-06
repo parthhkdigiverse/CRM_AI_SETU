@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         :root {
             --crm-primary: #4361ee;
@@ -107,30 +106,6 @@
             background: #ef4444;
         }
 
-        /* Star Picker for Modal */
-        .star-picker {
-            display: flex;
-            gap: 5px;
-            flex-direction: row-reverse;
-            justify-content: flex-end;
-        }
-
-        .star-picker input {
-            display: none;
-        }
-
-        .star-picker label {
-            font-size: 1.5rem;
-            color: #e4e4e4;
-            cursor: pointer;
-        }
-
-        .star-picker label:hover,
-        .star-picker label:hover~label,
-        .star-picker input:checked~label {
-            color: #ffbc00;
-        }
-
         .text-truncate-2 {
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -162,7 +137,6 @@
     <div class="d-flex">
         <div id="sidebar"></div>
         <div class="flex-grow-1 main-content">
-
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <nav aria-label="breadcrumb">
@@ -213,7 +187,7 @@
                 </div>
             </div>
 
-            <!-- Filters -->
+            <!-- Merged Filters -->
             <div class="filter-card">
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
@@ -243,7 +217,7 @@
                 </div>
             </div>
 
-            <!-- Table -->
+            <!-- Premium Table -->
             <div class="table-container">
                 <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
                     <h6 class="mb-0 fw-bold">Recent Feedback Records</h6>
@@ -276,7 +250,7 @@
         </div>
     </div>
 
-    <!-- Modal: Add Feedback -->
+    <!-- Modal: Add Feedback (Compact QR Version) -->
     <div class="modal fade" id="addFeedbackModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content border-0 shadow">
@@ -314,44 +288,53 @@
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('feedback');
 
-        // Expanded Dummy Data for Sorting Logic Demo
+        // Expanded Dummy Data
         const baseData = [
-            { client: "Acme Corp", product: "CRM Enterprise", agent: "Rahul Sharma", rating: 4.8, helpful: "Yes", date: "02 Mar 2024", comment: "Excellent automation.", ref: "REF-RS-101" },
-            { client: "Global Tech", product: "AI Analytics", agent: "Priya Patel", rating: 4.2, helpful: "Yes", date: "01 Mar 2024", comment: "Great insights but UI needs work.", ref: "REF-PP-102" },
-            { client: "Nexus Labs", product: "ERP Solution", agent: "Amit Shah", rating: 3.5, helpful: "No", date: "28 Feb 2024", comment: "Support response was slow.", ref: "REF-AS-103" },
-            { client: "Zenith Inc", product: "CRM Enterprise", agent: "Rahul Sharma", rating: 4.5, helpful: "Yes", date: "25 Feb 2024", comment: "Very good service.", ref: "REF-RS-101" },
-            { client: "Beta Corp", product: "AI Analytics", agent: "Rahul Sharma", rating: 4.7, helpful: "Yes", date: "24 Feb 2024", comment: "Highly recommend.", ref: "REF-RS-101" },
-            { client: "Delta Systems", product: "ERP Solution", agent: "Priya Patel", rating: 3.9, helpful: "No", date: "22 Feb 2024", comment: "Needs better docs.", ref: "REF-PP-102" }
+            { client: "Acme Corp", product: "CRM Enterprise", agent: "Rahul Sharma", rating: 4.8, date: "02 Mar 2024", comment: "Excellent automation.", ref: "REF-RS-101" },
+            { client: "Global Tech", product: "AI Analytics", agent: "Priya Patel", rating: 4.2, date: "01 Mar 2024", comment: "Great insights but UI needs work.", ref: "REF-PP-102" },
+            { client: "Nexus Labs", product: "ERP Solution", agent: "Amit Shah", rating: 3.5, date: "28 Feb 2024", comment: "Support response was slow.", ref: "REF-AS-103" },
+            { client: "Zenith Inc", product: "CRM Enterprise", agent: "Rahul Sharma", rating: 4.5, date: "25 Feb 2024", comment: "Very good service.", ref: "REF-RS-101" },
+            { client: "Beta Corp", product: "AI Analytics", agent: "Rahul Sharma", rating: 4.7, date: "24 Feb 2024", comment: "Highly recommend.", ref: "REF-RS-101" },
+            { client: "Delta Systems", product: "ERP Solution", agent: "Priya Patel", rating: 3.9, date: "22 Feb 2024", comment: "Needs better docs.", ref: "REF-PP-102" }
         ];
 
-        // Function to populate Sales Person Filter based on Frequency (Popularity)
-        const populateAgentFilter = () => {
+        // Populate Filters
+        const populateFilters = () => {
+            // Clients
+            const clients = [...new Set(baseData.map(d => d.client))].sort();
+            document.getElementById('fb-filter-client').innerHTML = '<option value="">All Clients</option>' +
+                clients.map(c => `<option value="${c}">${c}</option>`).join('');
+
+            // Agents by Popularity
             const agentCounts = baseData.reduce((acc, curr) => {
                 acc[curr.agent] = (acc[curr.agent] || 0) + 1;
                 return acc;
             }, {});
-
-            // Sort agents by count (descending)
             const sortedAgents = Object.keys(agentCounts).sort((a, b) => agentCounts[b] - agentCounts[a]);
-
-            const filterSelect = document.getElementById('fb-filter-agent');
-            filterSelect.innerHTML = '<option value="">All Agents</option>' +
+            document.getElementById('fb-filter-agent').innerHTML = '<option value="">All Agents</option>' +
                 sortedAgents.map(agent => `<option value="${agent}">${agent}</option>`).join('');
         };
 
         const loadFeedback = () => {
+            const clientFilter = document.getElementById('fb-filter-client').value;
             const agentFilter = document.getElementById('fb-filter-agent').value;
             const searchTerm = document.getElementById('fb-search').value.toLowerCase();
 
             const filteredData = baseData.filter(f => {
+                const matchesClient = !clientFilter || f.client === clientFilter;
                 const matchesAgent = !agentFilter || f.agent === agentFilter;
                 const matchesSearch = f.client.toLowerCase().includes(searchTerm) ||
                     f.agent.toLowerCase().includes(searchTerm) ||
                     f.comment.toLowerCase().includes(searchTerm);
-                return matchesAgent && matchesSearch;
+                return matchesClient && matchesAgent && matchesSearch;
             });
 
             const tbody = document.getElementById('feedback-table');
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No records found.</td></tr>';
+                return;
+            }
+
             tbody.innerHTML = filteredData.map(f => {
                 const initials = f.agent.split(' ').map(n => n[0]).join('').toUpperCase();
                 return `
@@ -360,28 +343,28 @@
                     <td>
                         <div class="d-flex align-items-center gap-2">
                             <div class="agent-avatar bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">${initials}</div>
-                            <span class="fw-500">${f.agent}</span>
+                            <span class="fw-medium">${f.agent}</span>
                         </div>
                     </td>
                     <td>
                         <div class="d-flex flex-column" style="gap: 2px;">
                             <div class="d-flex align-items-center gap-2">
-                                <span class="text-muted" style="font-size: 0.8rem; font-weight: 600; width: 62px; display: inline-block;">Product</span>
-                                <div class="star-rating" style="font-size: 0.85rem; line-height: 1;">★★★★☆</div>
+                                <span class="text-muted" style="font-size: 0.75rem; font-weight: 600; width: 55px;">Product</span>
+                                <div class="star-rating" style="font-size: 0.8rem;">★★★★☆</div>
                             </div>
                             <div class="d-flex align-items-center gap-2">
-                                <span class="text-muted" style="font-size: 0.8rem; font-weight: 600; width: 62px; display: inline-block;">Sales</span>
-                                <div class="star-rating" style="font-size: 0.85rem; line-height: 1;">★★★★☆</div>
+                                <span class="text-muted" style="font-size: 0.75rem; font-weight: 600; width: 55px;">Sales</span>
+                                <div class="star-rating" style="font-size: 0.8rem;">★★★★☆</div>
                             </div>
                         </div>
                     </td>
-                    <td style="max-width: 250px;"><div class="text-muted small text-truncate-2">${f.comment}</div></td>
+                    <td style="max-width: 200px;"><div class="text-muted small text-truncate-2">${f.comment}</div></td>
                     <td><div class="overall-score ${f.rating >= 4.5 ? 'bg-score-high' : 'bg-score-mid'}">${f.rating}</div></td>
                     <td class="text-end">
                         <div class="d-flex justify-content-end align-items-center gap-3">
                             <div class="text-end">
-                                <div class="text-muted small fw-600 mb-0" style="line-height: 1.1;">${f.date}</div>
-                                <div class="text-muted" style="font-size: 0.75rem; line-height: 1.1;">05:22 PM</div>
+                                <div class="text-muted small fw-bold mb-0">${f.date}</div>
+                                <div class="text-muted" style="font-size: 0.7rem;">05:22 PM</div>
                             </div>
                             <button class="btn btn-link btn-sm p-0 mb-1" title="Delete"><i class="bi bi-trash text-danger"></i></button>
                         </div>
@@ -391,32 +374,29 @@
         };
 
         // Initial Load
-        populateAgentFilter();
+        populateFilters();
         loadFeedback();
 
         // Search logic
         document.getElementById('fb-search').addEventListener('input', loadFeedback);
 
-        // QR Code Logic for Modal
+        // QR Code Logic
         const updateModalQR = () => {
-            const refCode = "REF-RS-101"; // Default referral code
+            const refCode = "REF-RS-101";
             const qrImg = document.getElementById('agent-qr-code');
             const refDisplay = document.getElementById('ref-code-display');
-
-            // Construct the feedback URL
+            // Using network IP for actual testing if possible, otherwise origin
             const feedbackUrl = `${window.location.origin}/frontend/template/client_feedback.html?ref=${refCode}`;
-
             qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(feedbackUrl)}`;
             refDisplay.textContent = refCode;
         };
 
-        // Update QR on modal show
-        const addFeedbackModalElement = document.getElementById('addFeedbackModal');
-        addFeedbackModalElement.addEventListener('shown.bs.modal', updateModalQR);
+        const modalEl = document.getElementById('addFeedbackModal');
+        modalEl.addEventListener('shown.bs.modal', updateModalQR);
 
         document.getElementById('save-feedback-btn').addEventListener('click', () => {
-            alert("Feedback saved locally! (Frontend Preview)");
-            bootstrap.Modal.getInstance(document.getElementById('addFeedbackModal')).hide();
+            alert("Feedback updated! (Frontend Demo)");
+            bootstrap.Modal.getInstance(modalEl).hide();
         });
     </script>
 </body>

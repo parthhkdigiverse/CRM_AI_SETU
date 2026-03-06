@@ -1,5 +1,6 @@
 import sys
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -9,8 +10,20 @@ import traceback
 # Core Imports
 from app.api.router import api_router
 from config import config
+from app.utils.scheduler import start_scheduler, stop_scheduler
 
-app = FastAPI(title="CRM AI SETU API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup & shutdown hooks."""
+    # ── Startup ──────────────────────────────────────────────────
+    start_scheduler()
+    yield
+    # ── Shutdown ─────────────────────────────────────────────────
+    stop_scheduler()
+
+
+app = FastAPI(title="CRM AI SETU API", lifespan=lifespan)
 
 # CORS
 app.add_middleware(
@@ -35,9 +48,8 @@ async def catch_exceptions_middleware(request: Request, call_next):
         )
 
 # Static Files
-# project_root is 2 levels up from backend/app/main.py
-app_path = os.path.dirname(os.path.abspath(__file__)) # backend/app
-project_root = os.path.dirname(os.path.dirname(app_path)) # e:/CRM AI SETU
+app_path = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(app_path))
 frontend_path = os.path.join(project_root, "frontend")
 
 if os.path.exists(frontend_path):
@@ -65,3 +77,4 @@ async def get_config():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
+

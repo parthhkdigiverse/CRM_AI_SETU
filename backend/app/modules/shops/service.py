@@ -22,6 +22,8 @@ class ShopService:
         shop = db.query(Shop).filter(Shop.id == shop_id).first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
+        if getattr(shop, 'area', None):
+            setattr(shop, 'area_name', shop.area.name)
         return shop
 
     @staticmethod
@@ -72,12 +74,12 @@ class ShopService:
             shop_data = shop.__dict__.copy()
             shop_data["owner_name"] = owner_name
             shop_data["area_name"] = area_name
-            # Ensure status is string for key lookup
             status_val = str(shop.status.value) if hasattr(shop.status, "value") else str(shop.status)
             if status_val in kanban:
                 kanban[status_val].append(shop_data)
                 
         return kanban
+
 
     @staticmethod
     def update_shop(db: Session, shop_id: int, shop_in: ShopUpdate):
