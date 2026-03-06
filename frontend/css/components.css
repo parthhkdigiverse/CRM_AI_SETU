@@ -1,3 +1,28 @@
+/* ─── Standardized Page Title Classes ─── */
+
+/* Used in top navbar (injectTopHeader) */
+.page-nav-title {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+/* Used in page content area heading below navbar */
+.page-section-title {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.15rem;
+    line-height: 1.2;
+}
+
+
 /* ─── Missing Badge & Helper Classes ─── */
 
 .badge-green-light {
@@ -28,15 +53,64 @@
     color: var(--warning);
 }
 
-/* ─── Stat Card Icon Wrappers ─── */
-.stat-card {
-    display: flex;
+.slab-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    display: inline-block;
+}
+
+/* ─── Status Pills (Utility) ─── */
+.status-pill {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.78rem;
+    display: inline-flex;
     align-items: center;
+}
+
+/* ─── Stat Card — Canonical Definition ─── */
+.stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 24px;
+    display: flex;
     justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.08);
 }
 
 .stat-content-left {
     flex: 1;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.85rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1;
+    letter-spacing: -0.02em;
 }
 
 .stat-icon-wrapper {
@@ -115,6 +189,41 @@
 .modal-header h2 {
     font-size: 20px;
     font-weight: 700;
+}
+
+/* ─── CRM Standardized Modals (Used in Incentives, Salary) ─── */
+.crm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.25s ease;
+}
+
+.crm-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.crm-box {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 32px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+    transform: scale(0.9) translateY(20px);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.crm-overlay.show .crm-box {
+    transform: scale(1) translateY(0);
 }
 
 .modal-close-btn {
@@ -250,12 +359,42 @@
 .tab-btn.active {
     color: var(--primary);
     border-bottom-color: var(--primary);
+    font-weight: 600;
 }
 
 .tab-btn:hover:not(.active) {
     color: var(--text-heading);
     background: var(--bg-app);
     border-radius: 8px 8px 0 0;
+}
+
+/* ─── Premium Table ─── */
+.table-premium thead th {
+    background: var(--bg-app);
+    border-bottom: 2px solid var(--border);
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    padding: 14px 18px;
+}
+
+.table-premium tbody td {
+    padding: 14px 18px;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    color: #1e293b;
+}
+
+.table-premium tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table-premium tbody tr:hover {
+    background: #f8fafc;
+    transition: background 0.15s;
 }
 
 /* ─── Form Textarea ─── */
@@ -391,4 +530,117 @@
     font-weight: 700;
     color: var(--text-heading);
     margin-bottom: 6px;
+}
+
+/* ─── Global Search Live Results ─── */
+.search-results-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    margin-top: 8px;
+    max-height: 480px;
+    overflow-y: auto;
+    z-index: 1000;
+    border: 1px solid #e2e8f0;
+    display: none;
+}
+
+.search-results-dropdown.show {
+    display: block;
+}
+
+.search-section-header {
+    padding: 12px 16px 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #64748b;
+    letter-spacing: 0.05em;
+    background: #f8fafc;
+}
+
+.search-result-item {
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: #1e293b;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.2s;
+}
+
+.search-result-item:hover {
+    background: #f1f5f9;
+    color: var(--primary);
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.search-result-item:hover .search-result-icon {
+    background: #e0e7ff;
+    color: var(--primary);
+}
+
+.search-result-info {
+    flex: 1;
+    overflow: hidden;
+}
+
+.search-result-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-result-sub {
+    font-size: 0.75rem;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Highlight for search terms */
+.search-highlight {
+    background-color: #fef08a;
+    color: #1a1a1a;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+/* Highlight animation for destination pages */
+@keyframes highlight-fade {
+    0% {
+        background-color: #fef08a;
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+.highlight-row {
+    animation: highlight-fade 3s ease-out forwards;
 }

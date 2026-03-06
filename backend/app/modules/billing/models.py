@@ -20,3 +20,11 @@ class Bill(Base):
     # Relationships
     shop = relationship("app.modules.shops.models.Shop", backref="bills")
     client = relationship("app.modules.clients.models.Client", backref="bills")
+
+    @property
+    def shop_name(self) -> str:
+        return self.shop.name if self.shop else "Unknown Shop"
+
+    @property
+    def client_name(self) -> str:
+        return self.client.name if self.client else "Personal/Walk-in"

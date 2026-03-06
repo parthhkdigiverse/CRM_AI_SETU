@@ -65,7 +65,42 @@ def get_my_leaves(
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
 ) -> Any:
-    return db.query(LeaveRecord).filter(LeaveRecord.user_id == current_user.id).all()
+    leaves = db.query(LeaveRecord).filter(LeaveRecord.user_id == current_user.id).all()
+    return [
+        {
+            "id": l.id,
+            "user_id": l.user_id,
+            "start_date": l.start_date,
+            "end_date": l.end_date,
+            "reason": l.reason,
+            "status": l.status,
+            "approved_by": l.approved_by,
+            "user_name": current_user.name or current_user.email,
+            "approver_name": (l.approver.name or l.approver.email) if l.approver else None,
+        }
+        for l in leaves
+    ]
+
+@router.get("/leave/all", response_model=List[LeaveRecordRead])
+def get_all_leaves(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(hr_checker)
+) -> Any:
+    leaves = db.query(LeaveRecord).all()
+    return [
+        {
+            "id": l.id,
+            "user_id": l.user_id,
+            "start_date": l.start_date,
+            "end_date": l.end_date,
+            "reason": l.reason,
+            "status": l.status,
+            "approved_by": l.approved_by,
+            "user_name": (l.user.name or l.user.email) if l.user else None,
+            "approver_name": (l.approver.name or l.approver.email) if l.approver else None,
+        }
+        for l in leaves
+    ]
 
 # SALARY ENDPOINTS
 @router.post("/salary/generate", response_model=SalarySlipRead)
@@ -77,6 +112,15 @@ def generate_salary_slip(
     from app.modules.salary.service import SalaryService
     service = SalaryService(db)
     return service.generate_salary_slip(salary_in)
+
+@router.get("/salary/me", response_model=List[SalarySlipRead])
+def get_my_salary_slips(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    from app.modules.salary.service import SalaryService
+    service = SalaryService(db)
+    return service.get_user_salary_slips(current_user.id)
 
 @router.get("/salary/{user_id}", response_model=List[SalarySlipRead])
 def get_user_salary_slips(

@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 
 class DashboardStats(BaseModel):
@@ -20,3 +21,25 @@ class DashboardStats(BaseModel):
 
     class Config:
         from_attributes = True
+
+class EmployeePerformance(BaseModel):
+    user_id: int
+    name: Optional[str]
+    email: str
+    role: str
+    total_visits: int
+    total_leads: int
+    total_sales: int
+    total_revenue: float
+    total_incentive: float
+
+class BusinessSummary(BaseModel):
+    month: str
+    total_revenue: float
+    total_salaries: float
+    total_incentives: float
+    total_expenses: float
+    net_profit: float
+    new_clients: int
+    total_visits: int
+    total_issues_raised: int

@@ -19,6 +19,8 @@ class LeaveRecordRead(BaseModel):
     end_date: date
     reason: Optional[str] = None
     status: LeaveStatus
+    user_name: Optional[str] = None
+    approver_name: Optional[str] = None
     approved_by: Optional[int] = None
 
     class Config:
@@ -41,6 +43,7 @@ class SalarySlipRead(BaseModel):
     unpaid_leaves: int
     deduction_amount: float
     final_salary: float
+    user_name: Optional[str] = None
     generated_at: date
 
     class Config:

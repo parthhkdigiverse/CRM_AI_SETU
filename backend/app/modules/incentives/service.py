@@ -2,12 +2,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy import extract
 from fastapi import HTTPException
 from datetime import datetime, UTC
-from typing import List
+from typing import List, Optional
 
 from app.modules.incentives.models import (
     IncentiveTarget, IncentiveSlab, IncentiveSlip
 )
-from app.modules.incentives.schemas import IncentiveCalculationRequest
+from app.modules.incentives.schemas import IncentiveCalculationRequest, IncentiveSlipRead
 from app.modules.users.models import User, UserRole
 from app.modules.clients.models import Client
 
@@ -44,19 +44,22 @@ class IncentiveService:
             achieved = calc_in.closed_units
         else:
             year, month = map(int, calc_in.period.split('-'))
-            achieved = 0
-            if user.role in [UserRole.SALES, UserRole.TELESALES, UserRole.PROJECT_MANAGER_AND_SALES]:
-                achieved += self.db.query(Client).filter(
-                    Client.owner_id == user.id,
-                    extract('year', Client.created_at) == year,
-                    extract('month', Client.created_at) == month
-                ).count()
-            if user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
-                achieved += self.db.query(Client).filter(
-                    Client.pm_id == user.id,
-                    extract('year', Client.created_at) == year,
-                    extract('month', Client.created_at) == month
-                ).count()
+            # Calculate achieved units based on role
+            query = self.db.query(Client).filter(
+                extract('year', Client.created_at) == year,
+                extract('month', Client.created_at) == month
+            )
+            
+            if user.role == UserRole.TELESALES or user.role == UserRole.SALES:
+                achieved = query.filter(Client.owner_id == user.id).count()
+            elif user.role == UserRole.PROJECT_MANAGER:
+                achieved = query.filter(Client.pm_id == user.id).count()
+            elif user.role == UserRole.PROJECT_MANAGER_AND_SALES:
+                # Count if either owner OR PM
+                from sqlalchemy import or_
+                achieved = query.filter(or_(Client.owner_id == user.id, Client.pm_id == user.id)).count()
+            else:
+                achieved = 0
 
         percentage = (achieved / target) * 100
 
@@ -65,8 +68,8 @@ class IncentiveService:
             IncentiveSlab.min_percentage <= percentage
         ).order_by(IncentiveSlab.min_percentage.desc()).first()
 
-        amount_per_unit = 0.0
-        total_incentive = 0.0
+        amount_per_unit: Optional[float] = 0.0 # Initialize with default value
+        total_incentive: float = 0.0 # Initialize with default value
         applied_slab_val = 0.0
 
         if applied_slab:
@@ -89,13 +92,18 @@ class IncentiveService:
         self.db.commit()
         self.db.refresh(db_slip)
 
-        return db_slip
+        # Attach user name for response
+        res = IncentiveSlipRead.model_validate(db_slip)
+        res.user_name = user.name or user.email
+        return res
 
     def get_user_incentive_slips(self, user_id: int):
-        try:
-            return self.db.query(IncentiveSlip).filter(IncentiveSlip.user_id == user_id).all()
-        except Exception as e:
-            print(f"Error fetching incentive slips: {e}")
-            return []
+        slips = self.db.query(IncentiveSlip).filter(IncentiveSlip.user_id == user_id).all()
+        results = []
+        for s in slips:
+            r = IncentiveSlipRead.model_validate(s)
+            r.user_name = s.user.name or s.user.email
+            results.append(r)
+        return results
 
 

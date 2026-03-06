@@ -1,8 +1,8 @@
 // auth.js — shared across all pages
-let API = localStorage.getItem('api_base') || 'http://127.0.0.1:8000/api';
+let API = localStorage.getItem('api_base') || (window.location.origin + '/api');
 
 // Background Refresh Config
-fetch('http://127.0.0.1:8000/api/config')
+fetch((window.location.origin) + '/api/config')
     .then(r => r.json())
     .then(data => {
         if (data.API_BASE_URL) {
@@ -12,10 +12,13 @@ fetch('http://127.0.0.1:8000/api/config')
     })
     .catch(e => console.warn('Config fetch error:', e));
 
-// Inject global theme styles
-document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/theme.css?v=2.6">');
-document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/components.css?v=2.6">');
-document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/global.css?v=2.6">');
+// Inject global theme styles (but NOT on the login page to avoid style degradation)
+const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/') || window.location.pathname === '';
+if (!isLoginPage) {
+    document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/theme.css?v=2.6">');
+    document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/components.css?v=2.6">');
+    document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/global.css?v=2.6">');
+}
 
 function getToken() {
     const t = localStorage.getItem('access_token');

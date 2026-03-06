@@ -10,7 +10,11 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker, get_current_active_user
 from app.modules.users.models import User, UserRole
+<<<<<<< HEAD
 from app.modules.users.schemas import UserRead, UserCreate, UserProfileUpdate
+=======
+from app.modules.users.schemas import UserRead, UserCreate, EmployeeUpdate
+>>>>>>> 4e9077c30962ca43722946a88198cd1531425287
 
 router = APIRouter()
 
@@ -66,7 +70,11 @@ def create_employee(
 @router.patch("/{employee_id}", response_model=UserRead)
 def update_employee(
     employee_id: int,
+<<<<<<< HEAD
     update_in: UserProfileUpdate,
+=======
+    update_in: EmployeeUpdate,
+>>>>>>> 4e9077c30962ca43722946a88198cd1531425287
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_checker),
 ) -> Any:

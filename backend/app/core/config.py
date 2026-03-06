@@ -9,6 +9,7 @@ env_file_path = os.path.join(backend_dir, ".env")
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "CRM AI SETU"
+<<<<<<< HEAD
     
     # --- CHANGE THIS ---
     # Remove the "postgresql://user:password..." default. 
@@ -19,6 +20,13 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 
     
+=======
+    DATABASE_URL: str = "postgresql://user:0412@localhost/AI%20SETU"
+    SECRET_KEY: str = "your-secret-key-for-development"  # Change in production!
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    
+>>>>>>> 4e9077c30962ca43722946a88198cd1531425287
     encryption_key: str = "default_placeholder_if_missing"
     google_api_key: str = "default_placeholder_if_missing"
 
@@ -29,10 +37,15 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SENDER_EMAIL: str = ""
 
+<<<<<<< HEAD
     # This tells Pydantic exactly where to look
     model_config = SettingsConfigDict(
         env_file=env_file_path,
         env_file_encoding="utf-8", # Good practice to include
+=======
+    model_config = SettingsConfigDict(
+        env_file=env_file_path,
+>>>>>>> 4e9077c30962ca43722946a88198cd1531425287
         extra="allow"
     )
 

@@ -334,6 +334,12 @@ class ApiClient {
     static async calculateIncentive(data) {
         return this.request('/incentives/calculate', { method: 'POST', body: data });
     }
+    static async getIncentiveTargets() {
+        return this.request('/incentives/targets');
+    }
+    static async createIncentiveTarget(data) {
+        return this.request('/incentives/targets', { method: 'POST', body: data });
+    }
 
     // ─── Payments ────────────────────────────────────────────
     static async generatePaymentQR(clientId, amount) {

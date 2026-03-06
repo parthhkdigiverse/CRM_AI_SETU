@@ -1,14 +1,1 @@
 credentials.json
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-venv/
-backend/env
-.env
-*.env
-env/
-ENV/backend/env
-backend/.env
-env
-.env

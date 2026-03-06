@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status, Request
 from app.modules.clients.models import Client, ClientPMHistory
 from app.modules.clients.schemas import ClientCreate, ClientUpdate
@@ -71,6 +72,19 @@ class ClientService:
                 Client.pm_id.in_(pm_ids),
                 Client.is_active == True
             ).group_by(Client.pm_id).all()
+<<<<<<< HEAD
+
+            count_map = {row.pm_id: row.client_count for row in client_counts}
+
+            # Build list of (pm, workload) and pick the least-loaded PM
+            pm_workloads = [(pm, count_map.get(pm.id, 0)) for pm in active_pms]
+            pm_workloads.sort(key=lambda x: x[1])
+            assigned_pm = pm_workloads[0][0]
+
+            db_client.pm_id = assigned_pm.id
+        # -------------------------------------------
+=======
+>>>>>>> 4e9077c30962ca43722946a88198cd1531425287
 
             count_map = {row.pm_id: row.client_count for row in client_counts}
 
@@ -82,9 +96,32 @@ class ClientService:
             db_client.pm_id = assigned_pm.id
         # -------------------------------------------
 
-        self.db.add(db_client)
-        self.db.commit()
-        self.db.refresh(db_client)
+        try:
+            self.db.add(db_client)
+            self.db.commit()
+            self.db.refresh(db_client)
+        except IntegrityError:
+            self.db.rollback()
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Client with this phone number or email already exists.")
+
+        # Record PM assignment history
+        if assigned_pm:
+            history = ClientPMHistory(client_id=db_client.id, pm_id=assigned_pm.id)
+            self.db.add(history)
+            self.db.commit()
+
+            # Notify the assigned PM by email (non-blocking; errors are swallowed)
+            try:
+                email_svc = EmailService()
+                email_svc.send_pm_assignment_notification(
+                    pm_email=assigned_pm.email,
+                    pm_name=assigned_pm.name or assigned_pm.email,
+                    client_name=db_client.name,
+                    client_org=db_client.organization or "-",
+                    client_phone=db_client.phone or "-",
+                )
+            except Exception as e:
+                print(f"[PM Notify] Email failed (non-fatal): {e}")
 
         # Record PM assignment history
         if assigned_pm:
@@ -180,8 +217,12 @@ class ClientService:
         for key, value in update_data.items():
             setattr(db_client, key, value)
 
-        self.db.commit()
-        self.db.refresh(db_client)
+        try:
+            self.db.commit()
+            self.db.refresh(db_client)
+        except IntegrityError:
+            self.db.rollback()
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Client with this phone number or email already exists.")
 
         new_data = {k: getattr(db_client, k) for k in old_data.keys()}
 

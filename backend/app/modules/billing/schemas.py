@@ -12,6 +12,8 @@ class BillCreate(BillBase):
 class BillRead(BillBase):
     id: int
     client_id: Optional[int] = None
+    shop_name: Optional[str] = None
+    client_name: Optional[str] = None
     status: str
     invoice_number: Optional[str] = None
     whatsapp_sent: bool

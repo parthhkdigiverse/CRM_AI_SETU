@@ -9,6 +9,11 @@ from app.modules.users.models import User
 from app.modules.projects.models import Project, ProjectStatus
 from app.modules.shops.models import Shop
 from app.modules.payments.models import Payment, PaymentStatus
+from app.modules.salary.models import SalarySlip
+from app.modules.incentives.models import IncentiveSlip
+import io
+import csv
+from typing import List
 
 class ReportService:
     @staticmethod
@@ -95,3 +100,122 @@ class ReportService:
                 "open_issues": 0, "leads_by_month": {}, "revenue_by_month": {}, 
                 "visit_status_breakdown": {}, "issue_severity_breakdown": {}, "lead_sources_breakdown": {}
             }
+
+    @staticmethod
+    def get_employee_performance(db: Session, month: str = None):
+        # month format: YYYY-MM
+        if not month:
+            month = datetime.utcnow().strftime('%Y-%m')
+        
+        year, m = map(int, month.split('-'))
+        
+        users = db.query(User).filter(User.role != 'CLIENT', User.is_deleted == False).all()
+        performance = []
+        
+        for u in users:
+            visits = db.query(func.count(Visit.id)).filter(
+                Visit.user_id == u.id,
+                extract('year', Visit.visit_date) == year,
+                extract('month', Visit.visit_date) == m
+            ).scalar() or 0
+            
+            leads = db.query(func.count(Visit.id)).filter(
+                Visit.user_id == u.id,
+                Visit.status.in_(['ACCEPT', 'SATISFIED']),
+                extract('year', Visit.visit_date) == year,
+                extract('month', Visit.visit_date) == m
+            ).scalar() or 0
+            
+            payments = db.query(func.count(Payment.id)).filter(
+                Payment.generated_by_id == u.id,
+                Payment.status == PaymentStatus.VERIFIED,
+                extract('year', Payment.verified_at) == year,
+                extract('month', Payment.verified_at) == m
+            ).scalar() or 0
+            
+            revenue = db.query(func.sum(Payment.amount)).filter(
+                Payment.generated_by_id == u.id,
+                Payment.status == PaymentStatus.VERIFIED,
+                extract('year', Payment.verified_at) == year,
+                extract('month', Payment.verified_at) == m
+            ).scalar() or 0.0
+            
+            incentive = db.query(IncentiveSlip.total_incentive).filter(
+                IncentiveSlip.user_id == u.id,
+                IncentiveSlip.period == month
+            ).scalar() or 0.0
+            
+            performance.append({
+                "user_id": u.id,
+                "name": u.name or u.email.split('@')[0],
+                "email": u.email,
+                "role": str(u.role),
+                "total_visits": visits,
+                "total_leads": leads,
+                "total_sales": payments,
+                "total_revenue": float(revenue),
+                "total_incentive": float(incentive)
+            })
+            
+        return performance
+
+    @staticmethod
+    def get_business_summary(db: Session, month: str = None):
+        if not month:
+            month = datetime.utcnow().strftime('%Y-%m')
+        
+        year, m = map(int, month.split('-'))
+        
+        revenue = db.query(func.sum(Payment.amount)).filter(
+            Payment.status == PaymentStatus.VERIFIED,
+            extract('year', Payment.verified_at) == year,
+            extract('month', Payment.verified_at) == m
+        ).scalar() or 0.0
+        
+        salaries = db.query(func.sum(SalarySlip.final_salary)).filter(
+            SalarySlip.month == month
+        ).scalar() or 0.0
+        
+        incentives = db.query(func.sum(IncentiveSlip.total_incentive)).filter(
+            IncentiveSlip.period == month
+        ).scalar() or 0.0
+        
+        clients = db.query(func.count(Client.id)).filter(
+            extract('year', Client.created_at) == year,
+            extract('month', Client.created_at) == m
+        ).scalar() or 0
+        
+        visits = db.query(func.count(Visit.id)).filter(
+            extract('year', Visit.visit_date) == year,
+            extract('month', Visit.visit_date) == m
+        ).scalar() or 0
+        
+        issues = db.query(func.count(Issue.id)).filter(
+            extract('year', Issue.created_at) == year,
+            extract('month', Issue.created_at) == m
+        ).scalar() or 0
+        
+        total_expenses = salaries + incentives
+        
+        return {
+            "month": month,
+            "total_revenue": float(revenue),
+            "total_salaries": float(salaries),
+            "total_incentives": float(incentives),
+            "total_expenses": float(total_expenses),
+            "net_profit": float(revenue - total_expenses),
+            "new_clients": clients,
+            "total_visits": visits,
+            "total_issues_raised": issues
+        }
+
+    @staticmethod
+    def generate_csv_response(data: List[dict]):
+        if not data:
+            return ""
+            
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=data[0].keys())
+        writer.writeheader()
+        writer.writerows(data)
+        return output.getvalue()

@@ -8,7 +8,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<<<<<<< HEAD
     <link rel="stylesheet" href="../css/theme.css">
+=======
+    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
+    <link rel="stylesheet" href="../css/components.css?v=1772780187">
+>>>>>>> 4e9077c30962ca43722946a88198cd1531425287
 </head>
 
 <body>
@@ -19,11 +24,22 @@
                 <!-- Header -->
                 <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                     <div>
+<<<<<<< HEAD
                         <h1 class="fw-bold h3 mb-1">Incentive Management</h1>
+=======
+                        <h2 class="page-section-title">Incentive Management</h2>
+>>>>>>> 4e9077c30962ca43722946a88198cd1531425287
                         <p class="text-muted mb-0" style="font-size:0.93rem;">Configure tiered incentive slabs, set role
                             targets, and calculate bonuses.</p>
                     </div>
                     <div class="d-flex gap-2" id="admin-action-area">
+<<<<<<< HEAD
+=======
+                        <button class="btn btn-outline-secondary" style="border-radius:10px;"
+                            onclick="openTargetModal()">
+                            <i class="bi bi-bullseye me-2"></i>Manage Targets
+                        </button>
+>>>>>>> 4e9077c30962ca43722946a88198cd1531425287
                         <button class="btn btn-outline-primary" style="border-radius:10px;" onclick="openSlabModal()">
                             <i class="bi bi-layers me-2"></i>Add Slab
                         </button>
@@ -38,6 +54,11 @@
                 <ul class="nav nav-tabs mb-4" id="incentTab">
                     <li class="nav-item"><button class="nav-link active" onclick="switchTab('slabs')">Incentive
                             Slabs</button></li>
+<<<<<<< HEAD
+=======
+                    <li class="nav-item"><button class="nav-link" onclick="switchTab('targets')">Role Targets</button>
+                    </li>
+>>>>>>> 4e9077c30962ca43722946a88198cd1531425287
                     <li class="nav-item"><button class="nav-link" onclick="switchTab('slips')">Incentive Slips</button>
                     </li>
                 </ul>
@@ -50,8 +71,11 @@
                             <p class="text-muted mb-0 small">Higher target achievement → higher per-unit bonus payout.
                             </p>
                         </div>
+<<<<<<< HEAD
                         <button class="btn btn-sm btn-light border" onclick="loadSlabs()"><i
                                 class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+=======
+>>>>>>> 4e9077c30962ca43722946a88198cd1531425287
                     </div>
                     <div class="table-responsive">
                         <table class="table mb-0">
@@ -72,6 +96,7 @@
                     </div>
                 </div>
 
+<<<<<<< HEAD
                 <!-- Slips Table -->
                 <div id="tab-slips" class="grid-card" style="display:none;">
                     <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
@@ -83,6 +108,62 @@
                             </select>
                             <button class="btn btn-sm btn-light border" onclick="loadSlips()"><i
                                     class="bi bi-arrow-clockwise"></i></button>
+=======
+                <!-- Targets Table -->
+                <div id="tab-targets" class="grid-card" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
+                        <div>
+                            <h6 class="fw-bold mb-1" style="color:#334155;">Role-Based Targets</h6>
+                            <p class="text-muted mb-0 small">Default monthly unit targets for each employee role.</p>
+>>>>>>> 4e9077c30962ca43722946a88198cd1531425287
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+<<<<<<< HEAD
+                                    <th>Employee</th>
+                                    <th>Period</th>
+                                    <th>Target</th>
+                                    <th>Achieved</th>
+                                    <th>% Hit</th>
+                                    <th>Applied Slab</th>
+                                    <th>Total Incentive (₹)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="slips-tbody">
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">Select an employee above to view
+                                        their incentive slips.</td>
+=======
+                                    <th>Role</th>
+                                    <th>Period</th>
+                                    <th>Target Units</th>
+                                </tr>
+                            </thead>
+                            <tbody id="targets-tbody">
+                                <tr>
+                                    <td colspan="3" class="text-center py-5 text-muted">Loading...</td>
+>>>>>>> 4e9077c30962ca43722946a88198cd1531425287
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+<<<<<<< HEAD
+            </div><!-- /page-content -->
+=======
+
+                <!-- Slips Table -->
+                <div id="tab-slips" class="grid-card" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
+                        <h6 class="fw-bold mb-0" style="color:#334155;">Incentive Calculation Slips</h6>
+                        <div class="d-flex gap-2">
+                            <select id="slip-user-filter" class="form-select form-select-sm" style="width:auto;"
+                                onchange="loadSlips()">
+                                <option value="">Select Employee</option>
+                            </select>
                         </div>
                     </div>
                     <div class="table-responsive">
@@ -108,6 +189,42 @@
                     </div>
                 </div>
             </div><!-- /page-content -->
+        </div>
+    </div>
+
+    <!-- ─── Manage Targets Modal ────────────────────────────────── -->
+    <div class="crm-overlay" id="targetModal">
+        <div class="crm-box">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                <h5 class="fw-bold mb-0"><i class="bi bi-bullseye text-secondary me-2"></i>Set Role Target</h5>
+                <button class="btn-close" onclick="closeTargetModal()"></button>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Employee Role <span class="text-danger">*</span></label>
+                <select id="target-role" class="form-select">
+                    <option value="TELESALES">TELESALES</option>
+                    <option value="SALES">SALES</option>
+                    <option value="PROJECT_MANAGER">PROJECT MANAGER</option>
+                    <option value="PROJECT_MANAGER_AND_SALES">PM & SALES</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold small">Period</label>
+                <select id="target-period" class="form-select" disabled>
+                    <option value="Monthly">Monthly</option>
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-semibold small">Monthly Target (Units) <span
+                        class="text-danger">*</span></label>
+                <input type="number" id="target-count" class="form-control" placeholder="e.g. 20" min="1">
+            </div>
+            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                <button class="btn btn-light border" onclick="closeTargetModal()">Cancel</button>
+                <button class="btn btn-secondary px-4 fw-semibold text-white" id="target-submit-btn"
+                    onclick="saveTarget()">Save Target</button>
+            </div>
+>>>>>>> 4e9077c30962ca43722946a88198cd1531425287
         </div>
     </div>
 
@@ -186,6 +303,7 @@
     <script>
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('incentives');
+        injectTopHeader('Incentives');
 
         const user = getUser();
         const isAdmin = user?.role === 'ADMIN';
@@ -194,10 +312,11 @@
         // ── Tab helper ────────────────────────────────────────────
         function switchTab(tab) {
             document.querySelectorAll('#incentTab .nav-link').forEach((b, i) => {
-                const isActive = (i === 0 && tab === 'slabs') || (i === 1 && tab === 'slips');
+                const isActive = (i === 0 && tab === 'slabs') || (i === 1 && tab === 'targets') || (i === 2 && tab === 'slips');
                 b.classList.toggle('active', isActive);
             });
             document.getElementById('tab-slabs').style.display = tab === 'slabs' ? '' : 'none';
+            document.getElementById('tab-targets').style.display = tab === 'targets' ? '' : 'none';
             document.getElementById('tab-slips').style.display = tab === 'slips' ? '' : 'none';
         }
 
@@ -206,7 +325,9 @@
         function closeSlabModal() { document.getElementById('slabModal').classList.remove('show'); }
         function openCalcModal() { document.getElementById('calcModal').classList.add('show'); }
         function closeCalcModal() { document.getElementById('calcModal').classList.remove('show'); }
-        ['slabModal', 'calcModal'].forEach(id => {
+        function openTargetModal() { document.getElementById('targetModal').classList.add('show'); }
+        function closeTargetModal() { document.getElementById('targetModal').classList.remove('show'); }
+        ['slabModal', 'calcModal', 'targetModal'].forEach(id => {
             document.getElementById(id).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
         });
 
@@ -242,6 +363,42 @@
             } catch (e) {
                 tbody.innerHTML = `<tr><td colspan="3" class="text-center py-5 text-danger">${e.message}</td></tr>`;
             }
+        }
+
+        // ── Load Targets ──────────────────────────────────────────
+        async function loadTargets() {
+            const tbody = document.getElementById('targets-tbody');
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">Loading...</td></tr>';
+            try {
+                const targets = await ApiClient.getIncentiveTargets();
+                if (!targets.length) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-5 text-muted">No role targets set.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = targets.map(t => `<tr>
+                    <td class="fw-semibold text-dark">${t.role.replace(/_/g, ' ')}</td>
+                    <td class="text-muted">${t.period}</td>
+                    <td class="fw-bold text-dark">${t.target_count} Units</td>
+                </tr>`).join('');
+            } catch (e) { tbody.innerHTML = `<tr><td colspan="3" class="text-center py-5 text-danger">${e.message}</td></tr>`; }
+        }
+
+        // ── Save Target ───────────────────────────────────────────
+        async function saveTarget() {
+            const role = document.getElementById('target-role').value;
+            const count = parseInt(document.getElementById('target-count').value);
+            const btn = document.getElementById('target-submit-btn');
+            if (!count || count <= 0) { showToast('Enter a valid target', 'error'); return; }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+            try {
+                await ApiClient.createIncentiveTarget({ role, target_count: count, period: 'Monthly' });
+                closeTargetModal();
+                showToast('Role target updated!', 'success');
+                loadTargets();
+            } catch (e) { showToast(e.data?.detail || e.message || 'Failed', 'error'); }
+            finally { btn.disabled = false; btn.innerHTML = 'Save Target'; }
         }
 
         // ── Add Slab ──────────────────────────────────────────────
@@ -313,6 +470,7 @@
         }
 
         loadSlabs();
+        loadTargets();
     </script>
 </body>
 

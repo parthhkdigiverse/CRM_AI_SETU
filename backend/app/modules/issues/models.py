@@ -1,4 +1,5 @@
 import enum
+from datetime import datetime, UTC
 from sqlalchemy import Column, Integer, String, ForeignKey, Enum, Text, DateTime
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -25,6 +26,8 @@ class Issue(Base):
     severity = Column(String, default=IssueSeverity.MEDIUM, nullable=False)
     remarks = Column(Text, nullable=True)
     opened_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
     reporter_id = Column(Integer, ForeignKey("users.id"), nullable=False)

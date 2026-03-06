@@ -47,6 +47,7 @@ class IncentiveSlipRead(BaseModel):
     amount_per_unit: Optional[float]
     total_incentive: float
     generated_at: datetime
+    user_name: Optional[str] = None
 
     class Config:
         from_attributes = True

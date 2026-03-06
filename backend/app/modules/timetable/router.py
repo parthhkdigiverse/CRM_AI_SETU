@@ -94,6 +94,10 @@ def get_timetable(
     if end_date.tzinfo:
         end_date = end_date.replace(tzinfo=None)
 
+    # If end_date has no specific time (defaulting to 00:00:00), expand it to end of day
+    if end_date.time() == datetime.min.time():
+        end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+
     events = []
 
     # Helper format date
