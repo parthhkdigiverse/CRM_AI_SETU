@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status, Request
 from app.modules.clients.models import Client, ClientPMHistory
 from app.modules.clients.schemas import ClientCreate, ClientUpdate
@@ -82,9 +83,13 @@ class ClientService:
             db_client.pm_id = assigned_pm.id
         # -------------------------------------------
 
-        self.db.add(db_client)
-        self.db.commit()
-        self.db.refresh(db_client)
+        try:
+            self.db.add(db_client)
+            self.db.commit()
+            self.db.refresh(db_client)
+        except IntegrityError:
+            self.db.rollback()
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Client with this phone number or email already exists.")
 
         # Record PM assignment history
         if assigned_pm:
@@ -180,8 +185,12 @@ class ClientService:
         for key, value in update_data.items():
             setattr(db_client, key, value)
 
-        self.db.commit()
-        self.db.refresh(db_client)
+        try:
+            self.db.commit()
+            self.db.refresh(db_client)
+        except IntegrityError:
+            self.db.rollback()
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Client with this phone number or email already exists.")
 
         new_data = {k: getattr(db_client, k) for k in old_data.keys()}
 

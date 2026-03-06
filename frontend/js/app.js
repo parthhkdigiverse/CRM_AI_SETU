@@ -222,10 +222,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         mainContent.innerHTML = `
         <!-- Row 1: Greeting -->
-        <div class="page-header" style="margin-bottom: 24px;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h1 style="margin-bottom: 8px;">Dashboard</h1>
-                <p class="text-muted">Welcome back! Here's what's happening today.</p>
+                <h2 class="page-section-title">Dashboard</h2>
+                <p class="text-muted small mb-0">Welcome back! Here's what's happening today.</p>
             </div>
         </div>
         
@@ -997,10 +997,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         mainContent.innerHTML = `
         <div class="projects-container">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 32px;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1 style="margin-bottom:8px; font-weight:700; font-size:2rem; letter-spacing:-0.5px;">Projects</h1>
-                    <p class="text-muted m-0" style="font-size:1.1rem;">Overview of all delivery projects.</p>
+                    <h2 class="page-section-title">Projects</h2>
+                    <p class="text-muted small mb-0">Overview of all delivery projects.</p>
                 </div>
                 <button class="btn btn-primary" onclick="window.alert('Create Project functionality coming soon')" style="padding: 12px 24px; font-weight: 600; border-radius: 10px; display:flex; align-items:center; gap:8px;">
                     <i class="bi bi-plus-lg" style="font-size:1.1rem;"></i> Create Project
@@ -1066,14 +1066,11 @@ document.addEventListener('DOMContentLoaded', () => {
             `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No employees found.</td></tr>`;
 
         mainContent.innerHTML = `
-        <div class="page-header" style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-start;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h1 style="margin-bottom:8px; font-weight:700; font-size:2rem; letter-spacing:-0.5px;">Employees</h1>
-                <p class="text-muted m-0">Manage staff details, targets, and salaries.</p>
+                <h2 class="page-section-title">Employees</h2>
+                <p class="text-muted small mb-0">Manage staff details, targets, and salaries.</p>
             </div>
-            <button class="btn btn-primary" onclick="window.alert('Add Employee Modal Pending')" style="padding: 10px 20px; font-weight: 600; border-radius: 8px;">
-                <i class="bi bi-plus-lg me-2"></i> Add Employee
-            </button>
         </div>
         
         <div class="card" style="padding:0; border:1px solid #f1f5f9; border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">

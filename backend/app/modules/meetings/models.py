@@ -11,8 +11,10 @@ class MeetingType(str, enum.Enum):
     VIRTUAL = "Virtual"
 
 class MeetingStatus(str, enum.Enum):
+    PENDING = "PENDING"
     SCHEDULED = "SCHEDULED"
     COMPLETED = "COMPLETED"
+    DONE = "DONE"
     CANCELLED = "CANCELLED"
 
 class MeetingSummary(Base):

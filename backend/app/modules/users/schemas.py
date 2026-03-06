@@ -69,6 +69,10 @@ class UserProfileUpdate(BaseModel):
             raise ValueError("Password must contain at least one digit")
         return v
 
+class EmployeeUpdate(UserProfileUpdate):
+    role: Optional[UserRole] = None
+    is_active: Optional[bool] = None
+
 class UserRead(UserBase):
     id: int
     employee_code: Optional[str] = None

@@ -9,20 +9,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
+    <link rel="stylesheet" href="../css/components.css?v=1772780187">
 </head>
 
 <body>
     <div class="d-flex">
         <div id="sidebar"></div>
         <div class="flex-grow-1 bg-light"
-            style="height: 100vh; overflow-y: auto; display: flex; flexDirection: column;">
+            style="height: 100vh; overflow-y: auto; display: flex; flex-direction: column;">
             <!-- Top Header injected by auth.js -->
 
             <div class="page-content">
                 <!-- Page Header -->
                 <div class="page-header d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h1 class="fw-bold h3 mb-1">Billing & Invoices</h1>
+                        <h2 class="page-section-title">Billing &amp; Invoices</h2>
                         <p class="text-muted mb-0">Manage client payments, view history, and generate digital receipts.
                         </p>
                     </div>
@@ -72,9 +74,6 @@
                 <div class="grid-card">
                     <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
                         <h6 class="fw-bold mb-0" style="color:#1e293b;">Invoice Registry</h6>
-                        <button class="btn btn-sm btn-light border" onclick="loadBills()">
-                            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
-                        </button>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-premium mb-0">
@@ -189,6 +188,7 @@
     <script>
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('payment');
+        injectTopHeader('Billing & Invoices');
 
         const statusMap = {
             PENDING_CONFIRMATION: { bg: 'var(--warning-light)', color: 'var(--warning-text)', label: 'Pending', icon: 'bi-hourglass-split' },
@@ -249,12 +249,17 @@
                        </button>`
                         : `<span class="text-muted small">${b.status === 'CONFIRMED' ? '✓ Done' : '—'}</span>`;
 
+                    const displayName = b.client_name || b.shop_name || `Shop #${b.shop_id}`;
+
                     return `
                 <tr>
                     <td class="fw-semibold text-dark">${b.invoice_number || '—'}</td>
-                    <td class="text-muted" style="font-size: 0.85rem;">${b.shop_id ? 'Shop #' + b.shop_id : '—'}</td>
-                    <td class="fw-bold">₹${Number(b.amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
-                    <td><span class="status-pill" style="background:${ui.bg}; color:${ui.color};"><i class="bi ${ui.icon} me-1"></i>${ui.label}</span></td>
+                    <td>
+                        <div class="fw-bold" style="color:#334155;">${displayName}</div>
+                        <div class="text-muted extra-small" style="font-size: 0.75rem;">${b.client_name ? 'Client' : 'Lead Shop'}</div>
+                    </td>
+                    <td class="fw-bold text-primary">₹${Number(b.amount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                    <td><span class="status-pill" style="background:${ui.bg}; color:${ui.color}; border: 1px solid ${ui.color}15;"><i class="bi ${ui.icon} me-1"></i>${ui.label}</span></td>
                     <td>${waCell}</td>
                     <td class="text-muted small">${dateStr}</td>
                     <td class="text-end">${actionBtn}</td>

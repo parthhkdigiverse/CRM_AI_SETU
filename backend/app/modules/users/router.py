@@ -25,9 +25,9 @@ admin_checker = RoleChecker([UserRole.ADMIN])
 @router.get("/", response_model=List[UserRead])
 async def list_users(
     db: Session = Depends(get_db),
-    current_user: User = Depends(admin_checker)
+    current_user: User = Depends(get_current_active_user)
 ) -> Any:
-    return db.query(User).filter(User.is_deleted == False).all()
+    return db.query(User).filter(User.is_deleted != True).all()
 
 @router.patch("/{user_id}/role", response_model=UserRead)
 async def update_user_role(

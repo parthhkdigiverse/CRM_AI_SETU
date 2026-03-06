@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from typing import List, Optional
+import io
 from app.core.database import get_db
 from app.modules.users.models import User, UserRole
 from app.core.dependencies import RoleChecker
-from app.modules.reports.schemas import DashboardStats
+from app.modules.reports.schemas import DashboardStats, EmployeePerformance, BusinessSummary
 from app.modules.reports.service import ReportService
 
 router = APIRouter()
@@ -22,3 +25,41 @@ def get_dashboard_stats(
 ):
     stats = ReportService.get_dashboard_stats(db)
     return stats
+
+@router.get("/employees", response_model=List[EmployeePerformance])
+def get_employee_performance(
+    month: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(dashboard_viewer)
+):
+    return ReportService.get_employee_performance(db, month)
+
+@router.get("/final", response_model=BusinessSummary)
+def get_business_summary(
+    month: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(dashboard_viewer)
+):
+    return ReportService.get_business_summary(db, month)
+
+@router.get("/export")
+def export_report(
+    type: str = Query(..., pattern="^(employees|final)$"),
+    month: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(dashboard_viewer)
+):
+    if type == "employees":
+        data = ReportService.get_employee_performance(db, month)
+        filename = f"employee_report_{month or 'current'}.csv"
+    else:
+        data = [ReportService.get_business_summary(db, month)]
+        filename = f"business_summary_{month or 'current'}.csv"
+        
+    csv_content = ReportService.generate_csv_response(data)
+    
+    return StreamingResponse(
+        io.StringIO(csv_content),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )

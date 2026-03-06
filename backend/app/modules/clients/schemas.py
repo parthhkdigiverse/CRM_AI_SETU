@@ -6,8 +6,8 @@ import re
 # Client Schemas
 class ClientBase(BaseModel):
     name: str
-    email: EmailStr
-    phone: Optional[str] = None
+    phone: str
+    email: Optional[EmailStr] = None
     organization: Optional[str] = None
     address: Optional[str] = None
     project_type: Optional[str] = None

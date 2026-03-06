@@ -16,6 +16,7 @@ class MeetingSummaryCreate(BaseModel):
     content: str
     date: Optional[datetime] = None
     meeting_type: Optional[MeetingType] = MeetingType.IN_PERSON
+    status: Optional[MeetingStatus] = MeetingStatus.SCHEDULED
 
 class MeetingSummaryUpdateBase(BaseModel):
      title: Optional[str] = None

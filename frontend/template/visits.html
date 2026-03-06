@@ -8,7 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
+    <link rel="stylesheet" href="../css/components.css?v=1772780187">
 </head>
 
 <body>
@@ -19,9 +20,9 @@
                 <!-- Page Header -->
                 <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                     <div>
-                        <h1 class="fw-bold h3 mb-1">Shop Visit Log</h1>
-                        <p class="text-muted mb-0" style="font-size:0.93rem;">Track field visits, call outcomes, and
-                            shop conversion status.</p>
+                        <h2 class="page-section-title">Visits</h2>
+                        <p class="text-muted small mb-0">Track field visits, call outcomes, and shop conversion status.
+                        </p>
                     </div>
                     <button id="add-visit-btn" class="btn btn-primary"
                         onclick="document.getElementById('visitModal').classList.add('show')">
@@ -67,8 +68,6 @@
                 <div class="grid-card">
                     <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
                         <h6 class="fw-bold mb-0" style="color:#334155;">All Visit Records</h6>
-                        <button class="btn btn-sm btn-light border" onclick="loadVisits()"><i
-                                class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
                     </div>
                     <div class="table-responsive">
                         <table class="table mb-0">
@@ -222,6 +221,7 @@
     <script>
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('visits');
+        injectTopHeader('Visits');
 
         const user = getUser();
         const isSales = user?.role === 'SALES' || user?.role === 'PROJECT_MANAGER_AND_SALES';
@@ -424,7 +424,24 @@
             }
         }
 
-        loadVisits();
+        loadVisits().then(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const highlightId = urlParams.get('id');
+            if (highlightId) {
+                setTimeout(() => {
+                    // Try to find a row containing the shop ID text explicitly or matching ID structure if possible
+                    // In the existing UI, the shop_id isn't directly on a data attribute, so we'll look for text match
+                    const rows = document.querySelectorAll('#visits-table tr');
+                    for (let row of rows) {
+                        if (row.innerHTML.includes(`Shop #${highlightId}`) || row.innerHTML.includes(`value="${highlightId}"`)) {
+                            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            row.classList.add('highlight-row');
+                            break;
+                        }
+                    }
+                }, 500);
+            }
+        });
     </script>
 </body>
 
