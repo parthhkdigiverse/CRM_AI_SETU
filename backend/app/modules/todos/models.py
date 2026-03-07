@@ -35,7 +35,9 @@ class Todo(Base):
     
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=True)
 
 
     # Relationship
     user = relationship("app.modules.users.models.User", backref="todos")
+    client = relationship("app.modules.clients.models.Client", backref="todos")

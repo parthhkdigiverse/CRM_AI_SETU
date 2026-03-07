@@ -181,7 +181,8 @@ def get_timetable(
         
     todos = todo_query.filter(
         Todo.due_date >= start_date,
-        Todo.due_date <= end_date
+        Todo.due_date <= end_date,
+        ~Todo.related_entity.like("MEETING:%")
     ).all()
     for t in todos:
         if t.due_date:

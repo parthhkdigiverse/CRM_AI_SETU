@@ -953,6 +953,16 @@
                                 <label><i class="bi bi-card-text me-2"></i>Description</label>
                             </div>
                         </div>
+
+                        <!-- Client Selection -->
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <select id="ev-client" class="form-select">
+                                    <option value="">— No Client —</option>
+                                </select>
+                                <label><i class="bi bi-building me-2"></i>Link to Client (Auto-syncs Meeting)</label>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pb-4 pe-4 ps-4">
@@ -2026,7 +2036,8 @@
                     due_date: new Date(date).toISOString(),
                     start_time: start ? start + ":00" : null,
                     end_time: end ? end + ":00" : null,
-                    related_entity: document.getElementById('td-related').value.trim() || null
+                    related_entity: document.getElementById('td-related').value.trim() || null,
+                    client_id: document.getElementById('ev-client').value || null
                 };
                 try {
                     await ApiClient.updateTodo(id, payload);
@@ -2129,6 +2140,7 @@
 
                 try {
                     await ApiClient.createTimetableEvent(eventData);
+
                     if (user && !selectedCalendars.has(user)) {
                         selectedCalendars.add(user);
                         saveSelectedCalendars();
@@ -2158,7 +2170,7 @@
                 }
 
                 if (!due) {
-                    due = dStr(new Date()); // Defaults to today directly
+                    due = dStr(new Date());
                 }
 
                 let finalIsoStart = new Date(due).toISOString();
@@ -2171,7 +2183,8 @@
                     due_date: finalIsoStart,
                     start_time: startStr ? startStr + ":00" : null,
                     end_time: endStr ? endStr + ":00" : null,
-                    related_entity: related || null
+                    related_entity: related || null,
+                    client_id: document.getElementById('ev-client').value || null
                 };
 
                 try {
@@ -2295,6 +2308,13 @@
                         const role = (e.role || '').replace(/_/g, ' ');
                         return `<option value="${uniqueVal}">${e.name || e.email} (${role})</option>`;
                     }).join('');
+
+                const clients = await ApiClient.getClients();
+                const clientSel = document.getElementById('ev-client');
+                if (clientSel) {
+                    clientSel.innerHTML = '<option value="">— No Client —</option>' +
+                        clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                }
 
                 const currUserName = currentUser ? (currentUser.name || currentUser.email) : '';
 

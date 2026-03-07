@@ -42,5 +42,7 @@ class MeetingSummary(Base):
 
     # Dedup flag: set True once the 15-min reminder notification is sent
     reminder_sent = Column(Boolean, default=False, nullable=False, server_default="false")
+    todo_id = Column(Integer, ForeignKey("todos.id"), nullable=True)
 
     client = relationship("app.modules.clients.models.Client", backref="meeting_summaries")
+    todo = relationship("app.modules.todos.models.Todo", backref="meeting")

@@ -14,6 +14,7 @@ class TodoBase(BaseModel):
     assigned_to: Optional[str] = None
     related_entity: Optional[str] = None
     evidence_url: Optional[str] = None
+    client_id: Optional[int] = None
 
 class TodoCreate(TodoBase):
     pass
@@ -29,6 +30,7 @@ class TodoUpdate(BaseModel):
     assigned_to: Optional[str] = None
     related_entity: Optional[str] = None
     evidence_url: Optional[str] = None
+    client_id: Optional[int] = None
 
 class TodoRead(TodoBase):
     id: int

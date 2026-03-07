@@ -235,6 +235,15 @@
                             </div>
                         </div>
 
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select id="td-client" class="form-select">
+                                    <option value="">— No Client —</option>
+                                </select>
+                                <label>Target Client</label>
+                            </div>
+                        </div>
+
                         <div class="col-md-3">
                             <div class="form-floating">
                                 <input type="time" id="ev-start" class="form-control">
@@ -643,7 +652,8 @@
                     const payload = {
                         ...commonData,
                         priority: document.getElementById('td-priority').value,
-                        related_entity: document.getElementById('td-related').value.trim() || null
+                        related_entity: document.getElementById('td-related').value.trim() || null,
+                        client_id: document.getElementById('td-client').value || null
                     };
 
                     if (editingTaskId) {
@@ -712,6 +722,14 @@
                         const role = (e.role || '').replace(/_/g, ' ');
                         return `<option value="${uniqueVal}">${e.name || e.email} (${role})</option>`;
                     }).join('');
+            }
+        });
+
+        ApiClient.getClients().then(clients => {
+            const sel = document.getElementById('td-client');
+            if (sel) {
+                sel.innerHTML = '<option value="">— No Client —</option>' +
+                    clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
             }
         });
 
