@@ -40,3 +40,5 @@ Thumbs.db
 backend/static/uploads/
 
 credentials.json
+*.db
+crm.db
