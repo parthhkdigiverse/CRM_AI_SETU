@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.security import create_access_token, get_password_hash, verify_password
 from app.core.dependencies import get_current_user
 from app.modules.users.models import User, UserRole
-from app.modules.auth.schemas import Token
+from app.modules.auth.schemas import Token, ChangePasswordRequest, UpdatePreferencesRequest
 from app.modules.users.schemas import UserCreate, UserRead, UserProfileUpdate
 from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
@@ -234,6 +234,56 @@ async def update_profile(
         request=request
     )
     return current_user
+
+@router.post("/change-password")
+async def change_password(
+    request: Request,
+    body: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user is None:
+        raise HTTPException(status_code=400, detail="Demo account cannot change password")
+        
+    if not verify_password(body.old_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect current password")
+        
+    current_user.hashed_password = get_password_hash(body.new_password)
+    db.commit()
+    
+    activity_logger = ActivityLogger(db)
+    await activity_logger.log_activity(
+        user_id=current_user.id,
+        user_role=current_user.role,
+        action=ActionType.UPDATE,
+        entity_type=EntityType.USER,
+        entity_id=current_user.id,
+        new_data={"password_changed": True},
+        request=request
+    )
+    return {"message": "Password updated successfully"}
+
+@router.patch("/preferences")
+async def update_preferences(
+    request: Request,
+    body: UpdatePreferencesRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user is None:
+        return {"message": "Preferences updated (Demo Mode)"}
+        
+    # Merge preferences
+    current_prefs = current_user.preferences or {}
+    new_prefs = {**current_prefs, **body.preferences}
+    current_user.preferences = new_prefs
+    
+    # Needs this to flag the JSON column as modified in SQLAlchemy
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(current_user, "preferences")
+    
+    db.commit()
+    return {"message": "Preferences updated successfully", "preferences": current_user.preferences}
 
 @router.post("/logout")
 async def logout(

@@ -218,9 +218,9 @@
 
         // ── Load Employees for dropdowns ──────────────────────────
         ApiClient.getEmployees().then(emps => {
-            const opts = '<option value="">— Select Employee —</option>' + emps.map(e => `<option value="${e.id}">${e.full_name || e.email}</option>`).join('');
+            const opts = '<option value="">— Select Employee —</option>' + emps.map(e => `<option value="${e.id}">${e.name || e.email}</option>`).join('');
             document.getElementById('s-user').innerHTML = opts;
-            document.getElementById('slip-user-filter').innerHTML = '<option value="">All Employees</option>' + emps.map(e => `<option value="${e.id}">${e.full_name || e.email}</option>`).join('');
+            document.getElementById('slip-user-filter').innerHTML = '<option value="">All Employees</option>' + emps.map(e => `<option value="${e.id}">${e.name || e.email}</option>`).join('');
         }).catch(() => { });
 
         // ── Leave Status Styling ──────────────────────────────────

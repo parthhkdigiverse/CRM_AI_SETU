@@ -196,7 +196,14 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-semibold small">New Password (Leave blank to keep)</label>
-                    <input type="password" id="edit-password" class="form-control" placeholder="Minimum 8 characters">
+                    <div class="position-relative">
+                        <input type="password" id="edit-password" class="form-control"
+                            placeholder="Minimum 8 characters" style="padding-right: 40px;">
+                        <button type="button" class="password-toggle"
+                            onclick="togglePasswordVisibility('edit-password', 'edit-pwd-icon')">
+                            <i class="bi bi-eye" id="edit-pwd-icon"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 

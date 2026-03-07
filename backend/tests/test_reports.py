@@ -65,4 +65,4 @@ def test_export_employees():
     header = get_auth_header()
     response = client.get("/api/reports/export?type=employees", headers=header)
     assert response.status_code == 200
-    assert response.headers["content-type"] == "text/csv"
+    assert response.headers["content-type"].startswith("text/csv")

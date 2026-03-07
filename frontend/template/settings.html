@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Settings — CRM AI SETU</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../css/theme.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <style>
+        .settings-section {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05);
+        }
+
+        .settings-section-title {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #94a3b8;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .setting-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .setting-desc {
+            font-size: 0.78rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: #e2e8f0;
+            border-radius: 24px;
+            transition: background 0.2s;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            top: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .toggle-switch input:checked+.toggle-slider {
+            background: #4f46e5;
+        }
+
+        .toggle-switch input:checked+.toggle-slider::before {
+            transform: translateX(20px);
+        }
+
+        /* Settings nav pills */
+        .settings-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 12px;
+            box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05);
+            position: sticky;
+            top: 90px;
+        }
+
+        .settings-nav a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 9px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #475569;
+            text-decoration: none;
+            transition: all 0.18s;
+        }
+
+        .settings-nav a:hover {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .settings-nav a.active {
+            background: #EEF2FF;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+
+        .settings-nav a i {
+            width: 18px;
+            text-align: center;
+        }
+
+        .select-clean {
+            border: 1px solid #e2e8f0;
+            border-radius: 9px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            color: #0f172a;
+            background: #fff;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        .select-clean:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+        }
+
+        .btn-save-sm {
+            background: #4f46e5;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 20px;
+            font-size: 0.825rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-save-sm:hover {
+            background: #4338ca;
+        }
+
+        .danger-zone {
+            border: 1px solid #fecaca;
+            background: #fff;
+            border-radius: 14px;
+            padding: 24px;
+        }
+
+        .danger-zone-title {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #ef4444;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .version-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+            border-radius: 100px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 4px 12px;
+        }
+
+        .toast-msg {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #0f172a;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <div class="d-flex">
+        <div id="sidebar"></div>
+        <div class="flex-grow-1">
+            <!-- Top header injected -->
+
+            <div class="page-content" style="max-width: 1040px;">
+
+                <div class="row g-4">
+
+                    <!-- Sidebar Nav -->
+                    <div class="col-md-3">
+                        <nav class="settings-nav" id="settings-nav">
+                            <a href="#appearance" class="active" onclick="scrollTo('appearance',this)"><i
+                                    class="bi bi-palette"></i> Appearance</a>
+                            <a href="#notifications" onclick="scrollTo('notifications',this)"><i class="bi bi-bell"></i>
+                                Notifications</a>
+                            <a href="#account" onclick="scrollTo('account',this)"><i class="bi bi-person-gear"></i>
+                                Account</a>
+                            <a href="#system" onclick="scrollTo('system',this)" id="system-nav-link"><i
+                                    class="bi bi-cpu"></i> System</a>
+                        </nav>
+                    </div>
+
+                    <!-- Settings Content -->
+                    <div class="col-md-9">
+
+                        <!-- ── Appearance ───── -->
+                        <div class="settings-section" id="appearance">
+                            <div class="settings-section-title"><i class="bi bi-palette text-primary"></i> Appearance
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Theme</div>
+                                    <div class="setting-desc">Choose your preferred colour scheme</div>
+                                </div>
+                                <select class="select-clean" id="theme-select"
+                                    onchange="saveSetting('theme', this.value)">
+                                    <option value="light">☀️ Light</option>
+                                    <option value="system">🖥️ System Default</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Sidebar Position</div>
+                                    <div class="setting-desc">Fixed left (default)</div>
+                                </div>
+                                <span class="version-chip"
+                                    style="background:#f0f4ff; color:#4f46e5; border-color:#c7d2fe;"><i
+                                        class="bi bi-layout-sidebar"></i> Left</span>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Compact Tables</div>
+                                    <div class="setting-desc">Reduce table row height for more data density</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="compact-tables"
+                                        onchange="saveSetting('compact_tables', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Animate Cards</div>
+                                    <div class="setting-desc">Card hover lift animations</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="animate-cards" checked
+                                        onchange="saveSetting('animate_cards', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- ── Notifications ───── -->
+                        <div class="settings-section" id="notifications">
+                            <div class="settings-section-title"><i class="bi bi-bell text-warning"></i> Notifications
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">In-App Alerts</div>
+                                    <div class="setting-desc">Bell notifications inside the CRM</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notif-inapp" checked
+                                        onchange="saveSetting('notif_inapp', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Meeting Reminders</div>
+                                    <div class="setting-desc">Get reminded 30 min before meetings</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notif-meetings" checked
+                                        onchange="saveSetting('notif_meetings', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Issue Alerts</div>
+                                    <div class="setting-desc">Notifications when new issues are raised</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notif-issues" checked
+                                        onchange="saveSetting('notif_issues', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Lead Assignment Alerts</div>
+                                    <div class="setting-desc">Notify when a lead is assigned to you</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notif-leads"
+                                        onchange="saveSetting('notif_leads', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Notification Poll Rate</div>
+                                    <div class="setting-desc">How often to check for new alerts</div>
+                                </div>
+                                <select class="select-clean" id="poll-rate"
+                                    onchange="saveSetting('poll_rate', this.value)">
+                                    <option value="15">Every 15s</option>
+                                    <option value="30" selected>Every 30s</option>
+                                    <option value="60">Every 1 min</option>
+                                    <option value="300">Every 5 min</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- ── Account ───── -->
+                        <div class="settings-section" id="account">
+                            <div class="settings-section-title"><i class="bi bi-person-gear text-primary"></i> Account
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Two-Factor Authentication</div>
+                                    <div class="setting-desc">Add extra security to your login</div>
+                                </div>
+                                <span class="version-chip"
+                                    style="background:#fffbeb;color:#d97706;border-color:#fcd34d;"><i
+                                        class="bi bi-clock"></i> Coming Soon</span>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Session Timeout</div>
+                                    <div class="setting-desc">Auto-logout after inactivity</div>
+                                </div>
+                                <select class="select-clean" id="session-timeout"
+                                    onchange="saveSetting('session_timeout', this.value)">
+                                    <option value="30">30 minutes</option>
+                                    <option value="60" selected>1 hour</option>
+                                    <option value="240">4 hours</option>
+                                    <option value="0">Never</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Dashboard Default View</div>
+                                    <div class="setting-desc">Page shown after login</div>
+                                </div>
+                                <select class="select-clean" id="default-view"
+                                    onchange="saveSetting('default_view', this.value)">
+                                    <option value="dashboard" selected>Dashboard Overview</option>
+                                    <option value="leads">Project Leads</option>
+                                    <option value="clients">Clients</option>
+                                    <option value="timetable">Timetable</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Date Format</div>
+                                    <div class="setting-desc">How dates are displayed across the CRM</div>
+                                </div>
+                                <select class="select-clean" id="date-format"
+                                    onchange="saveSetting('date_format', this.value)">
+                                    <option value="dd/mm/yyyy" selected>DD/MM/YYYY</option>
+                                    <option value="mm/dd/yyyy">MM/DD/YYYY</option>
+                                    <option value="yyyy-mm-dd">YYYY-MM-DD</option>
+                                </select>
+                            </div>
+
+                            <div class="mt-4">
+                                <a href="profile.html" class="btn-save-sm text-decoration-none"><i
+                                        class="bi bi-person me-1"></i> Manage Profile</a>
+                            </div>
+                        </div>
+
+                        <!-- ── System ───── -->
+                        <div class="settings-section" id="system" style="display:none;">
+                            <div class="settings-section-title"><i class="bi bi-cpu text-secondary"></i> System
+                                Information</div>
+
+                            <div class="setting-row">
+                                <div class="setting-label">Backend API URL</div>
+                                <span class="text-muted" id="api-url-display"
+                                    style="font-size:0.8rem; font-family: monospace;"></span>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-label">Frontend Version</div>
+                                <span class="version-chip"><i class="bi bi-check-circle-fill"></i> v1.0</span>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-label">API Status</div>
+                                <span class="version-chip" id="api-status-chip"><i class="bi bi-arrow-repeat"></i>
+                                    Checking...</span>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-label">Logged-in User ID</div>
+                                <span class="text-muted" id="sys-user-id" style="font-size:0.85rem;"></span>
+                            </div>
+                        </div>
+
+                        <!-- ── Danger Zone ───── -->
+                        <div class="danger-zone" id="danger-zone" style="display:none;">
+                            <div class="danger-zone-title"><i class="bi bi-exclamation-triangle-fill"></i> Danger Zone
+                            </div>
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Clear All Local Settings</div>
+                                    <div class="setting-desc">Reset all CRM preferences to defaults</div>
+                                </div>
+                                <button class="btn btn-sm"
+                                    style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;border-radius:8px;font-size:0.82rem;font-weight:600;"
+                                    onclick="clearAllSettings()">
+                                    <i class="bi bi-trash me-1"></i> Clear
+                                </button>
+                            </div>
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Force Logout</div>
+                                    <div class="setting-desc">Clear session and return to login</div>
+                                </div>
+                                <button class="btn btn-sm"
+                                    style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;border-radius:8px;font-size:0.82rem;font-weight:600;"
+                                    onclick="logout()">
+                                    <i class="bi bi-box-arrow-right me-1"></i> Logout
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-msg" id="toast-msg">
+        <i class="bi bi-check-circle-fill text-success"></i>
+        <span id="toast-text">Saved!</span>
+    </div>
+
+    <script src="../js/utils.js"></script>
+    <script src="../js/ui_components.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        requireAuth();
+        document.getElementById('sidebar').innerHTML = renderSidebar('settings');
+        injectTopHeader('Settings');
+
+        // ── Load saved settings
+        async function loadSettings() {
+            let backendPrefs = {};
+            const u = JSON.parse(localStorage.getItem('crm_user') || '{}');
+
+            // Try fetching from backend first
+            if (u.id) {
+                try {
+                    const profile = await apiGet('/auth/profile');
+                    backendPrefs = profile.preferences || {};
+                } catch (err) {
+                    console.error('Failed to load backend preferences', err);
+                }
+            }
+
+            const keys = ['compact_tables', 'animate_cards', 'notif_inapp', 'notif_meetings', 'notif_issues', 'notif_leads'];
+            keys.forEach(k => {
+                const el = document.getElementById(k.replace('_', '-'));
+                if (el && el.type === 'checkbox') {
+                    // Backend -> LocalStorage -> Default
+                    let val = backendPrefs[k];
+                    if (val === undefined) val = localStorage.getItem('crm_setting_' + k);
+
+                    if (val !== undefined && val !== null) {
+                        el.checked = String(val) === 'true';
+                    } else {
+                        el.checked = el.defaultChecked !== false;
+                    }
+                }
+            });
+
+            ['theme-select', 'poll-rate', 'session-timeout', 'default-view', 'date-format'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    let val = backendPrefs[id];
+                    if (val === undefined) val = localStorage.getItem('crm_setting_' + id);
+                    if (val) el.value = val;
+                }
+            });
+        }
+
+        // ── Save a setting
+        async function saveSetting(key, value) {
+            // Save locally
+            localStorage.setItem('crm_setting_' + key, value);
+
+            // Save to backend
+            try {
+                const prefs = {};
+                prefs[key] = value;
+                await apiPatch('/auth/preferences', { preferences: prefs });
+                showToast('Setting saved');
+            } catch (err) {
+                console.error('Pref save error', err);
+                showToast('Saved locally (offline)', false);
+            }
+        }
+
+        // ── Toast
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast-msg');
+            const txt = document.getElementById('toast-text');
+            toast.querySelector('i').className = isError ? 'bi bi-x-circle-fill text-danger' : 'bi bi-check-circle-fill text-success';
+            txt.textContent = msg;
+            toast.style.display = 'flex';
+            setTimeout(() => { toast.style.display = 'none'; }, 2200);
+        }
+
+        // ── Scroll nav
+        function scrollTo(id, el) {
+            document.querySelectorAll('.settings-nav a').forEach(a => a.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return false;
+        }
+
+        // ── Clear all settings
+        async function clearAllSettings() {
+            const keys = Object.keys(localStorage).filter(k => k.startsWith('crm_setting_'));
+            keys.forEach(k => localStorage.removeItem(k));
+
+            try {
+                await apiPatch('/auth/preferences', { preferences: {} });
+            } catch (err) { }
+
+            loadSettings();
+            showToast('All settings reset to defaults');
+        }
+
+        // ── System section (admin-only)
+        function initSystem() {
+            const u = JSON.parse(localStorage.getItem('crm_user') || '{}');
+            const isAdmin = u?.role === 'ADMIN';
+
+            if (isAdmin) {
+                document.getElementById('system').style.display = 'block';
+                document.getElementById('danger-zone').style.display = 'block';
+                document.getElementById('system-nav-link').style.display = 'flex';
+
+                const apiUrl = window.API_BASE || 'http://localhost:8000';
+                document.getElementById('api-url-display').textContent = apiUrl;
+                document.getElementById('sys-user-id').textContent = `#${u?.id || '—'}`;
+
+                // Ping API
+                apiGet('/health').then(() => {
+                    document.getElementById('api-status-chip').innerHTML = '<i class="bi bi-check-circle-fill"></i> Online';
+                }).catch(() => {
+                    document.getElementById('api-status-chip').innerHTML = '<i class="bi bi-x-circle-fill"></i> Offline';
+                    document.getElementById('api-status-chip').style.background = '#fef2f2';
+                    document.getElementById('api-status-chip').style.color = '#b91c1c';
+                    document.getElementById('api-status-chip').style.borderColor = '#fca5a5';
+                });
+            } else {
+                document.getElementById('system-nav-link').style.display = 'none';
+            }
+        }
+
+        loadSettings();
+        initSystem();
+    </script>
+</body>
+
+</html>
