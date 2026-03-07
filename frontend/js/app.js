@@ -1444,8 +1444,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <tr>
                     <td>
                         <div style="display:flex;align-items:center;gap:12px;">
-                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary-light);color:var(--primary);font-weight:700;display:flex;align-items:center;justify-content:center;">${(e.full_name || e.name || '?')[0].toUpperCase()}</div>
-                            <div><div style="font-weight:500;">${e.full_name || e.name || '—'}</div><div style="font-size:12px;color:var(--text-muted);">${e.email || '—'}</div></div>
+                            <div style="width:36px;height:36px;border-radius:50%;background:var(--primary-light);color:var(--primary);font-weight:700;display:flex;align-items:center;justify-content:center;">${(e.name || e.email || '?')[0].toUpperCase()}</div>
+                            <div><div style="font-weight:500;">${e.name || e.email || '—'}</div><div style="font-size:12px;color:var(--text-muted);">${e.email || '—'}</div></div>
                         </div>
                     </td>
                     <td>${e.phone || '—'}</td>
@@ -1472,7 +1472,7 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const emp of employees.slice(0, 30)) {
                 try {
                     const slips = await window.ApiClient.getSalaryRecords(emp.id);
-                    (slips || []).forEach(s => allSlips.push({ ...s, emp_name: emp.full_name || emp.name }));
+                    (slips || []).forEach(s => allSlips.push({ ...s, emp_name: emp.name || emp.email }));
                 } catch (e) { }
             }
             allSlips.sort((a, b) => (b.period || '').localeCompare(a.period || ''));
@@ -1530,8 +1530,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <tr>
                 <td>
                     <div style="display:flex;align-items:center;gap:10px;">
-                        <div style="width:32px;height:32px;border-radius:50%;background:var(--primary-light);color:var(--primary);font-weight:700;display:flex;align-items:center;justify-content:center;">${(u.full_name || u.name || '?')[0]}</div>
-                        ${u.full_name || u.name || '—'}
+                        <div style="width:32px;height:32px;border-radius:50%;background:var(--primary-light);color:var(--primary);font-weight:700;display:flex;align-items:center;justify-content:center;">${(u.name || u.email || '?')[0].toUpperCase()}</div>
+                        ${u.name || u.email || '—'}
                     </div>
                 </td>
                 <td>${u.email || '—'}</td>

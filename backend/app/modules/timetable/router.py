@@ -106,20 +106,31 @@ def get_timetable(
 
     # 1. Fetch Visits - show as 1 hour events
     user_id = current_user.id if current_user else 0
-    username = current_user.name if current_user else "Demo Admin"
+    username = (current_user.name or current_user.email or "Unknown User") if current_user else "Demo Admin"
+    is_admin = current_user.role == UserRole.ADMIN if current_user else True
 
-    visits = db.query(Visit).join(Shop).filter(
-        Visit.user_id == user_id,
+    visit_query = db.query(Visit).join(Shop)
+    if not is_admin:
+        visit_query = visit_query.filter(Visit.user_id == user_id)
+    visits = visit_query.filter(
         Visit.visit_date >= start_date,
         Visit.visit_date <= end_date
     ).all()
+    
     for v in visits:
         h = v.visit_date.hour if v.visit_date.hour >= 7 else 10 # Default to 10 AM if weird
+        # Try to resolve actual user name if available
+        real_user = username
+        try:
+            if v.user:
+                real_user = v.user.name or v.user.email
+        except:
+            pass
         events.append(TimelineEvent(
             id=v.id,
             title=f"Visit: {v.shop.name}",
             date=date_str(v.visit_date),
-            user=username,
+            user=real_user or "Unknown User",
             sh=h, sm=0, eh=h+1, em=0,
             loc=v.shop.area.name if v.shop.area else "Shop",
             event_type="VISIT",
@@ -140,11 +151,19 @@ def get_timetable(
     ).all()
     for m in meetings:
         h = m.date.hour if m.date.hour >= 7 else 14
+        
+        real_user = username
+        try:
+            if m.client:
+                real_user = m.client.owner.name if m.client.owner else username
+        except:
+            pass
+
         events.append(TimelineEvent(
             id=m.id,
             title=f"Meeting: {m.client.name}",
             date=date_str(m.date),
-            user=username,
+            user=real_user or "Unknown User",
             sh=h, sm=0, eh=h+1, em=30,
             loc="Office/Online",
             event_type="MEETING",
@@ -154,19 +173,31 @@ def get_timetable(
         ))
 
     # 3. Fetch Todos - shown as all day or specific time
-    todos = db.query(Todo).filter(
-        Todo.user_id == user_id,
+    todo_query = db.query(Todo)
+    if not is_admin:
+        todo_query = todo_query.filter(Todo.user_id == user_id)
+        
+    todos = todo_query.filter(
         Todo.due_date >= start_date,
         Todo.due_date <= end_date
     ).all()
     for t in todos:
         if t.due_date:
             h = t.due_date.hour if t.due_date.hour >= 7 else 9
+            
+            real_user = t.assigned_to or username
+            if not t.assigned_to and is_admin:
+                try:
+                    if t.user:
+                        real_user = t.user.name or t.user.email
+                except:
+                    pass
+
             events.append(TimelineEvent(
                 id=t.id,
                 title=f"Todo: {t.title}",
                 date=date_str(t.due_date),
-                user=t.assigned_to or username,
+                user=real_user or "Unknown User",
                 sh=h, sm=0, eh=h+1, em=0,
                 loc=t.related_entity or "",
                 event_type="TODO",
@@ -176,17 +207,28 @@ def get_timetable(
             ))
 
     # 4. Fetch Custom Timetable Events
-    custom_events = db.query(TimetableEvent).filter(
-        TimetableEvent.user_id == user_id,
+    tt_query = db.query(TimetableEvent)
+    if not is_admin:
+        tt_query = tt_query.filter(TimetableEvent.user_id == user_id)
+        
+    custom_events = tt_query.filter(
         TimetableEvent.date >= start_date.date(),
         TimetableEvent.date <= end_date.date()
     ).all()
     for c in custom_events:
+        real_user = c.assignee_name or username
+        if not c.assignee_name and is_admin:
+            try:
+                if c.user:
+                    real_user = c.user.name or c.user.email
+            except:
+                pass
+                
         events.append(TimelineEvent(
             id=c.id,
             title=c.title,
             date=date_str(c.date),
-            user=c.assignee_name or username,
+            user=real_user or "Unknown User",
             sh=c.start_time.hour,
             sm=c.start_time.minute,
             eh=c.end_time.hour,

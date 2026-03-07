@@ -47,6 +47,7 @@ class UserProfileUpdate(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
     password: Optional[str] = None
+    preferences: Optional[dict] = None
     # Admin-editable employee fields
     employee_code: Optional[str] = None
     joining_date: Optional[date] = None
@@ -81,6 +82,7 @@ class UserRead(UserBase):
     target: Optional[int] = None
     department: Optional[str] = None
     referral_code: Optional[str] = None
+    preferences: Optional[dict] = None
 
     class Config:
         from_attributes = True

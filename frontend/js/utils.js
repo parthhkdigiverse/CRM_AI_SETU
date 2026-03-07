@@ -109,7 +109,26 @@ function showOfflineBanner(show = true) {
     }
 }
 
+/**
+ * Toggles password visibility for a given input element
+ * @param {string} inputId The ID of the password input
+ * @param {string} iconId The ID of the icon to toggle
+ */
+function togglePasswordVisibility(inputId, iconId) {
+    const inp = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if (!inp || !icon) return;
+    
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+    } else {
+        inp.type = 'password';
+        icon.className = 'bi bi-eye';
+    }
+}
+
 // Export to window
-window.toast = toast;
+window.togglePasswordVisibility = togglePasswordVisibility;
 window.requireAuth = requireAuth;
 window.showOfflineBanner = showOfflineBanner;

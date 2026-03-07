@@ -492,8 +492,8 @@
                 const pastelColors = ['#e0e7ff', '#fce7f3', '#dcfce7', '#fef3c7', '#e0f2fe'];
                 const textColors = ['#4f46e5', '#db2777', '#16a34a', '#d97706', '#0ea5e9'];
                 el.innerHTML = emps.map((e, idx) => {
-                    const initials = (e.full_name || e.user?.name || 'EM').slice(0, 2).toUpperCase();
-                    const name = e.full_name || e.user?.name || `Employee #${e.id}`;
+                    const initials = (e.name || 'EM').slice(0, 2).toUpperCase();
+                    const name = e.name || `Employee #${e.id}`;
                     const role = (e.department || e.user?.role || '').replace(/_/g, ' ');
                     const bg = pastelColors[idx % pastelColors.length];
                     const fg = textColors[idx % textColors.length];

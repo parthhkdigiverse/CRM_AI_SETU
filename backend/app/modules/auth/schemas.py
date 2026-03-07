@@ -12,3 +12,10 @@ class TokenData(BaseModel):
 class LoginRequest(BaseModel):
     username: EmailStr
     password: str
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+class UpdatePreferencesRequest(BaseModel):
+    preferences: dict

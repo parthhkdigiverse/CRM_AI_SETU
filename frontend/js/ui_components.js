@@ -119,16 +119,9 @@ function renderSidebar(active) {
             <div class="sidebar-brand-icon"><i class="bi bi-grid-fill"></i></div>
             <span>CRM AI SETU</span>
         </div>
-        <div class="sidebar-user-card">
-            <div class="sidebar-user-avatar">${userInitials}</div>
-            <div class="sidebar-user-info">
-                <div class="sidebar-user-name">${userName}</div>
-                <div class="sidebar-user-role">${userRole}</div>
-            </div>
-        </div>
-        <div class="sb-scroll-area">${nav}</div>
+        <div class="sb-scroll-area mt-2">${nav}</div>
         <div class="sb-bottom">
-            <a href="#" class="sb-bottom-link"><i class="bi bi-gear-fill"></i> Settings</a>
+            <a href="settings.html" class="sb-bottom-link"><i class="bi bi-gear-fill"></i> Settings</a>
             <a href="#" class="sb-bottom-link logout" onclick="logout();return false;"><i class="bi bi-box-arrow-right"></i> Logout</a>
         </div>
     </div>`;
@@ -195,7 +188,8 @@ function injectTopHeader(pageTitle) {
         'To-Do List': 'Dashboard',
         'Overview': 'Dashboard',
         'Dashboard': 'Home',
-        'Profile': 'Dashboard',
+        'Profile': 'Account',
+        'Settings': 'Account',
         'Search Results': 'Search'
     };
 
@@ -234,7 +228,7 @@ function injectTopHeader(pageTitle) {
             </div>
         </div>
 
-        <!-- Right: Actions & Profile -->
+        <!-- Right: Actions -->
         <div class="d-flex align-items-center justify-content-end gap-3">
             <!-- Add New Dropdown -->
             <div class="dropdown">
@@ -252,6 +246,7 @@ function injectTopHeader(pageTitle) {
                     <li><a class="dropdown-item rounded-2 py-2" href="admin.html"><i class="bi bi-person-plus me-2 text-secondary"></i> New User</a></li>
                 </ul>
             </div>
+            <!-- Notifications Bell -->
             <div class="dropdown">
                 <div class="position-relative text-muted" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer; font-size:1.25rem; width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:#f8fafc; border-radius:50%;">
                     <i class="bi bi-bell"></i>
@@ -280,7 +275,7 @@ function injectTopHeader(pageTitle) {
                     <div class="text-muted small" style="font-size:0.70rem; line-height:1.5;">${role}</div>
                 </div>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="profileDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px; z-index: 9999;">
-                    <li><a class="dropdown-item py-2 rounded-2" href="javascript:void(0)" onclick="if(window.loadView) window.loadView('profile');"><i class="bi bi-person me-2 text-primary"></i> My Profile</a></li>
+                    <li><a class="dropdown-item py-2 rounded-2" href="profile.html"><i class="bi bi-person me-2 text-primary"></i> My Profile</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item py-2 rounded-2" href="javascript:void(0)" onclick="logout()" style="color:var(--danger);"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
                 </ul>

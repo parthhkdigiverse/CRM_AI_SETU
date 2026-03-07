@@ -616,7 +616,7 @@
         ApiClient.getEmployees().then(emps => {
             const sel = document.getElementById('ev-user');
             sel.innerHTML = '<option value="">— Unassigned —</option>' +
-                emps.map(e => `<option value="${e.full_name || e.email}">${e.full_name || e.email}</option>`).join('');
+                emps.map(e => `<option value="${e.name || e.email}">${e.name || e.email}</option>`).join('');
         }).catch(() => {
             // Fallback: keep loading placeholder but don't block
             document.getElementById('ev-user').innerHTML = '<option value="">— Unassigned —</option>';

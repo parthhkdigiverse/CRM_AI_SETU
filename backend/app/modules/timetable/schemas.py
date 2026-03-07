@@ -22,10 +22,12 @@ class TimelineEvent(BaseModel):
 class TimetableResponse(BaseModel):
     events: List[TimelineEvent]
 
+import datetime as dt
+
 class TimetableEventBase(BaseModel):
     title: str
     assignee_name: Optional[str] = None
-    date: date
+    date: dt.date
     start_time: time
     end_time: time
     location: Optional[str] = None
@@ -36,7 +38,7 @@ class TimetableEventCreate(TimetableEventBase):
 class TimetableEventUpdate(BaseModel):
     title: Optional[str] = None
     assignee_name: Optional[str] = None
-    date: Optional[date] = None
+    date: Optional[dt.date] = None
     start_time: Optional[time] = None
     end_time: Optional[time] = None
     location: Optional[str] = None

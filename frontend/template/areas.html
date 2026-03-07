@@ -990,7 +990,7 @@
                 allUsers.forEach(u => {
                     const option = document.createElement('option');
                     option.value = u.user_id || u.id;
-                    option.textContent = `${u.name || u.full_name || u.email || 'Unknown User'} (${u.role || 'No Role'})`;
+                    option.textContent = `${u.name || u.email || 'Unknown User'} (${u.role || 'No Role'})`;
                     select.appendChild(option);
                 });
             }

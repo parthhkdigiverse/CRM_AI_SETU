@@ -280,9 +280,9 @@
 
         // ── Load Employees ────────────────────────────────────────
         ApiClient.getEmployees().then(emps => {
-            const opts = '<option value="">— Select Employee —</option>' + emps.map(e => `<option value="${e.id}">${e.full_name || e.email}</option>`).join('');
+            const opts = '<option value="">— Select Employee —</option>' + emps.map(e => `<option value="${e.id}">${e.name || e.email}</option>`).join('');
             document.getElementById('calc-user').innerHTML = opts;
-            document.getElementById('slip-user-filter').innerHTML = '<option value="">Select Employee</option>' + emps.map(e => `<option value="${e.id}">${e.full_name || e.email}</option>`).join('');
+            document.getElementById('slip-user-filter').innerHTML = '<option value="">Select Employee</option>' + emps.map(e => `<option value="${e.id}">${e.name || e.email}</option>`).join('');
         }).catch(() => { });
 
         // ── Load Slabs ────────────────────────────────────────────

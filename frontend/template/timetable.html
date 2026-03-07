@@ -787,10 +787,7 @@
                             <label class="form-label fw-semibold small">Assignee <span
                                     class="text-danger">*</span></label>
                             <select id="ev-user" class="form-select">
-                                <option>Nency Savaliya</option>
-                                <option>Tisha Chauhan</option>
-                                <option>Rahul Mehta</option>
-                                <option>Admin</option>
+                                <option value="">— Loading users... —</option>
                             </select>
                         </div>
 
@@ -873,22 +870,63 @@
         const DAY_NAMES = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
         // ── User colour palette ─────────────────────────────────
-        const USERS = {
-            'Nency Savaliya': { color: '#4f46e5', bg: 'rgba(79,70,229,.13)', initials: 'NS' },
-            'Tisha Chauhan': { color: '#0891b2', bg: 'rgba(8,145,178,.13)', initials: 'TC' },
-            'Rahul Mehta': { color: '#16a34a', bg: 'rgba(22,163,74,.13)', initials: 'RM' },
-            'Admin': { color: '#dc2626', bg: 'rgba(220,38,38,.13)', initials: 'AD' },
-        };
+        let USERS = {};
+        let ALL_USERS_LIST = [];
+        let selectedCalendars = new Set();
+        let currentUser = null;
+
+        const PALETTE = [
+            { color: '#4f46e5', bg: 'rgba(79,70,229,.13)' },
+            { color: '#0891b2', bg: 'rgba(8,145,178,.13)' },
+            { color: '#16a34a', bg: 'rgba(22,163,74,.13)' },
+            { color: '#dc2626', bg: 'rgba(220,38,38,.13)' },
+            { color: '#eab308', bg: 'rgba(234,179,8,.13)' },
+            { color: '#d946ef', bg: 'rgba(217,70,239,.13)' },
+            { color: '#f97316', bg: 'rgba(249,115,22,.13)' },
+            { color: '#8b5cf6', bg: 'rgba(139,92,246,.13)' }
+        ];
+
+        function getInitials(name) {
+            if (!name) return '?';
+            const parts = name.trim().split(' ');
+            if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return name.substring(0, 2).toUpperCase();
+        }
+
+        function saveSelectedCalendars() {
+            localStorage.setItem('timetable_selected_cals', JSON.stringify(Array.from(selectedCalendars)));
+        }
+
+        function toggleCalendar(identifier, isChecked) {
+            if (isChecked) {
+                selectedCalendars.add(identifier);
+            } else {
+                selectedCalendars.delete(identifier);
+            }
+            saveSelectedCalendars();
+
+            const scrollY = window.scrollY;
+            const ms = document.getElementById('main-content');
+            const mainScroll = ms ? ms.scrollTop : 0;
+
+            renderCalendarLocal();
+
+            window.scrollTo(0, scrollY);
+            const newMs = document.getElementById('main-content');
+            if (newMs) newMs.scrollTop = mainScroll;
+        }
 
         // ── Navigation state ─────────────────────────────────────
         let weekStart = getWeekStart(new Date());
         let selectedDate = new Date();
         let currentView = 'week';
         let showTaskView = false;          // NEW: task list mode toggle
-        let taskFilter = 'all';          // 'all' | 'pending' | 'done'
+        let taskFilter = 'all';          // 'all' | 'pending' | 'done' | 'my' | 'employees'
         let bsModal;
         const completedIds = new Set();
         let miniMonthOffset = 0;
+        let isMyCalsOpen = true;         // Track accordion state to prevent closing on re-render
+        let isOtherCalsOpen = false;
 
         // ── Status colour palette ───────────────────────────────
         const STATUS_COLORS = {
@@ -903,7 +941,10 @@
 
         function getEventStyles(ev) {
             const status = (ev.status || '').toUpperCase();
-            const baseUser = USERS[ev.user] || { color: '#6b7280', bg: 'rgba(107,114,128,0.13)', initials: '?' };
+
+            // Generate basic styles for unknown users dynamically
+            const defaultInitials = (ev.user || '?').substring(0, 2).toUpperCase();
+            const baseUser = USERS[ev.user] || { color: '#6b7280', bg: 'rgba(107,114,128,0.13)', initials: defaultInitials };
 
             // Priority for Meetings or if status is explicitly actionable (Done/Cancelled)
             if (ev.event_type === 'MEETING' || status === 'COMPLETED' || status === 'CANCELLED' || status === 'DONE' || status === 'CANCEL') {
@@ -989,7 +1030,7 @@
                 ['ev-title', 'ev-date', 'ev-start', 'ev-end', 'ev-loc'].forEach(id => {
                     const el = document.getElementById(id); if (el) el.value = '';
                 });
-                document.getElementById('ev-user').value = 'Nency Savaliya';
+                document.getElementById('ev-user').value = '';
 
                 bsModal.hide();
                 await renderCalendar();
@@ -1046,43 +1087,51 @@
 
         // ── Sidebar generator ───────────────────────────────────
         function buildSidebar() {
-            // My calendars
+            const currUserName = currentUser ? (currentUser.name || currentUser.email) : '';
+            const currUserObj = USERS[currUserName] || { color: '#1a73e8' };
+
+            // Generate My calendars list (Current user + Birthdays + Tasks)
             const myCals = `
             <div class="sidebar-section">
-                <div class="sidebar-title">
+                <div class="sidebar-title" data-bs-toggle="collapse" data-bs-target="#myCalendarsCollapse" aria-expanded="${isMyCalsOpen ? 'true' : 'false'}" style="cursor:pointer;" onclick="isMyCalsOpen=!isMyCalsOpen">
                     <span>My calendars</span>
-                    <i class="bi bi-chevron-up text-muted"></i>
+                    <i class="bi bi-chevron-down text-muted"></i>
                 </div>
-                <div>
+                <div id="myCalendarsCollapse" class="collapse ${isMyCalsOpen ? 'show' : ''}">
+                    ${currUserName ? `
                     <label class="check-item">
-                        <input type="checkbox" checked class="accent-checkbox" style="--c:${USERS['Nency Savaliya']?.color || '#1a73e8'}"> Nency Savaliya
+                        <input type="checkbox" ${selectedCalendars.has(currUserName) ? 'checked' : ''} onchange="toggleCalendar('${currUserName.replace(/'/g, "\\'")}', this.checked)" class="accent-checkbox" style="--c:${currUserObj.color}"> ${currUserName}
+                    </label>` : ''}
+                    <label class="check-item">
+                        <input type="checkbox" ${selectedCalendars.has('Birthdays') ? 'checked' : ''} onchange="toggleCalendar('Birthdays', this.checked)" class="accent-checkbox" style="--c:#3b82f6"> Birthdays
                     </label>
                     <label class="check-item">
-                        <input type="checkbox" checked class="accent-checkbox" style="--c:#3b82f6"> Birthdays
-                    </label>
-                    <label class="check-item">
-                        <input type="checkbox" checked class="accent-checkbox" style="--c:#8b5cf6"> Tasks
+                        <input type="checkbox" ${selectedCalendars.has('Tasks') ? 'checked' : ''} onchange="toggleCalendar('Tasks', this.checked)" class="accent-checkbox" style="--c:#8b5cf6"> Tasks
                     </label>
                 </div>
             </div>`;
 
             // Other calendars
+            let otherCalsHtml = '';
+            ALL_USERS_LIST.forEach(emp => {
+                const identifier = emp.name || emp.email;
+                if (identifier && identifier !== currUserName) {
+                    const uColor = USERS[identifier]?.color || '#0ea5e9';
+                    otherCalsHtml += `
+                    <label class="check-item">
+                        <input type="checkbox" ${selectedCalendars.has(identifier) ? 'checked' : ''} onchange="toggleCalendar('${identifier.replace(/'/g, "\\'")}', this.checked)" class="accent-checkbox" style="--c:${uColor}"> ${identifier}
+                    </label>`;
+                }
+            });
+
             const otherCals = `
             <div class="sidebar-section">
-                <div class="sidebar-title">
+                <div class="sidebar-title" data-bs-toggle="collapse" data-bs-target="#otherCalendarsCollapse" aria-expanded="${isOtherCalsOpen ? 'true' : 'false'}" style="cursor:pointer;" onclick="isOtherCalsOpen=!isOtherCalsOpen">
                     <span>Other calendars</span>
-                    <i class="bi bi-plus-lg text-muted"></i>
+                    <i class="bi bi-chevron-down text-muted"></i>
                 </div>
-                <div>
-                    <label class="check-item">
-                        <input type="checkbox" checked class="accent-checkbox" style="--c:${USERS['Tisha Chauhan']?.color || '#0ea5e9'}"> Tisha Chauhan
-                    </label>
-                    <label class="check-item">
-                        <input type="checkbox" checked class="accent-checkbox" style="--c:${USERS['Rahul Mehta']?.color || '#22c55e'}"> Rahul Mehta
-                    </label>
-                    <label class="check-item">
-                        <input type="checkbox" checked class="accent-checkbox" style="--c:${USERS['Admin']?.color || '#ef4444'}"> Admin
-                    </label>
+                <div id="otherCalendarsCollapse" class="collapse ${isOtherCalsOpen ? 'show' : ''}">
+                    ${otherCalsHtml || '<div class="text-muted small">No other users</div>'}
                 </div>
             </div>`;
 
@@ -1224,17 +1273,35 @@
 
         function renderCalendarLocal() {
 
+            // Always preserve accordion states before nuking the DOM
+            const mcDOM = document.getElementById('myCalendarsCollapse');
+            if (mcDOM) isMyCalsOpen = mcDOM.classList.contains('show');
+            const ocDOM = document.getElementById('otherCalendarsCollapse');
+            if (ocDOM) isOtherCalsOpen = ocDOM.classList.contains('show');
+
             const today = new Date();
             const todayStr = dStr(today);
+
+            const filteredEvents = events.filter(ev => {
+                const user = ev.user || ev.assignee_name;
+                if (!user) return true;
+                return selectedCalendars.has(user);
+            });
 
             // ── TASK LIST VIEW ──────────────────────────────────────
             if (showTaskView) {
                 // Group events by date, sort by time
+                const currUserName = currentUser ? (currentUser.name || currentUser.email) : '';
                 const grouped = {};
-                events.forEach(ev => {
-                    const isDone = completedIds.has(ev.id);
+                filteredEvents.forEach(ev => {
+                    const s = (ev.status || '').toUpperCase();
+                    const isDone = (s === 'COMPLETED' || s === 'DONE' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
+                    const isMyTask = (ev.user === currUserName || ev.assignee_name === currUserName);
+
                     if (taskFilter === 'pending' && isDone) return;
                     if (taskFilter === 'done' && !isDone) return;
+                    if (taskFilter === 'my' && !isMyTask) return;
+                    if (taskFilter === 'employees' && isMyTask) return;
 
                     if (!grouped[ev.date]) grouped[ev.date] = [];
                     grouped[ev.date].push(ev);
@@ -1296,6 +1363,8 @@
                             <button class="${taskFilter === 'all' ? 'active' : ''}" onclick="setTaskFilter('all')">All</button>
                             <button class="${taskFilter === 'pending' ? 'active' : ''}" onclick="setTaskFilter('pending')">Pending</button>
                             <button class="${taskFilter === 'done' ? 'active' : ''}" onclick="setTaskFilter('done')">Completed</button>
+                            <button class="${taskFilter === 'my' ? 'active' : ''}" onclick="setTaskFilter('my')">My Tasks</button>
+                            <button class="${taskFilter === 'employees' ? 'active' : ''}" onclick="setTaskFilter('employees')">Employee Tasks</button>
                         </div>
                         <button class="task-toggle-btn active" onclick="toggleTaskView()" style="background:#e8eafd;color:#4f46e5;border-color:#c7d2fe;">
                             <i class="bi bi-calendar3"></i>
@@ -1339,7 +1408,7 @@
                 }
 
                 // Events for this day
-                const dayEvts = events.filter(e => e.date === sdStr);
+                const dayEvts = filteredEvents.filter(e => e.date === sdStr);
                 const placed = packEvents(dayEvts);
                 const evHtml = placed.map(({ ev, slot, slots }) => {
                     const u = getEventStyles(ev);
@@ -1441,7 +1510,7 @@
                         const isToday = ds === todayStr;
                         const isCurMonth = cur.getMonth() === mStart.getMonth();
 
-                        const dayEvts = events.filter(e => e.date === ds);
+                        const dayEvts = filteredEvents.filter(e => e.date === ds);
                         const evHtml = dayEvts.slice(0, 4).map(ev => {
                             const u = getEventStyles(ev);
                             const s = (ev.status || '').toUpperCase();
@@ -1553,7 +1622,7 @@
                 }
 
                 // Events for this day — handle robust overlap packing
-                const dayEvts = events.filter(e => e.date === ds);
+                const dayEvts = filteredEvents.filter(e => e.date === ds);
                 const placed = packEvents(dayEvts);
 
                 const evHtml = placed.map(({ ev, slot, slots }) => {
@@ -1985,10 +2054,65 @@
         setInterval(() => renderCalendar(), 60000);
 
         // ── Init ─────────────────────────────────────────────────
-        bsModal = new bootstrap.Modal(document.getElementById('scheduleModal'));
-        // Set today's date as default in modal
-        document.getElementById('ev-date').value = dStr(new Date());
-        renderCalendar();
+        async function initApp() {
+            bsModal = new bootstrap.Modal(document.getElementById('scheduleModal'));
+            document.getElementById('ev-date').value = dStr(new Date());
+
+            try {
+                currentUser = ApiClient.getCurrentUser();
+                const emps = await ApiClient.getEmployees();
+                ALL_USERS_LIST = emps;
+
+                // Populate Assignee dropdown
+                const sel = document.getElementById('ev-user');
+                sel.innerHTML = '<option value="">— Unassigned —</option>' +
+                    emps.map(e => `<option value="${e.name || e.email}">${e.name || e.email}</option>`).join('');
+
+                const currUserName = currentUser ? (currentUser.name || currentUser.email) : '';
+
+                // Populate USERS palette
+                emps.forEach((emp, index) => {
+                    const identifier = emp.name || emp.email;
+                    if (identifier) {
+                        const paletteContext = PALETTE[index % PALETTE.length];
+                        USERS[identifier] = {
+                            color: paletteContext.color,
+                            bg: paletteContext.bg,
+                            initials: getInitials(identifier)
+                        };
+                    }
+                });
+
+                // Load from localStorage or set defaults
+                const savedCals = localStorage.getItem('timetable_selected_cals');
+                if (savedCals) {
+                    try {
+                        const parsedCals = JSON.parse(savedCals);
+                        if (Array.isArray(parsedCals)) {
+                            parsedCals.forEach(c => selectedCalendars.add(c));
+                        }
+                    } catch (e) {
+                        console.error('Failed to parse cached calendars', e);
+                    }
+                }
+
+                // If nothing was parsed in localStorage, apply defaults
+                if (selectedCalendars.size === 0) {
+                    if (currUserName) selectedCalendars.add(currUserName);
+                    selectedCalendars.add('Tasks');
+                    selectedCalendars.add('Birthdays');
+                    saveSelectedCalendars();
+                }
+
+            } catch (error) {
+                console.error("Failed to initialize users", error);
+                document.getElementById('ev-user').innerHTML = '<option value="">— Unassigned —</option>';
+            }
+
+            renderCalendar();
+        }
+
+        initApp();
     </script>
 </body>
 

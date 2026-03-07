@@ -72,7 +72,7 @@ class SalaryService:
             slips = self.db.query(SalarySlip).filter(SalarySlip.user_id == user_id).all()
             for s in slips:
                 if s.user:
-                    s.user_name = s.user.full_name or s.user.email
+                    s.user_name = s.user.name or s.user.email
             return slips
         except Exception as e:
             print(f"Error fetching salary slips: {e}")
