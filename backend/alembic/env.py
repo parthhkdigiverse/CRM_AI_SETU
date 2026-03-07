@@ -6,8 +6,6 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
 
-# --- 1. ADD THESE LINES TO FIX PATHING ---
-# This ensures Python can see the 'app' folder
 sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app.core.config import settings
@@ -56,3 +54,9 @@ def run_migrations_online() -> None:
             context.run_migrations()
 
 # ... rest of file ...
+# --- ADD THIS AT THE VERY BOTTOM OF YOUR env.py ---
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
