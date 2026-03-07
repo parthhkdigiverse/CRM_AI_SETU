@@ -172,7 +172,7 @@ for p in projects_data:
     else:
         result = db.execute(text("""
             INSERT INTO projects (name, description, client_id, pm_id, status, budget, start_date, end_date, created_at, updated_at)
-            VALUES (:name, :description, :client_id, :pm_id, :status::projectstatus, :budget, :start_date, :end_date, :now, :now)
+            VALUES (:name, :description, :client_id, :pm_id, CAST(:status AS projectstatus), :budget, :start_date, :end_date, :now, :now)
             RETURNING id
         """), {**p, "now": now})
         proj_id = result.fetchone()[0]
