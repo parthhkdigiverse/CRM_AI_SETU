@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -21,14 +21,32 @@ def create_todo(
     db.refresh(todo)
     return todo
 
+from app.modules.todos.models import TodoStatus
+
 @router.get("/", response_model=List[TodoRead])
 def read_todos(
     skip: int = 0,
     limit: int = 100,
+    status: Optional[TodoStatus] = None,
+    assigned_to: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    return db.query(Todo).filter(Todo.user_id == current_user.id).order_by(Todo.created_at.desc()).offset(skip).limit(limit).all()
+    query = db.query(Todo)
+    
+    from app.modules.users.models import UserRole
+    is_admin = current_user.role == UserRole.ADMIN
+    
+    if not is_admin:
+        query = query.filter(Todo.user_id == current_user.id)
+    
+    if status:
+        query = query.filter(Todo.status == status)
+        
+    if assigned_to:
+        query = query.filter(Todo.assigned_to.ilike(f"%{assigned_to}%"))
+        
+    return query.order_by(Todo.created_at.desc()).offset(skip).limit(limit).all()
 
 @router.patch("/{todo_id}", response_model=TodoRead)
 def update_todo(

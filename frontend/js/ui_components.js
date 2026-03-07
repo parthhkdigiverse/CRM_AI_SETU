@@ -1,4 +1,4 @@
-// Centralized UI components for CRM AI SETU
+// Centralized UI components for SRM AI SETU
 
 function getUser() {
     try { return JSON.parse(localStorage.getItem('crm_user')); } catch { return null; }
@@ -74,6 +74,7 @@ function renderSidebar(active) {
     // PROJECT MANAGEMENT
     if (isAdmin || isPM) {
         nav += sbSection('pm', 'Project Management', 'bi-briefcase', [
+            { id: 'projects_demo', href: 'projects_demo.html', icon: 'bi-display', label: 'Demo' },
             { id: 'projects', href: 'projects.html', icon: 'bi-briefcase', label: 'Projects' },
             { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
             { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
@@ -96,7 +97,8 @@ function renderSidebar(active) {
     if (isAdmin) {
         nav += sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', [
             { id: 'employees', href: 'employees.html', icon: 'bi-people', label: 'Employees' },
-            { id: 'salary', href: 'salary.html', icon: 'bi-calendar3', label: 'Salary & Leaves' },
+            { id: 'salary', href: 'salary.html', icon: 'bi-cash-stack', label: 'Salary' },
+            { id: 'leaves', href: 'leaves.html', icon: 'bi-calendar3', label: 'Leaves' },
             { id: 'incentives', href: 'incentives.html', icon: 'bi-trophy', label: 'Incentives' }
         ]);
     }
@@ -117,7 +119,7 @@ function renderSidebar(active) {
     <div id="sidebar-container">
         <div class="sidebar-brand">
             <div class="sidebar-brand-icon"><i class="bi bi-grid-fill"></i></div>
-            <span>CRM AI SETU</span>
+            <span>SRM AI SETU</span>
         </div>
         <div class="sb-scroll-area mt-2">${nav}</div>
         <div class="sb-bottom">
@@ -173,6 +175,7 @@ function injectTopHeader(pageTitle) {
         'Visits': 'Field Operations',
         'Areas & Shops': 'Field Operations',
         'Projects': 'Project Management',
+        'Project Management Demo': 'Project Management',
         'Meeting Strategy': 'Project Management',
         'Meetings': 'Project Management',
         'Issues': 'Project Management',
@@ -181,19 +184,35 @@ function injectTopHeader(pageTitle) {
         'Payment': 'Client Relations',
         'Feedback': 'Client Relations',
         'Employees': 'HR & Payroll',
-        'Salary & Leaves': 'HR & Payroll',
+        'Salary': 'HR & Payroll',
+        'Leaves': 'HR & Payroll',
         'Incentives': 'HR & Payroll',
+        'Demo': 'Project Management',
         'Reports': 'Reports & Analytics',
         'Timetable': 'Dashboard',
+        'Timetable & Schedule': 'Dashboard',
         'To-Do List': 'Dashboard',
+        'TO-DO List': 'Dashboard',
+        'To-do': 'Dashboard',
         'Overview': 'Dashboard',
         'Dashboard': 'Home',
         'Profile': 'Account',
+        'My Profile': 'Account',
         'Settings': 'Account',
+        'Notifications': 'System',
         'Search Results': 'Search'
     };
 
-    const parent = pageToParent[pageTitle];
+    // Standardize key matching: trim and case-insensitive
+    const normalizedTitle = (pageTitle || '').trim();
+    let parent = pageToParent[normalizedTitle];
+
+    // Fallback search for case-insensitive match if direct match fails
+    if (!parent) {
+        const lowerTitle = normalizedTitle.toLowerCase();
+        const foundKey = Object.keys(pageToParent).find(k => k.toLowerCase() === lowerTitle);
+        if (foundKey) parent = pageToParent[foundKey];
+    }
     const breadcrumbHtml = parent ? `
         <div class="d-flex align-items-center gap-2">
             <span class="text-muted" style="font-size: 0.875rem;">${parent}</span>
@@ -236,12 +255,17 @@ function injectTopHeader(pageTitle) {
                     <i class="bi bi-plus-lg"></i> Add New
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px; min-width:210px;">
-                    <li><a class="dropdown-item rounded-2 py-2" href="leads.html?add=true"><i class="bi bi-bullseye me-2 text-primary"></i> New Project Lead</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="areas.html?add=true"><i class="bi bi-building me-2" style="color:#6366f1;"></i> New Area / Shop</a></li>
                     <li><a class="dropdown-item rounded-2 py-2" href="clients.html"><i class="bi bi-people me-2 text-info"></i> New Client</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="meetings.html"><i class="bi bi-calendar-event me-2 text-success"></i> New Meeting</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="javascript:void(0)" onclick="if(window.openNewBillModal) window.openNewBillModal();"><i class="bi bi-file-invoice-dollar me-2 text-danger"></i> New Payment</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="issues.html"><i class="bi bi-exclamation-triangle me-2 text-warning"></i> New Issue</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="projects.html?add=true"><i class="bi bi-briefcase me-2 text-primary"></i> New Project</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="areas.html?add=true"><i class="bi bi-building me-2" style="color:#6366f1;"></i> New Area / Shop</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="visits.html?add=true"><i class="bi bi-geo-alt me-2 text-success"></i> New Visit</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="meetings.html?add=true"><i class="bi bi-calendar-event me-2 text-success"></i> New Meeting</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="todo.html"><i class="bi bi-check2-square me-2 text-primary"></i> New Task</a></li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="javascript:void(0)" onclick="if(window.openNewBillModal) window.openNewBillModal();"><i class="bi bi-receipt me-2 text-danger"></i> New Payment</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="issues.html?add=true"><i class="bi bi-exclamation-triangle me-2 text-warning"></i> New Issue</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="feedback.html?add=true"><i class="bi bi-chat-square-text me-2 text-info"></i> New Feedback</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="leaves.html?add=true"><i class="bi bi-calendar3 me-2 text-warning"></i> New Leave Request</a></li>
                     <li><hr class="dropdown-divider my-1"></li>
                     <li><a class="dropdown-item rounded-2 py-2" href="admin.html"><i class="bi bi-person-plus me-2 text-secondary"></i> New User</a></li>
                 </ul>
@@ -292,7 +316,58 @@ function injectTopHeader(pageTitle) {
     if (typeof window.initLiveSearch === 'function') {
         window.initLiveSearch();
     }
+
+    // Auto-trigger "Add New" modals if ?add=true is in URL
+    setTimeout(() => {
+        if (window.checkUrlForQuickAdd) window.checkUrlForQuickAdd();
+    }, 500);
 }
+
+// ─── GLOBAL QUICK ADD HANDLER ──────────────────────────────────────────
+window.checkUrlForQuickAdd = function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('add') !== 'true') return;
+
+    const path = window.location.pathname.toLowerCase();
+
+    try {
+        if (path.includes('visits.html')) {
+            const modal = document.getElementById('visitModal');
+            if (modal) modal.classList.add('show');
+        }
+        else if (path.includes('meetings.html')) {
+            const modalEl = document.getElementById('addMeetingModal');
+            if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+        else if (path.includes('issues.html')) {
+            const modalEl = document.getElementById('addIssueModal');
+            if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+        else if (path.includes('projects.html')) {
+            const addBtn = document.querySelector('button[onclick*="openProjectUpdateModal"]') ||
+                document.querySelector('.page-content button.btn-primary');
+            if (addBtn) addBtn.click();
+        }
+        else if (path.includes('areas.html')) {
+            const addBtn = document.querySelector('button[onclick*="openAreaModal"]') ||
+                document.querySelector('.page-content button.btn-primary');
+            if (addBtn) addBtn.click();
+        }
+        else if (path.includes('feedback.html')) {
+            const modalEl = document.getElementById('addFeedbackModal');
+            if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+        else if (path.includes('leaves.html')) {
+            if (window.openLeaveModal) window.openLeaveModal();
+            else {
+                const modal = document.getElementById('leaveModal');
+                if (modal) modal.classList.add('show');
+            }
+        }
+    } catch (e) {
+        console.warn("Quick Add trigger failed:", e);
+    }
+};
 
 // ─── NOTIFICATION BELL POLLING ────────────────────────────────────────
 // State to track if polling is already active

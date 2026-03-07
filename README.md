@@ -1,4 +1,4 @@
-# CRM AI SETU
+# SRM AI SETU
 
 A full-stack CRM system with AI capabilities built with FastAPI + PostgreSQL.
 
@@ -60,7 +60,7 @@ copy backend\.env.example backend\.env      # Windows
 Open `backend/.env` and fill in your values:
 
 ```env
-PROJECT_NAME="CRM AI SETU"
+PROJECT_NAME="SRM AI SETU"
 DATABASE_URL="postgresql://AI%20SETU:0412@localhost:5432/crm_ai_setu"
 SECRET_KEY="your_long_random_secret_key_here"
 ```
@@ -104,7 +104,7 @@ The app will be available at:
 ## Project Structure
 
 ```
-CRM AI SETU/
+SRM AI SETU/
 ├── app.py               # Entry point — runs the server
 ├── backend/
 │   ├── .env             # Your local config (NOT committed to git)

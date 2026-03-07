@@ -37,10 +37,11 @@ def update_timetable_event(
     current_user: User = Depends(get_current_user)
 ) -> Any:
     user_id = current_user.id if current_user else 0
-    event = db.query(TimetableEvent).filter(
-        TimetableEvent.id == event_id,
-        TimetableEvent.user_id == user_id
-    ).first()
+    query = db.query(TimetableEvent).filter(TimetableEvent.id == event_id)
+    if current_user and current_user.role != UserRole.ADMIN:
+        query = query.filter(TimetableEvent.user_id == user_id)
+    
+    event = query.first()
     
     if not event:
         raise HTTPException(status_code=404, detail="Timetable event not found")
@@ -60,10 +61,11 @@ def delete_timetable_event(
     current_user: User = Depends(get_current_user)
 ) -> None:
     user_id = current_user.id if current_user else 0
-    event = db.query(TimetableEvent).filter(
-        TimetableEvent.id == event_id,
-        TimetableEvent.user_id == user_id
-    ).first()
+    query = db.query(TimetableEvent).filter(TimetableEvent.id == event_id)
+    if current_user and current_user.role != UserRole.ADMIN:
+        query = query.filter(TimetableEvent.user_id == user_id)
+    
+    event = query.first()
     
     if not event:
         raise HTTPException(status_code=404, detail="Timetable event not found")
@@ -185,6 +187,11 @@ def get_timetable(
         if t.due_date:
             h = t.due_date.hour if t.due_date.hour >= 7 else 9
             
+            sh = t.start_time.hour if t.start_time else h
+            sm = t.start_time.minute if t.start_time else 0
+            eh = t.end_time.hour if t.end_time else (sh + 1)
+            em = t.end_time.minute if t.end_time else 0
+            
             real_user = t.assigned_to or username
             if not t.assigned_to and is_admin:
                 try:
@@ -198,7 +205,7 @@ def get_timetable(
                 title=f"Todo: {t.title}",
                 date=date_str(t.due_date),
                 user=real_user or "Unknown User",
-                sh=h, sm=0, eh=h+1, em=0,
+                sh=sh, sm=sm, eh=eh, em=em,
                 loc=t.related_entity or "",
                 event_type="TODO",
                 status=t.status.value if hasattr(t.status, 'value') else str(t.status),

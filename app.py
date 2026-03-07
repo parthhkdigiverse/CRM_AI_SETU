@@ -14,7 +14,7 @@ if backend_dir not in sys.path:
 
 if __name__ == "__main__":
     print("==================================================")
-    print("CRM AI SETU - Startup Diagnostics")
+    print("SRM AI SETU - Startup Diagnostics")
     print(f"Root Directory: {root_dir}")
     print(f"Backend Directory: {backend_dir}")
     print(f"Python Version: {sys.version}")

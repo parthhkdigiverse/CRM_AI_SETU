@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum, Boolean
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum, Boolean, Time
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 
@@ -25,6 +25,8 @@ class Todo(Base):
     description = Column(Text, nullable=True)
     
     due_date = Column(DateTime, nullable=True)
+    start_time = Column(Time, nullable=True)
+    end_time = Column(Time, nullable=True)
     status = Column(Enum(TodoStatus), default=TodoStatus.PENDING)
     priority = Column(Enum(TodoPriority), default=TodoPriority.MEDIUM)
     assigned_to = Column(String, nullable=True)
