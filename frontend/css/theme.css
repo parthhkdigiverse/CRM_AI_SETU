@@ -89,11 +89,7 @@ h6 {
     box-shadow: var(--shadow-md);
 }
 
-<<<<<<< HEAD
-/* Sidebar */
-=======
 /* ─── SIDEBAR — Premium Dark Gradient ─────────────────────── */
->>>>>>> 4e9077c30962ca43722946a88198cd1531425287
 #sidebar-container {
     background: linear-gradient(175deg, #1e1b4b 0%, #2d2a6e 55%, #312e81 100%);
     border-right: none;
@@ -238,11 +234,6 @@ h6 {
 
 /* Header - Sticky Top Navbar */
 .top-header {
-<<<<<<< HEAD
-    height: 72px;
-    min-height: 72px;
-=======
->>>>>>> 4e9077c30962ca43722946a88198cd1531425287
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(12px) saturate(180%);
     -webkit-backdrop-filter: blur(12px) saturate(180%);
@@ -250,13 +241,7 @@ h6 {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-<<<<<<< HEAD
-    padding: 0 1.5rem;
-    position: sticky;
-    top: 0;
-=======
     padding: 16px 24px;
->>>>>>> 4e9077c30962ca43722946a88198cd1531425287
     z-index: 1000;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     margin-bottom: 24px;
@@ -675,8 +660,6 @@ h6 {
     color: #fff;
 }
 
-<<<<<<< HEAD
-=======
 .sb-bottom-link:hover i {
     color: #a5b4fc;
 }
@@ -686,7 +669,6 @@ h6 {
     color: #fca5a5;
 }
 
->>>>>>> 4e9077c30962ca43722946a88198cd1531425287
 /* Activity feed */
 .activity-item {
     position: relative;
@@ -720,105 +702,7 @@ h6 {
     z-index: 1;
 }
 
-<<<<<<< HEAD
-/* ─── CENTRALIZED UI COMPONENTS ────────────────────────────────────── */
-
-/* ── Stat Cards ───────────────────────────────────── */
-.stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: var(--shadow-soft);
-    transition: all 0.2s;
-}
-
-.stat-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-}
-
-.stat-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-}
-
-.stat-value {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--text-main);
-    line-height: 1;
-}
-
-/* ── Status Pills ──────────────────────────────────── */
-.status-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 12px;
-    border-radius: 100px;
-    font-size: 0.74rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-}
-
-.pill-success {
-    background: var(--success-light);
-    color: var(--success-text);
-}
-
-.pill-warning {
-    background: var(--warning-light);
-    color: var(--warning-text);
-}
-
-.pill-danger {
-    background: var(--danger-light);
-    color: var(--danger-text);
-}
-
-.pill-info {
-    background: #e0f2fe;
-    color: #0369a1;
-}
-
-/* ── Premium Tables ────────────────────────────────── */
-.table-premium thead th {
-    background: var(--bg-app);
-    border-bottom: 2px solid var(--border);
-    color: var(--text-muted);
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.72rem;
-    letter-spacing: 0.06em;
-    padding: 14px 18px;
-}
-
-.table-premium tbody td {
-    padding: 14px 18px;
-    vertical-align: middle;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.9rem;
-}
-
-.table-premium tbody tr:hover {
-    background: #f8fafc;
-}
-
-/* ── Split Panel (Used in Areas, Timetable, etc) ─────── */
-=======
 /* ─── Split Panel (Used in Areas, Timetable, etc) ─────── */
->>>>>>> 4e9077c30962ca43722946a88198cd1531425287
 .split-panel {
     display: grid;
     grid-template-columns: 320px 1fr;
@@ -834,11 +718,7 @@ h6 {
     background: var(--bg-app);
 }
 
-<<<<<<< HEAD
-/* ── Grid/List Consistency ──────────────────────────── */
-=======
 /* ─── Grid/List Consistency ─────────────────────────── */
->>>>>>> 4e9077c30962ca43722946a88198cd1531425287
 .grid-card {
     background: var(--surface);
     border-radius: 16px;

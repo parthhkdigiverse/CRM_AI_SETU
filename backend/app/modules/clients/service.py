@@ -72,19 +72,6 @@ class ClientService:
                 Client.pm_id.in_(pm_ids),
                 Client.is_active == True
             ).group_by(Client.pm_id).all()
-<<<<<<< HEAD
-
-            count_map = {row.pm_id: row.client_count for row in client_counts}
-
-            # Build list of (pm, workload) and pick the least-loaded PM
-            pm_workloads = [(pm, count_map.get(pm.id, 0)) for pm in active_pms]
-            pm_workloads.sort(key=lambda x: x[1])
-            assigned_pm = pm_workloads[0][0]
-
-            db_client.pm_id = assigned_pm.id
-        # -------------------------------------------
-=======
->>>>>>> 4e9077c30962ca43722946a88198cd1531425287
 
             count_map = {row.pm_id: row.client_count for row in client_counts}
 

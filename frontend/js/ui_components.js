@@ -220,11 +220,8 @@ function injectTopHeader(pageTitle) {
         </div>
 
         <!-- Center: Global Search -->
-<<<<<<< HEAD
         <div class="top-header-search">
-=======
         <div class="top-header-search" style="position:relative; z-index:1000;">
->>>>>>> 4e9077c30962ca43722946a88198cd1531425287
             <div class="position-relative w-100">
                 <button class="btn p-0 position-absolute text-muted" style="left:12px; top:50%; transform:translateY(-50%); border:none; background:none; z-index:5;" onclick="const val = document.getElementById('global-search-input').value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val);">
                     <i class="bi bi-search" style="font-size:0.9rem;"></i>
@@ -293,7 +290,6 @@ function injectTopHeader(pageTitle) {
     </div>`;
     const rightSide = document.querySelector('.flex-grow-1');
     if (rightSide) {
-<<<<<<< HEAD
         // ENFORCE STANDARDS: Remove any conflicting inline paddings or styles
         rightSide.style.setProperty('padding', '0', 'important');
         rightSide.style.height = '100vh';
@@ -321,7 +317,6 @@ function injectTopHeader(pageTitle) {
             nodesToMove.forEach(node => contentContainer.appendChild(node));
             rightSide.appendChild(contentContainer);
         }
-=======
         // Inject header at top of the column
         rightSide.insertAdjacentHTML('afterbegin', headerHtml);
     }
@@ -329,7 +324,6 @@ function injectTopHeader(pageTitle) {
     startNotificationPolling(); // ensure we start checking alerts
     if (typeof window.initLiveSearch === 'function') {
         window.initLiveSearch();
->>>>>>> 4e9077c30962ca43722946a88198cd1531425287
     }
 
     startNotificationPolling();
