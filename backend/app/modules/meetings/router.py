@@ -111,6 +111,19 @@ def update_meeting(
     for field, value in update_data.items():
         setattr(db_meeting, field, value)
     
+    # If the user is manually marking the meeting done, kill any lingering notifications
+    if update_data.get("status") in [MeetingStatus.COMPLETED, MeetingStatus.DONE, MeetingStatus.CANCELLED]:
+        if db_meeting.meet_link:
+            from app.modules.notifications.models import Notification
+            notifs = (
+                db.query(Notification)
+                .filter(Notification.message.like(f"%LINK:{db_meeting.meet_link}%"))
+                .all()
+            )
+            for notif in notifs:
+                if "STATUS:COMPLETED" not in notif.message:
+                    notif.message += "\nSTATUS:COMPLETED"
+
     db.add(db_meeting)
     db.commit()
     db.refresh(db_meeting)

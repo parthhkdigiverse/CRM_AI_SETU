@@ -43,8 +43,8 @@ def generate_google_meet_link(
         service = build('calendar', 'v3', credentials=creds)
 
         end_time = start_time + timedelta(minutes=duration_minutes)
-        start_iso = start_time.strftime('%Y-%m-%dT%H:%M:%S')
-        end_iso   = end_time.strftime('%Y-%m-%dT%H:%M:%S')
+        start_iso = start_time.strftime('%Y-%m-%dT%H:%M:%S+05:30')
+        end_iso   = end_time.strftime('%Y-%m-%dT%H:%M:%S+05:30')
         timezone  = 'Asia/Kolkata'
 
         event = {
