@@ -237,6 +237,8 @@ window.refreshBell = async function () {
         const bellBody = document.getElementById('bell-notif-list');
         if (!bellBody) return;
 
+        bellBody.innerHTML = '';
+
         const unreadList = (Array.isArray(all) ? all : []).filter(n => !n.is_read).slice(0, 5);
         if (unreadList.length === 0) {
             bellBody.innerHTML = `<div class="p-3 text-center"><p class="text-muted small mb-0">No new alerts.</p></div>`;
@@ -281,10 +283,10 @@ window.refreshBell = async function () {
                         <div class="fw-bold text-truncate text-dark" style="font-size:.82rem;">${displayTitle}</div>
                         <div class="text-muted text-wrap small mt-1" style="line-height: 1.3;">
                             ${cleanMessage}
-                            ${sessionClosed ? 
-                                `<br><span class="badge text-bg-secondary mt-1" style="font-size:10px;">Ended</span>` :
-                                meetLink ? 
-                                `<br><a href="${meetLink}" target="_blank" class="badge text-bg-primary text-decoration-none mt-1" style="font-size:10px;">Join Meeting</a>` : ''}
+                            ${sessionClosed ?
+                        `<br><span class="badge text-bg-secondary mt-1" style="font-size:10px;">Ended</span>` :
+                        meetLink ?
+                            `<br><a href="${meetLink}" target="_blank" class="badge text-bg-primary text-decoration-none mt-1" style="font-size:10px;">Join Meeting</a>` : ''}
                         </div>
                         <div class="text-muted mt-1 small" style="font-size:.68rem;">
                             <i class="bi bi-clock"></i> ${dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}

@@ -670,9 +670,26 @@ input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
     display: none;
 }
+
 input[type="password"]::-webkit-contacts-auto-fill-button,
 input[type="password"]::-webkit-credentials-auto-fill-button {
     visibility: hidden;
     position: absolute;
     right: 0;
+}
+
+/* ─── Notification Dropdown Overlay fixes ─── */
+#bell-notif-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.dropdown-menu:has(#bell-notif-list),
+.dropdown-menu[aria-labelledby="notificationDropdown"] {
+    position: absolute;
+    z-index: 9999 !important;
+    background-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 350px;
+    width: 350px;
 }
