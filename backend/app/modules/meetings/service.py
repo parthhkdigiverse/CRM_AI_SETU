@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Request
 from fastapi.encoders import jsonable_encoder
@@ -40,10 +40,31 @@ class MeetingService:
             meeting_data["calendar_event_id"] = result.get("calendar_event_id")
             
         db_meeting = MeetingSummary(**meeting_data)
-
         self.db.add(db_meeting)
         self.db.commit()
         self.db.refresh(db_meeting)
+
+        # --- Synchronization: Create/Update linked Todo ---
+        from app.modules.todos.models import Todo, TodoPriority
+        db_todo = Todo(
+            user_id=current_user.id,
+            title=f"Meeting: {db_meeting.title}",
+            description=db_meeting.content,
+            due_date=db_meeting.date,
+            start_time=db_meeting.date.time() if db_meeting.date else None,
+            end_time=(db_meeting.date + timedelta(minutes=30)).time() if db_meeting.date else None,
+            priority=TodoPriority.MEDIUM,
+            assigned_to=current_user.name or current_user.email,
+            related_entity=f"MEETING:{db_meeting.id}",
+            client_id=client_id
+        )
+        self.db.add(db_todo)
+        self.db.commit()
+        self.db.refresh(db_todo)
+        
+        db_meeting.todo_id = db_todo.id
+        self.db.commit()
+        # ------------------------------------------------
 
         await self.activity_logger.log_activity(
             user_id=current_user.id,
@@ -76,6 +97,24 @@ class MeetingService:
 
         self.db.commit()
         self.db.refresh(db_meeting)
+
+        # --- Synchronization: Update linked Todo ---
+        if db_meeting.todo_id:
+            from app.modules.todos.models import Todo
+            db_todo = self.db.query(Todo).filter(Todo.id == db_meeting.todo_id).first()
+            if db_todo:
+                if "title" in update_data:
+                    db_todo.title = f"Meeting: {db_meeting.title}"
+                if "content" in update_data:
+                    db_todo.description = db_meeting.content
+                if "status" in update_data:
+                    from app.modules.todos.models import TodoStatus
+                    if update_data["status"] == MeetingStatus.COMPLETED or update_data["status"] == MeetingStatus.DONE:
+                        db_todo.status = TodoStatus.COMPLETED
+                    elif update_data["status"] == MeetingStatus.CANCELLED:
+                        db_todo.status = TodoStatus.PENDING # Or maybe a CANCELLED status for todo if exists
+                self.db.commit()
+        # ------------------------------------------
 
         new_data = {k: getattr(db_meeting, k) for k in old_data.keys()}
         new_data["status"] = new_data["status"].value if hasattr(new_data["status"], 'value') else str(new_data["status"])
@@ -220,6 +259,17 @@ class MeetingService:
         db_meeting.cancellation_reason = None
         self.db.commit()
         self.db.refresh(db_meeting)
+
+        # --- Synchronization: Update linked Todo date ---
+        if db_meeting.todo_id:
+            from app.modules.todos.models import Todo
+            db_todo = self.db.query(Todo).filter(Todo.id == db_meeting.todo_id).first()
+            if db_todo:
+                db_todo.due_date = new_date
+                db_todo.start_time = new_date.time()
+                db_todo.end_time = (new_date + timedelta(minutes=30)).time()
+                self.db.commit()
+        # -----------------------------------------------
 
         # 2. Sync with Google Calendar if event exists
         if db_meeting.calendar_event_id:

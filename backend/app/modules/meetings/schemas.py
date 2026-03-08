@@ -40,6 +40,7 @@ class MeetingSummaryRead(MeetingSummaryBase):
     status: MeetingStatus
     meet_link: Optional[str] = None
     cancellation_reason: Optional[str] = None
+    todo_id: Optional[int] = None
 
     class Config:
         from_attributes = True

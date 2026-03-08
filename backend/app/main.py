@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
     stop_scheduler()
 
 
-app = FastAPI(title="CRM AI SETU API", lifespan=lifespan)
+app = FastAPI(title="SRM AI SETU API", lifespan=lifespan)
 
 # CORS
 app.add_middleware(
@@ -67,7 +67,7 @@ async def favicon():
 @app.get("/")
 async def root():
     return {
-        "message": "Welcome to CRM AI SETU",
+        "message": "Welcome to SRM AI SETU",
         "backend_api_docs": "/docs",
         "frontend_app": "/frontend/template/index.html",
         "status": "active"
@@ -84,4 +84,3 @@ async def get_config():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
-

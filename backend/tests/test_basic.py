@@ -2,7 +2,7 @@ import sys
 import os
 
 # Crucial: Add 'backend' to the very front of sys.path to prioritize 
-# 'backend/app' over 'e:/CRM AI SETU/app.py'
+# 'backend/app' over 'e:/SRM AI SETU/app.py'
 current_dir = os.path.dirname(os.path.abspath(__file__))
 backend_dir = os.path.abspath(os.path.join(current_dir, ".."))
 sys.path.insert(0, backend_dir)

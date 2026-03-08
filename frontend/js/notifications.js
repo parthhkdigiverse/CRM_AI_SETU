@@ -1,5 +1,5 @@
 /**
- * CRM AI SETU — Notifications Page Logic
+ * SRM AI SETU — Notifications Page Logic
  * Handles fetching, rendering, and marking notifications as read.
  */
 
