@@ -6,11 +6,12 @@ import enum
 from app.core.database import Base
 
 class ProjectStatus(str, enum.Enum):
-    PLANNING = "PLANNING"
+    PLANNING    = "PLANNING"
     IN_PROGRESS = "IN_PROGRESS"
-    COMPLETED = "COMPLETED"
-    ON_HOLD = "ON_HOLD"
-    CANCELLED = "CANCELLED"
+    ONGOING     = "ONGOING"     # legacy alias — map to IN_PROGRESS in UI
+    COMPLETED   = "COMPLETED"
+    ON_HOLD     = "ON_HOLD"
+    CANCELLED   = "CANCELLED"
 
 class Project(Base):
     __tablename__ = "projects"

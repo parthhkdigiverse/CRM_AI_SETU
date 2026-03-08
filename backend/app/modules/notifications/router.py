@@ -17,14 +17,22 @@ def read_notifications(
     current_user: User = Depends(get_current_user)
 ) -> Any:
     """Get all notifications for current user, newest first."""
-    return (
-        db.query(Notification)
-        .filter(Notification.user_id == current_user.id)
-        .order_by(Notification.created_at.desc())
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+    try:
+        return (
+            db.query(Notification)
+            .filter(Notification.user_id == current_user.id)
+            .order_by(Notification.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+    except Exception as exc:
+        import traceback
+        print(f"[Notifications] Error fetching notifications: {exc}\n{traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch notifications: {str(exc)}"
+        )
 
 @router.get("/unread-count")
 def get_unread_count(

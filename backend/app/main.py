@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse, Response
 import traceback
 
 # Core Imports
@@ -56,6 +56,13 @@ if os.path.exists(frontend_path):
     app.mount("/frontend", StaticFiles(directory=frontend_path), name="frontend")
 else:
     print(f"WARNING: Static frontend path not found at {frontend_path}")
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    favicon_path = os.path.join(frontend_path, "favicon.ico")
+    if os.path.exists(favicon_path):
+        return FileResponse(favicon_path)
+    return Response(status_code=204)
 
 @app.get("/")
 async def root():

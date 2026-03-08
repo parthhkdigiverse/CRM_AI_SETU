@@ -5,11 +5,13 @@ from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 class IssueStatus(str, enum.Enum):
-    PENDING = "PENDING"
-    SOLVED = "SOLVED"
-    RESOLVED = "RESOLVED"
-    COMPLETED = "COMPLETED"
-    CANCELLED = "CANCEL"
+    PENDING     = "PENDING"
+    OPEN        = "OPEN"
+    IN_PROGRESS = "IN_PROGRESS"
+    SOLVED      = "SOLVED"
+    RESOLVED    = "RESOLVED"
+    COMPLETED   = "COMPLETED"
+    CANCELLED   = "CANCEL"
 
 class IssueSeverity(str, enum.Enum):
     HIGH = "HIGH"
