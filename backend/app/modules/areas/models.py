@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean, JSON
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -14,4 +14,11 @@ class Area(Base):
     # Add Google Maps coordinates
     lat = Column(Float, nullable=True)
     lng = Column(Float, nullable=True)
+    
+    # Advanced Targeting
+    radius_meters = Column(Integer, default=500, nullable=False)
+    shop_limit = Column(Integer, default=20, nullable=False)
+    priority_level = Column(String, default="MEDIUM", nullable=False)
+    auto_discovery_enabled = Column(Boolean, default=False, nullable=False)
+    target_categories = Column(JSON, nullable=True)
     assigned_user = relationship("app.modules.users.models.User", backref="assigned_areas")

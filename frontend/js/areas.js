@@ -2,6 +2,7 @@ window.map = null;
 window.marker = null;
 window.autocomplete = null;
 window.geocoder = null;
+window.radiusCircle = null;
 
 // 2. The HTML script tag calls this, but we tell it to wait!
 window.initMap = function () {
@@ -47,6 +48,25 @@ function buildMapNow() {
         gmpDraggable: true
     });
 
+    // Initialize Radius Circle
+    window.radiusCircle = new google.maps.Circle({
+        map: window.map,
+        center: { lat: 21.1702, lng: 72.8311 },
+        radius: parseInt(document.getElementById('a-radius')?.value || 500),
+        fillColor: '#4f46e5',
+        fillOpacity: 0.15,
+        strokeColor: '#4f46e5',
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        clickable: false
+    });
+
+    window.updateRadiusCircle = function (radius) {
+        if (window.radiusCircle) {
+            window.radiusCircle.setRadius(parseInt(radius));
+        }
+    };
+
     // Initialize Services
     window.geocoder = new google.maps.Geocoder();
 
@@ -71,6 +91,9 @@ function buildMapNow() {
             window.map.setCenter(place.geometry.location);
             window.map.setZoom(15);
             window.marker.position = place.geometry.location;
+            if (window.radiusCircle) {
+                window.radiusCircle.setCenter(place.geometry.location);
+            }
 
             // Update hidden coordinate fields
             document.getElementById('a-lat').value = place.geometry.location.lat();
@@ -117,6 +140,7 @@ function buildMapNow() {
     // Map Click Listener
     window.map.addListener('click', (e) => {
         window.marker.position = e.latLng;
+        if (window.radiusCircle) window.radiusCircle.setCenter(e.latLng);
         document.getElementById('a-lat').value = e.latLng.lat();
         document.getElementById('a-lng').value = e.latLng.lng();
 
@@ -127,6 +151,7 @@ function buildMapNow() {
     // Marker Drag Listener
     window.marker.addListener('dragend', () => {
         const pos = window.marker.position;
+        if (window.radiusCircle) window.radiusCircle.setCenter(pos);
         document.getElementById('a-lat').value = pos.lat;
         document.getElementById('a-lng').value = pos.lng;
 
@@ -165,6 +190,10 @@ window.loadMapForEdit = function (lat, lng) {
     if (window.marker) {
         window.marker.position = latLng;
     }
+    if (window.radiusCircle) {
+        window.radiusCircle.setCenter(latLng);
+        window.radiusCircle.setRadius(parseInt(document.getElementById('a-radius')?.value || 500));
+    }
     // Trigger a resize in case the map div was hidden
     setTimeout(() => google.maps.event.trigger(window.map, 'resize'), 100);
 };
@@ -175,6 +204,14 @@ window.handleModalSave = async function () {
     const desc = document.getElementById('a-desc').value.trim();
     const lat = document.getElementById('a-lat').value;
     const lng = document.getElementById('a-lng').value;
+
+    // Advanced Targeting Fields
+    const radiusMeters = parseInt(document.getElementById('a-radius').value);
+    const shopLimit = parseInt(document.getElementById('a-shop-limit').value);
+    const priorityLevel = document.getElementById('a-priority').value;
+    const autoDiscoveryEnabled = document.getElementById('a-auto-discovery').checked;
+    const targetCategories = Array.from(document.querySelectorAll('.tgt-category:checked')).map(cb => cb.value);
+
     const existingId = document.getElementById('a-id').value; // non-empty only in edit mode
     const btn = document.getElementById('modal-save-btn');
 
@@ -188,22 +225,24 @@ window.handleModalSave = async function () {
 
     try {
         let savedArea;
+        const payload = {
+            name: name,
+            description: desc,
+            lat: parseFloat(lat),
+            lng: parseFloat(lng),
+            radius_meters: radiusMeters,
+            shop_limit: shopLimit,
+            priority_level: priorityLevel,
+            auto_discovery_enabled: autoDiscoveryEnabled,
+            target_categories: targetCategories
+        };
+
         if (existingId) {
             // ── Edit Mode: update the existing record ──
-            savedArea = await ApiClient.updateArea(parseInt(existingId), {
-                name: name,
-                description: desc,
-                lat: parseFloat(lat),
-                lng: parseFloat(lng)
-            });
+            savedArea = await ApiClient.updateArea(parseInt(existingId), payload);
         } else {
             // ── Create Mode: make a new area ──
-            savedArea = await ApiClient.createArea({
-                name: name,
-                description: desc,
-                lat: parseFloat(lat),
-                lng: parseFloat(lng)
-            });
+            savedArea = await ApiClient.createArea(payload);
         }
 
         // ── Transition to Step 2: Discovered Shops ──
@@ -216,7 +255,14 @@ window.handleModalSave = async function () {
         btn.style.display = 'none';
 
         const savedAreaId = savedArea.id || savedArea.data?.id;
-        window._discoverShops(savedAreaId, { lat: parseFloat(lat), lng: parseFloat(lng) });
+
+        // Only run auto-discovery if the user toggled it on
+        if (autoDiscoveryEnabled) {
+            window._discoverShops(savedAreaId, { lat: parseFloat(lat), lng: parseFloat(lng) }, radiusMeters, shopLimit, targetCategories);
+        } else {
+            // If disabled, just close the modal and refresh
+            bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+        }
 
         // Refresh the sidebar list in the background
         if (typeof loadAll === 'function') loadAll();
@@ -229,35 +275,34 @@ window.handleModalSave = async function () {
     }
 };
 
-window._discoverShops = async function (areaId, locationParams) {
+window._discoverShops = async function (areaId, locationParams, radiusMeters = 500, maxResults = 20, categories = []) {
     const tableBody = document.getElementById('discovered-shops-table');
 
     // Show a loading indicator while fetching
-    tableBody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Discovering nearby shops...</td></tr>';
+    tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Discovering nearby shops within ${radiusMeters}m...</td></tr>`;
 
     try {
         const request = {
-            fields: ['id', 'displayName', 'formattedAddress'],
+            fields: ['id', 'displayName', 'formattedAddress', 'types'],
             locationRestriction: {
                 center: locationParams,
-                radius: 500 // 500m radius — keeps results tightly localised
+                radius: radiusMeters // Dynamic radius
             },
-            // No type filter — fetch all businesses, offices, and shops
             rankPreference: google.maps.places.SearchNearbyRankPreference.DISTANCE,
-            maxResultCount: 20
+            maxResultCount: maxResults
         };
 
         const { places } = await google.maps.places.Place.searchNearby(request);
 
         if (!places || places.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">No businesses found within 500m.</td></tr>';
+            tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">No businesses found within ${radiusMeters}m.</td></tr>`;
             return;
         }
 
         tableBody.innerHTML = ''; // Clear loading indicator
 
-        // Display all 20 results sorted by distance
-        places.slice(0, 20).forEach(place => {
+        // Display results sorted by distance up to maxResults limit
+        places.slice(0, maxResults).forEach(place => {
             const row = document.createElement('tr');
 
             const nameCell = document.createElement('td');
