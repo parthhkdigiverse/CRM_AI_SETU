@@ -93,9 +93,10 @@
                 <!-- Header -->
                 <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                     <div>
-                        <h2 class="page-section-title">Employees Directory</h2>
-                        <p class="text-muted mb-0" style="font-size:0.93rem;">Manage your team members, roles, and
-                            profiles.</p>
+                        <h2 class="page-section-title" style="font-weight: 700; color: #1e293b; margin-bottom: 4px;">
+                            Employees Directory</h2>
+                        <p class="text-muted mb-0" style="font-size:0.93rem;">Manage your team members, their roles, and
+                            system access profiles.</p>
                     </div>
                     <div class="d-flex gap-2">
                     </div>
@@ -223,7 +224,6 @@
     <script>
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('employees');
-        injectTopHeader('Employees');
 
         const currentUser = getUser();
         const isAdmin = currentUser?.role === 'ADMIN';

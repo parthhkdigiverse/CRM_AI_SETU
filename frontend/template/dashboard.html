@@ -241,7 +241,6 @@
     <script>
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('dashboard');
-        injectTopHeader('Dashboard');
         document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-IN', {
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
         });

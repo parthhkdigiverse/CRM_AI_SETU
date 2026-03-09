@@ -18,10 +18,12 @@
             <div class="page-content">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h2 class="page-section-title">Clients</h2>
+                        <h2 class="page-section-title" style="font-weight: 700; color: #1e293b; margin-bottom: 4px;">
+                            Clients Database</h2>
                         <small class="text-muted" id="client-count"></small>
                     </div>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addClientModal">
+                    <button class="btn btn-primary px-4 shadow-sm border-0" data-bs-toggle="modal"
+                        data-bs-target="#addClientModal" style="border-radius: 8px; height: 42px; font-weight: 600;">
                         <i class="bi bi-plus-lg me-1"></i>New Client
                     </button>
                 </div>
@@ -160,7 +162,6 @@
         <script>
             requireAuth();
             document.getElementById('sidebar').innerHTML = renderSidebar('clients');
-            injectTopHeader('Clients');
 
             let activeClientIdForPayment = null;
 
@@ -185,27 +186,27 @@
                     console.warn("Could not fetch users for PM mapping. They will display as IDs.", err);
                 }
 
-                    // Allow search query from Navbar to filter clients
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const searchQuery = urlParams.get('search');
-                    if (searchQuery) {
-                        const q = searchQuery.toLowerCase();
-                        clients = clients.filter(c =>
-                            c.name.toLowerCase().includes(q) ||
-                            (c.email && c.email.toLowerCase().includes(q)) ||
-                            (c.organization && c.organization.toLowerCase().includes(q))
-                        );
-                    }
+                // Allow search query from Navbar to filter clients
+                const urlParams = new URLSearchParams(window.location.search);
+                const searchQuery = urlParams.get('search');
+                if (searchQuery) {
+                    const q = searchQuery.toLowerCase();
+                    clients = clients.filter(c =>
+                        c.name.toLowerCase().includes(q) ||
+                        (c.email && c.email.toLowerCase().includes(q)) ||
+                        (c.organization && c.organization.toLowerCase().includes(q))
+                    );
+                }
 
-                    document.getElementById('client-count').textContent = `${clients.length} active clients registered`;
-                    const tbody = document.getElementById('clients-table');
+                document.getElementById('client-count').textContent = `${clients.length} active clients registered`;
+                const tbody = document.getElementById('clients-table');
 
-                    if (!clients.length) {
-                        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">No clients found matching "${searchQuery || 'your criteria'}".</td></tr>`;
-                        return;
-                    }
+                if (!clients.length) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">No clients found matching "${searchQuery || 'your criteria'}".</td></tr>`;
+                    return;
+                }
 
-                    tbody.innerHTML = clients.map(c => `
+                tbody.innerHTML = clients.map(c => `
                 <tr>
                     <td>
                         <div class="fw-semibold">${c.name}</div>

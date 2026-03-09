@@ -20,11 +20,13 @@
                 <!-- Page Header -->
                 <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                     <div>
-                        <h2 class="page-section-title">Visits</h2>
-                        <p class="text-muted small mb-0">Track field visits, call outcomes, and shop conversion status.
-                        </p>
+                        <h2 class="page-section-title" style="font-weight: 700; color: #1e293b; margin-bottom: 4px;">
+                            Field Visits</h2>
+                        <p class="text-muted small mb-0">Track and monitor sales visits, client follow-ups, and
+                            conversion status.</p>
                     </div>
                     <button id="add-visit-btn" class="btn btn-primary"
+                        style="border-radius: 8px; height: 42px; font-weight: 600;"
                         onclick="document.getElementById('visitModal').classList.add('show')">
                         <i class="bi bi-plus-lg me-2"></i>Log New Visit
                     </button>
@@ -221,7 +223,6 @@
     <script>
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('visits');
-        injectTopHeader('Visits');
 
         const user = getUser();
         const isSales = user?.role === 'SALES' || user?.role === 'PROJECT_MANAGER_AND_SALES';

@@ -289,8 +289,9 @@
             <div class="page-content">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h2 class="page-section-title">Project Overview</h2>
-                        <p class="text-muted small mb-0" id="total-leads-count">0 total leads in pipeline</p>
+                        <h2 class="page-section-title" style="font-weight: 700; color: #1e293b; margin-bottom: 4px;">
+                            Project Overview</h2>
+                        <p class="text-muted small mb-0" id="total-leads-count">0 total leads in the sales pipeline.</p>
                     </div>
                     <div class="d-flex align-items-center gap-3">
                         <div class="layout-toggles btn-group">
@@ -301,8 +302,9 @@
                                 <i class="bi bi-list-ul"></i>
                             </button>
                         </div>
-                        <button class="btn btn-primary d-flex align-items-center gap-2"
-                            onclick="window.location.href='areas.html?add=true'">
+                        <button class="btn btn-primary d-flex align-items-center gap-2 px-3 shadow-sm border-0"
+                            onclick="window.location.href='areas.html?add=true'"
+                            style="border-radius: 8px; height: 42px; font-weight: 600;">
                             <i class="bi bi-plus-lg"></i> Add Lead
                         </button>
                     </div>
@@ -391,7 +393,6 @@
     <script>
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('leads');
-        injectTopHeader('Project Overview');
 
         let leadStore = {};
 
