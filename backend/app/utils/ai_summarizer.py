@@ -6,11 +6,24 @@ from dotenv import load_dotenv
 # 1. Force load the .env file from the current environment
 load_dotenv()
 
-# 2. Get the key directly from the environment variables
-api_key = os.getenv("GOOGLE_API_KEY")
+# 2. Lazy Initialization for GenAI Client
+_client = None
 
-# 3. Initialize the client with the direct key
-client = genai.Client(api_key=api_key)
+def get_gemini_client():
+    """Returns the GenAI client, initializing it only once if the API key is available."""
+    global _client
+    if _client is None:
+        # Get the key directly from the environment variables
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            print("[ai_summarizer] WARNING: GOOGLE_API_KEY not found in environment.")
+            return None
+        try:
+            _client = genai.Client(api_key=api_key)
+        except Exception as e:
+            print(f"[ai_summarizer] ERROR: Failed to initialize Gemini client: {e}")
+            return None
+    return _client
 
 async def generate_ai_summary(meeting_id: int, manual_notes: str = None):
     """
@@ -46,9 +59,16 @@ async def generate_ai_summary(meeting_id: int, manual_notes: str = None):
     }}
     """
     
+    client = get_gemini_client()
+    if not client:
+        return {
+            "highlights": ["AI analysis unavailable (Missing API Key)"],
+            "next_steps": "Please provide a valid GOOGLE_API_KEY in the .env file."
+        }
+
     try:
         response = client.models.generate_content(
-            model="gemini-3-flash-preview",
+            model="gemini-2.0-flash",
             contents=prompt
         )
         

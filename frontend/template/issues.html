@@ -33,6 +33,10 @@
                         <table class="table align-middle mb-0">
                             <thead>
                                 <tr>
+                                    <th class="ps-3" style="width: 40px;">
+                                        <input type="checkbox" class="form-check-input" id="issue-select-all"
+                                            onclick="toggleAllIssues(this)">
+                                    </th>
                                     <th class="text-secondary fw-semibold">ISSUE</th>
                                     <th class="text-secondary fw-semibold">SEVERITY</th>
                                     <th class="text-secondary fw-semibold">STATUS</th>
@@ -130,7 +134,7 @@
     </div>
 
     <script src="../js/api.js?v=2.6"></script>
-    <script src="../js/ui_components.js?v=2.6"></script>
+    <script src="../js/ui_components.js?v=1772780187"></script>
     <script src="../js/auth.js?v=2.6"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -176,6 +180,9 @@
 
                     return `
                 <tr class="bg-white align-middle ${criticalClass}" style="height: 60px; cursor: pointer;" onclick="openHandleModal(${i.id}, '${i.status}', '${(i.remarks || '').replace(/'/g, "\\'")}')">
+                    <td class="ps-3" onclick="event.stopPropagation()">
+                        <input type="checkbox" class="form-check-input issue-checkbox" value="${i.id}" onclick="updateSelectedCount()">
+                    </td>
                     <td class="fw-semibold text-dark">
                         ${icon} ${i.title}
                         ${i.remarks ? `<div class="text-muted small ms-4" style="font-size:0.75rem;"><i class="bi bi-chat-left-text me-1"></i>${i.remarks}</div>` : ''}
@@ -307,6 +314,47 @@
             } catch (e) { showToast(e.message, 'error'); }
             finally { btn.disabled = false; btn.textContent = 'Report Issue'; }
         });
+
+        function toggleAllIssues(master) {
+            document.querySelectorAll('.issue-checkbox').forEach(cb => cb.checked = master.checked);
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const selected = document.querySelectorAll('.issue-checkbox:checked').length;
+            window.updateBulkActionBar({
+                count: selected,
+                onDelete: () => batchDeleteIssues(),
+                onCancel: () => {
+                    document.querySelectorAll('.issue-checkbox').forEach(cb => cb.checked = false);
+                    document.getElementById('issue-select-all').checked = false;
+                    updateSelectedCount();
+                }
+            });
+        }
+
+        async function batchDeleteIssues() {
+            const selectedIds = Array.from(document.querySelectorAll('.issue-checkbox:checked')).map(cb => parseInt(cb.value));
+            if (!selectedIds.length) return;
+
+            if (getUser().role !== 'ADMIN') {
+                showToast('Only Admins can perform bulk delete', 'error');
+                return;
+            }
+
+            if (!confirm(`Delete ${selectedIds.length} issues permanently?`)) return;
+
+            try {
+                await ApiClient.request('/issues/batch-delete', {
+                    method: 'POST',
+                    body: selectedIds
+                });
+                showToast(`Successfully removed ${selectedIds.length} issues`, 'success');
+                loadIssues();
+            } catch (err) {
+                showToast('Bulk delete failed', 'error');
+            }
+        }
 
         loadIssues().then(() => {
             const urlParams = new URLSearchParams(window.location.search);

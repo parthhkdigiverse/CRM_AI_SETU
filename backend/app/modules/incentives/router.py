@@ -1,5 +1,5 @@
 from typing import List, Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from datetime import datetime, UTC
 
@@ -59,7 +59,7 @@ def read_incentive_slabs(
     db: Session = Depends(get_db),
     current_user: User = Depends(pro_checker)
 ) -> Any:
-    return db.query(IncentiveSlab).order_by(IncentiveSlab.min_percentage).all()
+    return db.query(IncentiveSlab).order_by(IncentiveSlab.min_units).all()
 
 # CALCULATION
 @router.post("/calculate", response_model=IncentiveSlipRead)
@@ -81,3 +81,43 @@ def read_incentive_slips(
     from app.modules.incentives.service import IncentiveService
     service = IncentiveService(db)
     return service.get_user_incentive_slips(user_id)
+
+@router.delete("/targets/{target_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_incentive_target(
+    target_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+):
+    db_target = db.query(IncentiveTarget).filter(IncentiveTarget.id == target_id).first()
+    if not db_target:
+        raise HTTPException(status_code=404, detail="Target not found")
+    db.delete(db_target)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.post("/slabs/batch-delete", status_code=status.HTTP_200_OK)
+def batch_delete_slabs(
+    slab_ids: List[int],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+):
+    try:
+        count = db.query(IncentiveSlab).filter(IncentiveSlab.id.in_(slab_ids)).delete(synchronize_session=False)
+        db.commit()
+        return {"message": f"Successfully deleted {count} slabs"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/slabs/{slab_id}")
+def delete_incentive_slab(
+    slab_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+):
+    db_slab = db.query(IncentiveSlab).filter(IncentiveSlab.id == slab_id).first()
+    if not db_slab:
+        raise HTTPException(status_code=404, detail="Slab not found")
+    db.delete(db_slab)
+    db.commit()
+    return {"message": "Slab deleted"}

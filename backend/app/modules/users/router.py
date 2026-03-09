@@ -155,6 +155,35 @@ async def delete_user(
     from fastapi import Response
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+@router.post("/batch-delete")
+async def batch_delete_users(
+    ids: List[int],
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+):
+    try:
+        # Soft delete
+        db.query(User).filter(User.id.in_(ids)).update({"is_deleted": True}, synchronize_session=False)
+        db.commit()
+        
+        activity_logger = ActivityLogger(db)
+        # Log collectively or individually? Collectively is faster.
+        await activity_logger.log_activity(
+            user_id=current_user.id if current_user else 0,
+            user_role=current_user.role if current_user else UserRole.ADMIN,
+            action=ActionType.DELETE,
+            entity_type=EntityType.USER,
+            entity_id=0, # 0 for batch
+            old_data={"batch_ids": ids},
+            new_data={"is_deleted": True},
+            request=request
+        )
+        return {"message": f"Successfully deleted {len(ids)} users"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ── Referral Code endpoints (moved from employees router) ─────────────────────
 
 @router.post("/{user_id}/referral-code")

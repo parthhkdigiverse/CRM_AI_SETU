@@ -53,8 +53,10 @@
                                     <th>Month</th>
                                     <th>Base Salary</th>
                                     <th>Deductions</th>
-                                    <th>Net Salary (₹)</th>
-                                    <th>Paid / Unpaid Leaves</th>
+                                    <th>Incentive</th>
+                                    <th>Total Earnings</th>
+                                    <th>Invoice</th>
+                                    <th>Leaves</th>
                                 </tr>
                             </thead>
                             <tbody id="slips-tbody">
@@ -116,7 +118,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../js/api.js?v=2.6"></script>
-    <script src="../js/ui_components.js?v=2.6"></script>
+    <script src="../js/ui_components.js?v=1772780187"></script>
     <script src="../js/auth.js?v=2.6"></script>
     <script>
         requireAuth();
@@ -165,8 +167,14 @@
                 <td class="text-muted">${s.month}</td>
                 <td>₹${Number(s.base_salary).toLocaleString('en-IN')}</td>
                 <td class="text-danger">-₹${Number(s.deduction_amount).toLocaleString('en-IN')}</td>
+                <td class="text-success fw-bold">+₹${Number(s.incentive_amount || 0).toLocaleString('en-IN')}</td>
                 <td class="fw-bold text-dark fs-6">₹${Number(s.final_salary).toLocaleString('en-IN')}</td>
-                <td class="text-muted">${s.paid_leaves} paid / ${s.unpaid_leaves} unpaid</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="downloadInvoice(${s.id})">
+                        <i class="bi bi-download me-1"></i>PDF
+                    </button>
+                </td>
+                <td class="text-muted small">${s.paid_leaves}P / ${s.unpaid_leaves}U</td>
             </tr>`).join('');
             } catch (e) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger">${e.message || 'Err'}</td></tr>`; }
         }
@@ -196,15 +204,24 @@
             finally { btn.disabled = false; btn.innerHTML = 'Generate Slip'; }
         }
 
+        async function downloadInvoice(slipId) {
+            try {
+                const response = await fetch(`${window.API_BASE || 'http://localhost:8000'}/api/hrm/salary/slip/${slipId}/invoice`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch invoice');
+                const html = await response.text();
+                const win = window.open('', '_blank');
+                win.document.write(html);
+                win.document.close();
+            } catch (err) { showToast('Error downloading invoice', true); }
+        }
+
         if (!isAdmin) {
             document.getElementById('slip-user-filter').style.display = 'none';
             loadSlips();
         }
     </script>
-</body>
-
-</html>
-</script>
 </body>
 
 </html>

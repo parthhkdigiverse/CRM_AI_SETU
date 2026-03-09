@@ -19,8 +19,10 @@ class IncentiveTargetRead(IncentiveTargetBase):
 
 # Slabs
 class IncentiveSlabBase(BaseModel):
-    min_percentage: float
-    amount_per_unit: float
+    min_units: int
+    max_units: int
+    incentive_per_unit: float
+    slab_bonus: float
 
 class IncentiveSlabCreate(IncentiveSlabBase):
     pass

@@ -47,7 +47,13 @@ class ActivityLogger:
 
     def get_logs(self, skip: int = 0, limit: int = 100):
         try:
-            return self.db.query(ActivityLog).order_by(ActivityLog.created_at.desc()).offset(skip).limit(limit).all()
+            logs = self.db.query(ActivityLog).order_by(ActivityLog.created_at.desc()).offset(skip).limit(limit).all()
+            for log in logs:
+                if log.user:
+                    log.user_name = log.user.name or log.user.email or log.user.employee_code or f"User #{log.user_id}"
+                else:
+                    log.user_name = "System"
+            return logs
         except Exception as e:
             print(f"Error fetching logs: {e}")
             return []

@@ -37,6 +37,8 @@ class SalarySlip(Base):
     paid_leaves = Column(Integer, default=0)
     unpaid_leaves = Column(Integer, default=0)
     deduction_amount = Column(Float, default=0.0)
+    incentive_amount = Column(Float, default=0.0)
+    total_earnings = Column(Float, nullable=False, default=0.0)
     final_salary = Column(Float, nullable=False)
 
     file_url = Column(String, nullable=True)
