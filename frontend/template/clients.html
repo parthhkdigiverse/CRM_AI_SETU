@@ -185,27 +185,27 @@
                     console.warn("Could not fetch users for PM mapping. They will display as IDs.", err);
                 }
 
-                // Allow search query from Navbar to filter clients
-                const urlParams = new URLSearchParams(window.location.search);
-                const searchQuery = urlParams.get('search');
-                if (searchQuery) {
-                    const q = searchQuery.toLowerCase();
-                    clients = clients.filter(c =>
-                        c.name.toLowerCase().includes(q) ||
-                        (c.email && c.email.toLowerCase().includes(q)) ||
-                        (c.organization && c.organization.toLowerCase().includes(q))
-                    );
-                }
+                    // Allow search query from Navbar to filter clients
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const searchQuery = urlParams.get('search');
+                    if (searchQuery) {
+                        const q = searchQuery.toLowerCase();
+                        clients = clients.filter(c =>
+                            c.name.toLowerCase().includes(q) ||
+                            (c.email && c.email.toLowerCase().includes(q)) ||
+                            (c.organization && c.organization.toLowerCase().includes(q))
+                        );
+                    }
 
-                document.getElementById('client-count').textContent = `${clients.length} active clients registered`;
-                const tbody = document.getElementById('clients-table');
+                    document.getElementById('client-count').textContent = `${clients.length} active clients registered`;
+                    const tbody = document.getElementById('clients-table');
 
-                if (!clients.length) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">No clients found matching "${searchQuery || 'your criteria'}".</td></tr>`;
-                    return;
-                }
+                    if (!clients.length) {
+                        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">No clients found matching "${searchQuery || 'your criteria'}".</td></tr>`;
+                        return;
+                    }
 
-                tbody.innerHTML = clients.map(c => `
+                    tbody.innerHTML = clients.map(c => `
                 <tr>
                     <td>
                         <div class="fw-semibold">${c.name}</div>

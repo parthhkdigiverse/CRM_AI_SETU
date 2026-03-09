@@ -110,6 +110,25 @@ class ClientService:
             except Exception as e:
                 print(f"[PM Notify] Email failed (non-fatal): {e}")
 
+        # Record PM assignment history
+        if assigned_pm:
+            history = ClientPMHistory(client_id=db_client.id, pm_id=assigned_pm.id)
+            self.db.add(history)
+            self.db.commit()
+
+            # Notify the assigned PM by email (non-blocking; errors are swallowed)
+            try:
+                email_svc = EmailService()
+                email_svc.send_pm_assignment_notification(
+                    pm_email=assigned_pm.email,
+                    pm_name=assigned_pm.name or assigned_pm.email,
+                    client_name=db_client.name,
+                    client_org=db_client.organization or "-",
+                    client_phone=db_client.phone or "-",
+                )
+            except Exception as e:
+                print(f"[PM Notify] Email failed (non-fatal): {e}")
+
         await self.activity_logger.log_activity(
             user_id=current_user.id,
             user_role=current_user.role,

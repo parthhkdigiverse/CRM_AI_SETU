@@ -214,6 +214,7 @@ function injectTopHeader(pageTitle) {
         </div>
 
         <!-- Center: Global Search -->
+        <div class="top-header-search">
         <div class="top-header-search" style="position:relative; z-index:1000;">
             <div class="position-relative w-100">
                 <button class="btn p-0 position-absolute text-muted" style="left:12px; top:50%; transform:translateY(-50%); border:none; background:none; z-index:5;" onclick="const val = document.getElementById('global-search-input').value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val);">
@@ -284,6 +285,33 @@ function injectTopHeader(pageTitle) {
     </div>`;
     const rightSide = document.querySelector('.flex-grow-1');
     if (rightSide) {
+        // ENFORCE STANDARDS: Remove any conflicting inline paddings or styles
+        rightSide.style.setProperty('padding', '0', 'important');
+        rightSide.style.height = '100vh';
+        rightSide.style.overflowY = 'auto';
+        rightSide.style.display = 'flex';
+        rightSide.style.flexDirection = 'column';
+        rightSide.classList.remove('p-4');
+        rightSide.classList.add('bg-light');
+
+        // Inject header at top of the column
+        rightSide.insertAdjacentHTML('afterbegin', headerHtml);
+
+        // Only wrap content in page-content if one doesn't already exist.
+        // This prevents double-wrapping on pages that already have .page-content.
+        let existingPageContent = rightSide.querySelector('.page-content');
+        if (!existingPageContent) {
+            const nodesToMove = [];
+            for (const child of rightSide.childNodes) {
+                if (child.nodeType === 1 && child.classList.contains('top-header')) continue;
+                nodesToMove.push(child);
+            }
+            const contentContainer = document.createElement('div');
+            contentContainer.className = 'page-content';
+            contentContainer.style.flexGrow = '1';
+            nodesToMove.forEach(node => contentContainer.appendChild(node));
+            rightSide.appendChild(contentContainer);
+        }
         // Inject header at top of the column
         rightSide.insertAdjacentHTML('afterbegin', headerHtml);
     }
@@ -292,6 +320,84 @@ function injectTopHeader(pageTitle) {
     if (typeof window.initLiveSearch === 'function') {
         window.initLiveSearch();
     }
+
+    startNotificationPolling();
+}
+
+// ─── NOTIFICATION BELL POLLING ────────────────────────────────────────
+// State to track if polling is already active
+window._notifPollStarted = window._notifPollStarted || false;
+
+// Expose refreshBell globally so other pages (like notifications.html) can trigger an instant sync.
+window.refreshBell = async function () {
+    // Only fetch if we have a token
+    if (!localStorage.getItem('access_token')) return;
+
+    try {
+        const { unread } = await apiGet('/notifications/unread-count');
+        const dot = document.getElementById('nav-notif-dot');
+        if (dot) {
+            if (unread > 0) dot.classList.remove('d-none');
+            else dot.classList.add('d-none');
+        }
+
+        // Populate the dropdown preview (unread only, top 5 max)
+        const all = await apiGet('/notifications/?limit=100');
+        const bellBody = document.getElementById('bell-notif-list');
+        if (!bellBody) return;
+
+        // Filter for unread only
+        const unreadList = (Array.isArray(all) ? all : []).filter(n => !n.is_read).slice(0, 5);
+
+        // Protect against no unread alerts
+        if (unreadList.length === 0) {
+            bellBody.innerHTML = `
+                <div class="p-3 text-center">
+                    <i class="bi bi-bell-slash text-muted" style="font-size:2rem;"></i>
+                    <p class="text-muted small mt-2 mb-0">No new alerts right now.</p>
+                </div>`;
+            return;
+        }
+
+        bellBody.innerHTML = unreadList.map(n => {
+            // Determine client name from message if possible, or fallback
+            let displayTitle = n.title;
+            if (n.title === "⏰ Upcoming Meeting") {
+                const match = n.message.match(/with (.*?) starts/);
+                const clientName = match ? match[1] : "Client";
+                displayTitle = `Upcoming Session: ${clientName}`;
+            }
+
+            // Force UTC parsing: Append 'Z' if missing to ensure browser converts correctly to local time
+            const dateObj = new Date(n.created_at.endsWith('Z') || n.created_at.includes('+') ? n.created_at : n.created_at + 'Z');
+
+            return `
+            <div class="d-flex gap-2 px-3 py-2 border-bottom bg-primary-subtle"
+                 style="cursor:default; transition: background 0.2s;">
+                <i class="bi bi-bell-fill text-primary mt-1 flex-shrink-0" style="font-size:.85rem;"></i>
+                <div class="w-100 overflow-hidden">
+                    <div class="fw-bold text-truncate text-dark" style="font-size:.82rem;">${displayTitle}</div>
+                    <div class="text-muted text-wrap small mt-1" style="line-height: 1.3;">${n.message}</div>
+                    <div class="text-muted mt-1 d-flex align-items-center gap-1" style="font-size:.68rem;">
+                        <i class="bi bi-clock" style="font-size:.65rem;"></i>
+                        ${dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        // silently ignore — user may not be on a page that loads auth yet
+    }
+};
+
+function startNotificationPolling() {
+    if (window._notifPollStarted) return;
+    window._notifPollStarted = true;
+
+    // Run immediately
+    window.refreshBell();
+    // Then every 30 seconds
+    setInterval(window.refreshBell, 30000);
 }
 
 // ─── NOTIFICATION BELL POLLING ────────────────────────────────────────
