@@ -141,12 +141,23 @@ def delete_meeting(
 
     if current_user and current_user.role != UserRole.ADMIN:
         db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
-        if not db_client or db_client.pm_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Access denied")
-
     db.delete(db_meeting)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@global_router.post("/batch-delete")
+def batch_delete_meetings(
+    ids: List[int],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+):
+    try:
+        db.query(MeetingSummary).filter(MeetingSummary.id.in_(ids)).delete(synchronize_session=False)
+        db.commit()
+        return {"message": f"Successfully deleted {len(ids)} meetings"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/meetings/{meeting_id}/cancel", response_model=MeetingSummaryRead)
 def cancel_meeting(

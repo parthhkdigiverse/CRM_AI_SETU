@@ -17,6 +17,8 @@ from app.utils.scheduler import start_scheduler, stop_scheduler
 async def lifespan(app: FastAPI):
     """Startup & shutdown hooks."""
     # ── Startup ──────────────────────────────────────────────────
+    from app.core.database import init_db
+    init_db()
     start_scheduler()
     yield
     # ── Shutdown ─────────────────────────────────────────────────

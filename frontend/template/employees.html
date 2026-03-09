@@ -114,6 +114,10 @@
                         <table class="table mb-0 align-middle">
                             <thead class="bg-light">
                                 <tr>
+                                    <th class="ps-4" style="width: 40px;">
+                                        <input type="checkbox" class="form-check-input" id="emp-select-all"
+                                            onclick="toggleAllEmployees(this)">
+                                    </th>
                                     <th class="py-3 px-4 text-uppercase small fw-bold text-muted">Employee</th>
                                     <th class="py-3 px-4 text-uppercase small fw-bold text-muted">Department & Code</th>
                                     <th class="py-3 px-4 text-uppercase small fw-bold text-muted">Role</th>
@@ -220,7 +224,7 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../js/api.js?v=2.6"></script>
-    <script src="../js/ui_components.js?v=2.6"></script>
+    <script src="../js/ui_components.js?v=1772780187"></script>
     <script src="../js/auth.js?v=2.6"></script>
     <script>
         requireAuth();
@@ -287,6 +291,9 @@
 
                     return `
                     <tr>
+                        <td class="ps-4">
+                            <input type="checkbox" class="form-check-input emp-checkbox" value="${emp.id}" onclick="updateSelectedCount()">
+                        </td>
                         <td class="px-4">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="employee-avatar shadow-sm">${avatarLetter}</div>
@@ -363,6 +370,47 @@
             } catch (err) {
                 console.error("Delete failed", err);
                 showToast(err.data?.detail || err.message || 'Failed to delete employee', 'error');
+            }
+        }
+
+        function toggleAllEmployees(master) {
+            document.querySelectorAll('.emp-checkbox').forEach(cb => cb.checked = master.checked);
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const selected = document.querySelectorAll('.emp-checkbox:checked').length;
+            window.updateBulkActionBar({
+                count: selected,
+                onDelete: () => batchDeleteEmployees(),
+                onCancel: () => {
+                    document.querySelectorAll('.emp-checkbox').forEach(cb => cb.checked = false);
+                    document.getElementById('emp-select-all').checked = false;
+                    updateSelectedCount();
+                }
+            });
+        }
+
+        async function batchDeleteEmployees() {
+            const selectedIds = Array.from(document.querySelectorAll('.emp-checkbox:checked')).map(cb => parseInt(cb.value));
+            if (!selectedIds.length) return;
+
+            if (getUser().role !== 'ADMIN') {
+                showToast('Only Admins can perform bulk delete', 'error');
+                return;
+            }
+
+            if (!confirm(`Delete ${selectedIds.length} employees? (Soft delete)`)) return;
+
+            try {
+                await ApiClient.request('/users/batch-delete', {
+                    method: 'POST',
+                    body: selectedIds
+                });
+                showToast(`Removed ${selectedIds.length} employees`, 'success');
+                loadEmployees();
+            } catch (err) {
+                showToast('Bulk delete failed', 'error');
             }
         }
 

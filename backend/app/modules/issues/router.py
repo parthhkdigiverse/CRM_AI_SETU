@@ -107,6 +107,21 @@ async def delete_issue(
     await service.delete_issue(issue_id, current_user, request)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+@global_router.post("/batch-delete")
+async def batch_delete_issues(
+    ids: List[int],
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+):
+    try:
+        db.query(Issue).filter(Issue.id.in_(ids)).delete(synchronize_session=False)
+        db.commit()
+        return {"message": f"Successfully deleted {len(ids)} issues"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/issues/{issue_id}", response_model=IssueRead)
 def get_issue_details(
     issue_id: int,

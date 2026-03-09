@@ -15,200 +15,189 @@
 </head>
 
 <body>
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --accent-primary: #6366f1;
+            --accent-secondary: #0ea5e9;
+            --accent-success: #10b981;
+        }
+
+        .grid-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .grid-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-premium {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            border: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-premium:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+            color: white;
+        }
+
+        .table thead th {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+    </style>
+
     <div class="d-flex">
         <div id="sidebar"></div>
         <div class="flex-grow-1">
             <div class="page-content">
                 <!-- Header -->
-                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                <div class="d-flex justify-content-between align-items-center mb-5 pb-2">
                     <div>
-                        <h2 class="page-section-title">Incentive Management</h2>
-                        <p class="text-muted mb-0" style="font-size:0.93rem;">Configure tiered incentive slabs, set role
-                            targets, and calculate bonuses.</p>
-                    </div>
-                    <div class="d-flex gap-2" id="admin-action-area">
-                        <button class="btn btn-outline-secondary" style="border-radius:10px;"
-                            onclick="openTargetModal()">
-                            <i class="bi bi-bullseye me-2"></i>Manage Targets
-                        </button>
-                        <button class="btn btn-outline-primary" style="border-radius:10px;" onclick="openSlabModal()">
-                            <i class="bi bi-layers me-2"></i>Add Slab
-                        </button>
-                        <button class="btn btn-primary fw-semibold" style="border-radius:10px;"
-                            onclick="openCalcModal()">
-                            <i class="bi bi-calculator me-2"></i>Calculate Incentive
-                        </button>
+                        <h2 class="page-section-title fw-bold" style="font-size: 1.75rem; color: #1e293b;">Incentive
+                            Intelligence</h2>
+                        <p class="text-muted mb-0">Unified dashboard for performance tracking and incentive
+                            configuration.</p>
                     </div>
                 </div>
 
-                <!-- Tabs -->
-                <ul class="nav nav-tabs mb-4" id="incentTab">
-                    <li class="nav-item"><button class="nav-link active" onclick="switchTab('slabs')">Incentive
-                            Slabs</button></li>
-                    <li class="nav-item"><button class="nav-link" onclick="switchTab('targets')">Role Targets</button>
-                    </li>
-                    <li class="nav-item"><button class="nav-link" onclick="switchTab('slips')">Incentive Slips</button>
-                    </li>
-                </ul>
-
-                <!-- Slabs Table -->
-                <div id="tab-slabs" class="grid-card">
-                    <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
-                        <div>
-                            <h6 class="fw-bold mb-1" style="color:#334155;">Incentive Slab Structure</h6>
-                            <p class="text-muted mb-0 small">Higher target achievement → higher per-unit bonus payout.
-                            </p>
+                <!-- Summary Quick Stats -->
+                <div class="row g-4 mb-5">
+                    <div class="col-md-4">
+                        <div class="grid-card p-4 border-0 rounded-4 shadow-sm">
+                            <div class="stat-icon bg-primary-subtle text-primary">
+                                <i class="bi bi-layers-half fs-5"></i>
+                            </div>
+                            <div class="text-muted small fw-semibold text-uppercase mb-1">Configured Slabs</div>
+                            <div class="h2 fw-bold mb-0" id="stat-slabs">-</div>
                         </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Min. Achievement %</th>
-                                    <th>Per-Unit Bonus (₹)</th>
-                                    <th>Rate Tier</th>
-                                </tr>
-                            </thead>
-                            <tbody id="slabs-tbody">
-                                <tr>
-                                    <td colspan="3" class="text-center py-5 text-muted"><span
-                                            class="spinner-border spinner-border-sm me-2"></span>Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="col-md-4">
+                        <div class="grid-card p-4 border-0 rounded-4 shadow-sm">
+                            <div class="stat-icon bg-info-subtle text-info">
+                                <i class="bi bi-bullseye fs-5"></i>
+                            </div>
+                            <div class="text-muted small fw-semibold text-uppercase mb-1">Role Targets</div>
+                            <div class="h2 fw-bold mb-0" id="stat-targets">-</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="grid-card p-4 border-0 rounded-4 shadow-sm">
+                            <div class="stat-icon bg-success-subtle text-success">
+                                <i class="bi bi-person-check fs-5"></i>
+                            </div>
+                            <div class="text-muted small fw-semibold text-uppercase mb-1">Active Slips</div>
+                            <div class="h2 fw-bold mb-0" id="stat-slips">-</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Targets Table -->
-                <div id="tab-targets" class="grid-card" style="display:none;">
-                    <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
-                        <div>
-                            <h6 class="fw-bold mb-1" style="color:#334155;">Role-Based Targets</h6>
-                            <p class="text-muted mb-0 small">Default monthly unit targets for each employee role.</p>
+                <!-- Unified Dashboard Grid -->
+                <div class="row g-4">
+                    <!-- Left Side: Configuration Rules -->
+                    <div class="col-xl-4 col-lg-5">
+                        <!-- Slabs Card -->
+                        <div class="grid-card p-0 border-0 rounded-4 shadow-sm mb-4 overflow-hidden h-100">
+                            <div
+                                class="p-4 border-bottom d-flex justify-content-between align-items-center bg-white sticky-top shadow-sm">
+                                <h6 class="fw-bold mb-0 text-dark"><i
+                                        class="bi bi-shield-lock me-2 text-primary"></i>Incentive Strategy</h6>
+                                <a href="settings.html#incentives-config"
+                                    class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                    <i class="bi bi-gear me-1"></i>Edit
+                                </a>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle small mb-0">
+                                    <thead class="bg-light sticky-top">
+                                        <tr class="x-small text-uppercase text-muted fw-bold">
+                                            <th class="ps-4">Range</th>
+                                            <th>Per Task</th>
+                                            <th class="pe-4">Bonus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="slabs-tbody">
+                                        <tr>
+                                            <td colspan="3" class="text-center py-5 text-muted">Loading strategy...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="p-4 bg-light border-top mt-auto">
+                                <p class="x-small text-muted mb-0">Performance is measured by task achievement within
+                                    these defined ranges. Rewards are calculated automatically.</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Role</th>
-                                    <th>Period</th>
-                                    <th>Target Units</th>
-                                </tr>
-                            </thead>
-                            <tbody id="targets-tbody">
-                                <tr>
-                                    <td colspan="3" class="text-center py-5 text-muted">Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
 
-                <!-- Slips Table -->
-                <div id="tab-slips" class="grid-card" style="display:none;">
-                    <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
-                        <h6 class="fw-bold mb-0" style="color:#334155;">Incentive Calculation Slips</h6>
-                        <div class="d-flex gap-2">
-                            <select id="slip-user-filter" class="form-select form-select-sm" style="width:auto;"
-                                onchange="loadSlips()">
-                                <option value="">Select Employee</option>
-                            </select>
+                    <!-- Right Side: Performance Slips -->
+                    <div class="col-xl-8 col-lg-7">
+                        <div class="grid-card p-0 border-0 rounded-4 shadow-sm overflow-hidden h-100">
+                            <div
+                                class="p-4 border-bottom d-flex justify-content-between align-items-center bg-white sticky-top shadow-sm z-3">
+                                <div>
+                                    <h6 class="fw-bold mb-0">Performance Insights</h6>
+                                    <p class="text-muted small mb-0">Real-time incentive calculations</p>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <select id="slip-user-filter" class="form-select form-select-sm rounded-pill"
+                                        style="width:180px;" onchange="loadSlips()">
+                                        <option value="">Filter Employee</option>
+                                    </select>
+                                    <button class="btn btn-sm btn-premium rounded-pill px-4" onclick="openCalcModal()">
+                                        <i class="bi bi-lightning-charge-fill me-1"></i>Calculate
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="table-responsive h-100">
+                                <table class="table table-hover mb-0 align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-4">Employee</th>
+                                            <th>Period</th>
+                                            <th>Achievement</th>
+                                            <th class="pe-4 text-end">Incentive</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="slips-tbody">
+                                        <tr>
+                                            <td colspan="4" class="text-center py-5 text-muted">Select an employee to
+                                                view performance history</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Employee</th>
-                                    <th>Period</th>
-                                    <th>Target</th>
-                                    <th>Achieved</th>
-                                    <th>% Hit</th>
-                                    <th>Applied Slab</th>
-                                    <th>Total Incentive (₹)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="slips-tbody">
-                                <tr>
-                                    <td colspan="7" class="text-center py-5 text-muted">Select an employee above to view
-                                        their incentive slips.</td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div><!-- /page-content -->
         </div>
     </div>
 
-    <!-- ─── Manage Targets Modal ────────────────────────────────── -->
-    <div class="crm-overlay" id="targetModal">
-        <div class="crm-box">
-            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-                <h5 class="fw-bold mb-0"><i class="bi bi-bullseye text-secondary me-2"></i>Set Role Target</h5>
-                <button class="btn-close" onclick="closeTargetModal()"></button>
-            </div>
-            <div class="mb-3">
-                <label class="form-label fw-semibold small">Employee Role <span class="text-danger">*</span></label>
-                <select id="target-role" class="form-select">
-                    <option value="TELESALES">TELESALES</option>
-                    <option value="SALES">SALES</option>
-                    <option value="PROJECT_MANAGER">PROJECT MANAGER</option>
-                    <option value="PROJECT_MANAGER_AND_SALES">PM & SALES</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label class="form-label fw-semibold small">Period</label>
-                <select id="target-period" class="form-select" disabled>
-                    <option value="Monthly">Monthly</option>
-                </select>
-            </div>
-            <div class="mb-4">
-                <label class="form-label fw-semibold small">Monthly Target (Units) <span
-                        class="text-danger">*</span></label>
-                <input type="number" id="target-count" class="form-control" placeholder="e.g. 20" min="1">
-            </div>
-            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                <button class="btn btn-light border" onclick="closeTargetModal()">Cancel</button>
-                <button class="btn btn-secondary px-4 fw-semibold text-white" id="target-submit-btn"
-                    onclick="saveTarget()">Save Target</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ─── Add Slab Modal ──────────────────────────────────────── -->
-    <div class="crm-overlay" id="slabModal">
-        <div class="crm-box">
-            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-                <h5 class="fw-bold mb-0"><i class="bi bi-layers text-primary me-2"></i>Add Incentive Slab</h5>
-                <button class="btn-close" onclick="closeSlabModal()"></button>
-            </div>
-            <div class="mb-3">
-                <label class="form-label fw-semibold small">Min. Achievement Threshold (%) <span
-                        class="text-danger">*</span></label>
-                <div class="input-group">
-                    <input type="number" id="slab-pct" class="form-control" placeholder="e.g. 50" min="0" max="100">
-                    <span class="input-group-text">%</span>
-                </div>
-                <div class="form-text text-muted">Applies when an employee achieves ≥ this % of their target.</div>
-            </div>
-            <div class="mb-4">
-                <label class="form-label fw-semibold small">Bonus per Unit (₹) <span
-                        class="text-danger">*</span></label>
-                <div class="input-group">
-                    <span class="input-group-text">₹</span>
-                    <input type="number" id="slab-amount" class="form-control" placeholder="e.g. 500" min="0"
-                        step="0.01">
-                </div>
-            </div>
-            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                <button class="btn btn-light border" onclick="closeSlabModal()">Cancel</button>
-                <button class="btn btn-primary px-4 fw-semibold" id="slab-submit-btn" onclick="addSlab()">Add
-                    Slab</button>
-            </div>
-        </div>
-    </div>
+    <!-- ─── Calculate Incentive Modal ────────────────────────────── -->
 
     <!-- ─── Calculate Incentive Modal ────────────────────────────── -->
     <div class="crm-overlay" id="calcModal">
@@ -247,7 +236,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../js/api.js?v=2.6"></script>
-    <script src="../js/ui_components.js?v=2.6"></script>
+    <script src="../js/ui_components.js?v=1772780187"></script>
     <script src="../js/auth.js?v=2.6"></script>
     <script>
         requireAuth();
@@ -258,27 +247,11 @@
         const isAdmin = user?.role === 'ADMIN';
         if (!isAdmin) document.getElementById('admin-action-area').style.display = 'none';
 
-        // ── Tab helper ────────────────────────────────────────────
-        function switchTab(tab) {
-            document.querySelectorAll('#incentTab .nav-link').forEach((b, i) => {
-                const isActive = (i === 0 && tab === 'slabs') || (i === 1 && tab === 'targets') || (i === 2 && tab === 'slips');
-                b.classList.toggle('active', isActive);
-            });
-            document.getElementById('tab-slabs').style.display = tab === 'slabs' ? '' : 'none';
-            document.getElementById('tab-targets').style.display = tab === 'targets' ? '' : 'none';
-            document.getElementById('tab-slips').style.display = tab === 'slips' ? '' : 'none';
-        }
 
         // ── Modal helpers ─────────────────────────────────────────
-        function openSlabModal() { document.getElementById('slabModal').classList.add('show'); }
-        function closeSlabModal() { document.getElementById('slabModal').classList.remove('show'); }
         function openCalcModal() { document.getElementById('calcModal').classList.add('show'); }
         function closeCalcModal() { document.getElementById('calcModal').classList.remove('show'); }
-        function openTargetModal() { document.getElementById('targetModal').classList.add('show'); }
-        function closeTargetModal() { document.getElementById('targetModal').classList.remove('show'); }
-        ['slabModal', 'calcModal', 'targetModal'].forEach(id => {
-            document.getElementById(id).addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
-        });
+        document.getElementById('calcModal').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
 
         // ── Load Employees ────────────────────────────────────────
         ApiClient.getEmployees().then(emps => {
@@ -290,109 +263,68 @@
         // ── Load Slabs ────────────────────────────────────────────
         async function loadSlabs() {
             const tbody = document.getElementById('slabs-tbody');
-            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-5 text-muted small"><span class="spinner-border spinner-border-sm me-2"></span>Syncing slabs...</td></tr>';
             try {
                 const slabs = await ApiClient.getIncentiveSlabs();
-                if (!slabs.length) {
-                    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-5 text-muted"><i class="bi bi-layers" style="font-size:2rem;display:block;margin-bottom:8px;color:#cbd5e1;"></i>No slabs configured yet. Add one to begin.</td></tr>';
+                if (!slabs || !slabs.length) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-5 text-muted small">No slabs configured.</td></tr>';
+                    document.getElementById('stat-slabs').innerText = '0';
                     return;
                 }
-                // Assign tier label based on sorted order
-                const tiers = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
-                tbody.innerHTML = slabs.map((s, i) => {
-                    const tier = tiers[i] || `Tier ${i + 1}`;
-                    const tierColors = ['#cd7f32', '#94a3b8', '#f59e0b', '#0ea5e9', '#8b5cf6'];
-                    const tc = tierColors[i] || '#6366f1';
-                    return `<tr>
-                    <td class="fw-semibold text-dark">≥ ${s.min_percentage}%</td>
-                    <td class="fw-bold text-dark">₹${Number(s.amount_per_unit).toLocaleString('en-IN')}</td>
-                    <td><span class="slab-badge" style="background:${tc}1A; color:${tc};">${tier}</span></td>
-                </tr>`;
-                }).join('');
+                document.getElementById('stat-slabs').innerText = slabs.length;
+                tbody.innerHTML = slabs.map(s => `<tr>
+                    <td class="ps-4 fw-semibold text-dark">${s.min_units}-${s.max_units}</td>
+                    <td class="fw-bold text-primary">₹${Number(s.incentive_per_unit).toLocaleString('en-IN')}</td>
+                    <td class="pe-4 fw-bold text-success">₹${Number(s.slab_bonus).toLocaleString('en-IN')}</td>
+                </tr>`).join('');
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-5 text-danger">${e.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-5 text-danger small">${e.message || 'Error'}</td></tr>`;
             }
         }
 
-        // ── Load Targets ──────────────────────────────────────────
-        async function loadTargets() {
-            const tbody = document.getElementById('targets-tbody');
-            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">Loading...</td></tr>';
-            try {
-                const targets = await ApiClient.getIncentiveTargets();
-                if (!targets.length) {
-                    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-5 text-muted">No role targets set.</td></tr>';
-                    return;
-                }
-                tbody.innerHTML = targets.map(t => `<tr>
-                    <td class="fw-semibold text-dark">${t.role.replace(/_/g, ' ')}</td>
-                    <td class="text-muted">${t.period}</td>
-                    <td class="fw-bold text-dark">${t.target_count} Units</td>
-                </tr>`).join('');
-            } catch (e) { tbody.innerHTML = `<tr><td colspan="3" class="text-center py-5 text-danger">${e.message}</td></tr>`; }
-        }
-
-        // ── Save Target ───────────────────────────────────────────
-        async function saveTarget() {
-            const role = document.getElementById('target-role').value;
-            const count = parseInt(document.getElementById('target-count').value);
-            const btn = document.getElementById('target-submit-btn');
-            if (!count || count <= 0) { showToast('Enter a valid target', 'error'); return; }
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
-            try {
-                await ApiClient.createIncentiveTarget({ role, target_count: count, period: 'Monthly' });
-                closeTargetModal();
-                showToast('Role target updated!', 'success');
-                loadTargets();
-            } catch (e) { showToast(e.data?.detail || e.message || 'Failed', 'error'); }
-            finally { btn.disabled = false; btn.innerHTML = 'Save Target'; }
-        }
-
-        // ── Add Slab ──────────────────────────────────────────────
-        async function addSlab() {
-            const pct = parseFloat(document.getElementById('slab-pct').value);
-            const amt = parseFloat(document.getElementById('slab-amount').value);
-            const btn = document.getElementById('slab-submit-btn');
-            if (isNaN(pct) || pct < 0 || pct > 100) { showToast('Enter a valid percentage (0-100)', 'error'); return; }
-            if (isNaN(amt) || amt <= 0) { showToast('Enter a valid bonus amount', 'error'); return; }
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Adding...';
-            try {
-                await ApiClient.createIncentiveSlab({ min_percentage: pct, amount_per_unit: amt });
-                closeSlabModal();
-                showToast('Incentive slab created!', 'success');
-                loadSlabs();
-            } catch (e) { showToast(e.data?.detail || e.message || 'Failed', 'error'); }
-            finally { btn.disabled = false; btn.innerHTML = 'Add Slab'; }
-        }
 
         // ── Load Slips ────────────────────────────────────────────
         async function loadSlips() {
             const userId = document.getElementById('slip-user-filter').value;
             const tbody = document.getElementById('slips-tbody');
-            if (!userId) { tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">Select an employee to view their incentive history.</td></tr>'; return; }
+            if (!userId) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted">Select an employee to view performance intelligence.</td></tr>';
+                return;
+            }
 
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Analyzing data...</td></tr>';
             try {
                 const slips = await ApiClient.request(`/incentives/slips/${userId}`);
-                if (!slips.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">No incentive slips for this employee yet.</td></tr>'; return; }
+                document.getElementById('stat-slips').innerText = slips.length;
+                if (!slips.length) { tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted">No historical data found for this employee.</td></tr>'; return; }
                 tbody.innerHTML = slips.map(s => {
                     const pct = Number(s.percentage).toFixed(1);
-                    const pctColor = s.percentage >= 75 ? '#16a34a' : s.percentage >= 50 ? '#d97706' : '#dc2626';
+                    const pctColor = s.percentage >= 100 ? '#10b981' : s.percentage >= 75 ? '#3b82f6' : s.percentage >= 50 ? '#f59e0b' : '#ef4444';
                     return `<tr>
-                    <td class="fw-semibold text-dark">${s.user_name || 'User #' + s.user_id}</td>
-                    <td class="text-muted">${s.period}</td>
-                    <td>${s.target}</td>
-                    <td class="fw-semibold">${s.achieved}</td>
-                    <td><span class="fw-bold" style="color:${pctColor};">${pct}%</span></td>
-                    <td class="text-muted">${s.applied_slab != null ? s.applied_slab + '%' : '—'}</td>
-                    <td class="fw-bold text-dark">₹${Number(s.total_incentive).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-light rounded-circle text-primary fw-bold d-flex align-items-center justify-content-center" style="width:32px; height:32px; font-size:0.8rem;">
+                                ${s.user_name ? s.user_name.charAt(0) : 'U'}
+                            </div>
+                            <span class="fw-semibold text-dark">${s.user_name || 'User #' + s.user_id}</span>
+                        </div>
+                    </td>
+                    <td class="text-muted small">${s.period}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                           <div>
+                               <span class="fw-bold d-block" style="font-size:0.9rem;">${s.achieved} <span class="text-muted fw-normal">Tasks</span></span>
+                               <span class="text-muted small" style="font-size:0.75rem;">of ${s.target} target</span>
+                           </div>
+                           <span class="badge rounded-pill px-3" style="background:${pctColor}15; color:${pctColor}; border:1px solid ${pctColor}30; font-size:0.75rem;">${pct}%</span>
+                        </div>
+                    </td>
+                    <td class="pe-4 text-end">
+                        <span class="fw-bold text-dark" style="font-size:1.05rem;">₹${Number(s.total_incentive).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                    </td>
                 </tr>`;
                 }).join('');
-            } catch (e) { tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger">${e.message}</td></tr>`; }
+            } catch (e) { tbody.innerHTML = `<tr><td colspan="4" class="text-center py-5 text-danger">${e.message || 'Error'}</td></tr>`; }
         }
 
         // ── Calculate Incentive ───────────────────────────────────
@@ -412,14 +344,12 @@
                 closeCalcModal();
                 showToast('Incentive calculated!', 'success');
                 document.getElementById('slip-user-filter').value = userId;
-                switchTab('slips');
                 loadSlips();
             } catch (e) { showToast(e.data?.detail || e.message || 'Failed', 'error'); }
             finally { btn.disabled = false; btn.innerHTML = 'Calculate'; }
         }
 
         loadSlabs();
-        loadTargets();
     </script>
 </body>
 

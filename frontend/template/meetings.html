@@ -82,7 +82,11 @@
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="bg-light bg-opacity-50">
                                     <tr>
-                                        <th class="ps-4 py-3 text-muted fw-bold extra-small uppercase">Client Name</th>
+                                        <th class="ps-4" style="width: 40px;">
+                                            <input type="checkbox" class="form-check-input" id="meeting-select-all"
+                                                onclick="toggleAllMeetings(this)">
+                                        </th>
+                                        <th class="py-3 text-muted fw-bold extra-small uppercase">Client Name</th>
                                         <th class="py-3 text-muted fw-bold extra-small uppercase">Subject & Type</th>
                                         <th class="py-3 text-muted fw-bold extra-small uppercase">Scheduled Date</th>
                                         <th class="py-3 text-muted fw-bold extra-small uppercase">Status</th>
@@ -289,6 +293,9 @@
                     return `
                     <tr class="border-bottom">
                         <td class="ps-4">
+                            <input type="checkbox" class="form-check-input meeting-checkbox" value="${m.id}" onclick="updateSelectedCount()">
+                        </td>
+                        <td>
                             <div class="fw-bold text-dark">${clientName}</div>
                             <div class="text-muted extra-small">ID: ${m.id}</div>
                         </td>
@@ -467,6 +474,48 @@
                 loadMeetings();
             } catch (e) { showToast('Scheduling failed', 'error'); }
         });
+
+        function toggleAllMeetings(master) {
+            document.querySelectorAll('.meeting-checkbox').forEach(cb => cb.checked = master.checked);
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const selected = document.querySelectorAll('.meeting-checkbox:checked').length;
+            window.updateBulkActionBar({
+                count: selected,
+                onDelete: () => batchDeleteMeetings(),
+                onCancel: () => {
+                    document.querySelectorAll('.meeting-checkbox').forEach(cb => cb.checked = false);
+                    document.getElementById('meeting-select-all').checked = false;
+                    updateSelectedCount();
+                }
+            });
+        }
+
+        async function batchDeleteMeetings() {
+            const selectedIds = Array.from(document.querySelectorAll('.meeting-checkbox:checked')).map(cb => parseInt(cb.value));
+            if (!selectedIds.length) return;
+
+            const u = getUser();
+            if (u.role !== 'ADMIN') {
+                showToast('Only Admins can perform bulk delete', 'error');
+                return;
+            }
+
+            if (!confirm(`Delete ${selectedIds.length} meetings permanently?`)) return;
+
+            try {
+                await apiPost('/meetings/batch-delete', {
+                    method: 'POST',
+                    body: selectedIds
+                });
+                showToast(`Removed ${selectedIds.length} sessions`, 'success');
+                loadMeetings();
+            } catch (err) {
+                showToast('Bulk delete failed', 'error');
+            }
+        }
 
         // Initialize
         loadClients().then(loadMeetings);

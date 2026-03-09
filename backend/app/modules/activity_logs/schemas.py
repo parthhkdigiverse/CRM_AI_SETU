@@ -19,6 +19,7 @@ class ActivityLogCreate(ActivityLogBase):
 class ActivityLogResponse(ActivityLogBase):
     id: int
     created_at: datetime
+    user_name: Optional[str] = None
 
     class Config:
         from_attributes = True

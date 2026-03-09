@@ -16,8 +16,10 @@ class IncentiveSlab(Base):
     __tablename__ = "incentive_slabs"
 
     id = Column(Integer, primary_key=True, index=True)
-    min_percentage = Column(Float, nullable=False)
-    amount_per_unit = Column(Float, nullable=False)
+    min_units = Column(Integer, nullable=False, default=1)
+    max_units = Column(Integer, nullable=False, default=10)
+    incentive_per_unit = Column(Float, nullable=False, default=0.0)
+    slab_bonus = Column(Float, nullable=False, default=0.0)
 
 class EmployeePerformance(Base):
     __tablename__ = "employee_performances"

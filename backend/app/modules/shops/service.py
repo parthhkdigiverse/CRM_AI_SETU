@@ -107,11 +107,11 @@ class ShopService:
         return db_shop
 
     @staticmethod
-    def convert_lead_to_client(db: Session, shop_id: int):
+    def approve_pipeline_entry(db: Session, shop_id: int):
         db_shop = ShopService.get_shop(db, shop_id)
         
         if db_shop.status == ShopStatus.CONVERTED:
-            raise HTTPException(status_code=400, detail="Lead already converted to client")
+            raise HTTPException(status_code=400, detail="Entry already approved and converted to project")
             
         # Check if client already exists with this email/phone
         from sqlalchemy import or_

@@ -41,6 +41,7 @@ class ClientPMAssign(BaseModel):
 class ClientRead(ClientBase):
     id: int
     pm_id: Optional[int] = None
+    pm_name: Optional[str] = None
     owner_id: Optional[int] = None
     address: Optional[str] = None
     project_type: Optional[str] = None

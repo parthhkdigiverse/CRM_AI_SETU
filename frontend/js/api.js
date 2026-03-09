@@ -236,6 +236,9 @@ class ApiClient {
     static async deleteShop(shopId) {
         return this.request(`/shops/${shopId}`, { method: 'DELETE' });
     }
+    static async approvePipelineEntry(shopId) {
+        return this.request(`/shops/${shopId}/approve`, { method: 'POST' });
+    }
     static async getShopsByArea(areaId) {
         return this.request(`/shops/?area_id=${areaId}&limit=200`);
     }
