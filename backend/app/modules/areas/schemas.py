@@ -31,7 +31,7 @@ class AreaUpdate(BaseModel):
     target_categories: Optional[List[str]] = None
 
 class AreaAssign(BaseModel):
-    assigned_user_id: int
+    user_ids: List[int]
     shop_ids: Optional[List[int]] = None
 
 class AreaRead(AreaBase):

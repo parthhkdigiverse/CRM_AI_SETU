@@ -28,12 +28,12 @@ class ShopService:
 
     @staticmethod
     def list_shops(db: Session, skip: int = 0, limit: int = 100, status: ShopStatus = None, owner_id: int = None):
-        from app.modules.areas.models import Area
-        query = db.query(
-            Shop, 
-            User.name.label("owner_name"),
-            Area.name.label("area_name")
-        ).outerjoin(User, Shop.owner_id == User.id).outerjoin(Area, Shop.area_id == Area.id)
+        from sqlalchemy.orm import selectinload
+        query = db.query(Shop).options(
+            selectinload(Shop.owner),
+            selectinload(Shop.area),
+            selectinload(Shop.assigned_owners_list)
+        )
         
         if status:
             query = query.filter(Shop.status == status)
@@ -42,21 +42,28 @@ class ShopService:
         
         results = query.offset(skip).limit(limit).all()
         shops = []
-        for shop, owner_name, area_name in results:
+        for shop in results:
             shop_data = shop.__dict__.copy()
-            shop_data["owner_name"] = owner_name
-            shop_data["area_name"] = area_name
+            shop_data["owner_name"] = shop.owner.name if shop.owner else None
+            shop_data["area_name"] = shop.area.name if shop.area else None
+            shop_data.pop("_sa_instance_state", None)
+            
+            # Map assigned owners for frontend UI
+            shop_data["assigned_users"] = [
+                {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+                for u in getattr(shop, 'assigned_owners_list', [])
+            ]
             shops.append(shop_data)
         return shops
         
     @staticmethod
     def list_kanban_shops(db: Session, owner_id: int = None):
-        from app.modules.areas.models import Area
-        query = db.query(
-            Shop, 
-            User.name.label("owner_name"),
-            Area.name.label("area_name")
-        ).outerjoin(User, Shop.owner_id == User.id).outerjoin(Area, Shop.area_id == Area.id)
+        from sqlalchemy.orm import selectinload
+        query = db.query(Shop).options(
+            selectinload(Shop.owner),
+            selectinload(Shop.area),
+            selectinload(Shop.assigned_owners_list)
+        )
         
         if owner_id:
             query = query.filter(Shop.owner_id == owner_id)
@@ -70,10 +77,17 @@ class ShopService:
             "CONVERTED": [],
         }
         
-        for shop, owner_name, area_name in results:
+        for shop in results:
             shop_data = shop.__dict__.copy()
-            shop_data["owner_name"] = owner_name
-            shop_data["area_name"] = area_name
+            shop_data["owner_name"] = shop.owner.name if shop.owner else None
+            shop_data["area_name"] = shop.area.name if shop.area else None
+            shop_data.pop("_sa_instance_state", None)
+            
+            shop_data["assigned_users"] = [
+                {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+                for u in getattr(shop, 'assigned_owners_list', [])
+            ]
+            
             status_val = str(shop.status.value) if hasattr(shop.status, "value") else str(shop.status)
             if status_val in kanban:
                 kanban[status_val].append(shop_data)

@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 from app.core.database import Base
@@ -11,6 +11,12 @@ class ShopStatus(str, enum.Enum):
     MEETING_SET = "MEETING_SET"
     CONVERTED = "CONVERTED"
 
+shop_assignments = Table(
+    "shop_assignments",
+    Base.metadata,
+    Column("shop_id", Integer, ForeignKey("shops.id", ondelete="CASCADE"), primary_key=True),
+    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+)
 
 class Shop(Base):
     __tablename__ = "shops"
@@ -35,8 +41,9 @@ class Shop(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
 
     # Relationships — from both branches
-    owner = relationship("User", backref="assigned_shops")
-    area = relationship("Area", backref="shops")
+    owner = relationship("app.modules.users.models.User", backref="assigned_shops")
+    area = relationship("app.modules.areas.models.Area", backref="shops")
+    assigned_owners_list = relationship("app.modules.users.models.User", secondary=shop_assignments, backref="assigned_shops_list")
 
 
 # Explicit imports at end to avoid circular dependency issues

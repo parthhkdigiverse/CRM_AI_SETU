@@ -1,6 +1,13 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean, JSON
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean, JSON, Table
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+
+area_assignments = Table(
+    "area_assignments",
+    Base.metadata,
+    Column("area_id", Integer, ForeignKey("areas.id", ondelete="CASCADE"), primary_key=True),
+    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+)
 
 class Area(Base):
     __tablename__ = "areas"
@@ -21,4 +28,8 @@ class Area(Base):
     priority_level = Column(String, default="MEDIUM", nullable=False)
     auto_discovery_enabled = Column(Boolean, default=False, nullable=False)
     target_categories = Column(JSON, nullable=True)
+    
+    # Relationships
     assigned_user = relationship("app.modules.users.models.User", backref="assigned_areas")
+    assigned_users_list = relationship("app.modules.users.models.User", secondary=area_assignments, backref="assigned_areas_list")
+

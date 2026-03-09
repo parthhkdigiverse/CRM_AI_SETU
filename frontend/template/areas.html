@@ -420,19 +420,21 @@
                                     <input type="hidden" id="a-id" value="">
                                     <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i>Pin a
                                         location to base auto-discovery on.</p>
-                                        
+
                                     <hr class="my-4">
-                                    <h6 class="fw-bold mb-3" style="color:#0f172a;"><i class="bi bi-crosshair me-2 text-primary"></i>Advanced Targeting</h6>
-                                    
+                                    <h6 class="fw-bold mb-3" style="color:#0f172a;"><i
+                                            class="bi bi-crosshair me-2 text-primary"></i>Advanced Targeting</h6>
+
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold d-flex justify-content-between">
                                             <span>Precision Targeting (Radius)</span>
                                             <span id="radius-val" class="text-primary fw-bold">500m</span>
                                         </label>
-                                        <input type="range" class="form-range" id="a-radius" min="250" max="2000" step="250" value="500" 
+                                        <input type="range" class="form-range" id="a-radius" min="250" max="2000"
+                                            step="250" value="500"
                                             oninput="document.getElementById('radius-val').textContent = this.value + 'm'; if(window.updateRadiusCircle) window.updateRadiusCircle(this.value);">
                                     </div>
-                                    
+
                                     <div class="row g-2 mb-3">
                                         <div class="col-6">
                                             <label class="form-label fw-semibold">Max Shops</label>
@@ -451,33 +453,42 @@
                                             </select>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold">Target Categories</label>
                                         <div class="d-flex flex-wrap gap-2">
                                             <div class="form-check form-check-inline m-0">
-                                                <input class="form-check-input tgt-category" type="checkbox" id="cat-retail" value="Retailers">
+                                                <input class="form-check-input tgt-category" type="checkbox"
+                                                    id="cat-retail" value="Retailers">
                                                 <label class="form-check-label small" for="cat-retail">Retailers</label>
                                             </div>
                                             <div class="form-check form-check-inline m-0">
-                                                <input class="form-check-input tgt-category" type="checkbox" id="cat-wholesale" value="Wholesalers">
-                                                <label class="form-check-label small" for="cat-wholesale">Wholesalers</label>
+                                                <input class="form-check-input tgt-category" type="checkbox"
+                                                    id="cat-wholesale" value="Wholesalers">
+                                                <label class="form-check-label small"
+                                                    for="cat-wholesale">Wholesalers</label>
                                             </div>
                                             <div class="form-check form-check-inline m-0">
-                                                <input class="form-check-input tgt-category" type="checkbox" id="cat-corp" value="Corporate">
+                                                <input class="form-check-input tgt-category" type="checkbox"
+                                                    id="cat-corp" value="Corporate">
                                                 <label class="form-check-label small" for="cat-corp">Corporate</label>
                                             </div>
                                             <div class="form-check form-check-inline m-0">
-                                                <input class="form-check-input tgt-category" type="checkbox" id="cat-health" value="Healthcare">
-                                                <label class="form-check-label small" for="cat-health">Healthcare</label>
+                                                <input class="form-check-input tgt-category" type="checkbox"
+                                                    id="cat-health" value="Healthcare">
+                                                <label class="form-check-label small"
+                                                    for="cat-health">Healthcare</label>
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="form-check form-switch mt-4 mb-2 border rounded p-3 bg-light">
-                                        <input class="form-check-input ms-0 me-2 mt-1" type="checkbox" id="a-auto-discovery" style="cursor:pointer;" checked>
-                                        <label class="form-check-label fw-bold text-dark" for="a-auto-discovery" style="cursor:pointer;">Enable Auto-Discovery</label>
-                                        <div class="small text-muted mt-1 lh-sm">Automatically fetch nearby shops bridging these categories within the radius when creating area.</div>
+                                        <input class="form-check-input ms-0 me-2 mt-1" type="checkbox"
+                                            id="a-auto-discovery" style="cursor:pointer;" checked>
+                                        <label class="form-check-label fw-bold text-dark" for="a-auto-discovery"
+                                            style="cursor:pointer;">Enable Auto-Discovery</label>
+                                        <div class="small text-muted mt-1 lh-sm">Automatically fetch nearby shops
+                                            bridging these categories within the radius when creating area.</div>
                                     </div>
                                 </div>
                                 <!-- Right: Google Map -->
@@ -602,12 +613,32 @@
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-3">Select a user to assign this area or specific shops to.</p>
+                    <p class="text-muted small mb-3">Select users to assign this area or specific shops to. The first
+                        user selected will be the Primary Owner.</p>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Select User</label>
-                        <select id="assign-user-select" class="form-select">
-                            <option value="">— Select User —</option>
-                        </select>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label fw-semibold mb-0">Select Users *</label>
+                            <div class="d-flex gap-2">
+                                <span class="badge bg-primary bg-opacity-10 text-primary" style="cursor:pointer;"
+                                    onclick="window.selectTeam('SALES')"><i class="bi bi-people-fill me-1"></i>Sales
+                                    Team</span>
+                                <span class="badge bg-info bg-opacity-10 text-info" style="cursor:pointer;"
+                                    onclick="window.selectTeam('TELESALES')"><i class="bi bi-headset me-1"></i>Telesales
+                                    Team</span>
+                            </div>
+                        </div>
+                        <div class="dropdown w-100">
+                            <button class="form-select text-start d-flex justify-content-between align-items-center"
+                                type="button" id="assign-user-dropdown" data-bs-toggle="dropdown" aria-expanded="false"
+                                data-bs-auto-close="outside">
+                                <span>— Select Users —</span>
+                            </button>
+                            <ul class="dropdown-menu w-100 p-2 shadow-sm border-0"
+                                style="max-height: 250px; overflow-y: auto;" id="assign-user-list">
+                                <li><span class="dropdown-item text-muted small">Loading users...</span></li>
+                            </ul>
+                        </div>
+                        <div id="selected-users-tags" class="mt-2 d-flex flex-wrap gap-2"></div>
                     </div>
 
                     <div class="mt-3">
@@ -620,9 +651,11 @@
                                     All</label>
                             </div>
                         </div>
-                        <div id="assign-shops-list" class="border rounded p-2"
-                            style="max-height: 200px; overflow-y: auto; background: #f8fafc;">
-                            <!-- Dynamically populated -->
+                        <input type="text" id="assign-shop-search" class="form-control form-control-sm mb-2"
+                            placeholder="Search shops..." oninput="window.filterAssignShops(this.value)">
+                        <div id="assign-shops-list" class="border rounded p-2 d-flex flex-column gap-2"
+                            style="max-height: 250px; overflow-y: auto; background: #f8fafc;">
+                            <!-- Dynamically populated styled cards -->
                         </div>
                         <p class="text-muted small mt-2"><i class="bi bi-info-circle"></i> Uncheck shops to assign them
                             individually. Leave all checked to assign the entire area.</p>
@@ -762,10 +795,35 @@
                 const lastVisit = s.last_visit_date
                     ? new Date(s.last_visit_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
                     : 'Not visited';
-                const ownerInit = (s.owner_name || s.contact_person || 'U')[0].toUpperCase();
+                let assignedHtml = '';
+                if (s.assigned_users && s.assigned_users.length > 0) {
+                    const primaryUser = s.assigned_users[0].name;
+                    const allNames = s.assigned_users.map(u => u.name).join(', ');
+                    const ownerInit = (primaryUser || 'U')[0].toUpperCase();
+
+                    if (s.assigned_users.length === 1) {
+                        assignedHtml = `<div class="d-flex align-items-center gap-2"><div class="avatar-owner">${ownerInit}</div><span class="fw-medium">${primaryUser}</span></div>`;
+                    } else {
+                        const othersCount = s.assigned_users.length - 1;
+                        assignedHtml = `
+                            <div class="d-flex align-items-center gap-2 flex-wrap" title="${allNames}">
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill d-flex align-items-center gap-1 p-1 pe-2">
+                                    <div class="avatar-owner" style="width:20px;height:20px;font-size:0.7rem;">${ownerInit}</div>
+                                    <span style="font-size: 0.85rem; font-weight: 500;">${primaryUser}</span>
+                                </span>
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                                    +${othersCount} others
+                                </span>
+                            </div>
+                        `;
+                    }
+                } else {
+                    assignedHtml = `<div class="d-flex align-items-center gap-2"><span class="text-muted"><i class="bi bi-person-dash me-1"></i>Unassigned</span></div>`;
+                }
+
                 return `<tr>
                         <td><span class="shop-name-primary">${s.name}</span><span class="shop-name-sub">${s.address || 'No address set'}</span></td>
-                        <td><div class="d-flex align-items-center gap-2"><div class="avatar-owner">${ownerInit}</div><span class="fw-medium">${s.owner_name || 'Unassigned'}</span></div></td>
+                        <td>${assignedHtml}</td>
                         <td>
                             <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.name + ' ' + (s.address || ''))}" 
                                target="_blank" 
@@ -1033,44 +1091,156 @@
             }
         }
 
-        // ── Assign Area ──
+        window.selectedAssignUsers = [];
+
+        window.renderAssignUserDropdown = function () {
+            const list = document.getElementById('assign-user-list');
+            const tags = document.getElementById('selected-users-tags');
+
+            list.innerHTML = '';
+            tags.innerHTML = '';
+
+            if (!allUsers || allUsers.length === 0) {
+                list.innerHTML = '<li><span class="dropdown-item text-muted small">No users available</span></li>';
+                return;
+            }
+
+            allUsers.forEach(u => {
+                const userId = u.user_id || u.id;
+                const isSelected = window.selectedAssignUsers.includes(userId);
+
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="dropdown-item d-flex align-items-center gap-2" onclick="window.toggleUserSelection(${userId}, event)" style="cursor:pointer;">
+                        <input class="form-check-input mt-0" type="checkbox" ${isSelected ? 'checked' : ''} style="pointer-events: none;">
+                        <div class="d-flex flex-column lh-1">
+                            <span class="fw-medium" style="font-size: 0.9rem;">${u.name || u.email || 'Unknown User'}</span>
+                            <span class="text-muted" style="font-size: 0.75rem;">${u.role || 'No Role'}</span>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(li);
+
+                if (isSelected) {
+                    const isPrimary = window.selectedAssignUsers[0] === userId;
+                    const badgeClass = isPrimary ? 'bg-primary' : 'bg-secondary';
+                    const badgeEl = document.createElement('span');
+                    badgeEl.className = `badge ${badgeClass} d-flex align-items-center gap-1`;
+                    badgeEl.style.fontSize = '0.8rem';
+                    badgeEl.style.padding = '6px 10px';
+                    badgeEl.innerHTML = `
+                        ${u.name || u.email} ${isPrimary ? '<i class="bi bi-star-fill text-warning ms-1" style="font-size:0.7rem;" title="Primary Owner"></i>' : ''}
+                        <i class="bi bi-x-circle-fill ms-1" style="cursor:pointer;" onclick="window.toggleUserSelection(${userId}, event)"></i>
+                    `;
+                    tags.appendChild(badgeEl);
+                }
+            });
+
+            const btnText = window.selectedAssignUsers.length === 0
+                ? '— Select Users —'
+                : `${window.selectedAssignUsers.length} user${window.selectedAssignUsers.length > 1 ? 's' : ''} selected`;
+
+            document.getElementById('assign-user-dropdown').querySelector('span').textContent = btnText;
+        };
+
+        window.toggleUserSelection = function (userId, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const idx = window.selectedAssignUsers.indexOf(userId);
+            if (idx === -1) {
+                window.selectedAssignUsers.push(userId);
+            } else {
+                window.selectedAssignUsers.splice(idx, 1);
+            }
+            window.renderAssignUserDropdown();
+        };
+
+        window.selectTeam = function (role) {
+            if (!allUsers) return;
+            const teamUsers = allUsers.filter(u => u.role && u.role.toUpperCase() === role);
+            teamUsers.forEach(u => {
+                const id = u.user_id || u.id;
+                if (!window.selectedAssignUsers.includes(id)) {
+                    window.selectedAssignUsers.push(id);
+                }
+            });
+            window.renderAssignUserDropdown();
+        };
+
         window.toggleAllAssignShops = function (masterCb) {
             const list = document.getElementById('assign-shops-list');
             const cbs = list.querySelectorAll('input[type="checkbox"]');
-            cbs.forEach(cb => cb.checked = masterCb.checked);
+            cbs.forEach(cb => {
+                // Only toggle visible shops
+                if (cb.closest('.shop-card').style.display !== 'none') {
+                    cb.checked = masterCb.checked;
+                }
+            });
+        };
+
+        window.filterAssignShops = function (query) {
+            query = query.toLowerCase();
+            const list = document.getElementById('assign-shops-list');
+            const cards = list.querySelectorAll('.shop-card');
+            cards.forEach(card => {
+                const name = card.getAttribute('data-name');
+                if (name.includes(query)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
         };
 
         window.openAssignModal = function (areaId) {
             assigningAreaId = areaId;
-            const select = document.getElementById('assign-user-select');
-            if (!select) return;
-
-            // Reset user dropdown
-            select.innerHTML = '<option value="">— Select User —</option>';
-            if (Array.isArray(allUsers) && allUsers.length > 0) {
-                allUsers.forEach(u => {
-                    const option = document.createElement('option');
-                    option.value = u.user_id || u.id;
-                    option.textContent = `${u.name || u.email || 'Unknown User'} (${u.role || 'No Role'})`;
-                    select.appendChild(option);
-                });
-            }
+            window.selectedAssignUsers = [];
+            window.renderAssignUserDropdown();
 
             // Populate Shops List for this area
             const shopsList = document.getElementById('assign-shops-list');
             const areaShops = allShops.filter(s => s.area_id === areaId);
             document.getElementById('assign-select-all').checked = true;
+            document.getElementById('assign-shop-search').value = '';
 
             if (areaShops.length > 0) {
-                shopsList.innerHTML = areaShops.map(s => `
-                    <div class="form-check mb-1">
-                        <input class="form-check-input assign-shop-cb" type="checkbox" value="${s.id}" id="chk-shop-${s.id}" checked>
-                        <label class="form-check-label small d-flex justify-content-between" for="chk-shop-${s.id}">
-                            <span>${s.name}</span>
-                            <span class="text-muted opacity-75">${s.owner_name ? `(Assigned to: ${s.owner_name})` : ''}</span>
-                        </label>
-                    </div>
-                `).join('');
+                shopsList.innerHTML = areaShops.map(s => {
+                    let assignedHtml = '';
+                    if (s.assigned_users && s.assigned_users.length > 0) {
+                        const primaryUser = s.assigned_users[0].name;
+                        const allNames = s.assigned_users.map(u => u.name).join(', ');
+
+                        if (s.assigned_users.length === 1) {
+                            assignedHtml = `<span class="text-muted small"><i class="bi bi-person-check-fill me-1 text-primary"></i>Assigned to: ${primaryUser}</span>`;
+                        } else {
+                            const othersCount = s.assigned_users.length - 1;
+                            assignedHtml = `
+                                <div class="d-flex align-items-center gap-1 mt-1 flex-wrap" title="${allNames}">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill px-2 py-0" style="font-size: 0.7rem;">
+                                        ${primaryUser}
+                                    </span>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle rounded-pill px-2 py-0" style="font-size: 0.7rem;">
+                                        +${othersCount} others
+                                    </span>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        assignedHtml = `<span class="text-muted small"><i class="bi bi-person-dash me-1"></i>Unassigned</span>`;
+                    }
+
+                    return `
+                        <div class="shop-card border p-2 rounded d-flex align-items-center gap-3" data-name="${s.name.toLowerCase()}" style="background:#fff;">
+                            <input class="form-check-input assign-shop-cb m-0" type="checkbox" value="${s.id}" id="chk-shop-${s.id}" checked style="width: 1.25rem; height: 1.25rem;">
+                            <label class="d-flex flex-column mb-0 w-100" for="chk-shop-${s.id}" style="cursor:pointer;">
+                                <span class="fw-bold lh-1 mb-1" style="color:#0f172a;">${s.name}</span>
+                                ${assignedHtml}
+                            </label>
+                        </div>
+                    `;
+                }).join('');
             } else {
                 shopsList.innerHTML = '<p class="text-center text-muted small my-3">No shops in this area</p>';
             }
@@ -1080,9 +1250,8 @@
         };
 
         window.saveAreaAssignment = async function () {
-            const userId = document.getElementById('assign-user-select').value;
-            if (!userId) {
-                toast('Please select a user', 'warning');
+            if (window.selectedAssignUsers.length === 0) {
+                toast('Please select at least one user', 'warning');
                 return;
             }
 
@@ -1102,7 +1271,8 @@
             const shopIds = (selectAll && checkedCbs.length === allCbs.length) ? null : Array.from(checkedCbs).map(cb => parseInt(cb.value));
 
             try {
-                await ApiClient.assignArea(assigningAreaId, userId, shopIds);
+                // Pass array of userIds instead of single userId
+                await ApiClient.assignArea(assigningAreaId, window.selectedAssignUsers, shopIds);
                 toast(shopIds ? 'Specific shops successfully assigned' : 'Area and all shops successfully assigned');
 
                 const modalEl = document.getElementById('assignModal');

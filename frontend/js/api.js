@@ -218,8 +218,9 @@ class ApiClient {
     static async deleteArea(areaId) {
         return this.request(`/areas/${areaId}`, { method: 'DELETE' });
     }
-    static async assignArea(areaId, userId, shopIds = []) {
-        return this.request(`/areas/${areaId}/assign`, { method: 'PATCH', body: { assigned_user_id: userId, shop_ids: shopIds } });
+    static async assignArea(areaId, userIds, shopIds = []) {
+        // userIds should be an array of IDs
+        return this.request(`/areas/${areaId}/assign`, { method: 'PATCH', body: { user_ids: userIds, shop_ids: shopIds } });
     }
 
     // ─── Shops ───────────────────────────────────────────────

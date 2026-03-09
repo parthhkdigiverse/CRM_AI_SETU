@@ -55,10 +55,10 @@ def assign_area(
     current_user: User = Depends(admin_access)
 ) -> Any:
     """
-    Assign an area to a user. Admin only.
+    Assign an area to users. Admin only.
     """
     service = AreaService(db)
-    return service.assign_area(area_id, assign_in.assigned_user_id, assign_in.shop_ids)
+    return service.assign_area(area_id, assign_in.user_ids, assign_in.shop_ids)
 
 @router.delete("/{area_id}", status_code=status.HTTP_200_OK)
 def delete_area(

@@ -38,11 +38,17 @@ class ShopUpdate(BaseModel):
     status: Optional[ShopStatus] = None
     owner_id: Optional[int] = None
 
+class AssignedUser(BaseModel):
+    id: int
+    name: Optional[str] = None
+    role: Optional[str] = None
+
 class ShopRead(ShopBase):
     id: int
     owner_name: Optional[str] = None
     area_name: Optional[str] = None
     created_at: datetime
+    assigned_users: list[AssignedUser] = []
 
     class Config:
         from_attributes = True
