@@ -23,6 +23,8 @@ class Area(SoftDeleteMixin, Base):
     lat = Column(Float, nullable=True)
     lng = Column(Float, nullable=True)
     
+    assignment_status = Column(String, default="UNASSIGNED", nullable=False)
+    
     # Advanced Targeting
     radius_meters = Column(Integer, default=500, nullable=False)
     shop_limit = Column(Integer, default=20, nullable=False)

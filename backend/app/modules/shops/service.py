@@ -239,3 +239,34 @@ class ShopService:
         db.delete(db_shop)
         db.commit()
         return {"detail": "Shop permanently deleted"}
+
+    # ── Accept Shop (Staff claims the shop) ──
+    @staticmethod
+    def accept_shop(db: Session, shop_id: int, current_user: User):
+        from app.modules.users.models import User
+        from app.modules.shops.models import Shop
+        shop = db.query(Shop).filter(Shop.id == shop_id).first()
+        if not shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
+            
+        if not any(u.id == current_user.id for u in shop.assigned_owners_list):
+            raise HTTPException(status_code=403, detail="You are not assigned to this shop.")
+            
+        db_user = db.query(User).filter(User.id == current_user.id).first()
+        shop.assignment_status = "ACCEPTED"
+        shop.assigned_owners_list = [db_user]
+        
+        db.commit()
+        db.refresh(shop)
+        
+        shop_data = shop.__dict__.copy()
+        shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+        shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+        shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
+        shop_data.pop("_sa_instance_state", None)
+        
+        shop_data["assigned_users"] = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+            for u in shop.assigned_owners_list
+        ]
+        return shop_data

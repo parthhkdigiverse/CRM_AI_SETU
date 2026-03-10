@@ -462,6 +462,11 @@ class ApiClient {
     static async hardDeleteItem(moduleName, id) {
         return this.request(`/${moduleName}/${id}/hard-delete`, { method: 'DELETE' });
     }
+
+    // ─── Generic Accept Assignment ───────────────────────────
+    static async acceptItem(moduleName, id) {
+        return this.request(`/${moduleName}/${id}/accept`, { method: 'POST' });
+    }
 }
 
 window.ApiClient = ApiClient;

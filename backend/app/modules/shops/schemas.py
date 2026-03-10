@@ -51,6 +51,7 @@ class ShopRead(ShopBase):
     is_archived: Optional[bool] = False
     archived_by_id: Optional[int] = None
     archived_by_name: Optional[str] = None
+    assignment_status: Optional[str] = "UNASSIGNED"
     assigned_users: list[AssignedUser] = []
 
     class Config:

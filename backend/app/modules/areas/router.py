@@ -75,6 +75,18 @@ def assign_area(
     service = AreaService(db)
     return service.assign_area(area_id, assign_in.user_ids, assign_in.shop_ids)
 
+@router.post("/{area_id}/accept", response_model=AreaRead)
+def accept_area(
+    area_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_access)
+) -> Any:
+    """
+    Accept an area assignment. User must be in the assigned list.
+    """
+    service = AreaService(db)
+    return service.accept_area(area_id, current_user)
+
 @router.delete("/{area_id}", status_code=status.HTTP_200_OK)
 def archive_area(
     area_id: int,

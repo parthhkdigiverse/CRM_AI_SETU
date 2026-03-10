@@ -837,32 +837,55 @@
                 }
             }
 
+            const isPendingArea = area && area.assignment_status === 'PENDING';
+            const isAcceptedArea = area && area.assignment_status === 'ACCEPTED';
+            let statusBadge = '';
+            
+            if (isPendingArea) {
+                if (isAdmin) {
+                    statusBadge = `<span class="badge bg-warning text-dark ms-2 align-self-center">Pending Staff Acceptance</span>`;
+                } else {
+                    statusBadge = `<span class="badge rounded-pill bg-warning text-dark placeholder-glow ms-2 align-self-center">Pending Acceptance</span>`;
+                }
+            } else if (isAcceptedArea) {
+                if (isAdmin) {
+                    statusBadge = `<span class="badge bg-success ms-2 align-self-center">Claimed / Accepted</span>`;
+                }
+            }
+
             document.getElementById('shops-panel-title').innerHTML =
                 `<div class="d-flex align-items-center gap-2" style="flex-wrap:wrap;">
                     <i class="bi bi-shop"></i> Shops in ${areaName}
-                    ${isAdmin ? `
-                        <button class="btn btn-sm btn-outline-info ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
-                            onclick="openAssignModal(${areaId})" title="Assign area to user">
-                            <i class="bi bi-person-plus-fill"></i> Assign
+                    ${statusBadge}
+                    ${isPendingArea && !isAdmin ? `
+                        <button class="btn btn-sm btn-success ms-2" style="font-size:0.75rem;padding:4px 12px;border-radius:6px;" onclick="acceptAssignment('areas', ${areaId})">
+                            <i class="bi bi-check-circle"></i> Accept Lead
                         </button>
-                    ` : ''}
-                    <button class="btn btn-sm btn-outline-secondary ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
-                        onclick="openEditAreaModal(${areaId})" title="Edit area">
-                        <i class="bi bi-pencil-fill"></i> Edit
-                    </button>
-                    ${(isAdmin || (area && area.assigned_users && area.assigned_users.some(u => u.id === user?.id))) ? 
-                        (globalSettings.feature_flags.enable_soft_delete ? `
-                        <button class="btn btn-sm btn-outline-danger ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
-                            onclick="archiveArea(${areaId}, '${areaName.replace(/'/g, "\\'")}')" title="Archive area">
-                            <i class="bi bi-archive"></i> Archive
+                    ` : `
+                        ${isAdmin ? `
+                            <button class="btn btn-sm btn-outline-info ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                                onclick="openAssignModal(${areaId})" title="Assign area to user">
+                                <i class="bi bi-person-plus-fill"></i> Assign
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-sm btn-outline-secondary ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                            onclick="openEditAreaModal(${areaId})" title="Edit area">
+                            <i class="bi bi-pencil-fill"></i> Edit
                         </button>
-                        ` : (isAdmin ? `
-                        <button class="btn btn-sm btn-outline-danger ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
-                            onclick="hardDeleteArea(${areaId}, '${areaName.replace(/'/g, "\\'")}')" title="Permanently delete area">
-                            <i class="bi bi-trash"></i> Delete
-                        </button>
-                        ` : ''))
-                    : ''}
+                        ${(isAdmin || (area && area.assigned_users && area.assigned_users.some(u => u.id === user?.id))) ? 
+                            (globalSettings.feature_flags.enable_soft_delete ? `
+                            <button class="btn btn-sm btn-outline-danger ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                                onclick="archiveArea(${areaId}, '${areaName.replace(/'/g, "\\'")}')" title="Archive area">
+                                <i class="bi bi-archive"></i> Archive
+                            </button>
+                            ` : (isAdmin ? `
+                            <button class="btn btn-sm btn-outline-danger ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                                onclick="hardDeleteArea(${areaId}, '${areaName.replace(/'/g, "\\'")}')" title="Permanently delete area">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                            ` : ''))
+                        : ''}
+                    `}
                     ${badgeHtml}
                  </div>`;
             document.getElementById('shops-panel-count').textContent = `${shops.length} shop${shops.length !== 1 ? 's' : ''}`;
@@ -903,8 +926,19 @@
                     assignedHtml = `<div class="d-flex align-items-center gap-2"><span class="text-muted"><i class="bi bi-person-dash me-1"></i>Unassigned</span></div>`;
                 }
 
+                let shopStatusBadge = '';
+                const isPendingShop = s.assignment_status === 'PENDING';
+                const isAcceptedShop = s.assignment_status === 'ACCEPTED';
+                if (isPendingShop) {
+                    shopStatusBadge = isAdmin 
+                        ? `<br><span class="badge bg-warning text-dark mt-1">Pending Staff Acceptance</span>`
+                        : `<br><span class="badge rounded-pill bg-warning text-dark placeholder-glow mt-1">Pending Acceptance</span>`;
+                } else if (isAcceptedShop && isAdmin) {
+                    shopStatusBadge = `<br><span class="badge bg-success mt-1">Claimed / Accepted</span>`;
+                }
+
                 return `<tr>
-                        <td><span class="shop-name-primary">${s.name}</span><span class="shop-name-sub">${s.address || 'No address set'}</span></td>
+                        <td><span class="shop-name-primary">${s.name}</span><span class="shop-name-sub">${s.address || 'No address set'}</span>${shopStatusBadge}</td>
                         <td>${assignedHtml}</td>
                         <td>
                             <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.name + ' ' + (s.address || ''))}" 
@@ -917,14 +951,18 @@
                         <td class="text-muted small">${lastVisit}</td>
                         <td>
                             <div class="d-flex justify-content-end gap-2">
-                                <button class="btn-action text-primary" onclick="editShop(${s.id})" title="Edit shop"><i class="bi bi-pencil"></i></button>
-                                ${(isAdmin || (s.assigned_users && s.assigned_users.some(u => u.id === user?.id))) ? 
-                                    (globalSettings.feature_flags.enable_soft_delete ? `
-                                    <button class="btn-action text-danger" onclick="archiveShop(${s.id}, '${s.name.replace(/'/g, "\\'")}')" title="Archive shop"><i class="bi bi-archive"></i></button>
-                                    ` : (isAdmin ? `
-                                    <button class="btn-action text-danger" onclick="hardDeleteShop(${s.id}, '${s.name.replace(/'/g, "\\'")}')" title="Permanently delete shop"><i class="bi bi-trash"></i></button>
-                                    ` : ''))
-                                : ''}
+                                ${isPendingShop && !isAdmin ? `
+                                    <button class="btn btn-success btn-sm" onclick="acceptAssignment('shops', ${s.id})"><i class="bi bi-check-circle"></i> Accept</button>
+                                ` : `
+                                    <button class="btn-action text-primary" onclick="editShop(${s.id})" title="Edit shop"><i class="bi bi-pencil"></i></button>
+                                    ${(isAdmin || (s.assigned_users && s.assigned_users.some(u => u.id === user?.id))) ? 
+                                        (globalSettings.feature_flags.enable_soft_delete ? `
+                                        <button class="btn-action text-danger" onclick="archiveShop(${s.id}, '${s.name.replace(/'/g, "\\'")}')" title="Archive shop"><i class="bi bi-archive"></i></button>
+                                        ` : (isAdmin ? `
+                                        <button class="btn-action text-danger" onclick="hardDeleteShop(${s.id}, '${s.name.replace(/'/g, "\\'")}')" title="Permanently delete shop"><i class="bi bi-trash"></i></button>
+                                        ` : ''))
+                                    : ''}
+                                `}
                             </div>
                         </td>
                     </tr>`;
@@ -1382,6 +1420,26 @@
                 if (area) selectArea(area.id, area.name);
             } catch (e) {
                 toast(e?.data?.detail || e?.message || 'Failed to assign', 'error');
+            }
+        };
+
+        window.acceptAssignment = async function (moduleName, id) {
+            if (!confirm(`Are you sure you want to accept this ${moduleName.slice(0, -1)}? All other assigned staff will be removed.`)) return;
+            try {
+                await ApiClient.acceptItem(moduleName, id);
+                toast(`Successfully accepted the ${moduleName.slice(0, -1)}!`, 'success');
+                await loadAll();
+                
+                // Re-render the side panel if appropriate
+                if (moduleName === 'areas') {
+                    const area = allAreas.find(a => a.id === id);
+                    if (area) selectArea(area.id, area.name);
+                } else if (moduleName === 'shops' && selectedAreaId) {
+                    const area = allAreas.find(a => a.id === selectedAreaId);
+                    if (area) selectArea(area.id, area.name);
+                }
+            } catch (e) {
+                toast(e?.data?.detail || e?.message || 'Failed to accept', 'error');
             }
         };
 

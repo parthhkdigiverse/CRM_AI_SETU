@@ -37,6 +37,36 @@ class AreaService:
             setattr(area, 'assigned_users', assigned_users)
         return areas
 
+    # ── Accept Area (Staff claims the area) ──
+    def accept_area(self, area_id: int, current_user: User):
+        from sqlalchemy.orm import joinedload
+        area = self.db.query(Area).options(joinedload(Area.shops)).filter(Area.id == area_id).first()
+        if not area:
+            raise HTTPException(status_code=404, detail="Area not found")
+            
+        if not any(u.id == current_user.id for u in area.assigned_users_list):
+            raise HTTPException(status_code=403, detail="You are not assigned to this area.")
+            
+        db_user = self.db.query(User).filter(User.id == current_user.id).first()
+        area.assignment_status = "ACCEPTED"
+        area.assigned_users_list = [db_user]
+        
+        for shop in area.shops:
+            shop.assignment_status = "ACCEPTED"
+            shop.assigned_owners_list = [db_user]
+        
+        self.db.commit()
+        self.db.refresh(area)
+        
+        setattr(area, 'shops_count', len(area.shops) if getattr(area, 'shops', None) else 0)
+        setattr(area, 'archived_by_name', area.archived_by.name if getattr(area, 'archived_by', None) else None)
+        assigned_users_out = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+            for u in getattr(area, 'assigned_users_list', [])
+        ]
+        setattr(area, 'assigned_users', assigned_users_out)
+        return area
+
     def create_area(self, area_in: AreaCreate):
         area = Area(**area_in.model_dump())
         self.db.add(area)
@@ -76,6 +106,12 @@ class AreaService:
         users = self.db.query(User).filter(User.id.in_(user_ids)).all()
         if not users or len(users) != len(user_ids):
             raise HTTPException(status_code=404, detail="One or more users not found")
+
+        current_user_ids = {u.id for u in area.assigned_users_list}
+        new_user_ids = {u.id for u in users}
+        
+        if len(new_user_ids) > 1 or new_user_ids != current_user_ids:
+            area.assignment_status = "PENDING"
 
         primary_owner_id = user_ids[0]
         from app.modules.shops.models import Shop

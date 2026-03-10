@@ -86,6 +86,17 @@ def update_shop(
 ) -> Any:
     return ShopService.update_shop(db, shop_id, shop_in)
 
+@router.post("/{shop_id}/accept", response_model=ShopRead)
+def accept_shop(
+    shop_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """
+    Accept a shop assignment.
+    """
+    return ShopService.accept_shop(db, shop_id, current_user)
+
 @router.post("/{shop_id}/approve", response_model=ClientRead)
 def approve_pipeline(
     shop_id: int,

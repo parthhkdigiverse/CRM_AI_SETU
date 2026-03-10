@@ -41,6 +41,8 @@ class Shop(SoftDeleteMixin, Base):
 
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     
+    assignment_status = Column(String, default="UNASSIGNED", nullable=False)
+    
     # Relationships — from both branches
     owner = relationship("app.modules.users.models.User", foreign_keys=[owner_id], backref="assigned_shops")
     area = relationship("app.modules.areas.models.Area", backref="shops")
