@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd \"e:\\\\CRM AI SETU\" ; python -c \"from app\\.main import app; print\\('✓ FastAPI app imported successfully'\\)\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
