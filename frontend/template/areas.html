@@ -765,6 +765,19 @@
             const user = ApiClient.getCurrentUser();
             const isAdmin = user && user.role && user.role.toUpperCase() === 'ADMIN';
 
+            const area = allAreas.find(a => a.id === areaId);
+            let badgeHtml = '';
+            if (area && area.priority_level) {
+                const p = area.priority_level.toUpperCase();
+                if (p === 'HIGH') {
+                    badgeHtml = `<span class="badge bg-danger-subtle text-danger ms-2 d-flex align-items-center" style="font-size:0.75rem;padding:4px 8px;"><i class="bi bi-flag-fill me-1"></i> High Priority</span>`;
+                } else if (p === 'MEDIUM') {
+                    badgeHtml = `<span class="badge bg-warning-subtle text-warning-emphasis ms-2 d-flex align-items-center" style="font-size:0.75rem;padding:4px 8px;"><i class="bi bi-flag-fill me-1"></i> Medium Priority</span>`;
+                } else if (p === 'LOW') {
+                    badgeHtml = `<span class="badge bg-secondary-subtle text-secondary ms-2 d-flex align-items-center" style="font-size:0.75rem;padding:4px 8px;"><i class="bi bi-flag-fill me-1"></i> Low Priority</span>`;
+                }
+            }
+
             document.getElementById('shops-panel-title').innerHTML =
                 `<div class="d-flex align-items-center gap-2" style="flex-wrap:wrap;">
                     <i class="bi bi-shop"></i> Shops in ${areaName}
@@ -782,6 +795,7 @@
                         onclick="deleteArea(${areaId})" title="Delete area">
                         <i class="bi bi-trash"></i> Delete
                     </button>
+                    ${badgeHtml}
                  </div>`;
             document.getElementById('shops-panel-count').textContent = `${shops.length} shop${shops.length !== 1 ? 's' : ''}`;
             const body = document.getElementById('shops-panel-body');

@@ -42,10 +42,10 @@ def read_areas(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: User = Depends(admin_access) # Admin usually manages areas
+    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.SALES, UserRole.TELESALES, UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]))
 ) -> Any:
     service = AreaService(db)
-    return service.get_areas(skip, limit)
+    return service.get_areas(current_user, skip, limit)
 
 @router.patch("/{area_id}/assign", response_model=AreaRead)
 def assign_area(

@@ -52,7 +52,7 @@ def read_shops(
     owner_id: int = None,
     current_user: User = Depends(staff_checker)
 ) -> Any:
-    return ShopService.list_shops(db, skip, limit, status, owner_id)
+    return ShopService.list_shops(db, current_user, skip, limit, status, owner_id)
 
 @router.get("/{shop_id}", response_model=ShopRead)
 def read_shop(

@@ -27,7 +27,7 @@ class ShopService:
         return shop
 
     @staticmethod
-    def list_shops(db: Session, skip: int = 0, limit: int = 100, status: ShopStatus = None, owner_id: int = None):
+    def list_shops(db: Session, current_user: User, skip: int = 0, limit: int = 100, status: ShopStatus = None, owner_id: int = None):
         from sqlalchemy.orm import selectinload
         query = db.query(Shop).options(
             selectinload(Shop.owner),
@@ -37,7 +37,15 @@ class ShopService:
         
         if status:
             query = query.filter(Shop.status == status)
-        if owner_id:
+            
+        # If Admin, return all shops
+        if current_user.role != "ADMIN":
+            # Sales/Telesales: Check the many-to-many relationship
+            query = query.filter(
+                Shop.assigned_owners_list.any(User.id == current_user.id)
+            )
+        elif owner_id:
+            # Admins can optionally filter by a specific owner
             query = query.filter(Shop.owner_id == owner_id)
         
         results = query.offset(skip).limit(limit).all()

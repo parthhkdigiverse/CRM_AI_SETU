@@ -227,6 +227,9 @@ class ApiClient {
     static async getShops(params = '') {
         return this.request(`/shops/${params}`);
     }
+    static async getShop(shopId) {
+        return this.request(`/shops/${shopId}`);
+    }
     static async createShop(data) {
         return this.request('/shops/', { method: 'POST', body: data });
     }

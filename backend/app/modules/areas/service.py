@@ -10,8 +10,16 @@ class AreaService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_areas(self, skip: int = 0, limit: int = 100):
-        areas = self.db.query(Area).offset(skip).limit(limit).all()
+    def get_areas(self, current_user: User, skip: int = 0, limit: int = 100):
+        # If Admin, return all areas
+        if current_user.role == "ADMIN":
+            areas = self.db.query(Area).offset(skip).limit(limit).all()
+        else:
+            # Sales/Telesales: Check the many-to-many relationship
+            areas = self.db.query(Area).filter(
+                Area.assigned_users_list.any(User.id == current_user.id)
+            ).offset(skip).limit(limit).all()
+
         for area in areas:
             # We add shops_count dynamically to the model 
             setattr(area, 'shops_count', len(area.shops) if area.shops else 0)
@@ -62,7 +70,17 @@ class AreaService:
                 shop.owner_id = primary_owner_id
                 # Replace existing assignments with the new list to maintain accurate sync
                 shop.assigned_owners_list = users
-                
+            
+            # Make sure all assigned users are also granted access to the parent Area
+            # This ensures the Area shows up in their Navigation Sidebar
+            for user in users:
+                if user not in area.assigned_users_list:
+                    area.assigned_users_list.append(user)
+                    
+            # Optionally update the primary owner of the Area if not set
+            if not area.assigned_user_id:
+                 area.assigned_user_id = primary_owner_id
+                 
         else:
             # Full assignment: Update area and ALL shops
             area.assigned_user_id = primary_owner_id
