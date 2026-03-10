@@ -156,8 +156,8 @@ print("\nSeeding projects...")
 
 projects_data = [
     dict(name="CRM Portal Rollout",    description="Full CRM deployment for TechNova",      client_id=created_clients[0].id, pm_id=pm1.id, status="ONGOING",    budget=250000.0, start_date=now - timedelta(days=30), end_date=now + timedelta(days=60)),
-    dict(name="Infra Monitoring Setup",description="Setup monitoring dashboard for Infra",  client_id=created_clients[1].id, pm_id=pm2.id, status="PLANNED",    budget=150000.0, start_date=now + timedelta(days=5),  end_date=now + timedelta(days=90)),
-    dict(name="Retail ERP Integration",description="Integrate ERP with retail POS system",  client_id=created_clients[2].id, pm_id=pm1.id, status="ON_HOLD",    budget=320000.0, start_date=now - timedelta(days=10), end_date=now + timedelta(days=45)),
+    dict(name="Infra Monitoring Setup",description="Setup monitoring dashboard for Infra",  client_id=created_clients[1].id, pm_id=pm2.id, status="PLANNING",    budget=150000.0, start_date=now + timedelta(days=5),  end_date=now + timedelta(days=90)),
+    dict(name="Retail ERP Integration",description="Integrate ERP with retail POS system",  client_id=created_clients[2].id, pm_id=pm1.id, status="IN_PROGRESS",    budget=320000.0, start_date=now - timedelta(days=10), end_date=now + timedelta(days=45)),
     dict(name="Finance App Revamp",    description="UI/UX overhaul for finance web app",    client_id=created_clients[3].id, pm_id=pm2.id, status="COMPLETED",  budget=180000.0, start_date=now - timedelta(days=90), end_date=now - timedelta(days=5)),
     dict(name="Logistics Dashboard",   description="Real-time shipment tracking dashboard", client_id=created_clients[4].id, pm_id=pm1.id, status="ONGOING",    budget=210000.0, start_date=now - timedelta(days=15), end_date=now + timedelta(days=30)),
 ]
