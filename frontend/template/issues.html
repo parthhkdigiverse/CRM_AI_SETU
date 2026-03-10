@@ -92,6 +92,13 @@
                     <div class="mb-3"><label class="form-label">Description</label>
                         <textarea id="i-desc" class="form-control" rows="3"></textarea>
                     </div>
+                    <div class="mb-3"><label class="form-label">Assign to (Optional)</label>
+                        <select id="i-handler" class="form-select">
+                            <option value="">-- Default (PM) --</option>
+                        </select>
+                        <small class="text-muted" style="font-size:0.75rem;">If unassigned, it defaults to the client's
+                            current PM.</small>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -133,9 +140,9 @@
         </div>
     </div>
 
-    <script src="../js/api.js?v=2.6"></script>
+    <script src="../js/api.js?v=1772780187"></script>
     <script src="../js/ui_components.js?v=1772780187"></script>
-    <script src="../js/auth.js?v=2.6"></script>
+    <script src="../js/auth.js?v=2.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
@@ -197,7 +204,7 @@
                     <td class="text-muted">${new Date(i.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                     <td class="text-end" onclick="event.stopPropagation()">
                         <div class="d-flex gap-2 justify-content-end">
-                            <button class="btn btn-sm btn-outline-primary" onclick="openHandleModal(${i.id}, '${i.status}', '${(i.remarks || '').replace(/'/g, "\\'")}')" title="Handle"><i class="bi bi-pencil-square"></i></button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="openHandleModal(${i.id}, '${i.status}', '${(i.remarks || '').replace(/'/g, "\\'")}')" title="Handle"><i class="bi bi-wrench-adjustable"></i></button>
                             ${i.status !== 'SOLVED' && i.status !== 'COMPLETED' && i.status !== 'CANCEL' ? `<button class="btn btn-sm btn-outline-success" onclick="quickResolve(${i.id})" title="Quick Resolve"><i class="bi bi-check-lg"></i></button>` : ''}
                             <button class="btn btn-sm btn-outline-danger" onclick="deleteIssue(${i.id})" title="Delete"><i class="bi bi-trash"></i></button>
                         </div>
@@ -271,6 +278,16 @@
             }
         });
 
+        // Load users for handler assignment
+        apiGet('/users/').then(usersRes => {
+            const users = Array.isArray(usersRes) ? usersRes : (usersRes.data || usersRes.items || usersRes.users || []);
+            const sel = document.getElementById('i-handler');
+            const activeStaff = users.filter(u => u.is_active);
+            sel.innerHTML += activeStaff.map(u =>
+                `<option value="${u.id}">${u.name || u.email} (${(u.role || '').replace('_', ' ')})</option>`
+            ).join('');
+        }).catch(() => { });
+
         window.loadProjectsForClient = async () => {
             const clientId = document.getElementById('i-client').value;
             const projSelect = document.getElementById('i-project');
@@ -306,6 +323,7 @@
                     description: document.getElementById('i-desc').value,
                     severity: document.getElementById('i-sev').value,
                     project_id: document.getElementById('i-project').value || null,
+                    assigned_to_id: document.getElementById('i-handler').value || null,
                     status: 'PENDING'
                 });
                 bootstrap.Modal.getInstance(document.getElementById('addIssueModal')).hide();

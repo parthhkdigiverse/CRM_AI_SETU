@@ -9,7 +9,7 @@ import traceback
 
 # Core Imports
 from app.api.router import api_router
-from config import config
+import config.config as config
 from app.utils.scheduler import start_scheduler, stop_scheduler
 
 

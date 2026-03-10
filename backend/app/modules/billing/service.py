@@ -18,13 +18,7 @@ class BillingService:
         self.client_service = ClientService(db)
 
     async def generate_bill_and_convert(self, bill_in: BillCreate, current_user: User, request: Request):
-        # 1. Fetch Shop
-        shop = self.db.query(Shop).filter(Shop.id == bill_in.shop_id).first()
-        if not shop:
-            raise HTTPException(status_code=404, detail="Shop not found")
-
-        # 2. Find or Create Client
-        # We search by email first, then phone if available
+        # 2. Check if Client exists (Read-only)
         client = None
         if shop.email:
             client = self.db.query(Client).filter(Client.email == shop.email).first()
@@ -32,9 +26,30 @@ class BillingService:
         if not client and shop.phone:
             client = self.db.query(Client).filter(Client.phone == shop.phone).first()
 
-        if not client:
-            # Auto-convert Shop to Client
-            # Note: create_client handles the round-robin PM assignment automatically now
+        # 3. Create Bill (Client ID remains NULL if no client found)
+        invoice_no = f"INV-{datetime.datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
+
+        db_bill = Bill(
+            shop_id=shop.id,
+            client_id=client.id if client else None,
+            amount=bill_in.amount,
+            invoice_number=invoice_no,
+            status="PENDING_CONFIRMATION"
+        )
+        self.db.add(db_bill)
+        self.db.commit()
+        self.db.refresh(db_bill)
+
+        return db_bill
+
+    async def confirm_bill(self, bill_id: int, current_user: User, request: Request):
+        bill = self.get_bill(bill_id)
+        if not bill:
+            raise HTTPException(status_code=404, detail="Bill not found")
+        
+        # Auto-convert Shop to Client if not already linked
+        if not bill.client_id:
+            shop = bill.shop
             client_create = ClientCreate(
                 name=shop.contact_person or shop.name,
                 email=shop.email or f"client_{uuid.uuid4().hex[:8]}@placeholder.com",
@@ -46,30 +61,11 @@ class BillingService:
                 owner_id=current_user.id
             )
             client = await self.client_service.create_client(client_create, current_user, request)
+            bill.client_id = client.id
 
-        # 3. Create Bill
-        invoice_no = f"INV-{datetime.datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
-
-        db_bill = Bill(
-            shop_id=shop.id,
-            client_id=client.id,
-            amount=bill_in.amount,
-            invoice_number=invoice_no,
-            status="PENDING_CONFIRMATION"
-        )
-        self.db.add(db_bill)
-        self.db.commit()
-        self.db.refresh(db_bill)
-
-        return db_bill
-
-    async def confirm_bill(self, bill_id: int):
-        bill = self.get_bill(bill_id)
-        if not bill:
-            raise HTTPException(status_code=404, detail="Bill not found")
-        
         bill.status = "CONFIRMED"
         self.db.commit()
+        self.db.refresh(bill)
         
         # Now send WhatsApp
         await self.send_whatsapp_invoice(bill, bill.client)

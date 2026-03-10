@@ -433,8 +433,24 @@
         // ── Load profile data
         async function loadProfile() {
             const u = JSON.parse(localStorage.getItem('crm_user') || '{}');
-            const name = u?.name || u?.email || 'User';
+            let name = u?.name || u?.email || 'User';
             const role = (u?.role || 'USER').replace(/_/g, ' ');
+            let phone = u?.phone || '';
+
+            // Fetch fresh data from backend to get latest name/phone
+            try {
+                const profile = await apiGet('/auth/profile');
+                if (profile) {
+                    name = profile.name || name;
+                    phone = profile.phone || '';
+                    // Update localStorage with fresh data
+                    const stored = JSON.parse(localStorage.getItem('crm_user') || '{}');
+                    stored.name = name;
+                    stored.phone = phone;
+                    localStorage.setItem('crm_user', JSON.stringify(stored));
+                }
+            } catch (e) { /* use local data */ }
+
             const initials = name.slice(0, 2).toUpperCase();
 
             // Hero section
@@ -446,6 +462,7 @@
             // Edit form pre-fill
             document.getElementById('edit-name').value = name;
             document.getElementById('edit-email').value = u?.email || '';
+            document.getElementById('edit-phone').value = phone;
             document.getElementById('edit-dept').value = role;
 
             // Account info rows

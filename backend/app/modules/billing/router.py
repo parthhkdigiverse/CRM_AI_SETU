@@ -13,7 +13,8 @@ router = APIRouter()
 staff_access = RoleChecker([
     UserRole.ADMIN, 
     UserRole.SALES, 
-    UserRole.TELESALES
+    UserRole.TELESALES,
+    UserRole.PROJECT_MANAGER
 ])
 
 @router.post("/", response_model=BillRead, status_code=status.HTTP_201_CREATED)
@@ -54,8 +55,9 @@ def read_bill(
 @router.patch("/{bill_id}/confirm", response_model=BillRead)
 async def confirm_bill(
     bill_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_access)
 ) -> Any:
     service = BillingService(db)
-    return await service.confirm_bill(bill_id)
+    return await service.confirm_bill(bill_id, current_user, request)

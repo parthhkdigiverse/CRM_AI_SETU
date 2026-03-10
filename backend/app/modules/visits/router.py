@@ -19,7 +19,7 @@ async def create_visit(
     request: Request,
     shop_id: int = Form(...),
     visit_date: Optional[str] = Form(None), # Parse string to datetime
-    remarks: Optional[str] = Form(None),
+    remarks: str = Form(...),
     decline_remarks: Optional[str] = Form(None),
     status: VisitStatus = Form(VisitStatus.SATISFIED),
     photo: Optional[UploadFile] = File(None),

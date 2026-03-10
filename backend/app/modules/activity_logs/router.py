@@ -16,10 +16,11 @@ def read_activity_logs(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if current_user and current_user.role != UserRole.ADMIN:
+    allowed_roles = [UserRole.ADMIN, UserRole.SALES, UserRole.TELESALES, UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]
+    if current_user and current_user.role not in allowed_roles:
          raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only Admins can view activity logs"
+            detail="You don't have enough privileges to view activity logs"
         )
     
     logger = ActivityLogger(db)

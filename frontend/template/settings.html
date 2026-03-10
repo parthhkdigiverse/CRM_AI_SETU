@@ -248,6 +248,7 @@
                                 Notifications</a>
                             <a href="#account" onclick="scrollTo('account',this)"><i class="bi bi-person-gear"></i>
                                 Account</a>
+                            <a href="#incentives-config" onclick="scrollTo('incentives-config',this)" id="incentives-nav-link" style="display:none;"><i class="bi bi-trophy"></i> Incentives</a>
                             <a href="#system" onclick="scrollTo('system',this)" id="system-nav-link"><i
                                     class="bi bi-cpu"></i> System</a>
                         </nav>
@@ -438,6 +439,41 @@
                             </div>
                         </div>
 
+                        <!-- ── Incentives Configuration ───── -->
+                        <div class="settings-section" id="incentives-config" style="display:none;">
+                            <div class="settings-section-title"><i class="bi bi-trophy text-warning"></i> Incentive Strategy <span class="ms-auto"><a href="incentives.html" class="text-muted" style="font-size:0.75rem; text-decoration:none;"><i class="bi bi-arrow-up-right-square"></i> View Incentives</a></span></div>
+
+                            <div id="slabs-settings-list">
+                                <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-muted"></div></div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="settings-section-title"><i class="bi bi-plus-circle text-success"></i> Add New Slab</div>
+                            <div class="row g-2 mt-1">
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">Min Units</label>
+                                    <input type="number" id="slab-min" class="form-control form-control-sm" placeholder="e.g. 0" min="0">
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">Max Units</label>
+                                    <input type="number" id="slab-max" class="form-control form-control-sm" placeholder="e.g. 10" min="1">
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">Per Unit (₹)</label>
+                                    <input type="number" id="slab-per-unit" class="form-control form-control-sm" placeholder="e.g. 500" min="0">
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">Slab Bonus (₹)</label>
+                                    <input type="number" id="slab-bonus" class="form-control form-control-sm" placeholder="e.g. 1000" min="0">
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <button class="btn-save-sm" onclick="addSlabSetting()"><i class="bi bi-plus me-1"></i> Add Slab</button>
+                                    <span id="slab-save-msg" class="ms-3 small text-success d-none"></span>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- ── System ───── -->
                         <div class="settings-section" id="system" style="display:none;">
                             <div class="settings-section-title"><i class="bi bi-cpu text-secondary"></i> System
@@ -504,6 +540,7 @@
     </div>
 
     <script src="../js/utils.js"></script>
+    <script src="../js/api.js"></script>
     <script src="../js/ui_components.js"></script>
     <script src="../js/auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -543,11 +580,19 @@
                 }
             });
 
-            ['theme-select', 'poll-rate', 'session-timeout', 'default-view', 'date-format'].forEach(id => {
-                const el = document.getElementById(id);
+            // Map: element-id => preference key used when saving
+            const selectMap = {
+                'theme-select': 'theme',
+                'poll-rate': 'poll_rate',
+                'session-timeout': 'session_timeout',
+                'default-view': 'default_view',
+                'date-format': 'date_format'
+            };
+            Object.entries(selectMap).forEach(([elId, prefKey]) => {
+                const el = document.getElementById(elId);
                 if (el) {
-                    let val = backendPrefs[id];
-                    if (val === undefined) val = localStorage.getItem('crm_setting_' + id);
+                    let val = backendPrefs[prefKey];
+                    if (val === undefined) val = localStorage.getItem('crm_setting_' + prefKey);
                     if (val) el.value = val;
                 }
             });
@@ -610,6 +655,9 @@
                 document.getElementById('system').style.display = 'block';
                 document.getElementById('danger-zone').style.display = 'block';
                 document.getElementById('system-nav-link').style.display = 'flex';
+                document.getElementById('incentives-nav-link').style.display = 'flex';
+                document.getElementById('incentives-config').style.display = 'block';
+                loadSlabsSettings();
 
                 const apiUrl = window.API_BASE || 'http://localhost:8000';
                 document.getElementById('api-url-display').textContent = apiUrl;
@@ -631,6 +679,127 @@
 
         loadSettings();
         initSystem();
+
+        // ── Incentives config (admin-only)
+        async function loadSlabsSettings() {
+            const list = document.getElementById('slabs-settings-list');
+            try {
+                const slabs = await ApiClient.getIncentiveSlabs();
+                if (!slabs || !slabs.length) {
+                    list.innerHTML = '<p class="text-muted small mb-0">No slabs configured yet. Add one below.</p>';
+                    return;
+                }
+                list.innerHTML = `
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0" style="font-size:0.85rem;">
+                        <thead><tr class="text-uppercase text-muted" style="font-size:0.72rem; font-weight:700; letter-spacing:0.06em;">
+                            <th>Range (Units)</th><th>Per Unit</th><th>Slab Bonus</th><th>Actions</th>
+                        </tr></thead>
+                        <tbody>${slabs.map(s => `
+                        <tr id="slab-row-${s.id}">
+                            <td class="fw-semibold">${s.min_units} – ${s.max_units}</td>
+                            <td class="text-primary fw-bold">₹${Number(s.incentive_per_unit).toLocaleString('en-IN')}</td>
+                            <td class="text-success fw-bold">₹${Number(s.slab_bonus).toLocaleString('en-IN')}</td>
+                            <td class="d-flex gap-1">
+                                <button class="btn btn-sm" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:7px;font-size:0.75rem;padding:2px 8px;" onclick="openEditSlabSettings(${s.id},${s.min_units},${s.max_units},${s.incentive_per_unit},${s.slab_bonus})"><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-sm" style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;border-radius:7px;font-size:0.75rem;padding:2px 8px;" onclick="deleteSlabSetting(${s.id})"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+            } catch (e) {
+                list.innerHTML = `<p class="text-danger small mb-0">Failed to load slabs: ${e.message || 'Error'}</p>`;
+            }
+        }
+
+        async function addSlabSetting() {
+            const min = parseInt(document.getElementById('slab-min').value);
+            const max = parseInt(document.getElementById('slab-max').value);
+            const perUnit = parseFloat(document.getElementById('slab-per-unit').value);
+            const bonus = parseFloat(document.getElementById('slab-bonus').value || '0');
+            const msg = document.getElementById('slab-save-msg');
+
+            if (isNaN(min) || isNaN(max) || isNaN(perUnit) || min > max) {
+                msg.textContent = 'Please fill all fields correctly.';
+                msg.className = 'ms-3 small text-danger';
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 3000);
+                return;
+            }
+
+            try {
+                await ApiClient.createIncentiveSlab({ min_units: min, max_units: max, incentive_per_unit: perUnit, slab_bonus: bonus });
+                ['slab-min', 'slab-max', 'slab-per-unit', 'slab-bonus'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+                msg.textContent = 'Slab added!';
+                msg.className = 'ms-3 small text-success';
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 2500);
+                loadSlabsSettings();
+            } catch (e) {
+                msg.textContent = e.message || 'Failed to add slab.';
+                msg.className = 'ms-3 small text-danger';
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 3000);
+            }
+        }
+
+        async function deleteSlabSetting(id) {
+            if (!confirm('Delete this incentive slab?')) return;
+            try {
+                await apiDelete('/incentives/slabs/' + id);
+                loadSlabsSettings();
+                showToast('Slab deleted');
+            } catch (e) {
+                showToast('Failed to delete slab', true);
+            }
+        }
+
+        let _editingSlabId = null;
+        function openEditSlabSettings(id, min, max, perUnit, bonus) {
+            _editingSlabId = id;
+            document.getElementById('slab-min').value = min;
+            document.getElementById('slab-max').value = max;
+            document.getElementById('slab-per-unit').value = perUnit;
+            document.getElementById('slab-bonus').value = bonus;
+            const btn = document.querySelector('[onclick="addSlabSetting()"]');
+            if (btn) { btn.innerHTML = '<i class="bi bi-check me-1"></i> Update Slab'; btn.setAttribute('onclick', 'saveEditSlabSettings()'); }
+            document.getElementById('slab-save-msg').textContent = `Editing slab ${min}–${max}`;
+            document.getElementById('slab-save-msg').className = 'ms-3 small text-info';
+            document.getElementById('slab-save-msg').classList.remove('d-none');
+            document.getElementById('slab-min').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function saveEditSlabSettings() {
+            const min = parseInt(document.getElementById('slab-min').value);
+            const max = parseInt(document.getElementById('slab-max').value);
+            const perUnit = parseFloat(document.getElementById('slab-per-unit').value);
+            const bonus = parseFloat(document.getElementById('slab-bonus').value || '0');
+            const msg = document.getElementById('slab-save-msg');
+
+            if (isNaN(min) || isNaN(max) || isNaN(perUnit) || min > max) {
+                msg.textContent = 'Please fill all fields correctly.';
+                msg.className = 'ms-3 small text-danger';
+                msg.classList.remove('d-none');
+                return;
+            }
+            try {
+                await ApiClient.updateIncentiveSlab(_editingSlabId, { min_units: min, max_units: max, incentive_per_unit: perUnit, slab_bonus: bonus });
+                ['slab-min', 'slab-max', 'slab-per-unit', 'slab-bonus'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+                _editingSlabId = null;
+                const btn = document.querySelector('[onclick="saveEditSlabSettings()"]');
+                if (btn) { btn.innerHTML = '<i class="bi bi-plus me-1"></i> Add Slab'; btn.setAttribute('onclick', 'addSlabSetting()'); }
+                msg.textContent = 'Slab updated!';
+                msg.className = 'ms-3 small text-success';
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 2500);
+                loadSlabsSettings();
+            } catch (e) {
+                msg.textContent = e.message || 'Failed to update slab.';
+                msg.className = 'ms-3 small text-danger';
+                msg.classList.remove('d-none');
+            }
+        }
     </script>
 </body>
 

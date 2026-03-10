@@ -20,7 +20,7 @@ A full-stack CRM system with AI capabilities built with FastAPI + PostgreSQL.
 
 ```bash
 git clone <your-repo-url>
-cd "CRM AI SETU"
+cd "SRM AI SETU"
 ```
 
 ### 2. Create & activate a virtual environment

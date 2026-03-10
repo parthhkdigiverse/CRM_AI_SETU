@@ -3,10 +3,9 @@
 
 <head>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Salary — SRM AI SETU</title>
+    <title>Salary -- SRM AI SETU</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -14,19 +13,19 @@
     <link rel="stylesheet" href="../css/components.css?v=1772780187">
 </head>
 
-<body>
-    <div class="d-flex">
+<body class="bg-app">
+    <div class="d-flex" style="height:100vh;overflow:hidden;">
         <div id="sidebar"></div>
-        <div class="flex-grow-1">
+        <div class="flex-grow-1" style="min-width:0;overflow-y:auto;">
             <div class="page-content">
                 <!-- Header -->
                 <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                     <div>
                         <h2 class="page-section-title">Salary Management</h2>
-                        <p class="text-muted mb-0" style="font-size:0.93rem;">Generate and manage employee salary slips
-                            and payroll history.</p>
+                        <p class="text-muted mb-0" style="font-size:0.93rem;">Generate, verify and manage employee
+                            salary slips and payroll history.</p>
                     </div>
-                    <div class="d-flex gap-2">
+                    <div class="d-none gap-2" id="admin-actions">
                         <button class="btn btn-primary fw-semibold" style="border-radius:10px;" id="gen-salary-btn"
                             onclick="openSalaryModal()">
                             <i class="bi bi-file-earmark-text me-2"></i>Generate Slip
@@ -34,90 +33,195 @@
                     </div>
                 </div>
 
-                <!-- Salary Slips Table -->
-                <div id="tab-slips" class="grid-card">
-                    <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
-                        <h6 class="fw-bold mb-0" style="color:#334155;">Generated Salary Slips</h6>
-                        <div class="d-flex gap-2">
-                            <select id="slip-user-filter" class="form-select form-select-sm" style="width:auto;"
-                                onchange="loadSlips()">
-                                <option value="">All Employees</option>
-                            </select>
+                <!-- Filter Toggle Toolbar -->
+                <div class="d-flex align-items-center justify-content-between mb-2" id="filter-toolbar">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2" id="filter-toggle-btn" onclick="toggleFilters()" style="border-radius:8px;">
+                            <i class="bi bi-funnel"></i>
+                            <span>Filters</span>
+                            <i class="bi bi-chevron-down" id="filter-chevron" style="font-size:0.75rem; transition:transform 0.2s;"></i>
+                        </button>
+                        <span class="text-muted small" id="active-filter-badge" style="display:none;"></span>
+                    </div>
+                    <div class="text-muted small" id="slip-count"></div>
+                </div>
+
+                <!-- Collapsible Filter Panel (hidden by default) -->
+                <div id="filter-bar" style="display:none;">
+                    <div class="grid-card p-3 mb-3" style="border:1.5px solid #e0e7ff; background:#f8f9ff;">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-sm-auto col-12">
+                                <label class="form-label fw-semibold small mb-1 text-muted"><i class="bi bi-person me-1"></i>Employee</label>
+                                <select id="slip-user-filter" class="form-select form-select-sm" style="min-width:200px;" onchange="loadSlips(); updateFilterBadge();">
+                                    <option value="">All Employees</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-auto col-12">
+                                <label class="form-label fw-semibold small mb-1 text-muted"><i class="bi bi-circle-half me-1"></i>Status</label>
+                                <select id="slip-status-filter" class="form-select form-select-sm" style="min-width:150px;" onchange="loadSlips(); updateFilterBadge();">
+                                    <option value="">All Statuses</option>
+                                    <option value="DRAFT">Draft</option>
+                                    <option value="CONFIRMED">Confirmed</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-auto col-12">
+                                <label class="form-label fw-semibold small mb-1 text-muted"><i class="bi bi-calendar3 me-1"></i>Month</label>
+                                <input type="month" id="slip-month-filter" class="form-control form-control-sm" style="min-width:160px;" onchange="loadSlips(); updateFilterBadge();">
+                            </div>
+                            <div class="col-sm-auto col-12">
+                                <button class="btn btn-sm btn-light border d-flex align-items-center gap-1" onclick="clearFilters()" style="border-radius:8px;">
+                                    <i class="bi bi-x-circle"></i>Clear All
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table mb-0">
+                </div>
+
+                <!-- Salary Table -->
+                <div id="tab-slips" class="grid-card">
+                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                        <h6 class="fw-bold mb-0" style="color:#334155;"><i class="bi bi-receipt me-2 text-primary"></i>Salary Slips</h6>
+                    </div>
+                    <div class="table-responsive" style="font-size:0.82rem;">
+                        <table class="table table-sm mb-0" style="width:100%; table-layout:fixed;">
+                            <colgroup>
+                                <col style="width:18%">
+                                <col style="width:9%">
+                                <col style="width:12%">
+                                <col style="width:9%">
+                                <col style="width:11%">
+                                <col style="width:10%">
+                                <col style="width:10%">
+                                <col style="width:9%">
+                                <col style="width:12%">
+                            </colgroup>
                             <thead>
                                 <tr>
-                                    <th>Employee</th>
-                                    <th>Month</th>
-                                    <th>Base Salary</th>
-                                    <th>Deductions</th>
-                                    <th>Incentive</th>
-                                    <th>Total Earnings</th>
-                                    <th>Invoice</th>
-                                    <th>Leaves</th>
+                                    <th style="padding:8px 10px;">Employee Name</th>
+                                    <th style="padding:8px 10px;">Month</th>
+                                    <th style="padding:8px 10px;">Base Salary</th>
+                                    <th style="padding:8px 10px;">Leaves (P/U)</th>
+                                    <th style="padding:8px 10px;">Bonus</th>
+                                    <th style="padding:8px 10px;">Deductions</th>
+                                    <th style="padding:8px 10px;">Net Pay</th>
+                                    <th style="padding:8px 10px;">Status</th>
+                                    <th class="text-end" style="padding:8px 10px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="slips-tbody">
                                 <tr>
-                                    <td colspan="6" class="text-center py-5 text-muted">Select an employee to view
-                                        history</td>
+                                    <td colspan="9" class="text-center py-4 text-muted">Loading...</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </div><!-- /page-content -->
+            </div>
         </div>
     </div>
 
-    <!-- ─── Generate Salary Slip Modal ───────────────────────── -->
+    <!-- Generate Salary Slip Modal -->
     <div class="crm-overlay" id="salaryModal">
-        <div class="crm-box">
+        <div class="crm-box" style="max-width:640px;">
             <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-                <h5 class="fw-bold mb-0"><i class="bi bi-file-earmark-text text-success me-2"></i>Generate Salary Slip
+                <h5 class="fw-bold mb-0"><i class="bi bi-file-earmark-text text-primary me-2"></i>Generate Salary Slip
                 </h5>
                 <button class="btn-close" onclick="closeSalaryModal()"></button>
             </div>
             <div class="row g-3 mb-3">
-                <div class="col-12">
+                <div class="col-6">
                     <label class="form-label fw-semibold small">Employee <span class="text-danger">*</span></label>
-                    <select id="s-user" class="form-select">
-                        <option value="">Loading...</option>
+                    <select id="s-user" class="form-select" onchange="onEmployeeOrMonthChange()">
+                        <option value="">-- Select Employee --</option>
                     </select>
                 </div>
-                <div class="col-12">
-                    <label class="form-label fw-semibold small">Month (YYYY-MM) <span
-                            class="text-danger">*</span></label>
-                    <input type="month" id="s-month" class="form-control">
+                <div class="col-6">
+                    <label class="form-label fw-semibold small">Month <span class="text-danger">*</span></label>
+                    <input type="month" id="s-month" class="form-control" onchange="onEmployeeOrMonthChange()">
                 </div>
                 <div class="col-6">
-                    <label class="form-label fw-semibold small">Paid Leaves</label>
-                    <input type="number" id="s-paid-leaves" class="form-control" value="0" min="0">
-                </div>
-                <div class="col-6">
-                    <label class="form-label fw-semibold small">Unpaid Leaves</label>
-                    <input type="number" id="s-unpaid-leaves" class="form-control" value="0" min="0">
-                </div>
-                <div class="col-12">
-                    <label class="form-label fw-semibold small">Extra Deductions (₹)</label>
+                    <label class="form-label fw-semibold small">Base Salary Override</label>
                     <div class="input-group">
-                        <span class="input-group-text">₹</span>
-                        <input type="number" id="s-deduction" class="form-control" value="0" min="0" step="0.01">
+                        <span class="input-group-text">Rs.</span>
+                        <input type="number" id="s-base-salary" class="form-control" placeholder="Leave blank to use profile" min="0" step="0.01" oninput="onEmployeeOrMonthChange()">
+                    </div>
+                    <div class="form-text text-muted" style="font-size:0.75rem;">Overrides the employee's profile base salary for this slip only.</div>
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-semibold small">Extra Deductions</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Rs.</span>
+                        <input type="number" id="s-deduction" class="form-control" value="0" min="0" step="0.01" oninput="onEmployeeOrMonthChange()">
                     </div>
                 </div>
             </div>
+
+            <!-- Preview Panel (populated via API) -->
+            <div id="salary-preview" style="display:none;" class="mb-3">
+                <div class="border rounded p-3" style="background:#FAFBFF;">
+                    <h6 class="fw-bold small mb-3" style="color:#334155; letter-spacing:0.3px;">SALARY BREAKDOWN</h6>
+                    <div class="row g-2 small">
+                        <div class="col-6 d-flex justify-content-between">
+                            <span class="text-muted">Base Salary</span>
+                            <span class="fw-semibold" id="pv-base">--</span>
+                        </div>
+                        <div class="col-6 d-flex justify-content-between">
+                            <span class="text-muted">Working Days</span>
+                            <span class="fw-semibold" id="pv-days">--</span>
+                        </div>
+                        <div class="col-6 d-flex justify-content-between">
+                            <span class="text-muted">Paid Leaves</span>
+                            <span class="fw-semibold" style="color:#059669;" id="pv-paid">--</span>
+                        </div>
+                        <div class="col-6 d-flex justify-content-between">
+                            <span class="text-muted">Unpaid Leaves</span>
+                            <span class="fw-semibold" style="color:#B91C1C;" id="pv-unpaid">--</span>
+                        </div>
+                        <div class="col-6 d-flex justify-content-between">
+                            <span class="text-muted">Leave Deduction</span>
+                            <span class="fw-semibold" style="color:#B91C1C;" id="pv-leave-ded">--</span>
+                        </div>
+                        <div class="col-6 d-flex justify-content-between">
+                            <span class="text-muted">Incentive</span>
+                            <span class="fw-semibold" style="color:#0891B2;" id="pv-incentive">--</span>
+                        </div>
+                        <div class="col-6 d-flex justify-content-between">
+                            <span class="text-muted">Slab Bonus</span>
+                            <span class="fw-semibold" style="color:#059669;" id="pv-slab">--</span>
+                        </div>
+                        <div class="col-6 d-flex justify-content-between">
+                            <span class="text-muted">Extra Deduction</span>
+                            <span class="fw-semibold" style="color:#B91C1C;" id="pv-extra">--</span>
+                        </div>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between fw-bold" style="font-size:1.05rem;">
+                        <span>Net Payable</span>
+                        <span style="color:#4F46E5;" id="pv-final">--</span>
+                    </div>
+                    <div id="pv-existing-warn" class="mt-2 small fw-semibold" style="display:none; color:#B91C1C;">
+                        A salary slip already exists for this employee/month.
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary mt-2" onclick="fetchPreview()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Recalculate
+                </button>
+            </div>
+
             <div class="d-flex justify-content-end gap-2 pt-3 border-top">
                 <button class="btn btn-light border" onclick="closeSalaryModal()">Cancel</button>
-                <button class="btn btn-success px-4 fw-semibold" id="salary-gen-btn"
-                    onclick="generateSalarySlip()">Generate Slip</button>
+                <button class="btn btn-warning px-4 fw-semibold d-none" id="salary-update-btn"
+                    onclick="updateDraftSlip()">Update Draft</button>
+                <button class="btn btn-danger px-4 fw-semibold d-none" id="salary-regen-btn"
+                    onclick="regenerateSlip()"><i class="bi bi-arrow-repeat me-1"></i>Delete Existing & Regenerate</button>
+                <button class="btn btn-primary px-4 fw-semibold" id="salary-gen-btn"
+                    onclick="generateSalarySlip()">Generate as Draft</button>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/api.js?v=2.6"></script>
+    <script src="../js/api.js?v=2.9"></script>
     <script src="../js/ui_components.js?v=1772780187"></script>
     <script src="../js/auth.js?v=2.6"></script>
     <script>
@@ -128,58 +232,219 @@
         const user = getUser();
         const isAdmin = user?.role === 'ADMIN';
 
-        // Non-admins can't generate salary slips
-        if (!isAdmin) document.getElementById('gen-salary-btn').style.display = 'none';
-
-        // ── Modal controls ────────────────────────────────────────
-        function openSalaryModal() { document.getElementById('salaryModal').classList.add('show'); }
-        function closeSalaryModal() { document.getElementById('salaryModal').classList.remove('show'); }
-        document.getElementById('salaryModal').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
-
-        // ── Load Employees for dropdowns ──────────────────────────
-        ApiClient.getEmployees().then(emps => {
-            const opts = '<option value="">— Select Employee —</option>' + emps.map(e => `<option value="${e.id}">${e.name || e.email}</option>`).join('');
-            document.getElementById('s-user').innerHTML = opts;
-            document.getElementById('slip-user-filter').innerHTML = '<option value="">All Employees</option>' + emps.map(e => `<option value="${e.id}">${e.name || e.email}</option>`).join('');
-        }).catch(() => { });
-
-        // ── Load Salary Slips ─────────────────────────────────────
-        async function loadSlips() {
-            const userId = document.getElementById('slip-user-filter').value;
-            const tbody = document.getElementById('slips-tbody');
-
-            // If not admin, we use /hrm/salary/me and ignore the filter
-            const endpoint = isAdmin
-                ? (userId ? `/hrm/salary/${userId}` : null)
-                : '/hrm/salary/me';
-
-            if (isAdmin && !userId) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">Select an employee to view slips.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
-            try {
-                const slips = await ApiClient.request(endpoint);
-                if (!slips.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No salary slips found.</td></tr>'; return; }
-                tbody.innerHTML = slips.map(s => `<tr>
-                <td class="fw-semibold text-dark">${s.user_name || 'User #' + s.user_id}</td>
-                <td class="text-muted">${s.month}</td>
-                <td>₹${Number(s.base_salary).toLocaleString('en-IN')}</td>
-                <td class="text-danger">-₹${Number(s.deduction_amount).toLocaleString('en-IN')}</td>
-                <td class="text-success fw-bold">+₹${Number(s.incentive_amount || 0).toLocaleString('en-IN')}</td>
-                <td class="fw-bold text-dark fs-6">₹${Number(s.final_salary).toLocaleString('en-IN')}</td>
-                <td class="text-center">
-                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="downloadInvoice(${s.id})">
-                        <i class="bi bi-download me-1"></i>PDF
-                    </button>
-                </td>
-                <td class="text-muted small">${s.paid_leaves}P / ${s.unpaid_leaves}U</td>
-            </tr>`).join('');
-            } catch (e) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger">${e.message || 'Err'}</td></tr>`; }
+        if (isAdmin) {
+            const aa = document.getElementById('admin-actions');
+            aa.classList.remove('d-none');
+            aa.classList.add('d-flex');
+        } else {
+            // Non-admin: hide filter toolbar entirely
+            const ft = document.getElementById('filter-toolbar');
+            if (ft) ft.style.display = 'none';
         }
 
-        // ── Generate Salary Slip ──────────────────────────────────
+        function toggleFilters() {
+            const panel = document.getElementById('filter-bar');
+            const chevron = document.getElementById('filter-chevron');
+            const btn = document.getElementById('filter-toggle-btn');
+            const isOpen = panel.style.display !== 'none';
+            panel.style.display = isOpen ? 'none' : 'block';
+            chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+            btn.classList.toggle('btn-outline-secondary', isOpen);
+            btn.classList.toggle('btn-secondary', !isOpen);
+        }
+
+        function updateFilterBadge() {
+            const badge = document.getElementById('active-filter-badge');
+            if (!badge) return;
+            const u = document.getElementById('slip-user-filter')?.value;
+            const s = document.getElementById('slip-status-filter')?.value;
+            const m = document.getElementById('slip-month-filter')?.value;
+            const count = [u, s, m].filter(Boolean).length;
+            if (count > 0) {
+                badge.textContent = count + ' filter' + (count > 1 ? 's' : '') + ' active';
+                badge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        const INR = v => 'Rs. ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        // Modal
+        function openSalaryModal() {
+            document.getElementById('salaryModal').classList.add('show');
+            document.getElementById('s-user').value = '';
+            document.getElementById('s-month').value = '';
+            document.getElementById('s-base-salary').value = '';
+            document.getElementById('s-deduction').value = '0';
+            document.getElementById('salary-preview').style.display = 'none';
+            document.getElementById('salary-gen-btn').disabled = false;
+            document.getElementById('salary-gen-btn').classList.remove('d-none');
+            document.getElementById('salary-update-btn').classList.add('d-none');
+            document.getElementById('salary-update-btn').dataset.slipId = '';
+            document.getElementById('salary-regen-btn').classList.add('d-none');
+        }
+        function closeSalaryModal() {
+            document.getElementById('salaryModal').classList.remove('show');
+            // Reset form for next use
+            document.getElementById('s-user').value = '';
+            document.getElementById('s-month').value = '';
+            document.getElementById('s-base-salary').value = '';
+            document.getElementById('s-deduction').value = '0';
+            document.getElementById('salary-preview').style.display = 'none';
+            document.getElementById('salary-gen-btn').disabled = false;
+            document.getElementById('salary-gen-btn').classList.remove('d-none');
+            document.getElementById('salary-update-btn').classList.add('d-none');
+            document.getElementById('salary-update-btn').dataset.slipId = '';
+            document.getElementById('salary-regen-btn').classList.add('d-none');
+        }
+        document.getElementById('salaryModal').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+
+        // Load employees and build name map
+        ApiClient.getEmployees().then(emps => {
+            window.allEmployees = emps;
+            window.userNameMap = {};
+            emps.forEach(e => { window.userNameMap[e.id] = e.name || e.email; });
+            const opts = emps.map(e => `<option value="${e.id}">${e.name || e.email}</option>`).join('');
+            document.getElementById('s-user').innerHTML = '<option value="">-- Select Employee --</option>' + opts;
+            document.getElementById('slip-user-filter').innerHTML = '<option value="">All Employees</option>' + opts;
+        }).catch(() => { });
+
+        // Preview on employee/month change
+        let previewTimeout;
+        function onEmployeeOrMonthChange() {
+            clearTimeout(previewTimeout);
+            previewTimeout = setTimeout(fetchPreview, 400);
+        }
+
+        async function fetchPreview() {
+            const userId = document.getElementById('s-user').value;
+            const month = document.getElementById('s-month').value;
+            const panel = document.getElementById('salary-preview');
+            if (!userId || !month) { panel.style.display = 'none'; return; }
+
+            const extra = parseFloat(document.getElementById('s-deduction').value) || 0;
+            const baseSalaryOverride = document.getElementById('s-base-salary').value.trim();
+            const baseSalary = baseSalaryOverride !== '' ? parseFloat(baseSalaryOverride) : null;
+            try {
+                const p = await ApiClient.previewSalary(userId, month, extra, baseSalary);
+                document.getElementById('pv-base').textContent = INR(p.base_salary);
+                document.getElementById('pv-days').textContent = p.working_days + '/30';
+                document.getElementById('pv-paid').textContent = p.paid_leaves;
+                document.getElementById('pv-unpaid').textContent = p.unpaid_leaves;
+                document.getElementById('pv-leave-ded').textContent = '-' + INR(p.leave_deduction);
+                document.getElementById('pv-incentive').textContent = '+' + INR(p.incentive_amount);
+                document.getElementById('pv-slab').textContent = '+' + INR(p.slab_bonus);
+                document.getElementById('pv-extra').textContent = '-' + INR(p.extra_deduction);
+                document.getElementById('pv-final').textContent = INR(p.final_salary);
+
+                const warn = document.getElementById('pv-existing-warn');
+                const genBtn = document.getElementById('salary-gen-btn');
+                const updateBtn = document.getElementById('salary-update-btn');
+                const regenBtn = document.getElementById('salary-regen-btn');
+                if (p.has_existing_slip) {
+                    if (p.existing_slip_status === 'DRAFT') {
+                        warn.style.display = 'block';
+                        warn.textContent = 'A draft salary slip exists. You can update it with the recalculated values.';
+                        warn.style.color = '#B45309';
+                        genBtn.classList.add('d-none');
+                        updateBtn.classList.remove('d-none');
+                        updateBtn.dataset.slipId = p.existing_slip_id;
+                        regenBtn.classList.add('d-none');
+                    } else {
+                        warn.style.display = 'block';
+                        warn.textContent = 'A confirmed salary slip already exists. You can delete it and generate a new draft with the recalculated values.';
+                        warn.style.color = '#B91C1C';
+                        genBtn.classList.add('d-none');
+                        updateBtn.classList.add('d-none');
+                        regenBtn.classList.remove('d-none');
+                    }
+                } else {
+                    warn.style.display = 'none';
+                    genBtn.classList.remove('d-none');
+                    genBtn.disabled = false;
+                    updateBtn.classList.add('d-none');
+                    updateBtn.dataset.slipId = '';
+                    regenBtn.classList.add('d-none');
+                }
+                panel.style.display = 'block';
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to load preview', 'error');
+            }
+        }
+
+        // Load slips
+        async function loadSlips() {
+            const tbody = document.getElementById('slips-tbody');
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+
+            try {
+                let slips;
+                if (isAdmin) {
+                    const userId = document.getElementById('slip-user-filter').value;
+                    slips = userId
+                        ? await ApiClient.getSalaryRecords(userId)
+                        : await ApiClient.getAllSalarySlips();
+                } else {
+                    slips = await ApiClient.getMySalarySlips();
+                }
+
+                // Status filter
+                const statusFilter = isAdmin ? document.getElementById('slip-status-filter').value : '';
+                if (statusFilter) slips = slips.filter(s => s.status === statusFilter);
+
+                // Month filter
+                const monthFilter = isAdmin ? document.getElementById('slip-month-filter').value : '';
+                if (monthFilter) slips = slips.filter(s => s.month === monthFilter);
+
+                document.getElementById('slip-count').textContent = slips.length + ' record(s)';
+
+                if (!slips.length) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted">No salary slips found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = slips.map(s => {
+                    const statusCls = s.status === 'CONFIRMED'
+                        ? 'badge-green-light'
+                        : 'badge-yellow-light';
+                    const statusIcon = s.status === 'CONFIRMED' ? 'bi-check-circle' : 'bi-hourglass-split';
+                    const statusLabel = s.status === 'CONFIRMED' ? 'Confirmed' : 'Draft';
+
+                    const confirmBtn = isAdmin && s.status === 'DRAFT'
+                        ? `<button class="btn btn-sm btn-outline-success" title="Confirm" onclick="confirmSlip(${s.id})"><i class="bi bi-check-lg"></i></button>`
+                        : '';
+                    const invoiceBtn = s.status === 'CONFIRMED'
+                        ? `<button class="btn btn-sm btn-outline-primary" title="View Invoice" onclick="downloadInvoice(${s.id})"><i class="bi bi-file-earmark-text"></i></button>`
+                        : '';
+
+                    const totalBonus = (parseFloat(s.incentive_amount) || 0) + (parseFloat(s.slab_bonus) || 0);
+                    const empName = (window.userNameMap && window.userNameMap[s.user_id]) || s.user_name || 'User #' + s.user_id;
+                    return `<tr>
+                        <td class="fw-semibold text-dark" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${empName}">${empName}</td>
+                        <td class="text-muted">${s.month}</td>
+                        <td>${INR(s.base_salary)}</td>
+                        <td>
+                            <span style="color:#059669;">${s.paid_leaves}P</span>
+                            <span class="text-muted mx-1">/</span>
+                            <span style="color:#B91C1C;">${s.unpaid_leaves}U</span>
+                        </td>
+                        <td style="color:#059669; font-weight:600;">+${INR(totalBonus)}</td>
+                        <td style="color:#B91C1C; font-weight:600;">-${INR(s.deduction_amount)}</td>
+                        <td class="fw-bold">${INR(s.final_salary)}</td>
+                        <td><span class="status-pill ${statusCls}"><i class="bi ${statusIcon} me-1"></i>${statusLabel}</span></td>
+                        <td class="text-end">
+                            <div class="d-flex gap-1 justify-content-end">
+                                ${confirmBtn}${invoiceBtn}
+                            </div>
+                        </td>
+                    </tr>`;
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-danger">${e.message || 'Error'}</td></tr>`;
+            }
+        }
+
         async function generateSalarySlip() {
             const userId = document.getElementById('s-user').value;
             const month = document.getElementById('s-month').value;
@@ -189,38 +454,103 @@
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating...';
             try {
-                await ApiClient.generateSalary({
+                const baseSalaryOverride = document.getElementById('s-base-salary').value.trim();
+                const payload = {
                     user_id: parseInt(userId),
                     month,
-                    paid_leaves: parseInt(document.getElementById('s-paid-leaves').value) || 0,
-                    unpaid_leaves: parseInt(document.getElementById('s-unpaid-leaves').value) || 0,
-                    deduction_amount: parseFloat(document.getElementById('s-deduction').value) || 0
-                });
+                    extra_deduction: parseFloat(document.getElementById('s-deduction').value) || 0
+                };
+                if (baseSalaryOverride !== '') payload.base_salary = parseFloat(baseSalaryOverride);
+                await ApiClient.generateSalary(payload);
                 closeSalaryModal();
-                showToast('Salary slip generated!', 'success');
-                document.getElementById('slip-user-filter').value = userId;
+                showToast('Salary slip generated as Draft. Review and confirm it.', 'success');
                 loadSlips();
             } catch (e) { showToast(e.data?.detail || e.message || 'Failed', 'error'); }
-            finally { btn.disabled = false; btn.innerHTML = 'Generate Slip'; }
+            finally { btn.disabled = false; btn.innerHTML = 'Generate as Draft'; }
+        }
+
+        async function updateDraftSlip() {
+            const btn = document.getElementById('salary-update-btn');
+            const slipId = btn.dataset.slipId;
+            if (!slipId) { showToast('No draft slip found to update', 'error'); return; }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+            try {
+                const userId = document.getElementById('s-user').value;
+                const month = document.getElementById('s-month').value;
+                const baseSalaryOverride = document.getElementById('s-base-salary').value.trim();
+                const payload = {
+                    user_id: parseInt(userId),
+                    month,
+                    extra_deduction: parseFloat(document.getElementById('s-deduction').value) || 0
+                };
+                if (baseSalaryOverride !== '') payload.base_salary = parseFloat(baseSalaryOverride);
+                await ApiClient.updateDraftSalarySlip(parseInt(slipId), payload);
+                closeSalaryModal();
+                showToast('Draft salary slip updated successfully.', 'success');
+                loadSlips();
+            } catch (e) { showToast(e.data?.detail || e.message || 'Failed to update', 'error'); }
+            finally { btn.disabled = false; btn.innerHTML = 'Update Draft'; }
+        }
+
+        async function regenerateSlip() {
+            const btn = document.getElementById('salary-regen-btn');
+            const userId = document.getElementById('s-user').value;
+            const month = document.getElementById('s-month').value;
+            if (!userId || !month) { showToast('Select an employee and month', 'error'); return; }
+            if (!confirm('This will DELETE the existing salary slip and create a new Draft. Continue?')) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Regenerating...';
+            try {
+                const baseSalaryOverride = document.getElementById('s-base-salary').value.trim();
+                const payload = {
+                    user_id: parseInt(userId),
+                    month,
+                    extra_deduction: parseFloat(document.getElementById('s-deduction').value) || 0
+                };
+                if (baseSalaryOverride !== '') payload.base_salary = parseFloat(baseSalaryOverride);
+                await ApiClient.regenerateSalarySlip(payload);
+                closeSalaryModal();
+                showToast('Salary slip regenerated as Draft successfully.', 'success');
+                loadSlips();
+            } catch (e) { showToast(e.data?.detail || e.message || 'Failed to regenerate', 'error'); }
+            finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Delete Existing & Regenerate'; }
+        }
+
+        async function confirmSlip(slipId) {
+            if (!confirm('Confirm this salary slip? Once confirmed, the employee will be able to view it.')) return;
+            try {
+                await ApiClient.confirmSalarySlip(slipId);
+                showToast('Salary slip confirmed.', 'success');
+                loadSlips();
+            } catch (e) { showToast(e.data?.detail || e.message || 'Failed', 'error'); }
         }
 
         async function downloadInvoice(slipId) {
             try {
-                const response = await fetch(`${window.API_BASE || 'http://localhost:8000'}/api/hrm/salary/slip/${slipId}/invoice`, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('crm_token')}` }
-                });
+                const response = await fetch(
+                    `${API_BASE_URL}/hrm/salary/slip/${slipId}/invoice`,
+                    { headers: { 'Authorization': `Bearer ${ApiClient.getAccessToken()}` } }
+                );
                 if (!response.ok) throw new Error('Failed to fetch invoice');
                 const html = await response.text();
                 const win = window.open('', '_blank');
                 win.document.write(html);
                 win.document.close();
-            } catch (err) { showToast('Error downloading invoice', true); }
+            } catch (err) { showToast('Error loading invoice', 'error'); }
         }
 
-        if (!isAdmin) {
-            document.getElementById('slip-user-filter').style.display = 'none';
+        function clearFilters() {
+            document.getElementById('slip-user-filter').value = '';
+            document.getElementById('slip-status-filter').value = '';
+            document.getElementById('slip-month-filter').value = '';
+            updateFilterBadge();
             loadSlips();
         }
+
+        loadSlips();
     </script>
 </body>
 
