@@ -43,8 +43,15 @@ class Shop(SoftDeleteMixin, Base):
     
     assignment_status = Column(String, default="UNASSIGNED", nullable=False)
     
+    # Lead Acceptance Tracking
+    assigned_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    accepted_at = Column(DateTime(timezone=True), nullable=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
     # Relationships — from both branches
     owner = relationship("app.modules.users.models.User", foreign_keys=[owner_id], backref="assigned_shops")
+    assigned_by = relationship("app.modules.users.models.User", foreign_keys=[assigned_by_id], backref="shops_assigned_out")
+    creator = relationship("app.modules.users.models.User", foreign_keys=[created_by_id], backref="shops_created")
     area = relationship("app.modules.areas.models.Area", backref="shops")
     assigned_owners_list = relationship("app.modules.users.models.User", secondary=shop_assignments, backref="assigned_shops_list")
 

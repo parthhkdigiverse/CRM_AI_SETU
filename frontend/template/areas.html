@@ -808,9 +808,10 @@
             ul.innerHTML = filtered.map(a => {
                 const shopCount = allShops.filter(s => s.area_id === a.id).length;
                 const isActive = a.id === selectedAreaId;
+                const sourcedBadge = a.created_by_name && a.created_by_id !== 1 ? `<span class="badge bg-info-subtle text-info border-info-subtle ms-1" style="font-size:0.6rem;padding:1px 4px;">Sourced</span>` : '';
                 return `<li class="area-item ${isActive ? 'active' : ''}" onclick="selectArea(${a.id}, '${a.name.replace(/'/g, "\\'")}')"
                         ondblclick="openEditAreaModal(${a.id})" title="Double-click to edit">
-                    <span class="area-info"><i class="bi bi-geo-alt-fill"></i>${a.name}</span>
+                    <span class="area-info"><i class="bi bi-geo-alt-fill"></i>${a.name}${sourcedBadge}</span>
                     <span class="area-count-pill">${shopCount} shops</span>
                 </li>`;
             }).join('');
@@ -840,6 +841,9 @@
             const isPendingArea = area && area.assignment_status === 'PENDING';
             const isAcceptedArea = area && area.assignment_status === 'ACCEPTED';
             let statusBadge = '';
+            let sourcedByBadge = area && area.created_by_name 
+                ? `<span class="badge bg-info text-dark ms-2 align-self-center" style="font-size:0.75rem;"><i class="bi bi-person-plus"></i> Sourced by: ${area.created_by_name}</span>` 
+                : "";
             
             if (isPendingArea) {
                 if (isAdmin) {
@@ -857,6 +861,7 @@
                 `<div class="d-flex align-items-center gap-2" style="flex-wrap:wrap;">
                     <i class="bi bi-shop"></i> Shops in ${areaName}
                     ${statusBadge}
+                    ${sourcedByBadge}
                     ${isPendingArea && !isAdmin ? `
                         <button class="btn btn-sm btn-success ms-2" style="font-size:0.75rem;padding:4px 12px;border-radius:6px;" onclick="acceptAssignment('areas', ${areaId})">
                             <i class="bi bi-check-circle"></i> Accept Lead
@@ -937,8 +942,17 @@
                     shopStatusBadge = `<br><span class="badge bg-success mt-1">Claimed / Accepted</span>`;
                 }
 
+                const sourcedByShop = s.created_by_name 
+                    ? `<div class="mt-1"><span class="badge bg-info text-dark" style="font-size:0.7rem;"><i class="bi bi-person-plus"></i> Sourced by: ${s.created_by_name}</span></div>` 
+                    : "";
+
                 return `<tr>
-                        <td><span class="shop-name-primary">${s.name}</span><span class="shop-name-sub">${s.address || 'No address set'}</span>${shopStatusBadge}</td>
+                        <td>
+                            <span class="shop-name-primary">${s.name}</span>
+                            <span class="shop-name-sub">${s.address || 'No address set'}</span>
+                            ${sourcedByShop}
+                            ${shopStatusBadge}
+                        </td>
                         <td>${assignedHtml}</td>
                         <td>
                             <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.name + ' ' + (s.address || ''))}" 

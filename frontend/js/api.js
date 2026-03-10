@@ -467,6 +467,9 @@ class ApiClient {
     static async acceptItem(moduleName, id) {
         return this.request(`/${moduleName}/${id}/accept`, { method: 'POST' });
     }
+    static async getAcceptedLeads() {
+        return this.request('/shops/accepted/history');
+    }
 }
 
 window.ApiClient = ApiClient;

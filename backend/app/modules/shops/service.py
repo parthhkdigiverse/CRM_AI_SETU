@@ -10,11 +10,36 @@ logger = logging.getLogger(__name__)
 
 class ShopService:
     @staticmethod
-    def create_shop(db: Session, shop_in: ShopCreate):
+    def create_shop(db: Session, shop_in: ShopCreate, current_user: User):
+        from app.modules.users.models import UserRole
+        from datetime import datetime, UTC
+        
         db_shop = Shop(**shop_in.model_dump())
+        db_shop.created_by_id = current_user.id
+        
+        # Auto-Assign if not Admin
+        if current_user.role != UserRole.ADMIN:
+            db_user = db.query(User).filter(User.id == current_user.id).first()
+            db_shop.assigned_owners_list = [db_user]
+            db_shop.assignment_status = "ACCEPTED"
+            db_shop.accepted_at = datetime.now(UTC)
+            db_shop.assigned_by_id = current_user.id
+            
         db.add(db_shop)
         db.commit()
         db.refresh(db_shop)
+        
+        # Add dynamic fields for Read schema
+        setattr(db_shop, 'owner_name', db_shop.owner.name if getattr(db_shop, 'owner', None) else None)
+        setattr(db_shop, 'area_name', db_shop.area.name if getattr(db_shop, 'area', None) else None)
+        setattr(db_shop, 'created_by_name', current_user.name)
+        
+        # Map assigned users for frontend UI
+        db_shop.assigned_users = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+            for u in getattr(db_shop, 'assigned_owners_list', [])
+        ]
+        
         return db_shop
 
     @staticmethod
@@ -33,7 +58,8 @@ class ShopService:
             selectinload(Shop.owner),
             selectinload(Shop.area),
             selectinload(Shop.assigned_owners_list),
-            selectinload(Shop.archived_by)
+            selectinload(Shop.archived_by),
+            selectinload(Shop.creator)
         ).filter(Shop.is_archived == False)
         
         if status:
@@ -56,6 +82,7 @@ class ShopService:
             shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
             shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
             shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
+            shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
             shop_data.pop("_sa_instance_state", None)
             
             # Map assigned owners for frontend UI
@@ -179,7 +206,8 @@ class ShopService:
             selectinload(Shop.owner),
             selectinload(Shop.area),
             selectinload(Shop.assigned_owners_list),
-            selectinload(Shop.archived_by)
+            selectinload(Shop.archived_by),
+            selectinload(Shop.creator)
         ).filter(Shop.is_archived == True)
 
         if current_user.role != "ADMIN":
@@ -195,6 +223,7 @@ class ShopService:
             shop_data["owner_name"] = shop.owner.name if shop.owner else None
             shop_data["area_name"] = shop.area.name if shop.area else None
             shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
+            shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
             shop_data.pop("_sa_instance_state", None)
             shop_data["assigned_users"] = [
                 {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
@@ -252,9 +281,11 @@ class ShopService:
         if not any(u.id == current_user.id for u in shop.assigned_owners_list):
             raise HTTPException(status_code=403, detail="You are not assigned to this shop.")
             
+        from datetime import datetime, UTC
         db_user = db.query(User).filter(User.id == current_user.id).first()
         shop.assignment_status = "ACCEPTED"
         shop.assigned_owners_list = [db_user]
+        shop.accepted_at = datetime.now(UTC)
         
         db.commit()
         db.refresh(shop)
@@ -270,3 +301,31 @@ class ShopService:
             for u in shop.assigned_owners_list
         ]
         return shop_data
+
+    @staticmethod
+    def get_accepted_leads(db: Session, current_user: User):
+        from sqlalchemy.orm import joinedload
+        from app.modules.users.models import User as UserModel, UserRole
+        
+        query = db.query(Shop).options(
+            joinedload(Shop.area),
+            joinedload(Shop.assigned_owners_list),
+            joinedload(Shop.assigned_by)
+        ).filter(Shop.assignment_status == "ACCEPTED")
+        
+        if current_user.role != UserRole.ADMIN:
+            query = query.filter(Shop.assigned_owners_list.any(UserModel.id == current_user.id))
+            
+        results = query.order_by(Shop.accepted_at.desc()).all()
+        
+        history = []
+        for shop in results:
+            assigned_to_name = shop.assigned_owners_list[0].name if shop.assigned_owners_list else "Unknown"
+            history.append({
+                "area_name": shop.area.name if shop.area else "N/A",
+                "shop_name": shop.name,
+                "assigned_to_name": assigned_to_name,
+                "assigned_by_name": shop.assigned_by.name if shop.assigned_by else "System",
+                "accepted_at": shop.accepted_at
+            })
+        return history

@@ -66,6 +66,37 @@
                     </div>
                 </div>
 
+                <!-- Accepted Leads History -->
+                <div class="grid-card mb-4">
+                    <div class="d-flex justify-content-between align-items-center p-4 border-bottom bg-light bg-gradient">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width:32px;height:32px;">
+                                <i class="bi bi-person-check-fill"></i>
+                            </div>
+                            <h6 class="fw-bold mb-0" style="color:#1e293b;">Accepted Lead History</h6>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Area</th>
+                                    <th>Shop</th>
+                                    <th id="dynamic-assign-header">Agent Info</th>
+                                    <th>Accepted Date & Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accepted-leads-table">
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">
+                                        <span class="spinner-border spinner-border-sm me-2"></span>Loading history...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Visits Table -->
                 <div class="grid-card">
                     <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
@@ -358,6 +389,58 @@
             }
         }
 
+        // ── Load Accepted Leads History ──────────────────────────
+        async function loadAcceptedLeads() {
+            const tbody = document.getElementById('accepted-leads-table');
+            const header = document.getElementById('dynamic-assign-header');
+            
+            try {
+                // Determine header based on role
+                if (isAdmin) {
+                    header.textContent = "Assigned To (Staff)";
+                } else {
+                    header.textContent = "Assigned By (Manager)";
+                }
+
+                const leads = await ApiClient.getAcceptedLeads();
+                
+                if (!leads || !leads.length) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No accepted leads found in your history.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = leads.map(l => {
+                    const agentValue = isAdmin ? l.assigned_to_name : l.assigned_by_name;
+                    const dateObj = l.accepted_at ? new Date(l.accepted_at) : null;
+                    const dateStr = dateObj ? dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+                    const timeStr = dateObj ? dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+
+                    return `
+                        <tr>
+                            <td class="text-muted"><i class="bi bi-geo-alt me-2"></i>${l.area_name}</td>
+                            <td class="fw-semibold text-dark">${l.shop_name}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width:28px;height:28px;font-size:0.7rem;font-weight:700;">
+                                        ${(agentValue || 'U').slice(0, 2).toUpperCase()}
+                                    </div>
+                                    <span class="text-muted small">${agentValue || 'Unknown'}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-medium text-dark">${dateStr}</div>
+                                <div class="small text-muted">${timeStr}</div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error("History fetch error:", err);
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-danger small">Error: ${err.message || 'Failed to fetch history'}</td></tr>`;
+            }
+        }
+
         // ── Save Visit ──────────────────────────────────────────
         async function saveVisit() {
             const shopId = document.getElementById('v-shop').value;
@@ -425,14 +508,16 @@
                 btn.innerHTML = 'Save Visit Log';
             }
         }
+        // Initialize
+        loadVisits();
+        loadAcceptedLeads();
+        highlightRowIfNeeded();
 
-        loadVisits().then(() => {
+        function highlightRowIfNeeded() {
             const urlParams = new URLSearchParams(window.location.search);
             const highlightId = urlParams.get('id');
             if (highlightId) {
                 setTimeout(() => {
-                    // Try to find a row containing the shop ID text explicitly or matching ID structure if possible
-                    // In the existing UI, the shop_id isn't directly on a data attribute, so we'll look for text match
                     const rows = document.querySelectorAll('#visits-table tr');
                     for (let row of rows) {
                         if (row.innerHTML.includes(`Shop #${highlightId}`) || row.innerHTML.includes(`value="${highlightId}"`)) {
@@ -443,8 +528,7 @@
                     }
                 }, 500);
             }
-        });
+        }
     </script>
 </body>
-
 </html>

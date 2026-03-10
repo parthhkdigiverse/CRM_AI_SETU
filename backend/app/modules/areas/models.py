@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean, JSON, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean, JSON, Table, DateTime
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from app.core.mixins import SoftDeleteMixin
@@ -25,6 +25,11 @@ class Area(SoftDeleteMixin, Base):
     
     assignment_status = Column(String, default="UNASSIGNED", nullable=False)
     
+    # Lead Acceptance Tracking
+    assigned_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    accepted_at = Column(DateTime(timezone=True), nullable=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
     # Advanced Targeting
     radius_meters = Column(Integer, default=500, nullable=False)
     shop_limit = Column(Integer, default=20, nullable=False)
@@ -34,5 +39,7 @@ class Area(SoftDeleteMixin, Base):
     
     # Relationships
     assigned_user = relationship("app.modules.users.models.User", foreign_keys=[assigned_user_id], backref="assigned_areas")
+    assigned_by = relationship("app.modules.users.models.User", foreign_keys=[assigned_by_id], backref="areas_assigned_out")
+    creator = relationship("app.modules.users.models.User", foreign_keys=[created_by_id], backref="areas_created")
     assigned_users_list = relationship("app.modules.users.models.User", secondary=area_assignments, backref="assigned_areas_list")
 

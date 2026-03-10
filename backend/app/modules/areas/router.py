@@ -20,13 +20,13 @@ staff_access = RoleChecker([
 def create_area(
     area_in: AreaCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(admin_access)
+    current_user: User = Depends(staff_access)
 ) -> Any:
     """
-    Create a new Area. Admin only.
+    Create a new Area. Available to staff.
     """
     service = AreaService(db)
-    return service.create_area(area_in)
+    return service.create_area(area_in, current_user)
 
 @router.patch("/{area_id}", response_model=AreaRead)
 def update_area(
@@ -73,7 +73,7 @@ def assign_area(
     Assign an area to users. Admin only.
     """
     service = AreaService(db)
-    return service.assign_area(area_id, assign_in.user_ids, assign_in.shop_ids)
+    return service.assign_area(area_id, assign_in.user_ids, current_user, assign_in.shop_ids)
 
 @router.post("/{area_id}/accept", response_model=AreaRead)
 def accept_area(

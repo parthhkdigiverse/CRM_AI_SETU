@@ -28,7 +28,7 @@ def create_shop(
     shop_in: ShopCreate,
     current_user: User = Depends(staff_checker)
 ) -> Any:
-    return ShopService.create_shop(db, shop_in)
+    return ShopService.create_shop(db, shop_in, current_user)
 
 @router.get("/kanban", response_model=Dict[str, List[ShopRead]])
 def read_kanban_shops(
@@ -153,3 +153,13 @@ def batch_delete_shops(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/accepted/history")
+def read_accepted_leads_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """
+    Get history of accepted leads. Scoped by role.
+    """
+    return ShopService.get_accepted_leads(db, current_user)
