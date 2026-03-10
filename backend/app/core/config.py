@@ -9,7 +9,7 @@ env_file_path = os.path.join(backend_dir, ".env")
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "SRM AI SETU"
-    DATABASE_URL: str = "postgresql://postgres:Nency@40307@localhost:5432/crm_ai_setu"
+    DATABASE_URL: str = "postgresql://postgres:Nency%40307@localhost:5432/crm_ai_setu"
     SECRET_KEY: str = "your-secret-key-for-development"  # Change in production!
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
