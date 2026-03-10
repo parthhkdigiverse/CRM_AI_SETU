@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse, Response
 import traceback
 
 # Core Imports
@@ -17,13 +17,15 @@ from app.utils.scheduler import start_scheduler, stop_scheduler
 async def lifespan(app: FastAPI):
     """Startup & shutdown hooks."""
     # ── Startup ──────────────────────────────────────────────────
+    from app.core.database import init_db
+    init_db()
     start_scheduler()
     yield
     # ── Shutdown ─────────────────────────────────────────────────
     stop_scheduler()
 
 
-app = FastAPI(title="CRM AI SETU API", lifespan=lifespan)
+app = FastAPI(title="SRM AI SETU API", lifespan=lifespan)
 
 # CORS
 app.add_middleware(
@@ -57,10 +59,17 @@ if os.path.exists(frontend_path):
 else:
     print(f"WARNING: Static frontend path not found at {frontend_path}")
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    favicon_path = os.path.join(frontend_path, "favicon.ico")
+    if os.path.exists(favicon_path):
+        return FileResponse(favicon_path)
+    return Response(status_code=204)
+
 @app.get("/")
 async def root():
     return {
-        "message": "Welcome to CRM AI SETU",
+        "message": "Welcome to SRM AI SETU",
         "backend_api_docs": "/docs",
         "frontend_app": "/frontend/template/index.html",
         "status": "active"
@@ -77,4 +86,3 @@ async def get_config():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
-

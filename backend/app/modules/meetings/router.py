@@ -111,6 +111,19 @@ def update_meeting(
     for field, value in update_data.items():
         setattr(db_meeting, field, value)
     
+    # If the user is manually marking the meeting done, kill any lingering notifications
+    if update_data.get("status") in [MeetingStatus.COMPLETED, MeetingStatus.DONE, MeetingStatus.CANCELLED]:
+        if db_meeting.meet_link:
+            from app.modules.notifications.models import Notification
+            notifs = (
+                db.query(Notification)
+                .filter(Notification.message.like(f"%LINK:{db_meeting.meet_link}%"))
+                .all()
+            )
+            for notif in notifs:
+                if "STATUS:COMPLETED" not in notif.message:
+                    notif.message += "\nSTATUS:COMPLETED"
+
     db.add(db_meeting)
     db.commit()
     db.refresh(db_meeting)
@@ -128,12 +141,23 @@ def delete_meeting(
 
     if current_user and current_user.role != UserRole.ADMIN:
         db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
-        if not db_client or db_client.pm_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Access denied")
-
     db.delete(db_meeting)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@global_router.post("/batch-delete")
+def batch_delete_meetings(
+    ids: List[int],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+):
+    try:
+        db.query(MeetingSummary).filter(MeetingSummary.id.in_(ids)).delete(synchronize_session=False)
+        db.commit()
+        return {"message": f"Successfully deleted {len(ids)} meetings"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/meetings/{meeting_id}/cancel", response_model=MeetingSummaryRead)
 def cancel_meeting(

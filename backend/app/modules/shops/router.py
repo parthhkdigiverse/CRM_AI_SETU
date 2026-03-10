@@ -76,13 +76,13 @@ def update_shop(
 ) -> Any:
     return ShopService.update_shop(db, shop_id, shop_in)
 
-@router.post("/{shop_id}/convert", response_model=ClientRead)
-def convert_lead(
+@router.post("/{shop_id}/approve", response_model=ClientRead)
+def approve_pipeline(
     shop_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
 ) -> Any:
-    return ShopService.convert_lead_to_client(db, shop_id)
+    return ShopService.approve_pipeline_entry(db, shop_id)
 
 @router.delete("/{shop_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_shop(
@@ -93,3 +93,18 @@ def delete_shop(
     ShopService.delete_shop(db, shop_id)
     from fastapi import Response
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+@router.post("/batch-delete")
+def batch_delete_shops(
+    ids: List[int],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+):
+    from app.modules.shops.models import Shop
+    try:
+        db.query(Shop).filter(Shop.id.in_(ids)).delete(synchronize_session=False)
+        db.commit()
+        return {"message": f"Successfully deleted {len(ids)} leads"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

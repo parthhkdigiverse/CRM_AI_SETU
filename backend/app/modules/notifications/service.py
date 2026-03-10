@@ -54,7 +54,7 @@ class EmailService:
                 </table>
                 <p>Please log in to the CRM to view full client details and get started.</p>
                 <br>
-                <p>Regards,<br>CRM AI SETU</p>
+                <p>Regards,<br>SRM AI SETU</p>
             </body>
         </html>
         """

@@ -42,6 +42,8 @@ class SalarySlipRead(BaseModel):
     paid_leaves: int
     unpaid_leaves: int
     deduction_amount: float
+    incentive_amount: float
+    total_earnings: float
     final_salary: float
     user_name: Optional[str] = None
     generated_at: date

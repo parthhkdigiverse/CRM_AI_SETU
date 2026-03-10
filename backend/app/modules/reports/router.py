@@ -20,10 +20,20 @@ dashboard_viewer = RoleChecker([
 
 @router.get("/dashboard", response_model=DashboardStats)
 def get_dashboard_stats(
+    area_id: Optional[int] = Query(None),
+    user_id: Optional[int] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(dashboard_viewer)
 ):
-    stats = ReportService.get_dashboard_stats(db)
+    stats = ReportService.get_dashboard_stats(
+        db, 
+        area_id=area_id, 
+        user_id=user_id, 
+        start_date=start_date, 
+        end_date=end_date
+    )
     return stats
 
 @router.get("/employees", response_model=List[EmployeePerformance])

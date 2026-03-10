@@ -1,5 +1,5 @@
 /**
- * CRM AI SETU — Notifications Page Logic
+ * SRM AI SETU — Notifications Page Logic
  * Handles fetching, rendering, and marking notifications as read.
  */
 
@@ -57,8 +57,33 @@ function renderNotifications(notifications) {
             iconBg = "bg-warning-subtle text-warning";
         }
 
-        // Force UTC parsing
-        const dateObj = new Date(n.created_at.endsWith('Z') || n.created_at.includes('+') ? n.created_at : n.created_at + 'Z');
+        // --- FIXED: Null-safe Timezone Parsing ---
+        let timeStr = n.created_at;
+        if (timeStr && typeof timeStr === 'string') {
+            if (!timeStr.endsWith('Z') && !timeStr.includes('+')) {
+                timeStr += 'Z';
+            }
+        } else {
+            // Fallback for null/missing timestamps to prevent crash
+            timeStr = new Date().toISOString();
+        }
+        const dateObj = new Date(timeStr);
+
+        // Extract link and sanitize message for UI display
+        let cleanMessage = n.message || "";
+        let meetLink = null;
+        let sessionClosed = false;
+
+        if (cleanMessage.includes('STATUS:COMPLETED')) {
+            sessionClosed = true;
+            cleanMessage = cleanMessage.replace('STATUS:COMPLETED', '').trim();
+        }
+
+        if (cleanMessage.includes('LINK:')) {
+            const parts = cleanMessage.split('LINK:');
+            cleanMessage = parts[0].trim();
+            meetLink = parts[1].trim();
+        }
 
         return `
             <div class="d-flex align-items-start gap-3 p-4 border-bottom position-relative hover-light bg-primary-subtle" 
@@ -72,10 +97,16 @@ function renderNotifications(notifications) {
                         <span class="fw-bold text-dark fs-6">${displayTitle}</span>
                         <span class="text-muted small">${formatTimeAgo(n.created_at)}</span>
                     </div>
-                    <p class="text-secondary mb-1">${n.message}</p>
+                    <p class="text-secondary mb-1">
+                        ${cleanMessage.replace('STATUS:COMPLETED', '').trim()} 
+                        ${sessionClosed ?
+                            `<br><span class="badge text-bg-secondary mt-2" style="font-size:12px;"><i class="bi bi-clock-history me-1"></i>Session Ended</span>` :
+                            meetLink ?
+                            `<br><a href="${meetLink}" target="_blank" class="badge text-bg-primary text-decoration-none mt-2" style="font-size:12px;"><i class="bi bi-camera-video me-1"></i>Join Meeting</a>` : ''}
+                    </p>
                     <div class="mt-2 text-end">
                         <span class="text-muted me-2 small"><i class="bi bi-clock me-1"></i>${dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
-                        <span class="badge bg-light text-dark border rounded-pill small">${n.title.replace(/⏰\s*/, '')}</span>
+                        <span class="badge bg-light text-dark border rounded-pill small">${n.title ? n.title.replace(/⏰\s*/, '') : 'Alert'}</span>
                         <span class="badge bg-primary rounded-pill ms-1">New</span>
                     </div>
                 </div>
@@ -113,15 +144,24 @@ async function clearNotifications() {
 }
 
 function formatTimeAgo(dateString) {
-    // Force UTC parsing
-    const date = new Date(dateString.endsWith('Z') || dateString.includes('+') ? dateString : dateString + 'Z');
+    // --- FIXED: Null-safe Time Ago logic ---
+    if (!dateString) return 'Just now';
+
+    let timeStr = dateString;
+    if (typeof timeStr === 'string') {
+        if (!timeStr.endsWith('Z') && !timeStr.includes('+')) {
+            timeStr += 'Z';
+        }
+    }
+
+    const date = new Date(timeStr);
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
 
-    if (diffInSeconds < 0) return 'Just now'; // Handle clock skew
+    if (diffInSeconds < 0 || isNaN(diffInSeconds)) return 'Just now';
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 8400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
 
     return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }

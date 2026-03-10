@@ -1,5 +1,5 @@
 /**
- * Shared utilities for CRM AI SETU Frontend
+ * Shared utilities for SRM AI SETU Frontend
  */
 
 // ── Authentication ──

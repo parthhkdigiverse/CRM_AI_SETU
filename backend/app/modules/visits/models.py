@@ -6,11 +6,15 @@ from datetime import datetime, UTC
 from app.core.database import Base
 
 class VisitStatus(str, enum.Enum):
-    SATISFIED = "SATISFIED"
-    ACCEPT = "ACCEPT"
-    DECLINE = "DECLINE"
+    SATISFIED          = "SATISFIED"
+    ACCEPT             = "ACCEPT"
+    DECLINE            = "DECLINE"
+    MISSED             = "MISSED"
     TAKE_TIME_TO_THINK = "TAKE_TIME_TO_THINK"
-    OTHER = "OTHER"
+    OTHER              = "OTHER"
+    COMPLETED          = "COMPLETED"
+    CANCELLED          = "CANCELLED"
+    SCHEDULED          = "SCHEDULED"
 
 class Visit(Base):
     __tablename__ = "visits"

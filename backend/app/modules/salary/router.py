@@ -132,3 +132,24 @@ def get_user_salary_slips(
     service = SalaryService(db)
     return service.get_user_salary_slips(user_id)
 
+@router.get("/salary/slip/{slip_id}/invoice")
+def get_salary_invoice(
+    slip_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    from app.modules.salary.service import SalaryService
+    from fastapi.responses import HTMLResponse
+    service = SalaryService(db)
+    
+    # Check permission: Admins can see all, employees only their own
+    slip = db.query(SalarySlip).filter(SalarySlip.id == slip_id).first()
+    if not slip:
+        raise HTTPException(status_code=404, detail="Slip not found")
+        
+    if current_user.role != UserRole.ADMIN and slip.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+        
+    html = service.generate_invoice_html(slip_id)
+    return HTMLResponse(content=html)
+

@@ -45,7 +45,11 @@ class ClientService:
                 else:
                     query = query.order_by(column.asc())
 
-            return query.offset(skip).limit(limit).all()
+            clients = query.offset(skip).limit(limit).all()
+            for c in clients:
+                if c.pm:
+                    c.pm_name = c.pm.name or c.pm.email or c.pm.employee_code or f"PM #{c.pm_id}"
+            return clients
         except Exception as e:
             print(f"Error fetching clients: {e}")
             return []

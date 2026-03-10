@@ -1,3 +1,4 @@
+from typing import Optional, List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Request
 from app.modules.issues.models import Issue
@@ -20,13 +21,17 @@ class IssueService:
     def get_issues(self, skip: int = 0, limit: int = 100):
         return self.db.query(Issue).offset(skip).limit(limit).all()
 
-    def get_all_issues(self, skip: int = 0, limit: int = 100, status=None, severity=None, client_id=None, assigned_to_id=None, pm_id=None):
+    def get_all_issues(self, skip: int = 0, limit: int = 100, status: Optional[str] = None, severity: Optional[str] = None, client_id: Optional[int] = None, assigned_to_id: Optional[int] = None, pm_id: Optional[int] = None):
         try:
             query = self.db.query(Issue)
             if pm_id: 
                 query = query.join(Client).filter(Client.pm_id == pm_id)
             if status:
-                query = query.filter(Issue.status == status)
+                if ',' in status:
+                    status_list = [s.strip() for s in status.split(',')]
+                    query = query.filter(Issue.status.in_(status_list))
+                else:
+                    query = query.filter(Issue.status == status)
             if severity:
                 query = query.filter(Issue.severity == severity)
             if client_id:
@@ -39,13 +44,13 @@ class IssueService:
             # Populate logical properties manually
             for issue in issues:
                 if issue.assigned_to:
-                    issue.pm_name = issue.assigned_to.name
+                    issue.pm_name = issue.assigned_to.name or issue.assigned_to.email or issue.assigned_to.employee_code or f"PM #{issue.assigned_to_id}"
                 if issue.project:
                     issue.project_name = issue.project.name
                 elif issue.client:
                     issue.project_name = issue.client.name
                 if issue.reporter:
-                    issue.reporter_name = issue.reporter.name
+                    issue.reporter_name = issue.reporter.name or issue.reporter.email or issue.reporter.employee_code or f"User #{issue.reporter_id}"
                 
             return issues
         except Exception as e:

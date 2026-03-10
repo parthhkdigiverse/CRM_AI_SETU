@@ -2,9 +2,11 @@
 <html lang="en">
 
 <head>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Timetable &amp; Schedule — CRM AI SETU</title>
+    <title>Timetable — SRM AI SETU</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/theme.css?v=1772780187">
@@ -12,7 +14,7 @@
     <style>
         body {
             background: #f8fafc;
-            overflow: hidden;
+            overflow: auto !important;
         }
 
         /* ── Toolbar ─────────────────────────────────────────── */
@@ -20,10 +22,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
+            padding: 16px 24px;
             background: #fff;
             border-bottom: 1px solid #e2e8f0;
             flex-shrink: 0;
+            border-radius: 16px 16px 0 0;
         }
 
         .cal-toolbar .nav-btn {
@@ -75,10 +78,11 @@
         /* ── Calendar container ──────────────────────────────── */
         .cal-wrapper {
             display: flex;
-            height: calc(100vh - 140px);
+            min-height: calc(100vh - 200px);
             background: #fff;
-            overflow: hidden;
             border-top: 1px solid #e2e8f0;
+            border-radius: 0 0 16px 16px;
+            overflow: hidden;
         }
 
         .cal-sidebar {
@@ -737,115 +741,242 @@
             background: #4f46e5;
             color: #fff;
         }
+
+        /* Premium Modal Overhaul */
+        #scheduleModal .modal-content {
+            border-radius: 24px;
+            border: none;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15) !important;
+        }
+
+        #scheduleModal .modal-header {
+            padding: 24px 32px;
+            background: #fff;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        #scheduleModal .modal-body {
+            padding: 32px;
+        }
+
+        #scheduleModal .modal-footer {
+            padding: 20px 32px;
+            background: #f8fafc;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .form-floating>.form-control,
+        .form-floating>.form-select {
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.95rem;
+            color: #1e293b;
+        }
+
+        .form-floating>.form-control:focus,
+        .form-floating>.form-select:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-floating>label {
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .type-toggle-premium {
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 14px;
+            display: flex;
+            border: 1px solid #e2e8f0;
+        }
+
+        .type-toggle-premium .btn-check+.btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .type-toggle-premium .btn-check:checked+.btn {
+            background: #fff;
+            color: #4f46e5;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
     </style>
 </head>
 
 <body>
 
     <!-- ─── App Layout ───────────────────────────────────── -->
-    <div class="d-flex" style="height:100vh; overflow:hidden;">
+    <div class="d-flex" style="min-height:100vh;">
         <div id="sidebar" style="flex-shrink:0;"></div>
-        <div class="flex-grow-1">
-            <div class="page-content">
-        <div class="flex-grow-1 d-flex flex-column" style="height:100vh; overflow:hidden;">
-            <div class="page-content p-0" style="display:flex; flex-direction:column;">
-                <div id="main-content" style="flex:1; display:flex; flex-direction:column; overflow:hidden;"></div>
+        <div class="flex-grow-1 d-flex flex-column">
+            <div class="page-content" style="display:flex; flex-direction:column; flex:1;">
+                <div id="main-content" class="card border-0 shadow-sm"
+                    style="flex:1; display:flex; flex-direction:column; border-radius:16px; overflow:hidden;"></div>
             </div>
         </div>
     </div>
 
-    <!-- ─── Unified Schedule/Task Modal ──────────────────────── -->
+    <!-- ─── Premium Unified Schedule/Task Modal ──────────────────────── -->
     <div class="modal fade" id="scheduleModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" style="max-width:550px;">
-            <div class="modal-content shadow-lg">
-                <div class="modal-header align-items-center">
-                    <h5 class="modal-title fw-bold mb-0">
-                        <i class="bi bi-calendar-plus-fill text-primary me-2"></i><span id="modal-title-text">Create
-                            Activity</span>
-                    </h5>
+        <div class="modal-dialog modal-dialog-centered" style="max-width:620px;">
+            <div class="modal-content">
+                <div class="modal-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-10 p-2 rounded-3 text-primary">
+                            <i class="bi bi-calendar-plus-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0" id="modal-title-text">Create Activity</h5>
+                            <p class="text-muted small mb-0">Plan your meetings or track your tasks</p>
+                        </div>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body pb-2">
-                    <!-- Type Toggle -->
-                    <div class="d-flex bg-light p-1 rounded-3 mb-4" style="border: 1px solid #e2e8f0;">
+                <div class="modal-body">
+                    <!-- Premium Type Toggle -->
+                    <div class="type-toggle-premium mb-4">
                         <input type="radio" class="btn-check" name="activityType" id="typeEvent" value="EVENT" checked
-                            autocomplete="off" onchange="toggleModalType()">
-                        <label class="btn btn-outline-primary border-0 flex-1 w-50 fw-semibold" for="typeEvent">Event /
-                            Meeting</label>
+                            onchange="toggleModalType()">
+                        <label class="btn" for="typeEvent">Event / Meeting</label>
 
                         <input type="radio" class="btn-check" name="activityType" id="typeTask" value="TASK"
-                            autocomplete="off" onchange="toggleModalType()">
-                        <label class="btn btn-outline-primary border-0 flex-1 w-50 fw-semibold" for="typeTask">To-Do
-                            Task</label>
+                            onchange="toggleModalType()">
+                        <label class="btn" for="typeTask">To-Do Task</label>
                     </div>
 
-                    <div class="row g-3">
-                        <!-- Common Fields -->
+                    <div class="row g-4">
+                        <!-- Common Header Field -->
                         <div class="col-12">
-                            <label class="form-label fw-semibold small">Title <span class="text-danger">*</span></label>
-                            <input type="text" id="ev-title" class="form-control" placeholder="What needs to be done?">
+                            <div class="form-floating">
+                                <input type="text" id="ev-title" class="form-control" placeholder="Title">
+                                <label><i class="bi bi-type me-2"></i>Title <span class="text-danger">*</span></label>
+                            </div>
                         </div>
+
+                        <!-- Assignee & Priority -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold small">Assignee <span
-                                    class="text-danger">*</span></label>
-                            <select id="ev-user" class="form-select">
-                                <option value="">— Loading users... —</option>
-                            </select>
+                            <div class="form-floating">
+                                <select id="ev-user" class="form-select">
+                                    <option value="">— Loading... —</option>
+                                </select>
+                                <label><i class="bi bi-person me-2"></i>Assignee</label>
+                            </div>
                         </div>
 
-                        <!-- EVENT specific fields -->
-                        <div class="col-md-6 event-fields">
-                            <label class="form-label fw-semibold small">Date <span class="text-danger">*</span></label>
-                            <input type="date" id="ev-date" class="form-control">
+                        <div class="col-md-6 task-fields" style="display: none;">
+                            <div class="form-floating">
+                                <select id="td-priority" class="form-select">
+                                    <option value="LOW">Low</option>
+                                    <option value="MEDIUM" selected>Medium</option>
+                                    <option value="HIGH">High</option>
+                                </select>
+                                <label><i class="bi bi-flag me-2"></i>Priority</label>
+                            </div>
                         </div>
+
+                        <!-- Date group -->
                         <div class="col-md-6 event-fields">
-                            <label class="form-label fw-semibold small">Start Time <span
-                                    class="text-danger">*</span></label>
-                            <input type="time" id="ev-start" class="form-control">
+                            <div class="form-floating">
+                                <input type="date" id="ev-date" class="form-control">
+                                <label id="ev-date-label"><i class="bi bi-calendar-event me-2"></i>Event Date</label>
+                            </div>
                         </div>
+                        <div class="col-md-6 task-fields" style="display: none;">
+                            <div class="form-floating">
+                                <input type="date" id="td-due" class="form-control">
+                                <label><i class="bi bi-calendar-check me-2"></i>Task Date</label>
+                            </div>
+                        </div>
+
+                        <!-- Times group (Shared layout but different IDs) -->
                         <div class="col-md-6 event-fields">
-                            <label class="form-label fw-semibold small">End Time <span
-                                    class="text-danger">*</span></label>
-                            <input type="time" id="ev-end" class="form-control">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="form-floating">
+                                        <input type="time" id="ev-start" class="form-control">
+                                        <label id="ev-start-label">Start Time</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-floating">
+                                        <input type="time" id="ev-end" class="form-control">
+                                        <label id="ev-end-label">End Time</label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
+                        <div class="col-md-6 task-fields" style="display: none;">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="form-floating">
+                                        <input type="time" id="td-start" class="form-control">
+                                        <label>Start (Opt)</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-floating">
+                                        <input type="time" id="td-end" class="form-control">
+                                        <label>End (Opt)</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Extra info -->
                         <div class="col-12 event-fields">
-                            <label class="form-label fw-semibold small">Location / Notes</label>
-                            <input type="text" id="ev-loc" class="form-control" placeholder="Office, online, etc.">
+                            <div class="form-floating">
+                                <input type="text" id="ev-loc" class="form-control" placeholder="Location">
+                                <label><i class="bi bi-geo-alt me-2"></i>Location / Notes</label>
+                            </div>
                         </div>
 
-                        <!-- TASK specific fields -->
-                        <div class="col-md-6 task-fields" style="display: none;">
-                            <label class="form-label fw-semibold small">Priority</label>
-                            <select id="td-priority" class="form-select">
-                                <option value="LOW">Low</option>
-                                <option value="MEDIUM" selected>Medium</option>
-                                <option value="HIGH">High</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 task-fields" style="display: none;">
-                            <label class="form-label fw-semibold small">Due Date & Time</label>
-                            <input type="datetime-local" id="td-due" class="form-control">
-                        </div>
                         <div class="col-12 task-fields" style="display: none;">
-                            <label class="form-label fw-semibold small">Related Entity</label>
-                            <input type="text" id="td-related" class="form-control"
-                                placeholder="Project, Client or Lead name">
+                            <div class="form-floating">
+                                <input type="text" id="td-related" class="form-control" placeholder="Related">
+                                <label><i class="bi bi-link-45deg me-2"></i>Related Entity (Project/Client)</label>
+                            </div>
                         </div>
+
                         <div class="col-12 task-fields" style="display: none;">
-                            <label class="form-label fw-semibold small">Description</label>
-                            <textarea id="td-desc" class="form-control" rows="2"
-                                placeholder="Additional details..."></textarea>
+                            <div class="form-floating">
+                                <textarea id="td-desc" class="form-control" style="height: 100px"
+                                    placeholder="Description"></textarea>
+                                <label><i class="bi bi-card-text me-2"></i>Description</label>
+                            </div>
+                        </div>
+
+                        <!-- Client Selection -->
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <select id="ev-client" class="form-select">
+                                    <option value="">— No Client —</option>
+                                </select>
+                                <label><i class="bi bi-building me-2"></i>Link to Client (Auto-syncs Meeting)</label>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer gap-2 border-top">
-                    <!-- Added an extra delete button container that can be toggled via JS -->
-                    <button class="btn btn-outline-danger me-auto" id="btn-delete-event" style="display: none;">
-                        <i class="bi bi-trash"></i> Delete
+                <div class="modal-footer border-0 pb-4 pe-4 ps-4">
+                    <button class="btn btn-outline-danger border-0 me-auto" id="btn-delete-event" style="display: none;"
+                        onclick="deleteEvent()">
+                        <i class="bi bi-trash me-1"></i> Delete
                     </button>
-                    <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary px-4" id="btn-save-event" onclick="saveActivity()">
-                        <i class="bi bi-check-lg me-1"></i>Save
+                    <button class="btn btn-link text-muted text-decoration-none fw-semibold"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary px-5 py-2 fw-bold" style="border-radius: 12px;" id="btn-save-event"
+                        onclick="saveActivity()">
+                        <i class="bi bi-check-lg me-1"></i>Save Activity
                     </button>
                 </div>
             </div>
@@ -910,12 +1041,22 @@
             const scrollY = window.scrollY;
             const ms = document.getElementById('main-content');
             const mainScroll = ms ? ms.scrollTop : 0;
+            const sbDOM = document.querySelector('.cal-sidebar');
+            const sbScroll = sbDOM ? sbDOM.scrollTop : 0;
+            if (ms && ms.offsetHeight > 0) ms.style.minHeight = ms.offsetHeight + 'px';
 
             renderCalendarLocal();
 
-            window.scrollTo(0, scrollY);
-            const newMs = document.getElementById('main-content');
-            if (newMs) newMs.scrollTop = mainScroll;
+            requestAnimationFrame(() => {
+                window.scrollTo(0, scrollY);
+                const newMs = document.getElementById('main-content');
+                if (newMs) {
+                    newMs.scrollTop = mainScroll;
+                    newMs.style.minHeight = '';
+                }
+                const newSb = document.querySelector('.cal-sidebar');
+                if (newSb) newSb.scrollTop = sbScroll;
+            });
         }
 
         // ── Navigation state ─────────────────────────────────────
@@ -1028,6 +1169,11 @@
             try {
                 await ApiClient.createTimetableEvent(eventData);
 
+                if (user && !selectedCalendars.has(user)) {
+                    selectedCalendars.add(user);
+                    saveSelectedCalendars();
+                }
+
                 // Reset form
                 ['ev-title', 'ev-date', 'ev-start', 'ev-end', 'ev-loc'].forEach(id => {
                     const el = document.getElementById(id); if (el) el.value = '';
@@ -1039,24 +1185,44 @@
                 showToastMsg('Activity scheduled!');
             } catch (error) {
                 console.error("Failed to schedule event", error);
-                alert("Failed to schedule event");
+                alert("Failed to schedule event. Note: You can only edit custom API Timetable events.");
             }
         }
 
-        function completeEvent(id) {
-            if (completedIds.has(id)) {
-                completedIds.delete(id);
+        async function completeEvent(uid) {
+            const [type, id] = uid.split('_');
+            const isDoneNow = !completedIds.has(uid);
+
+            if (isDoneNow) {
+                completedIds.add(uid);
             } else {
-                completedIds.add(id);
+                completedIds.delete(uid);
             }
-            // For a real app, this would be an API call to mark it complete.
-            // But we don't have a status on timetable_events currently.
+
+            // Re-render immediately for UI responsiveness
             renderCalendarLocal();
+
+            if (type === 'TODO') {
+                try {
+                    await ApiClient.updateTodo(id, { status: isDoneNow ? 'COMPLETED' : 'PENDING' });
+                    // Refresh data from server to ensure consistency
+                    await renderCalendar();
+                } catch (error) {
+                    console.error("Failed to update task status:", error);
+                    // Rollback on error? Maybe just show toast.
+                }
+            }
         }
 
         // ── Navigation functions ────────────────────────────────
         function navWeek(n) {
             weekStart = addDays(weekStart, n * 7);
+            renderCalendar();
+        }
+
+        function navDay(n) {
+            selectedDate = addDays(selectedDate, n);
+            weekStart = getWeekStart(selectedDate);
             renderCalendar();
         }
 
@@ -1200,7 +1366,7 @@
                 <button class="btn btn-light shadow-sm rounded-pill px-3 py-2 d-flex align-items-center gap-2 border" 
                     style="font-weight:500; background:#fff; align-self:flex-start; margin-bottom:12px; transition:box-shadow .15s;" 
                     onmouseover="this.style.boxShadow='0 2px 6px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)'"
-                    onclick="bsModal.show()">
+                    onclick="openCreateModal(dStr(new Date()), '', '')">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#202124" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     Create
                 </button>
@@ -1293,12 +1459,12 @@
             // ── TASK LIST VIEW ──────────────────────────────────────
             if (showTaskView) {
                 // Group events by date, sort by time
-                const currUserName = currentUser ? (currentUser.name || currentUser.email) : '';
+                const currUserUnique = currentUser ? (currentUser.email || currentUser.name) : '';
                 const grouped = {};
                 filteredEvents.forEach(ev => {
                     const s = (ev.status || '').toUpperCase();
                     const isDone = (s === 'COMPLETED' || s === 'DONE' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
-                    const isMyTask = (ev.user === currUserName || ev.assignee_name === currUserName);
+                    const isMyTask = (ev.user === currUserUnique || ev.assignee_name === currUserUnique);
 
                     if (taskFilter === 'pending' && isDone) return;
                     if (taskFilter === 'done' && !isDone) return;
@@ -1372,7 +1538,7 @@
                             <i class="bi bi-calendar3"></i>
                             <span class="tt-tip">Switch to Calendar</span>
                         </button>
-                        <button class="btn btn-primary btn-sm px-3" onclick="bsModal.show()">
+                        <button class="btn btn-primary btn-sm px-3" onclick="openCreateModal(dStr(new Date()), '', '', 'TASK')">
                             <i class="bi bi-plus-lg me-1"></i>Add Task
                         </button>
                     </div>
@@ -1446,8 +1612,8 @@
                 <!-- Toolbar -->
                 <div class="cal-toolbar">
                     <div class="d-flex align-items-center gap-2">
-                        <button class="nav-btn" onclick="navWeek(-1)" title="Previous day"><i class="bi bi-chevron-left"></i></button>
-                        <button class="nav-btn" onclick="navWeek(1)"  title="Next day"><i class="bi bi-chevron-right"></i></button>
+                        <button class="nav-btn" onclick="navDay(-1)" title="Previous day"><i class="bi bi-chevron-left"></i></button>
+                        <button class="nav-btn" onclick="navDay(1)"  title="Next day"><i class="bi bi-chevron-right"></i></button>
                         <button class="btn btn-sm btn-light border px-3" onclick="goToday()">Today</button>
                         <span class="nav-title">${navTitle}</span>
                     </div>
@@ -1770,20 +1936,29 @@
         }
 
         // ── Actions ─────────────────────────────────────────────
-        function openCreateModal(dateStr, startStr, endStr) {
+        function openCreateModal(dateStr, startStr, endStr, preferredType = 'EVENT') {
             document.getElementById('ev-date').value = dateStr;
             document.getElementById('ev-start').value = startStr;
             document.getElementById('ev-end').value = endStr;
             document.getElementById('ev-title').value = '';
             document.getElementById('ev-loc').value = '';
 
-            document.getElementById('typeEvent').checked = true;
+            // Clear task fields too
+            ['td-related', 'td-desc'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.value = '';
+            });
+
+            if (preferredType === 'TASK') {
+                document.getElementById('typeTask').checked = true;
+            } else {
+                document.getElementById('typeEvent').checked = true;
+            }
             toggleModalType();
 
             // Reconfigure modal for Create
             const saveBtn = document.getElementById('btn-save-event');
             saveBtn.onclick = saveActivity;
-            saveBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Schedule';
+            saveBtn.innerHTML = preferredType === 'TASK' ? '<i class="bi bi-plus-lg me-1"></i>Create Task' : '<i class="bi bi-check-lg me-1"></i>Schedule';
 
             const delBtn = document.getElementById('btn-delete-event');
             if (delBtn) delBtn.style.display = 'none';
@@ -1799,16 +1974,26 @@
                 showToastMsg(`Cannot edit synced ${ev.event_type.toLowerCase()}s from the calendar.`);
                 return;
             }
-            if (ev.event_type === 'TODO') {
-                showToastMsg('Please edit Todos from the Todo list page. You can only mark them complete here.');
-                return;
-            }
 
+            const isTask = ev.event_type === 'TODO';
+
+            // Populate Shared Fields
+            document.getElementById('ev-title').value = ev.title.replace(/^Todo: /, '');
             document.getElementById('ev-date').value = ev.date;
             document.getElementById('ev-start').value = `${String(ev.sh).padStart(2, '0')}:${String(ev.sm).padStart(2, '0')}`;
             document.getElementById('ev-end').value = `${String(ev.eh).padStart(2, '0')}:${String(ev.em).padStart(2, '0')}`;
-            document.getElementById('ev-title').value = ev.title;
-            document.getElementById('ev-loc').value = ev.loc || '';
+
+            // Populate Type Specific
+            if (isTask) {
+                document.getElementById('td-priority').value = ev.priority || 'MEDIUM';
+                document.getElementById('td-due').value = ev.date;
+                document.getElementById('td-related').value = ev.loc || '';
+                document.getElementById('td-desc').value = ev.description || '';
+                document.getElementById('typeTask').checked = true;
+            } else {
+                document.getElementById('ev-loc').value = ev.loc || '';
+                document.getElementById('typeEvent').checked = true;
+            }
 
             // Try to set user if available in dropdown
             const userSelect = document.getElementById('ev-user');
@@ -1816,30 +2001,77 @@
                 if (opt.value === ev.user) userSelect.value = ev.user;
             });
 
-            document.getElementById('modal-title-text').innerText = 'Edit Event';
-            document.getElementById('typeEvent').checked = true;
+            document.getElementById('modal-title-text').innerText = isTask ? 'Edit Task' : 'Edit Event';
             toggleModalType();
 
             // Reconfigure modal for Update
             const saveBtn = document.getElementById('btn-save-event');
-            saveBtn.onclick = () => updateEvent(ev.id);
+            saveBtn.onclick = () => updateActivity(ev.id, ev.event_type);
             saveBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Update';
 
             // Show delete button
             let delBtn = document.getElementById('btn-delete-event');
-            if (!delBtn) {
-                // Create delete button if it doesn't exist yet
-                const footer = document.querySelector('#scheduleModal .modal-footer');
-                delBtn = document.createElement('button');
-                delBtn.id = 'btn-delete-event';
-                delBtn.className = 'btn btn-outline-danger me-auto';
-                delBtn.innerHTML = '<i class="bi bi-trash"></i> Delete';
-                footer.prepend(delBtn);
+            if (delBtn) {
+                delBtn.style.display = 'block';
+                delBtn.onclick = () => deleteActivity(ev.id, ev.event_type);
             }
-            delBtn.style.display = 'block';
-            delBtn.onclick = () => deleteEvent(ev.id);
 
             bsModal.show();
+        }
+
+        async function updateActivity(id, type) {
+            const isEvent = document.getElementById('typeEvent').checked;
+            const title = document.getElementById('ev-title').value.trim();
+            const user = document.getElementById('ev-user').value;
+            const date = document.getElementById('ev-date').value;
+            const start = document.getElementById('ev-start').value;
+            const end = document.getElementById('ev-end').value;
+
+            if (!title || !date) return;
+
+            if (type === 'TODO') {
+                const payload = {
+                    title: title,
+                    description: document.getElementById('td-desc').value.trim() || null,
+                    priority: document.getElementById('td-priority').value,
+                    assigned_to: user,
+                    due_date: new Date(date).toISOString(),
+                    start_time: start ? start + ":00" : null,
+                    end_time: end ? end + ":00" : null,
+                    related_entity: document.getElementById('td-related').value.trim() || null,
+                    client_id: document.getElementById('ev-client').value || null
+                };
+                try {
+                    await ApiClient.updateTodo(id, payload);
+                    bsModal.hide();
+                    await renderCalendar();
+                    showToastMsg('Task updated!');
+                } catch (e) { alert("Update failed"); }
+            } else {
+                if (!start || !end) { alert("Times required"); return; }
+                const eventData = {
+                    title: title, assignee_name: user, date: date,
+                    start_time: start, end_time: end,
+                    location: document.getElementById('ev-loc').value.trim() || ''
+                };
+                try {
+                    await ApiClient.updateTimetableEvent(id, eventData);
+                    bsModal.hide();
+                    await renderCalendar();
+                    showToastMsg('Event updated!');
+                } catch (e) { alert("Update failed"); }
+            }
+        }
+
+        async function deleteActivity(id, type) {
+            if (!confirm("Are you sure?")) return;
+            try {
+                if (type === 'TODO') await ApiClient.deleteTodo(id);
+                else await ApiClient.deleteTimetableEvent(id);
+                bsModal.hide();
+                await renderCalendar();
+                showToastMsg('Deleted!');
+            } catch (e) { alert("Delete failed"); }
         }
 
         // ── Save event from modal ────────────────────────────────
@@ -1848,7 +2080,22 @@
             const isEvent = document.getElementById('typeEvent').checked;
             document.querySelectorAll('.event-fields').forEach(el => el.style.display = isEvent ? 'block' : 'none');
             document.querySelectorAll('.task-fields').forEach(el => el.style.display = isEvent ? 'none' : 'block');
-            document.getElementById('modal-title-text').innerText = isEvent ? 'Schedule Event' : 'Create Task';
+
+            const isUpdate = document.getElementById('btn-save-event').innerHTML.includes('Update');
+
+            if (isUpdate) {
+                document.getElementById('modal-title-text').innerText = isEvent ? 'Edit Event' : 'Edit Task';
+                document.getElementById('btn-save-event').innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Update';
+            } else {
+                document.getElementById('modal-title-text').innerText = isEvent ? 'Schedule Event' : 'Create Task';
+                document.getElementById('btn-save-event').innerHTML = isEvent ? '<i class="bi bi-check-lg me-1"></i>Schedule' : '<i class="bi bi-plus-lg me-1"></i>Create Task';
+            }
+
+            if (isEvent) {
+                document.getElementById('ev-date-label').innerHTML = '<i class="bi bi-calendar-event me-2"></i>Event Date <span class="text-danger">*</span>';
+                document.getElementById('ev-start-label').innerHTML = 'Start Time <span class="text-danger">*</span>';
+                document.getElementById('ev-end-label').innerHTML = 'End Time <span class="text-danger">*</span>';
+            }
         }
 
         // ── Save logic (Unified Event/Task) ──────────────────────
@@ -1864,8 +2111,18 @@
                 const end = document.getElementById('ev-end').value;
 
                 if (!title || !date || !start || !end) {
-                    document.getElementById('ev-title').classList.add('is-invalid');
-                    setTimeout(() => document.getElementById('ev-title').classList.remove('is-invalid'), 2000);
+                    if (!title) document.getElementById('ev-title').classList.add('is-invalid');
+                    if (!date) document.getElementById('ev-date').classList.add('is-invalid');
+                    if (!start) document.getElementById('ev-start').classList.add('is-invalid');
+                    if (!end) document.getElementById('ev-end').classList.add('is-invalid');
+
+                    setTimeout(() => {
+                        ['ev-title', 'ev-date', 'ev-start', 'ev-end'].forEach(id =>
+                            document.getElementById(id).classList.remove('is-invalid')
+                        );
+                    }, 2500);
+
+                    showToastMsg('Title, Date, Start and End times are all required.');
                     return;
                 }
 
@@ -1885,6 +2142,11 @@
 
                 try {
                     await ApiClient.createTimetableEvent(eventData);
+
+                    if (user && !selectedCalendars.has(user)) {
+                        selectedCalendars.add(user);
+                        saveSelectedCalendars();
+                    }
                     bsModal.hide();
                     await renderCalendar();
                     showToastMsg('Activity scheduled!');
@@ -1897,7 +2159,9 @@
                 const title = document.getElementById('ev-title').value.trim();
                 const user = document.getElementById('ev-user').value;
                 const priority = document.getElementById('td-priority').value;
-                const due = document.getElementById('td-due').value;
+                let due = document.getElementById('td-due').value;
+                const startStr = document.getElementById('td-start').value;
+                const endStr = document.getElementById('td-end').value;
                 const related = document.getElementById('td-related').value.trim();
                 const desc = document.getElementById('td-desc').value.trim();
 
@@ -1907,17 +2171,38 @@
                     return;
                 }
 
+                if (!due) {
+                    due = dStr(new Date());
+                }
+
+                let finalIsoStart = new Date(due).toISOString();
+
                 const payload = {
                     title: title,
                     description: desc || null,
                     priority: priority,
                     assigned_to: user,
-                    due_date: due ? new Date(due).toISOString() : null,
-                    related_entity: related || null
+                    due_date: finalIsoStart,
+                    start_time: startStr ? startStr + ":00" : null,
+                    end_time: endStr ? endStr + ":00" : null,
+                    related_entity: related || null,
+                    client_id: document.getElementById('ev-client').value || null
                 };
 
                 try {
                     await ApiClient.createTodo(payload);
+
+                    if (user && !selectedCalendars.has(user)) {
+                        selectedCalendars.add(user);
+                        saveSelectedCalendars();
+                    }
+
+                    // Reset form
+                    ['td-related', 'td-desc'].forEach(id => {
+                        const el = document.getElementById(id); if (el) el.value = '';
+                    });
+                    document.getElementById('ev-user').value = '';
+
                     bsModal.hide();
                     await renderCalendar();
                     showToastMsg('To-Do Task created!');
@@ -1925,54 +2210,6 @@
                     console.error("Failed to create task", error);
                     alert("Failed to create task");
                 }
-            }
-        }
-
-        async function updateEvent(eventId) {
-            const title = document.getElementById('ev-title').value.trim();
-            const user = document.getElementById('ev-user').value;
-            const date = document.getElementById('ev-date').value;
-            const start = document.getElementById('ev-start').value;
-            const end = document.getElementById('ev-end').value;
-
-            if (!title || !date || !start || !end) return;
-
-            if (start >= end) {
-                showToastMsg('End time must be after start time.');
-                return;
-            }
-
-            const eventData = {
-                title: title,
-                assignee_name: user,
-                date: date,
-                start_time: start,
-                end_time: end,
-                location: document.getElementById('ev-loc').value.trim() || ''
-            };
-
-            try {
-                await ApiClient.updateTimetableEvent(eventId, eventData);
-                bsModal.hide();
-                await renderCalendar();
-                showToastMsg('Activity updated!');
-            } catch (error) {
-                console.error("Failed to update event", error);
-                alert("Failed to update event. Note: You can only edit custom Timetable events, not Visits or Meetings.");
-            }
-        }
-
-        async function deleteEvent(eventId) {
-            if (!confirm("Are you sure you want to delete this activity?")) return;
-
-            try {
-                await ApiClient.deleteTimetableEvent(eventId);
-                bsModal.hide();
-                await renderCalendar();
-                showToastMsg('Activity deleted!');
-            } catch (error) {
-                console.error("Failed to delete event", error);
-                alert("Failed to delete event. Note: You can only delete custom Timetable events.");
             }
         }
 
@@ -2068,7 +2305,18 @@
                 // Populate Assignee dropdown
                 const sel = document.getElementById('ev-user');
                 sel.innerHTML = '<option value="">— Unassigned —</option>' +
-                    emps.map(e => `<option value="${e.name || e.email}">${e.name || e.email}</option>`).join('');
+                    emps.map(e => {
+                        const uniqueVal = e.email || e.name;
+                        const role = (e.role || '').replace(/_/g, ' ');
+                        return `<option value="${uniqueVal}">${e.name || e.email} (${role})</option>`;
+                    }).join('');
+
+                const clients = await ApiClient.getClients();
+                const clientSel = document.getElementById('ev-client');
+                if (clientSel) {
+                    clientSel.innerHTML = '<option value="">— No Client —</option>' +
+                        clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                }
 
                 const currUserName = currentUser ? (currentUser.name || currentUser.email) : '';
 
@@ -2108,7 +2356,8 @@
 
             } catch (error) {
                 console.error("Failed to initialize users", error);
-                document.getElementById('ev-user').innerHTML = '<option value="">— Unassigned —</option>';
+                const userSel = document.getElementById('ev-user');
+                if (userSel) userSel.innerHTML = '<option value="">— Unassigned —</option>';
             }
 
             renderCalendar();

@@ -61,21 +61,28 @@ class IncentiveService:
             else:
                 achieved = 0
 
-        percentage = (achieved / target) * 100
+        percentage = (achieved / target) * 100 if target > 0 else 0
 
-        # Find Slab
+        # Find Slab based on achieved units
         applied_slab = self.db.query(IncentiveSlab).filter(
-            IncentiveSlab.min_percentage <= percentage
-        ).order_by(IncentiveSlab.min_percentage.desc()).first()
+            IncentiveSlab.min_units <= achieved,
+            IncentiveSlab.max_units >= achieved
+        ).first()
 
-        amount_per_unit: Optional[float] = 0.0 # Initialize with default value
-        total_incentive: float = 0.0 # Initialize with default value
-        applied_slab_val = 0.0
+        # Fallback to the highest slab if achieved units exceed all defined max_units
+        if not applied_slab and achieved > 0:
+            applied_slab = self.db.query(IncentiveSlab).order_by(IncentiveSlab.max_units.desc()).first()
+
+        incentive_per_unit: float = 0.0
+        slab_bonus: float = 0.0
+        total_incentive: float = 0.0
+        applied_slab_units = ""
 
         if applied_slab:
-            amount_per_unit = applied_slab.amount_per_unit
-            total_incentive = achieved * amount_per_unit
-            applied_slab_val = applied_slab.min_percentage
+            incentive_per_unit = applied_slab.incentive_per_unit
+            slab_bonus = applied_slab.slab_bonus
+            total_incentive = (achieved * incentive_per_unit) + slab_bonus
+            applied_slab_units = f"{applied_slab.min_units}-{applied_slab.max_units}"
 
         db_slip = IncentiveSlip(
             user_id=calc_in.user_id,
@@ -83,8 +90,8 @@ class IncentiveService:
             target=target,
             achieved=achieved,
             percentage=round(percentage, 2),
-            applied_slab=applied_slab_val,
-            amount_per_unit=amount_per_unit,
+            applied_slab=None, # We can repurpose this or use a new field, but for now keeping it compatible
+            amount_per_unit=incentive_per_unit,
             total_incentive=round(total_incentive, 2),
             generated_at=datetime.now(UTC)
         )

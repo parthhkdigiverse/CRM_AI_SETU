@@ -2,9 +2,11 @@
 <html lang="en">
 
 <head>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Settings — CRM AI SETU</title>
+    <title>Settings — SRM AI SETU</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/theme.css">
@@ -246,6 +248,9 @@
                                 Notifications</a>
                             <a href="#account" onclick="scrollTo('account',this)"><i class="bi bi-person-gear"></i>
                                 Account</a>
+                            <a href="#incentives-config" onclick="scrollTo('incentives-config',this)"
+                                id="incentives-nav-link" style="display:none;"><i class="bi bi-layers"></i>
+                                Incentives</a>
                             <a href="#system" onclick="scrollTo('system',this)" id="system-nav-link"><i
                                     class="bi bi-cpu"></i> System</a>
                         </nav>
@@ -436,6 +441,160 @@
                             </div>
                         </div>
 
+                        <!-- ── Incentive & Target Strategy ───── -->
+                        <div class="settings-section border-0 shadow-sm" id="incentives-config"
+                            style="display:none; background: linear-gradient(to bottom right, #ffffff, #f8fafc);">
+                            <div class="settings-section-title"><i class="bi bi-layers text-primary"></i> Incentive &
+                                Target Strategy</div>
+                            <p class="setting-desc mb-4">Centralized configuration for performance-based rewards and
+                                role-specific targets.</p>
+
+                            <!-- Slabs Sub-section -->
+                            <div class="mb-5">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="small fw-bold mb-0 text-dark"><i
+                                            class="bi bi-reward-fill me-2 text-warning"></i>Reward Slabs</h6>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-primary btn-sm rounded-pill px-3"
+                                            onclick="openSlabModal()">
+                                            <i class="bi bi-plus-lg me-1"></i> New Slab
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="table-responsive rounded-4 border bg-white">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="bg-light">
+                                            <tr class="x-small text-uppercase text-muted fw-bold">
+                                                <th class="ps-4" style="width: 40px;">
+                                                    <input type="checkbox" class="form-check-input" id="slab-select-all"
+                                                        onclick="toggleAllSlabs(this)">
+                                                </th>
+                                                <th>Range (Tasks)</th>
+                                                <th>Per Task</th>
+                                                <th>Bonus</th>
+                                                <th class="pe-4 text-end">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="admin-slabs-body" class="small">
+                                            <tr>
+                                                <td colspan="5" class="text-center py-4 text-muted">Syncing
+                                                    configuration...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Role Targets Sub-section -->
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="small fw-bold mb-0 text-dark"><i
+                                            class="bi bi-bullseye me-2 text-danger"></i>Role Targets</h6>
+                                    <button class="btn btn-primary btn-sm rounded-pill px-3"
+                                        onclick="openTargetModal()">
+                                        <i class="bi bi-plus-lg me-1"></i> Set Target
+                                    </button>
+                                </div>
+                                <div class="table-responsive rounded-4 border bg-white">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="bg-light">
+                                            <tr class="x-small text-uppercase text-muted fw-bold">
+                                                <th class="ps-4">Employee Role</th>
+                                                <th>Monthly Target</th>
+                                                <th class="pe-4 text-end">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="admin-targets-body" class="small">
+                                            <tr>
+                                                <td colspan="3" class="text-center py-4 text-muted">Syncing targets...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slab Modal -->
+                        <div class="modal fade" id="slabEditModal" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                                    <div class="modal-header border-0 pb-0">
+                                        <h5 class="modal-title fw-bold" id="slabModalTitle">Add Incentive Slab</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body p-4">
+                                        <input type="hidden" id="slab-id">
+                                        <div class="row g-3 mb-3">
+                                            <div class="col-6">
+                                                <label class="form-label x-small fw-bold text-muted text-uppercase">Min
+                                                    Tasks</label>
+                                                <input type="number" id="slab-min" class="form-control rounded-3"
+                                                    placeholder="1">
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label x-small fw-bold text-muted text-uppercase">Max
+                                                    Tasks</label>
+                                                <input type="number" id="slab-max" class="form-control rounded-3"
+                                                    placeholder="10">
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label
+                                                class="form-label x-small fw-bold text-muted text-uppercase">Incentive
+                                                per Task (₹)</label>
+                                            <input type="number" id="slab-punit" class="form-control rounded-3"
+                                                placeholder="1200">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label class="form-label x-small fw-bold text-muted text-uppercase">Fixed
+                                                Slab Bonus (₹)</label>
+                                            <input type="number" id="slab-bonus" class="form-control rounded-3"
+                                                placeholder="5000">
+                                        </div>
+                                        <button class="btn btn-primary w-100 fw-bold py-2 rounded-3"
+                                            onclick="saveSlab()">
+                                            <i class="bi bi-check2-circle me-2"></i> Confirm Slab Configuration
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Target Modal -->
+                        <div class="modal fade" id="targetEditModal" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                                    <div class="modal-header border-0 pb-0">
+                                        <h5 class="modal-title fw-bold">Set Role Target</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body p-4">
+                                        <div class="mb-3">
+                                            <label class="form-label x-small fw-bold text-muted text-uppercase">Select
+                                                Role</label>
+                                            <select id="target-role" class="form-select rounded-3">
+                                                <option value="TELESALES">TELESALES</option>
+                                                <option value="SALES">SALES</option>
+                                                <option value="PROJECT_MANAGER">PROJECT MANAGER</option>
+                                                <option value="PROJECT_MANAGER_AND_SALES">PM & SALES</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label class="form-label x-small fw-bold text-muted text-uppercase">Monthly
+                                                Units Target</label>
+                                            <input type="number" id="target-count" class="form-control rounded-3"
+                                                placeholder="20">
+                                        </div>
+                                        <button class="btn btn-secondary w-100 fw-bold py-2 rounded-3 text-white"
+                                            onclick="saveTarget()">
+                                            <i class="bi bi-bullseye me-2"></i> Save Target Configuration
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- ── System ───── -->
                         <div class="settings-section" id="system" style="display:none;">
                             <div class="settings-section-title"><i class="bi bi-cpu text-secondary"></i> System
@@ -501,9 +660,10 @@
         <span id="toast-text">Saved!</span>
     </div>
 
-    <script src="../js/utils.js"></script>
-    <script src="../js/ui_components.js"></script>
-    <script src="../js/auth.js"></script>
+    <script src="../js/api.js?v=2.6"></script>
+    <script src="../js/utils.js?v=1772780187"></script>
+    <script src="../js/ui_components.js?v=1772780187"></script>
+    <script src="../js/auth.js?v=2.6"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
@@ -599,7 +759,10 @@
             showToast('All settings reset to defaults');
         }
 
-        // ── System section (admin-only)
+        // ── Incentive & Target Logic
+        let currentSlabs = [];
+        let slabModal, targetModal;
+
         function initSystem() {
             const u = JSON.parse(localStorage.getItem('crm_user') || '{}');
             const isAdmin = u?.role === 'ADMIN';
@@ -608,23 +771,206 @@
                 document.getElementById('system').style.display = 'block';
                 document.getElementById('danger-zone').style.display = 'block';
                 document.getElementById('system-nav-link').style.display = 'flex';
+                document.getElementById('incentives-config').style.display = 'block';
+                document.getElementById('incentives-nav-link').style.display = 'flex';
 
                 const apiUrl = window.API_BASE || 'http://localhost:8000';
                 document.getElementById('api-url-display').textContent = apiUrl;
                 document.getElementById('sys-user-id').textContent = `#${u?.id || '—'}`;
 
-                // Ping API
+                // Init Modals
+                slabModal = new bootstrap.Modal(document.getElementById('slabEditModal'));
+                targetModal = new bootstrap.Modal(document.getElementById('targetEditModal'));
+
                 apiGet('/health').then(() => {
                     document.getElementById('api-status-chip').innerHTML = '<i class="bi bi-check-circle-fill"></i> Online';
                 }).catch(() => {
                     document.getElementById('api-status-chip').innerHTML = '<i class="bi bi-x-circle-fill"></i> Offline';
-                    document.getElementById('api-status-chip').style.background = '#fef2f2';
-                    document.getElementById('api-status-chip').style.color = '#b91c1c';
-                    document.getElementById('api-status-chip').style.borderColor = '#fca5a5';
                 });
+
+                loadAdminSlabs();
+                loadAdminTargets();
             } else {
                 document.getElementById('system-nav-link').style.display = 'none';
             }
+        }
+
+        async function loadAdminSlabs() {
+            const tbody = document.getElementById('admin-slabs-body');
+            document.getElementById('slab-select-all').checked = false;
+            updateSelectedCount();
+
+            try {
+                const slabs = await ApiClient.getIncentiveSlabs();
+                currentSlabs = slabs;
+                if (!slabs || !slabs.length) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted small">No slabs defined</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = slabs.map(s => `
+                    <tr class="align-middle">
+                        <td class="ps-4">
+                            <input type="checkbox" class="form-check-input slab-checkbox" value="${s.id}" onclick="updateSelectedCount()">
+                        </td>
+                        <td class="fw-bold text-dark">${s.min_units}-${s.max_units} <span class="text-muted fw-normal x-small">tasks</span></td>
+                        <td class="fw-semibold text-primary">₹${Number(s.incentive_per_unit).toLocaleString('en-IN')}</td>
+                        <td class="fw-semibold text-success">₹${Number(s.slab_bonus).toLocaleString('en-IN')}</td>
+                        <td class="pe-4 text-end">
+                            <button class="btn btn-link btn-sm text-primary p-0 me-2" onclick="editSlab(${s.id})"><i class="bi bi-pencil-square"></i></button>
+                            <button class="btn btn-link btn-sm text-danger p-0" onclick="deleteSlab(${s.id})"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading</td></tr>'; }
+        }
+
+        function toggleAllSlabs(master) {
+            document.querySelectorAll('.slab-checkbox').forEach(cb => cb.checked = master.checked);
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const selected = document.querySelectorAll('.slab-checkbox:checked').length;
+
+            if (typeof window.updateBulkActionBar === 'function') {
+                window.updateBulkActionBar({
+                    count: selected,
+                    onDelete: () => batchDeleteSlabs(),
+                    onCancel: () => {
+                        document.querySelectorAll('.slab-checkbox').forEach(cb => cb.checked = false);
+                        document.getElementById('slab-select-all').checked = false;
+                        updateSelectedCount();
+                    }
+                });
+            } else {
+                // Retry in 100ms if not available yet (script loading race condition)
+                setTimeout(updateSelectedCount, 100);
+            }
+        }
+
+        async function batchDeleteSlabs() {
+            const selectedIds = Array.from(document.querySelectorAll('.slab-checkbox:checked')).map(cb => parseInt(cb.value));
+            if (!selectedIds.length) return;
+
+            if (getUser().role !== 'ADMIN') {
+                showToast('Only Admins can perform bulk delete', 'error');
+                return;
+            }
+
+            if (!confirm(`Permanently delete ${selectedIds.length} incentive slabs?`)) return;
+
+            try {
+                // Using the unified bulk action bar, so we don't need to update a local button
+                await ApiClient.request('/incentives/slabs/batch-delete', {
+                    method: 'POST',
+                    body: selectedIds
+                });
+                showToast(`Successfully deleted ${selectedIds.length} slabs`);
+                loadAdminSlabs();
+            } catch (err) {
+                showToast('Bulk delete failed: ' + (err.data?.detail || err.message), true);
+            }
+        }
+
+        function openSlabModal() {
+            document.getElementById('slabModalTitle').innerText = 'Add Incentive Slab';
+            document.getElementById('slab-id').value = '';
+            document.getElementById('slab-min').value = '';
+            document.getElementById('slab-max').value = '';
+            document.getElementById('slab-punit').value = '';
+            document.getElementById('slab-bonus').value = '';
+            slabModal.show();
+        }
+
+        function editSlab(id) {
+            const s = currentSlabs.find(slab => slab.id === id);
+            if (!s) return;
+            document.getElementById('slabModalTitle').innerText = 'Edit Incentive Slab';
+            document.getElementById('slab-id').value = s.id;
+            document.getElementById('slab-min').value = s.min_units;
+            document.getElementById('slab-max').value = s.max_units;
+            document.getElementById('slab-punit').value = s.incentive_per_unit;
+            document.getElementById('slab-bonus').value = s.slab_bonus;
+            slabModal.show();
+        }
+
+        async function saveSlab() {
+            const id = document.getElementById('slab-id').value;
+            const data = {
+                min_units: parseInt(document.getElementById('slab-min').value),
+                max_units: parseInt(document.getElementById('slab-max').value),
+                incentive_per_unit: parseFloat(document.getElementById('slab-punit').value),
+                slab_bonus: parseFloat(document.getElementById('slab-bonus').value)
+            };
+
+            if (isNaN(data.min_units) || isNaN(data.max_units)) { showToast('Invalid values', true); return; }
+
+            try {
+                if (id) {
+                    await ApiClient.request(`/incentives/slabs/${id}`, { method: 'PATCH', body: data });
+                    showToast('Slab updated');
+                } else {
+                    await ApiClient.createIncentiveSlab(data);
+                    showToast('Slab created');
+                }
+                slabModal.hide();
+                loadAdminSlabs();
+            } catch (err) { showToast('Operation failed', true); }
+        }
+
+        async function deleteSlab(id) {
+            if (!confirm('Delete this slab?')) return;
+            try {
+                await ApiClient.request(`/incentives/slabs/${id}`, { method: 'DELETE' });
+                showToast('Removed');
+                loadAdminSlabs();
+            } catch (err) { showToast('Error', true); }
+        }
+
+        async function loadAdminTargets() {
+            const tbody = document.getElementById('admin-targets-body');
+            try {
+                const targets = await ApiClient.getIncentiveTargets();
+                if (!targets || !targets.length) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted small">No specific targets set.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = targets.map(t => `
+                    <tr class="align-middle">
+                        <td class="ps-4 fw-semibold text-dark">${t.role.replace(/_/g, ' ')}</td>
+                        <td class="fw-bold text-info">${t.target_count} <span class="text-muted fw-normal small">Monthly</span></td>
+                        <td class="pe-4 text-end">
+                            <button class="btn btn-link btn-sm text-danger p-0" onclick="deleteTarget(${t.id})"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) { tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Error loading</td></tr>'; }
+        }
+
+        function openTargetModal() { targetModal.show(); }
+
+        async function saveTarget() {
+            const data = {
+                role: document.getElementById('target-role').value,
+                target_count: parseInt(document.getElementById('target-count').value),
+                period: 'Monthly'
+            };
+            if (!data.target_count) return;
+            try {
+                await ApiClient.createIncentiveTarget(data);
+                showToast('Target updated');
+                targetModal.hide();
+                loadAdminTargets();
+            } catch (err) { showToast('Failed to save target', true); }
+        }
+
+        async function deleteTarget(id) {
+            if (!confirm('Clear this target?')) return;
+            try {
+                await ApiClient.request(`/incentives/targets/${id}`, { method: 'DELETE' });
+                showToast('Target removed');
+                loadAdminTargets();
+            } catch (err) { showToast('Delete failed', true); }
         }
 
         loadSettings();

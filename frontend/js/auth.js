@@ -47,7 +47,7 @@ function requireAuth() {
     if (params.get('dev') === 'true' && isLocal) {
         document.body.style.visibility = 'visible';
         let pageName = document.title.split('—')[0].trim();
-        if (!pageName || pageName === 'CRM AI SETU') pageName = 'Dashboard';
+        if (!pageName || pageName === 'SRM AI SETU') pageName = 'Dashboard';
         if (typeof injectTopHeader === 'function') injectTopHeader(pageName);
         return;
     }
@@ -89,11 +89,6 @@ function requireAuth() {
         document.body.style.visibility = 'visible';
         const el = document.getElementById('username-display');
         if (el) el.textContent = user.name || 'User';
-
-        // Inject header immediately
-        let pageName = document.title.split('—')[0].trim();
-        if (!pageName || pageName === 'CRM AI SETU') pageName = 'Dashboard';
-        if (typeof injectTopHeader === 'function') injectTopHeader(pageName);
     } else {
         // Fallback: hide until we get a profile (rare)
         document.body.style.visibility = 'hidden';
@@ -124,9 +119,6 @@ function requireAuth() {
             document.body.style.visibility = 'visible';
             const el = document.getElementById('username-display');
             if (el) el.textContent = profile.name || 'User';
-
-            let pageName = document.title.split('—')[0].trim();
-            if (typeof injectTopHeader === 'function') injectTopHeader(pageName);
 
             // Fetch and check for critical issues across the app
             checkCriticalIssues();
