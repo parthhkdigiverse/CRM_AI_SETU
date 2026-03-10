@@ -218,6 +218,15 @@ class ApiClient {
     static async deleteArea(areaId) {
         return this.request(`/areas/${areaId}`, { method: 'DELETE' });
     }
+    static async getArchivedAreas() {
+        return this.request('/areas/archived');
+    }
+    static async unarchiveArea(areaId) {
+        return this.request(`/areas/${areaId}/unarchive`, { method: 'PATCH' });
+    }
+    static async hardDeleteArea(areaId) {
+        return this.request(`/areas/${areaId}/hard-delete`, { method: 'DELETE' });
+    }
     static async assignArea(areaId, userIds, shopIds = []) {
         // userIds should be an array of IDs
         return this.request(`/areas/${areaId}/assign`, { method: 'PATCH', body: { user_ids: userIds, shop_ids: shopIds } });
@@ -238,6 +247,15 @@ class ApiClient {
     }
     static async deleteShop(shopId) {
         return this.request(`/shops/${shopId}`, { method: 'DELETE' });
+    }
+    static async getArchivedShops() {
+        return this.request('/shops/archived');
+    }
+    static async unarchiveShop(shopId) {
+        return this.request(`/shops/${shopId}/unarchive`, { method: 'PATCH' });
+    }
+    static async hardDeleteShop(shopId) {
+        return this.request(`/shops/${shopId}/hard-delete`, { method: 'DELETE' });
     }
     static async approvePipelineEntry(shopId) {
         return this.request(`/shops/${shopId}/approve`, { method: 'POST' });
@@ -429,6 +447,20 @@ class ApiClient {
     // ─── Reports ─────────────────────────────────────────────
     static async getReportsDashboard() {
         return this.request('/reports/dashboard');
+    }
+
+    // ─── Generic Soft Delete (Archive) ───────────────────────
+    static async fetchArchived(moduleName) {
+        return this.request(`/${moduleName}/archived`);
+    }
+    static async archiveItem(moduleName, id) {
+        return this.request(`/${moduleName}/${id}`, { method: 'DELETE' });
+    }
+    static async unarchiveItem(moduleName, id) {
+        return this.request(`/${moduleName}/${id}/unarchive`, { method: 'PATCH' });
+    }
+    static async hardDeleteItem(moduleName, id) {
+        return this.request(`/${moduleName}/${id}/hard-delete`, { method: 'DELETE' });
     }
 }
 

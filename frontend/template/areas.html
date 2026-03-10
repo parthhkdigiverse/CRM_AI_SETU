@@ -312,49 +312,62 @@
 </head>
 
 <body>
-    <div class="d-flex">
+    <div class="d-flex" style="height: 100vh; overflow: hidden; background: #f8fafc;">
         <div id="sidebar"></div>
-        <div class="flex-grow-1">
-            <div class="page-content">
-                <div class="px-0">
-                    <div class="d-flex justify-content-between align-items-center mb-4 pt-0">
+        <div class="flex-grow-1 d-flex flex-column" style="height: 100vh; overflow: hidden;">
+            <div class="page-content d-flex flex-column flex-grow-1" style="padding: 1.5rem; overflow: hidden;">
+                <div class="px-0 d-flex flex-column flex-grow-1" style="min-height: 0;">
+                    <div class="d-flex justify-content-between align-items-center mb-4 pt-0 flex-shrink-0">
                         <div>
-                            <h2 class="page-section-title">Areas &amp; Shops</h2>
+                            <h2 class="page-section-title mb-1" style="font-weight: 800; color: #0f172a;">Areas &amp; Shops</h2>
                             <span class="text-muted small" id="area-count-label">Loading areas...</span>
                         </div>
-                        <button class="btn btn-primary d-flex align-items-center gap-2 px-3 shadow-sm" type="button"
-                            onclick="new bootstrap.Modal(document.getElementById('addModal')).show()"
-                            style="font-size:0.875rem; border-radius: 8px; height: 40px;">
-                            <i class="bi bi-plus-lg"></i> Add Area/Shop
-                        </button>
+                        <div class="d-flex gap-2">
+                            <div class="dropdown" id="btn-view-archive-container" style="display: none;">
+                                <button class="btn btn-light border d-flex align-items-center gap-2 px-3 shadow-sm dropdown-toggle" type="button"
+                                    id="btn-view-archive" data-bs-toggle="dropdown" aria-expanded="false"
+                                    style="font-size:0.875rem; border-radius: 8px; height: 40px;">
+                                    <i class="bi bi-archive text-secondary"></i> <span class="fw-semibold text-secondary">View Archive</span>
+                                </button>
+                                <ul class="dropdown-menu shadow border-0" aria-labelledby="btn-view-archive">
+                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="areasArchiveOffcanvas.open()">Archived Areas</a></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="shopsArchiveOffcanvas.open()">Archived Shops</a></li>
+                                </ul>
+                            </div>
+                            <button class="btn btn-primary d-flex align-items-center gap-2 px-3 shadow-sm" type="button"
+                                onclick="new bootstrap.Modal(document.getElementById('addModal')).show()"
+                                style="font-size:0.875rem; border-radius: 8px; height: 40px;">
+                                <i class="bi bi-plus-lg"></i> Add Area/Shop
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Main Content Card -->
-                    <div class="card shadow-sm border-0 mb-5" style="border-radius: 12px; overflow: hidden;">
-                        <div class="card-body p-0">
-                            <div class="split-panel">
+                    <div class="card shadow-sm border-0 flex-grow-1 d-flex flex-column mb-0" style="border-radius: 12px; overflow: hidden; min-height: 0;">
+                        <div class="card-body p-0 d-flex flex-column h-100">
+                            <div class="split-panel flex-grow-1 d-flex h-100" style="min-height: 0;">
                                 <!-- Left: Area Sidebar -->
-                                <div class="panel-sidebar">
-                                    <div class="area-search-container"
+                                <div class="panel-sidebar d-flex flex-column" style="width: 320px; border-right: 1px solid var(--border); background: #fff; flex-shrink: 0;">
+                                    <div class="area-search-container flex-shrink-0"
                                         style="padding: 1.25rem; border-bottom: 1px solid var(--border);">
                                         <input type="text" id="area-search" placeholder="Search areas..."
                                             style="width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px 9px 38px; font-size: 0.875rem; font-weight: 500; outline: none; background: var(--bg-app) url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E&quot;) no-repeat 14px center;">
                                     </div>
-                                    <ul class="area-list" id="area-list"
-                                        style="list-style: none; padding: 10px; margin: 0;">
+                                    <ul class="area-list flex-grow-1" id="area-list"
+                                        style="list-style: none; padding: 10px; margin: 0; overflow-y: auto;">
                                         <li class="area-list-empty p-4 text-center text-muted">Loading areas...</li>
                                     </ul>
                                 </div>
 
                                 <!-- Right: Shops Area -->
-                                <div class="panel-content d-flex flex-column">
-                                    <div class="shops-header"
+                                <div class="panel-content d-flex flex-column flex-grow-1" style="min-width: 0;">
+                                    <div class="shops-header flex-shrink-0"
                                         style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: #fff;">
                                         <h3 id="shops-panel-title" class="mb-0 fs-5"><i
                                                 class="bi bi-shop text-muted me-2"></i> Select an area</h3>
                                         <span id="shops-panel-count" class="text-muted small"></span>
                                     </div>
-                                    <div id="shops-panel-body" class="flex-grow-1">
+                                    <div id="shops-panel-body" class="flex-grow-1" style="overflow-y: auto;">
                                         <div
                                             class="h-100 d-flex flex-column align-items-center justify-content-center p-5 text-muted opacity-50">
                                             <i class="bi bi-geo-alt"
@@ -367,7 +380,11 @@
                         </div>
                     </div>
                 </div>
+                </div>
             </div><!-- /page-content -->
+
+            <!-- Archived Data Offcanvas Removed in favor of generic ArchivedDataOffcanvas component -->
+
         </div>
     </div>
     <!-- Toast Container -->
@@ -679,6 +696,35 @@
         injectTopHeader('Areas & Shops');
         document.getElementById('sidebar').innerHTML = renderSidebar('areas');
 
+        // ── Instantiate Generic Archive Component ──
+        const areasArchiveOffcanvas = new ArchivedDataOffcanvas({
+            moduleName: 'areas',
+            title: 'Archived Areas',
+            columns: [
+                { key: 'name', label: 'Name' },
+                { key: 'description', label: 'Description' }
+            ],
+            onRestore: async () => {
+                await loadAll();
+            }
+        });
+
+        const shopsArchiveOffcanvas = new ArchivedDataOffcanvas({
+            moduleName: 'shops',
+            title: 'Archived Shops',
+            columns: [
+                { key: 'name', label: 'Name' },
+                { key: 'address', label: 'Address' }
+            ],
+            onRestore: async () => {
+                await loadAll();
+                if (selectedAreaId) {
+                    const a = allAreas.find(x => x.id === selectedAreaId);
+                    if (a) selectArea(a.id, a.name);
+                }
+            }
+        });
+
         let allAreas = [];
         let allShops = [];
         let allUsers = [];
@@ -717,21 +763,34 @@
         });
 
         // ── Load Data ──
+        let globalSettings = { feature_flags: { enable_soft_delete: true } };
+
         async function loadAll() {
             try {
-                const [areasRes, shopsRes, usersRes] = await Promise.all([
+                const [areasRes, shopsRes, usersRes, settingsRes] = await Promise.all([
                     ApiClient.getAreas(),
                     ApiClient.getShops('?limit=1000'),
-                    ApiClient.getUsers()
+                    ApiClient.getUsers(),
+                    ApiClient.request('/settings/').catch(() => null)
                 ]);
                 allAreas = areasRes;
                 allShops = shopsRes;
+                if (settingsRes && settingsRes.feature_flags) {
+                    globalSettings.feature_flags = settingsRes.feature_flags;
+                }
 
                 // Defensively extract user array from common response wrappers
                 allUsers = Array.isArray(usersRes) ? usersRes : (usersRes.data || usersRes.items || usersRes.users || []);
-                console.log("Defensively loaded users:", allUsers);
+                
+                const viewArchiveContainer = document.getElementById('btn-view-archive-container');
+                const user = ApiClient.getCurrentUser();
+                const isAdmin = user && user.role && user.role.toUpperCase() === 'ADMIN';
+                const isStaff = user && ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'].includes(user.role?.toUpperCase());
+                if(viewArchiveContainer) { 
+                    viewArchiveContainer.style.display = (globalSettings.feature_flags.enable_soft_delete && isStaff) ? 'inline-block' : 'none'; 
+                }
             } catch (e) {
-                console.error("Error loading data:", e);
+                console.error(e); // exact API error
                 allUsers = allUsers || [];
             }
             renderAreaList();
@@ -791,10 +850,19 @@
                         onclick="openEditAreaModal(${areaId})" title="Edit area">
                         <i class="bi bi-pencil-fill"></i> Edit
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
-                        onclick="deleteArea(${areaId})" title="Delete area">
-                        <i class="bi bi-trash"></i> Delete
-                    </button>
+                    ${(isAdmin || (area && area.assigned_users && area.assigned_users.some(u => u.id === user?.id))) ? 
+                        (globalSettings.feature_flags.enable_soft_delete ? `
+                        <button class="btn btn-sm btn-outline-danger ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                            onclick="archiveArea(${areaId}, '${areaName.replace(/'/g, "\\'")}')" title="Archive area">
+                            <i class="bi bi-archive"></i> Archive
+                        </button>
+                        ` : (isAdmin ? `
+                        <button class="btn btn-sm btn-outline-danger ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                            onclick="hardDeleteArea(${areaId}, '${areaName.replace(/'/g, "\\'")}')" title="Permanently delete area">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                        ` : ''))
+                    : ''}
                     ${badgeHtml}
                  </div>`;
             document.getElementById('shops-panel-count').textContent = `${shops.length} shop${shops.length !== 1 ? 's' : ''}`;
@@ -850,7 +918,13 @@
                         <td>
                             <div class="d-flex justify-content-end gap-2">
                                 <button class="btn-action text-primary" onclick="editShop(${s.id})" title="Edit shop"><i class="bi bi-pencil"></i></button>
-                                <button class="btn-action" onclick="deleteShop(${s.id}, '${s.name.replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i></button>
+                                ${(isAdmin || (s.assigned_users && s.assigned_users.some(u => u.id === user?.id))) ? 
+                                    (globalSettings.feature_flags.enable_soft_delete ? `
+                                    <button class="btn-action text-danger" onclick="archiveShop(${s.id}, '${s.name.replace(/'/g, "\\'")}')" title="Archive shop"><i class="bi bi-archive"></i></button>
+                                    ` : (isAdmin ? `
+                                    <button class="btn-action text-danger" onclick="hardDeleteShop(${s.id}, '${s.name.replace(/'/g, "\\'")}')" title="Permanently delete shop"><i class="bi bi-trash"></i></button>
+                                    ` : ''))
+                                : ''}
                             </div>
                         </td>
                     </tr>`;
@@ -1068,28 +1142,32 @@
             bootstrap.Modal.getOrCreateInstance(document.getElementById('addModal')).show();
         }
 
-        // ── Delete Shop ──
-        async function deleteShop(id, name) {
-            if (!confirm(`Delete shop "${name}"? This cannot be undone.`)) return;
+        // ── Archive Shop ──
+        async function archiveShop(id, name) {
+            if (!confirm(`Archive shop "${name}"? It will be hidden from normal views.`)) return;
             try {
-                await ApiClient.deleteShop(id);
-                toast('Shop deleted');
+                await ApiClient.deleteShop(id); // backend uses delete router for soft delete
+                toast('Shop archived');
                 await loadAll();
                 if (selectedAreaId) {
                     const a = allAreas.find(x => x.id === selectedAreaId);
                     if (a) selectArea(a.id, a.name);
                 }
+                
+                if (shopsArchiveOffcanvas.offcanvasEl && shopsArchiveOffcanvas.offcanvasEl.classList.contains('show')) {
+                    shopsArchiveOffcanvas.loadData();
+                }
             } catch (e) {
-                toast(e?.data?.detail || 'Failed to delete', 'error');
+                toast(e?.data?.detail || 'Failed to archive', 'error');
             }
         }
 
-        // ── Delete Area ──
-        async function deleteArea(id, name) {
-            if (!confirm(`Are you sure you want to delete the area "${name}"?\nThis action cannot be undone and will delete all associated shops.`)) return;
+        // ── Archive Area ──
+        async function archiveArea(id, name) {
+            if (!confirm(`Archive area "${name}"? This will also archive all associated shops.`)) return;
             try {
-                await ApiClient.deleteArea(id);
-                toast(`Area "${name}" deleted`);
+                await ApiClient.deleteArea(id); // backend uses delete router for soft delete
+                toast(`Area "${name}" archived`);
                 selectedAreaId = null;
                 // Reset right-hand panel to empty default
                 document.getElementById('shops-panel-title').innerHTML = '<i class="bi bi-shop text-muted"></i> Select an area';
@@ -1100,10 +1178,16 @@
                         <p>Click an area on the left to view its shops</p>
                     </div>`;
                 await loadAll();
+                
+                if (areasArchiveOffcanvas.offcanvasEl && areasArchiveOffcanvas.offcanvasEl.classList.contains('show')) {
+                    areasArchiveOffcanvas.loadData();
+                }
             } catch (e) {
-                toast(e?.data?.detail || e?.message || 'Failed to delete area', 'error');
+                toast(e?.data?.detail || e?.message || 'Failed to archive area', 'error');
             }
         }
+
+        // ── Archived Data Logic (Handled By Generic Offcanvas Now) ──
 
         window.selectedAssignUsers = [];
 

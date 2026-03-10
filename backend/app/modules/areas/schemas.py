@@ -34,9 +34,18 @@ class AreaAssign(BaseModel):
     user_ids: List[int]
     shop_ids: Optional[List[int]] = None
 
+class AssignedUser(BaseModel):
+    id: int
+    name: Optional[str] = None
+    role: Optional[str] = None
+
 class AreaRead(AreaBase):
     id: int
     assigned_user_id: Optional[int] = None
     shops_count: Optional[int] = 0
+    is_archived: Optional[bool] = False
+    archived_by_id: Optional[int] = None
+    archived_by_name: Optional[str] = None
+    assigned_users: List[AssignedUser] = []
     
     model_config = ConfigDict(from_attributes=True)

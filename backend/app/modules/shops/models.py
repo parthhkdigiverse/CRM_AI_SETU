@@ -1,8 +1,9 @@
 import enum
-from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, ForeignKey, Table, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 from app.core.database import Base
+from app.core.mixins import SoftDeleteMixin
 
 
 class ShopStatus(str, enum.Enum):
@@ -18,7 +19,7 @@ shop_assignments = Table(
     Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
 )
 
-class Shop(Base):
+class Shop(SoftDeleteMixin, Base):
     __tablename__ = "shops"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -39,9 +40,9 @@ class Shop(Base):
     area_id = Column(Integer, ForeignKey("areas.id"), nullable=True)
 
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
-
+    
     # Relationships — from both branches
-    owner = relationship("app.modules.users.models.User", backref="assigned_shops")
+    owner = relationship("app.modules.users.models.User", foreign_keys=[owner_id], backref="assigned_shops")
     area = relationship("app.modules.areas.models.Area", backref="shops")
     assigned_owners_list = relationship("app.modules.users.models.User", secondary=shop_assignments, backref="assigned_shops_list")
 

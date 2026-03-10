@@ -11,18 +11,30 @@ class AreaService:
         self.db = db
 
     def get_areas(self, current_user: User, skip: int = 0, limit: int = 100):
-        # If Admin, return all areas
+        from sqlalchemy.orm import selectinload
+        query = self.db.query(Area).options(
+            selectinload(Area.assigned_users_list),
+            selectinload(Area.archived_by)
+        ).filter(Area.is_archived == False)
+
+        # If Admin, return all active (non-archived) areas
         if current_user.role == "ADMIN":
-            areas = self.db.query(Area).offset(skip).limit(limit).all()
+            areas = query.offset(skip).limit(limit).all()
         else:
             # Sales/Telesales: Check the many-to-many relationship
-            areas = self.db.query(Area).filter(
+            areas = query.filter(
                 Area.assigned_users_list.any(User.id == current_user.id)
             ).offset(skip).limit(limit).all()
 
         for area in areas:
             # We add shops_count dynamically to the model 
-            setattr(area, 'shops_count', len(area.shops) if area.shops else 0)
+            setattr(area, 'shops_count', len([s for s in getattr(area, 'shops', []) if not getattr(s, 'is_archived', False)]) if getattr(area, 'shops', None) else 0)
+            setattr(area, 'archived_by_name', area.archived_by.name if getattr(area, 'archived_by', None) else None)
+            assigned_users = [
+                {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+                for u in getattr(area, 'assigned_users_list', [])
+            ]
+            setattr(area, 'assigned_users', assigned_users)
         return areas
 
     def create_area(self, area_in: AreaCreate):
@@ -30,6 +42,9 @@ class AreaService:
         self.db.add(area)
         self.db.commit()
         self.db.refresh(area)
+        setattr(area, 'shops_count', 0)
+        setattr(area, 'archived_by_name', None)
+        setattr(area, 'assigned_users', [])
         return area
 
     def update_area(self, area_id: int, area_in):
@@ -41,7 +56,13 @@ class AreaService:
             setattr(area, field, value)
         self.db.commit()
         self.db.refresh(area)
-        setattr(area, 'shops_count', len(area.shops) if area.shops else 0)
+        setattr(area, 'shops_count', len(area.shops) if getattr(area, 'shops', None) else 0)
+        setattr(area, 'archived_by_name', area.archived_by.name if getattr(area, 'archived_by', None) else None)
+        assigned_users = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+            for u in getattr(area, 'assigned_users_list', [])
+        ]
+        setattr(area, 'assigned_users', assigned_users)
         return area
 
     def assign_area(self, area_id: int, user_ids: List[int], shop_ids: List[int] = None):
@@ -93,17 +114,100 @@ class AreaService:
         
         self.db.commit()
         self.db.refresh(area)
+        setattr(area, 'shops_count', len(area.shops) if getattr(area, 'shops', None) else 0)
+        setattr(area, 'archived_by_name', area.archived_by.name if getattr(area, 'archived_by', None) else None)
+        assigned_users_out = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+            for u in getattr(area, 'assigned_users_list', [])
+        ]
+        setattr(area, 'assigned_users', assigned_users_out)
         return area
 
-    def delete_area(self, area_id: int):
+    # ── Soft Delete (Archive) ──
+    def archive_area(self, area_id: int, current_user: User):
+        area = self.db.query(Area).filter(Area.id == area_id).first()
+        if not area:
+            raise HTTPException(status_code=404, detail="Area not found")
+        
+        # Check permissions
+        if current_user.role != "ADMIN":
+            if not any(u.id == current_user.id for u in area.assigned_users_list):
+                raise HTTPException(status_code=403, detail="Not authorized to archive this area")
+        
+        area.is_archived = True
+        area.archived_by_id = current_user.id
+        # Also archive all child shops
+        self.db.query(Shop).filter(Shop.area_id == area_id).update(
+            {Shop.is_archived: True, Shop.archived_by_id: current_user.id}, synchronize_session=False
+        )
+        
+        self.db.commit()
+        return {"detail": f"Area \"{area.name}\" and its shops have been archived"}
+
+    # ── Archived Listing (Scoped) ──
+    def get_archived_areas(self, current_user: User):
+        from sqlalchemy.orm import selectinload
+        query = self.db.query(Area).options(
+            selectinload(Area.assigned_users_list),
+            selectinload(Area.archived_by)
+        ).filter(Area.is_archived == True)
+
+        if current_user.role == "ADMIN":
+            areas = query.all()
+        else:
+            areas = query.filter(
+                (Area.archived_by_id == current_user.id) | (Area.assigned_users_list.any(User.id == current_user.id))
+            ).all()
+
+        for area in areas:
+            setattr(area, 'shops_count', len(area.shops) if area.shops else 0)
+            setattr(area, 'archived_by_name', area.archived_by.name if area.archived_by else None)
+            assigned_users = [
+                {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+                for u in getattr(area, 'assigned_users_list', [])
+            ]
+            setattr(area, 'assigned_users', assigned_users)
+        return areas
+
+    # ── Unarchive ──
+    def unarchive_area(self, area_id: int, current_user: User):
+        area = self.db.query(Area).filter(Area.id == area_id).first()
+        if not area:
+            raise HTTPException(status_code=404, detail="Area not found")
+        
+        # Check permissions
+        if current_user.role != "ADMIN":
+            if area.archived_by_id != current_user.id and not any(u.id == current_user.id for u in area.assigned_users_list):
+                 raise HTTPException(status_code=403, detail="Not authorized to unarchive this area")
+        
+        area.is_archived = False
+        area.archived_by_id = None
+        # Also unarchive child shops
+        self.db.query(Shop).filter(Shop.area_id == area_id).update(
+            {Shop.is_archived: False, Shop.archived_by_id: None}, synchronize_session=False
+        )
+        
+        self.db.commit()
+        self.db.refresh(area)
+        setattr(area, 'shops_count', len(area.shops) if area.shops else 0)
+        setattr(area, 'archived_by_name', None)
+        # Load assigned users again for the response model
+        assigned_users = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+            for u in getattr(area, 'assigned_users_list', [])
+        ]
+        setattr(area, 'assigned_users', assigned_users)
+        return area
+
+    # ── Hard Delete (Admin only) ──
+    def hard_delete_area(self, area_id: int):
         area = self.db.query(Area).filter(Area.id == area_id).first()
         if not area:
             raise HTTPException(status_code=404, detail="Area not found")
         
         # Cascading delete: Remove all shops associated with this area
-        from app.modules.shops.models import Shop
         self.db.query(Shop).filter(Shop.area_id == area_id).delete()
         
         self.db.delete(area)
         self.db.commit()
-        return {"detail": "Area and associated shops deleted"}
+        return {"detail": "Area and associated shops permanently deleted"}

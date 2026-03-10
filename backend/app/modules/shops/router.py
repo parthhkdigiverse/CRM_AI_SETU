@@ -1,5 +1,5 @@
 from typing import List, Any, Dict
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, status, Query, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
@@ -43,6 +43,16 @@ def read_kanban_shops(
         owner_id = current_user.id if current_user else 0
     return ShopService.list_kanban_shops(db, owner_id=owner_id)
 
+@router.get("/archived", response_model=List[ShopRead])
+def read_archived_shops(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """
+    Get all archived shops. Staff scope limited by permissions.
+    """
+    return ShopService.get_archived_shops(db, current_user)
+
 @router.get("/", response_model=List[ShopRead])
 def read_shops(
     db: Session = Depends(get_db),
@@ -84,15 +94,39 @@ def approve_pipeline(
 ) -> Any:
     return ShopService.approve_pipeline_entry(db, shop_id)
 
-@router.delete("/{shop_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_shop(
+@router.delete("/{shop_id}", status_code=status.HTTP_200_OK)
+def archive_shop(
+    shop_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """
+    Soft-delete (archive) a shop. Available to staff.
+    """
+    return ShopService.archive_shop(db, shop_id, current_user)
+
+@router.patch("/{shop_id}/unarchive", response_model=ShopRead)
+def unarchive_shop(
+    shop_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """
+    Unarchive a shop. Staff scope limited to owners/assignees.
+    """
+    shop = ShopService.unarchive_shop(db, shop_id, current_user)
+    return shop
+
+@router.delete("/{shop_id}/hard-delete", status_code=status.HTTP_200_OK)
+def hard_delete_shop(
     shop_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_checker)
-):
-    ShopService.delete_shop(db, shop_id)
-    from fastapi import Response
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+) -> Any:
+    """
+    Permanently delete a shop. Admin only.
+    """
+    return ShopService.hard_delete_shop(db, shop_id)
 
 @router.post("/batch-delete")
 def batch_delete_shops(

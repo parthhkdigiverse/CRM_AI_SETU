@@ -48,6 +48,9 @@ class ShopRead(ShopBase):
     owner_name: Optional[str] = None
     area_name: Optional[str] = None
     created_at: datetime
+    is_archived: Optional[bool] = False
+    archived_by_id: Optional[int] = None
+    archived_by_name: Optional[str] = None
     assigned_users: list[AssignedUser] = []
 
     class Config:

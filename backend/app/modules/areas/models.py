@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean, JSON, Table
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+from app.core.mixins import SoftDeleteMixin
 
 area_assignments = Table(
     "area_assignments",
@@ -9,7 +10,7 @@ area_assignments = Table(
     Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
 )
 
-class Area(Base):
+class Area(SoftDeleteMixin, Base):
     __tablename__ = "areas"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -30,6 +31,6 @@ class Area(Base):
     target_categories = Column(JSON, nullable=True)
     
     # Relationships
-    assigned_user = relationship("app.modules.users.models.User", backref="assigned_areas")
+    assigned_user = relationship("app.modules.users.models.User", foreign_keys=[assigned_user_id], backref="assigned_areas")
     assigned_users_list = relationship("app.modules.users.models.User", secondary=area_assignments, backref="assigned_areas_list")
 

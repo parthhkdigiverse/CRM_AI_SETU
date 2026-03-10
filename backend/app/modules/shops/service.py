@@ -32,8 +32,9 @@ class ShopService:
         query = db.query(Shop).options(
             selectinload(Shop.owner),
             selectinload(Shop.area),
-            selectinload(Shop.assigned_owners_list)
-        )
+            selectinload(Shop.assigned_owners_list),
+            selectinload(Shop.archived_by)
+        ).filter(Shop.is_archived == False)
         
         if status:
             query = query.filter(Shop.status == status)
@@ -52,8 +53,9 @@ class ShopService:
         shops = []
         for shop in results:
             shop_data = shop.__dict__.copy()
-            shop_data["owner_name"] = shop.owner.name if shop.owner else None
-            shop_data["area_name"] = shop.area.name if shop.area else None
+            shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+            shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+            shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
             shop_data.pop("_sa_instance_state", None)
             
             # Map assigned owners for frontend UI
@@ -70,8 +72,9 @@ class ShopService:
         query = db.query(Shop).options(
             selectinload(Shop.owner),
             selectinload(Shop.area),
-            selectinload(Shop.assigned_owners_list)
-        )
+            selectinload(Shop.assigned_owners_list),
+            selectinload(Shop.archived_by)
+        ).filter(Shop.is_archived == False)
         
         if owner_id:
             query = query.filter(Shop.owner_id == owner_id)
@@ -87,8 +90,9 @@ class ShopService:
         
         for shop in results:
             shop_data = shop.__dict__.copy()
-            shop_data["owner_name"] = shop.owner.name if shop.owner else None
-            shop_data["area_name"] = shop.area.name if shop.area else None
+            shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+            shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+            shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
             shop_data.pop("_sa_instance_state", None)
             
             shop_data["assigned_users"] = [
@@ -151,10 +155,74 @@ class ShopService:
         db.refresh(db_client)
         return db_client
 
+    # ── Soft Delete (Archive) ──
     @staticmethod
-    def delete_shop(db: Session, shop_id: int):
-        from sqlalchemy import or_
+    def archive_shop(db: Session, shop_id: int, current_user: User):
+        db_shop = ShopService.get_shop(db, shop_id)
 
+        # Check permissions
+        if current_user.role != "ADMIN":
+            if not any(u.id == current_user.id for u in db_shop.assigned_owners_list):
+                 raise HTTPException(status_code=403, detail="Not authorized to archive this shop")
+
+        db_shop.is_archived = True
+        db_shop.archived_by_id = current_user.id
+        db.commit()
+        return {"detail": f"Shop \"{db_shop.name}\" has been archived"}
+
+    # ── Archived Listing ──
+    @staticmethod
+    def get_archived_shops(db: Session, current_user: User):
+        from sqlalchemy.orm import selectinload
+        
+        query = db.query(Shop).options(
+            selectinload(Shop.owner),
+            selectinload(Shop.area),
+            selectinload(Shop.assigned_owners_list),
+            selectinload(Shop.archived_by)
+        ).filter(Shop.is_archived == True)
+
+        if current_user.role != "ADMIN":
+            query = query.filter(
+                (Shop.archived_by_id == current_user.id) | (Shop.assigned_owners_list.any(User.id == current_user.id))
+            )
+
+        results = query.all()
+        
+        shops = []
+        for shop in results:
+            shop_data = shop.__dict__.copy()
+            shop_data["owner_name"] = shop.owner.name if shop.owner else None
+            shop_data["area_name"] = shop.area.name if shop.area else None
+            shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
+            shop_data.pop("_sa_instance_state", None)
+            shop_data["assigned_users"] = [
+                {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+                for u in getattr(shop, 'assigned_owners_list', [])
+            ]
+            shops.append(shop_data)
+        return shops
+
+    # ── Unarchive ──
+    @staticmethod
+    def unarchive_shop(db: Session, shop_id: int, current_user: User):
+        db_shop = ShopService.get_shop(db, shop_id)
+
+        # Check permissions
+        if current_user.role != "ADMIN":
+            if db_shop.archived_by_id != current_user.id and not any(u.id == current_user.id for u in db_shop.assigned_owners_list):
+                 raise HTTPException(status_code=403, detail="Not authorized to unarchive this shop")
+
+        db_shop.is_archived = False
+        db_shop.archived_by_id = None
+        db.commit()
+        db.refresh(db_shop)
+        return db_shop
+
+    # ── Hard Delete (Admin only) ──
+    @staticmethod
+    def hard_delete_shop(db: Session, shop_id: int):
+        from sqlalchemy import or_
         db_shop = ShopService.get_shop(db, shop_id)
         
         conditions = []
@@ -170,4 +238,4 @@ class ShopService:
 
         db.delete(db_shop)
         db.commit()
-        return {"detail": "Shop deleted successfully"}
+        return {"detail": "Shop permanently deleted"}

@@ -9,8 +9,12 @@ from app.modules.areas.service import AreaService
 
 router = APIRouter()
 
-# Role Checker
+# Role Checkers
 admin_access = RoleChecker([UserRole.ADMIN])
+staff_access = RoleChecker([
+    UserRole.ADMIN, UserRole.SALES, UserRole.TELESALES,
+    UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES
+])
 
 @router.post("/", response_model=AreaRead, status_code=status.HTTP_201_CREATED)
 def create_area(
@@ -37,12 +41,23 @@ def update_area(
     service = AreaService(db)
     return service.update_area(area_id, area_in)
 
+@router.get("/archived", response_model=List[AreaRead])
+def read_archived_areas(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_access)
+) -> Any:
+    """
+    Get all archived areas. Staff scope limited by permissions.
+    """
+    service = AreaService(db)
+    return service.get_archived_areas(current_user)
+
 @router.get("/", response_model=List[AreaRead])
 def read_areas(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.SALES, UserRole.TELESALES, UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]))
+    current_user: User = Depends(staff_access)
 ) -> Any:
     service = AreaService(db)
     return service.get_areas(current_user, skip, limit)
@@ -61,13 +76,37 @@ def assign_area(
     return service.assign_area(area_id, assign_in.user_ids, assign_in.shop_ids)
 
 @router.delete("/{area_id}", status_code=status.HTTP_200_OK)
-def delete_area(
+def archive_area(
+    area_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_access)
+) -> Any:
+    """
+    Soft-delete (archive) an area and its shops. Available to staff.
+    """
+    service = AreaService(db)
+    return service.archive_area(area_id, current_user)
+
+@router.patch("/{area_id}/unarchive", response_model=AreaRead)
+def unarchive_area(
+    area_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_access)
+) -> Any:
+    """
+    Unarchive an area. Staff scope limited to owners/assignees.
+    """
+    service = AreaService(db)
+    return service.unarchive_area(area_id, current_user)
+
+@router.delete("/{area_id}/hard-delete", status_code=status.HTTP_200_OK)
+def hard_delete_area(
     area_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_access)
 ) -> Any:
     """
-    Delete an area and all associated shops. Admin only.
+    Permanently delete an area and all associated shops. Admin only.
     """
     service = AreaService(db)
-    return service.delete_area(area_id)
+    return service.hard_delete_area(area_id)
