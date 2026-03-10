@@ -101,7 +101,7 @@ function renderSidebar(active) {
     // FIELD OPERATIONS
     if (isAdmin || isSales || isTelesales) {
         const fieldItems = [
-            { id: 'leads', href: 'leads.html', icon: 'bi-kanban', label: 'Project Pipeline' },
+            { id: 'leads', href: 'leads.html', icon: 'bi-kanban', label: 'Project Overview' },
             { id: 'visits', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' }
         ];
         if (isAdmin || isSales || isPM) {
@@ -302,6 +302,17 @@ function injectTopHeader(pageTitle) {
                     <div class="fw-bold text-dark" style="font-size:0.85rem; line-height:1;">${u?.name || 'Admin'}</div>
                     <div class="text-muted small" style="font-size:0.70rem; line-height:1.5;">${role}</div>
                 </div>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" aria-labelledby="profileDropdown" style="border-radius:12px; min-width:200px; font-size:0.875rem;">
+                    <li class="px-2 pt-1 pb-2">
+                        <div class="fw-bold text-dark" style="font-size:0.85rem; line-height:1.3;">${u?.name || 'Admin'}</div>
+                        <div class="text-muted" style="font-size:0.73rem;">${u?.email || role}</div>
+                    </li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="profile.html"><i class="bi bi-person me-2 text-primary"></i> My Profile</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="settings.html"><i class="bi bi-gear me-2 text-secondary"></i> Settings</a></li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li><a class="dropdown-item rounded-2 py-2 text-danger" href="#" onclick="logout();return false;"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
+                </ul>
             </div>
         </div>
     </div>`;
@@ -312,6 +323,7 @@ function injectTopHeader(pageTitle) {
     }
 
     startNotificationPolling();
+    checkHighPriorityIssues();
     if (typeof window.initLiveSearch === 'function') {
         window.initLiveSearch();
     }
@@ -783,3 +795,58 @@ window.initLiveSearch = function () {
 
 
 
+window.checkHighPriorityIssues = async function () {
+    if (!localStorage.getItem('access_token')) return;
+    try {
+        const issues = await apiGet('/issues/');
+        const unreadHigh = (Array.isArray(issues) ? issues : []).filter(i => i.severity === 'HIGH' && i.status !== 'SOLVED');
+
+        const alertContainerId = 'high-priority-global-alert';
+        let alertEl = document.getElementById(alertContainerId);
+
+        if (unreadHigh.length > 0) {
+            if (!alertEl) {
+                const html = `
+                <div id="${alertContainerId}" class="alert alert-danger d-flex align-items-center justify-content-between py-2 px-3 mb-0 border-0 rounded-0" style="background-color: #B91C1C; color: white; position: sticky; top: 0; z-index: 2000; font-size: 0.85rem; font-weight: 600;">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span>System Alert: ${unreadHigh.length} Unresolved High Priority Issue(s) detected.</span>
+                    </div>
+                    <a href="issues.html" class="btn btn-sm btn-light py-0 px-2 fw-bold" style="font-size: 0.75rem; color: #B91C1C;">View Issues</a>
+                </div>`;
+                document.body.insertAdjacentHTML('afterbegin', html);
+
+                // Adjust top header position if it exists
+                const topHeader = document.querySelector('.top-header');
+                if (topHeader) {
+                    topHeader.style.top = document.getElementById(alertContainerId).offsetHeight + 'px';
+                }
+                const sidebar = document.getElementById('sidebar-container');
+                if (sidebar) {
+                    sidebar.style.height = `calc(100vh - ${document.getElementById(alertContainerId).offsetHeight}px)`;
+                    sidebar.style.top = document.getElementById(alertContainerId).offsetHeight + 'px';
+                }
+            } else {
+                alertEl.querySelector('span').textContent = `System Alert: ${unreadHigh.length} Unresolved High Priority Issue(s) detected.`;
+            }
+        } else if (alertEl) {
+            alertEl.remove();
+            const topHeader = document.querySelector('.top-header');
+            if (topHeader) topHeader.style.top = '0';
+            const sidebar = document.getElementById('sidebar-container');
+            if (sidebar) {
+                sidebar.style.height = '100vh';
+                sidebar.style.top = '0';
+            }
+        }
+    } catch (e) {
+        console.error("High Priority check failed", e);
+    }
+};
+
+// Start both polls
+function startAllPolling() {
+    startNotificationPolling();
+    // High priority check every 60s
+    setInterval(window.checkHighPriorityIssues, 60000);
+}

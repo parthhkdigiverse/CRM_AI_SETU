@@ -1,186 +1,61 @@
-:root {
-    /* Premium Color Palette */
-    --primary: #4F46E5;
-    --primary-hover: #4338CA;
-    --primary-light: #EEF2FF;
-    --primary-glass: rgba(79, 70, 229, 0.12);
+﻿/* ═══════════════════════════════════════════════════════════════
+   SRM AI SETU — Global Utilities
+   Injected by auth.js after page load.
+   NOTE: Variables and base styles live in theme.css.
+         Only add styles here that cannot live in theme.css.
+   ═══════════════════════════════════════════════════════════════ */
 
-    --secondary: #0D9488;
-    --secondary-hover: #0F766E;
-    --secondary-light: #CCFBF1;
-    --secondary-glass: rgba(13, 148, 136, 0.12);
+/* ── Utility Classes ─────────────────────────────────────────── */
+.hidden { display: none !important; }
 
-    --success: #10B981;
-    --success-bg: #D1FAE5;
-    --warning: #F59E0B;
-    --warning-bg: #FEF3C7;
-    --danger: #EF4444;
-    --danger-bg: #FEE2E2;
-
-    /* Backgrounds & Surfaces */
-    --bg-app: #F8FAFC;
-    --surface: #FFFFFF;
-    --border: #E2E8F0;
-
-    /* Typography Colors - Slate */
-    --text-heading: #0F172A;
-    --text-body: #475569;
-    --text-muted: #94A3B8;
-
-    /* Shadows & Effects - Soft and Multi-layered */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-    --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 20px;
-}
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background-color: var(--bg-app);
-    color: var(--text-body);
-    font-size: 14px;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    color: var(--text-heading);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-}
-
-h1 {
-    font-size: 28px;
-}
-
-h2 {
-    font-size: 20px;
-}
-
-h3 {
-    font-size: 16px;
-}
-
-small {
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-/* Utility */
-.hidden {
-    display: none !important;
-}
-
-.text-danger {
-    color: var(--danger);
-}
-
-.text-success {
-    color: var(--success);
-}
-
-.text-muted {
-    color: var(--text-muted);
-}
-
-.mt-4 {
-    margin-top: 16px;
-}
-
-.mb-4 {
-    margin-bottom: 16px;
-}
-
-/* Custom Scrollbar for premium feel */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #CBD5E1;
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #94A3B8;
-}
-
-/* Critical Issue Indicators */
+/* ── Critical Issue Indicators ──────────────────────────────── */
 .has-critical-issue {
-    background-color: rgba(239, 68, 68, 0.05) !important;
-    border-left: 4px solid #EF4444 !important;
+    background-color: rgba(220, 38, 38, 0.04) !important;
+    border-left: 3px solid var(--danger) !important;
 }
 
 .global-critical-alert {
-    background-color: #FEF2F2;
-    border-left: 4px solid #EF4444;
-    color: #991B1B;
-    padding: 12px 20px;
-    margin-bottom: 20px;
-    border-radius: 8px;
+    background-color: var(--danger-light);
+    border-left: 4px solid var(--danger);
+    color: var(--danger-text);
+    padding: 12px 18px;
+    margin-bottom: 16px;
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-xs);
+    font-size: 0.875rem;
 }
 
 .global-critical-alert .alert-content {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
 }
 
 .global-critical-alert i {
-    font-size: 1.2rem;
-    color: #EF4444;
+    font-size: 1rem;
+    color: var(--danger);
+    flex-shrink: 0;
 }
 
-.global-critical-alert strong {
-    font-weight: 700;
-}
+.global-critical-alert strong { font-weight: 700; }
 
 .global-critical-alert .btn-close-alert {
     background: none;
     border: none;
-    color: #F87171;
+    color: var(--danger);
     cursor: pointer;
-    font-size: 1.2rem;
-    padding: 4px;
-    transition: color 0.2s;
+    font-size: 1.1rem;
+    padding: 2px 4px;
+    transition: opacity 0.2s;
+    opacity: 0.7;
+    line-height: 1;
 }
+.global-critical-alert .btn-close-alert:hover { opacity: 1; }
 
-.global-critical-alert .btn-close-alert:hover {
-    color: #991B1B;
-}
-
-/* Red Line on Issues Table Fix */
-.table>tbody>tr.critical-issue-row>td:first-child {
-    box-shadow: inset 4px 0 0 0 #dc3545 !important;
-}
-
-.critical-issue-row {
-    background-color: rgba(239, 68, 68, 0.02) !important;
+.critical-issue-row { background-color: rgba(220, 38, 38, 0.02) !important; }
+.table > tbody > tr.critical-issue-row > td:first-child {
+    box-shadow: inset 3px 0 0 0 var(--danger) !important;
 }

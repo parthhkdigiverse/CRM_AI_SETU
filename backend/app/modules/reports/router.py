@@ -14,6 +14,7 @@ router = APIRouter()
 # Allow admins and PMs to view dashboard stats
 dashboard_viewer = RoleChecker([
     UserRole.ADMIN,
+    UserRole.SALES,
     UserRole.PROJECT_MANAGER,
     UserRole.PROJECT_MANAGER_AND_SALES
 ])

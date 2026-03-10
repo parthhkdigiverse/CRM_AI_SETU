@@ -19,6 +19,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     email: EmailStr
+    name: str
     password: str
     # Optional employee/HR fields (filled by Admin at creation time)
     employee_code: Optional[str] = None
@@ -26,6 +27,17 @@ class UserCreate(UserBase):
     base_salary: Optional[float] = None
     target: Optional[int] = None
     department: Optional[str] = None
+
+    @field_validator("email")
+    @classmethod
+    def check_email_deliverability(cls, v: str) -> str:
+        from email_validator import validate_email, EmailNotValidError
+        try:
+            # check_deliverability=True performs a DNS MX record check
+            validate_email(v, check_deliverability=True)
+            return v
+        except EmailNotValidError as e:
+            raise ValueError(f"Invalid or non-existent email domain: {str(e)}")
 
     @field_validator("password")
     @classmethod

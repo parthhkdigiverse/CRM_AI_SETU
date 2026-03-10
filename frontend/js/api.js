@@ -182,6 +182,22 @@ class ApiClient {
         return this.request('/reports/dashboard');
     }
 
+    // ─── Attendance ──────────────────────────────────────────
+    static async getPunchStatus() {
+        return this.request('/attendance/status');
+    }
+    static async punch() {
+        return this.request('/attendance/punch', { method: 'POST' });
+    }
+
+    // ─── Attendance ──────────────────────────────────────────
+    static async getPunchStatus() {
+        return this.request('/attendance/status');
+    }
+    static async punch() {
+        return this.request('/attendance/punch', { method: 'POST' });
+    }
+
     // ─── Clients ─────────────────────────────────────────────
     static async getClients(params = '') {
         return this.request(`/clients/${params}`);
@@ -345,8 +361,47 @@ class ApiClient {
     static async getSalaryRecords(employeeId) {
         return this.request(`/hrm/salary/${employeeId}`);
     }
+    static async getAllSalarySlips() {
+        return this.request('/hrm/salary/all');
+    }
+    static async getMySalarySlips() {
+        return this.request('/hrm/salary/me');
+    }
+    static async previewSalary(userId, month, extraDeduction = 0, baseSalary = null) {
+        let url = `/hrm/salary/preview?user_id=${userId}&month=${encodeURIComponent(month)}&extra_deduction=${extraDeduction}`;
+        if (baseSalary !== null && !isNaN(baseSalary)) url += `&base_salary=${baseSalary}`;
+        return this.request(url);
+    }
     static async generateSalary(data) {
         return this.request('/hrm/salary/generate', { method: 'POST', body: data });
+    }
+    static async regenerateSalarySlip(data) {
+        return this.request('/hrm/salary/regenerate', { method: 'POST', body: data });
+    }
+    static async updateDraftSalarySlip(slipId, data) {
+        return this.request(`/hrm/salary/update-draft/${slipId}`, { method: 'PATCH', body: data });
+    }
+    static async confirmSalarySlip(slipId) {
+        return this.request(`/hrm/salary/confirm/${slipId}`, { method: 'PATCH' });
+    }
+
+    // ─── Leave ───────────────────────────────────────────────
+    static async getMyLeaves() {
+        return this.request('/hrm/leave');
+    }
+    static async getAllLeaves() {
+        return this.request('/hrm/leave/all');
+    }
+    static async applyLeave(data) {
+        return this.request('/hrm/leave', { method: 'POST', body: data });
+    }
+    static async approveRejectLeave(leaveId, status, remarks = null) {
+        const body = { status };
+        if (remarks) body.remarks = remarks;
+        return this.request(`/hrm/leave/${leaveId}/approve`, { method: 'PATCH', body });
+    }
+    static async getLeaveSummary(userId, month) {
+        return this.request(`/hrm/leave/summary/${userId}?month=${encodeURIComponent(month)}`);
     }
 
     // ─── Incentives ──────────────────────────────────────────
@@ -356,14 +411,23 @@ class ApiClient {
     static async createIncentiveSlab(data) {
         return this.request('/incentives/slabs', { method: 'POST', body: data });
     }
+    static async updateIncentiveSlab(id, data) {
+        return this.request(`/incentives/slabs/${id}`, { method: 'PUT', body: data });
+    }
+    static async deleteIncentiveSlab(id) {
+        return this.request(`/incentives/slabs/${id}`, { method: 'DELETE' });
+    }
     static async calculateIncentive(data) {
         return this.request('/incentives/calculate', { method: 'POST', body: data });
     }
-    static async getIncentiveTargets() {
-        return this.request('/incentives/targets');
+    static async getAllIncentiveSlips() {
+        return this.request('/incentives/slips');
     }
-    static async createIncentiveTarget(data) {
-        return this.request('/incentives/targets', { method: 'POST', body: data });
+    static async getMyIncentiveSlips() {
+        return this.request('/incentives/my-slips');
+    }
+    static async getUserIncentiveSlips(userId) {
+        return this.request(`/incentives/slips/${userId}`);
     }
 
     // ─── Payments ────────────────────────────────────────────

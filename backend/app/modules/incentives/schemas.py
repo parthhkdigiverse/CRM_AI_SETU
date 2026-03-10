@@ -1,21 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel
 from datetime import datetime
-from app.modules.users.models import UserRole
-
-# Targets
-class IncentiveTargetBase(BaseModel):
-    role: UserRole
-    period: str  # Monthly/Quarterly
-    target_count: int
-
-class IncentiveTargetCreate(IncentiveTargetBase):
-    pass
-
-class IncentiveTargetRead(IncentiveTargetBase):
-    id: int
-    class Config:
-        from_attributes = True
 
 # Slabs
 class IncentiveSlabBase(BaseModel):
@@ -26,6 +11,12 @@ class IncentiveSlabBase(BaseModel):
 
 class IncentiveSlabCreate(IncentiveSlabBase):
     pass
+
+class IncentiveSlabUpdate(BaseModel):
+    min_units: Optional[int] = None
+    max_units: Optional[int] = None
+    incentive_per_unit: Optional[float] = None
+    slab_bonus: Optional[float] = None
 
 class IncentiveSlabRead(IncentiveSlabBase):
     id: int

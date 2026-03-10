@@ -62,8 +62,8 @@ async def create_issue(
     if not db_client:
         raise HTTPException(status_code=404, detail="Client not found")
     
-    if current_user and current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES] and db_client.pm_id != current_user.id:
-        raise HTTPException(status_code=403, detail="You can only report issues for your assigned clients")
+    # Relaxed: Any staff can report issues for any client
+    # Original restriction (PMs only for their clients) is removed as per request for flexibility
 
 
     service = IssueService(db)

@@ -1,5 +1,5 @@
 from typing import List, Any
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from datetime import datetime, UTC
 
@@ -9,7 +9,7 @@ from app.modules.users.models import User, UserRole
 from app.modules.salary.models import LeaveRecord, SalarySlip, LeaveStatus
 from app.modules.salary.schemas import (
     LeaveApplicationCreate, LeaveRecordRead, LeaveApproval,
-    SalarySlipGenerate, SalarySlipRead
+    SalarySlipGenerate, SalarySlipRead, SalaryPreviewResponse
 )
 
 router = APIRouter()
@@ -24,22 +24,34 @@ staff_checker = RoleChecker([
     UserRole.PROJECT_MANAGER_AND_SALES
 ])
 
+
+# ═══════════════════════════════════════════════════════
 # LEAVE ENDPOINTS
+# ═══════════════════════════════════════════════════════
+
 @router.post("/leave", response_model=LeaveRecordRead)
 def apply_leave(
     leave_in: LeaveApplicationCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
 ) -> Any:
+    if leave_in.end_date < leave_in.start_date:
+        raise HTTPException(status_code=400, detail="End date must be after start date")
+
     db_leave = LeaveRecord(
-        **leave_in.model_dump(),
         user_id=current_user.id,
-        status=LeaveStatus.PENDING
+        start_date=leave_in.start_date,
+        end_date=leave_in.end_date,
+        leave_type=leave_in.leave_type,
+        day_type=leave_in.day_type,
+        reason=leave_in.reason,
+        status=LeaveStatus.PENDING,
     )
     db.add(db_leave)
     db.commit()
     db.refresh(db_leave)
-    return db_leave
+    return _leave_to_dict(db_leave, current_user)
+
 
 @router.patch("/leave/{leave_id}/approve", response_model=LeaveRecordRead)
 def approve_leave(
@@ -55,82 +67,164 @@ def approve_leave(
     db_leave.status = approval_in.status
     if approval_in.status == LeaveStatus.APPROVED:
         db_leave.approved_by = current_user.id
+    if approval_in.remarks is not None:
+        db_leave.remarks = approval_in.remarks.strip() or None
 
     db.commit()
     db.refresh(db_leave)
-    return db_leave
+    return _leave_to_dict(db_leave)
+
 
 @router.get("/leave", response_model=List[LeaveRecordRead])
 def get_my_leaves(
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
 ) -> Any:
-    leaves = db.query(LeaveRecord).filter(LeaveRecord.user_id == current_user.id).all()
-    return [
-        {
-            "id": l.id,
-            "user_id": l.user_id,
-            "start_date": l.start_date,
-            "end_date": l.end_date,
-            "reason": l.reason,
-            "status": l.status,
-            "approved_by": l.approved_by,
-            "user_name": current_user.name or current_user.email,
-            "approver_name": (l.approver.name or l.approver.email) if l.approver else None,
-        }
-        for l in leaves
-    ]
+    leaves = db.query(LeaveRecord).filter(
+        LeaveRecord.user_id == current_user.id
+    ).order_by(LeaveRecord.start_date.desc()).all()
+    return [_leave_to_dict(l) for l in leaves]
+
 
 @router.get("/leave/all", response_model=List[LeaveRecordRead])
 def get_all_leaves(
     db: Session = Depends(get_db),
     current_user: User = Depends(hr_checker)
 ) -> Any:
-    leaves = db.query(LeaveRecord).all()
-    return [
-        {
-            "id": l.id,
-            "user_id": l.user_id,
-            "start_date": l.start_date,
-            "end_date": l.end_date,
-            "reason": l.reason,
-            "status": l.status,
-            "approved_by": l.approved_by,
-            "user_name": (l.user.name or l.user.email) if l.user else None,
-            "approver_name": (l.approver.name or l.approver.email) if l.approver else None,
-        }
-        for l in leaves
-    ]
+    leaves = db.query(LeaveRecord).order_by(LeaveRecord.start_date.desc()).all()
+    return [_leave_to_dict(l) for l in leaves]
 
+
+@router.get("/leave/summary/{user_id}")
+def get_leave_summary(
+    user_id: int,
+    month: str = Query(..., description="YYYY-MM"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """Return leave counts for a user in the given month."""
+    from sqlalchemy import extract
+    year, month_num = map(int, month.split('-'))
+    leaves = db.query(LeaveRecord).filter(
+        LeaveRecord.user_id == user_id,
+        extract('year', LeaveRecord.start_date) == year,
+        extract('month', LeaveRecord.start_date) == month_num
+    ).all()
+
+    total = 0
+    approved = 0
+    pending = 0
+    rejected = 0
+    for l in leaves:
+        days = (l.end_date - l.start_date).days + 1
+        total += days
+        if l.status == LeaveStatus.APPROVED:
+            approved += days
+        elif l.status == LeaveStatus.PENDING:
+            pending += days
+        else:
+            rejected += days
+
+    paid = min(approved, 1)
+    unpaid = max(0, approved - 1)
+    return {
+        "user_id": user_id,
+        "month": month,
+        "total_leave_days": total,
+        "approved_days": approved,
+        "pending_days": pending,
+        "rejected_days": rejected,
+        "paid_leaves": paid,
+        "unpaid_leaves": unpaid,
+    }
+
+
+# ═══════════════════════════════════════════════════════
 # SALARY ENDPOINTS
-@router.post("/salary/generate", response_model=SalarySlipRead)
+# ═══════════════════════════════════════════════════════
+
+@router.get("/salary/preview")
+def preview_salary(
+    user_id: int = Query(...),
+    month: str = Query(...),
+    extra_deduction: float = Query(0.0),
+    base_salary: float = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(hr_checker)
+) -> Any:
+    from app.modules.salary.service import SalaryService
+    return SalaryService(db).preview_salary(user_id, month, extra_deduction, base_salary=base_salary)
+
+
+@router.post("/salary/generate")
 def generate_salary_slip(
     salary_in: SalarySlipGenerate,
     db: Session = Depends(get_db),
     current_user: User = Depends(hr_checker)
 ) -> Any:
     from app.modules.salary.service import SalaryService
-    service = SalaryService(db)
-    return service.generate_salary_slip(salary_in)
+    return SalaryService(db).generate_salary_slip(salary_in)
 
-@router.get("/salary/me", response_model=List[SalarySlipRead])
+
+@router.post("/salary/regenerate")
+def regenerate_salary_slip(
+    salary_in: SalarySlipGenerate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(hr_checker)
+) -> Any:
+    from app.modules.salary.service import SalaryService
+    return SalaryService(db).regenerate_salary_slip(salary_in)
+
+
+@router.patch("/salary/update-draft/{slip_id}")
+def update_draft_salary_slip(
+    slip_id: int,
+    salary_in: SalarySlipGenerate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(hr_checker)
+) -> Any:
+    from app.modules.salary.service import SalaryService
+    return SalaryService(db).update_draft_slip(slip_id, salary_in)
+
+
+@router.patch("/salary/confirm/{slip_id}")
+def confirm_salary_slip(
+    slip_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(hr_checker)
+) -> Any:
+    from app.modules.salary.service import SalaryService
+    return SalaryService(db).confirm_salary_slip(slip_id, current_user.id)
+
+
+@router.get("/salary/all")
+def get_all_salary_slips(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(hr_checker)
+) -> Any:
+    from app.modules.salary.service import SalaryService
+    return SalaryService(db).get_all_salary_slips()
+
+
+@router.get("/salary/me")
 def get_my_salary_slips(
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
 ) -> Any:
     from app.modules.salary.service import SalaryService
-    service = SalaryService(db)
-    return service.get_user_salary_slips(current_user.id)
+    # Non-admins only see CONFIRMED slips
+    return SalaryService(db).get_user_salary_slips(current_user.id, show_drafts=False)
 
-@router.get("/salary/{user_id}", response_model=List[SalarySlipRead])
+
+@router.get("/salary/{user_id}")
 def get_user_salary_slips(
     user_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(hr_checker)
 ) -> Any:
     from app.modules.salary.service import SalaryService
-    service = SalaryService(db)
-    return service.get_user_salary_slips(user_id)
+    return SalaryService(db).get_user_salary_slips(user_id)
+
 
 @router.get("/salary/slip/{slip_id}/invoice")
 def get_salary_invoice(
@@ -140,16 +234,40 @@ def get_salary_invoice(
 ) -> Any:
     from app.modules.salary.service import SalaryService
     from fastapi.responses import HTMLResponse
-    service = SalaryService(db)
-    
-    # Check permission: Admins can see all, employees only their own
+
     slip = db.query(SalarySlip).filter(SalarySlip.id == slip_id).first()
     if not slip:
         raise HTTPException(status_code=404, detail="Slip not found")
-        
+
     if current_user.role != UserRole.ADMIN and slip.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
-        
-    html = service.generate_invoice_html(slip_id)
+
+    # Non-admins can only view invoices for CONFIRMED slips
+    if current_user.role != UserRole.ADMIN and slip.status != "CONFIRMED":
+        raise HTTPException(status_code=403, detail="Slip not yet confirmed")
+
+    html = SalaryService(db).generate_invoice_html(slip_id)
     return HTMLResponse(content=html)
+
+
+# ═══════════════════════════════════════════════════════
+# HELPERS
+# ═══════════════════════════════════════════════════════
+
+def _leave_to_dict(l: LeaveRecord, override_user: User = None) -> dict:
+    user = override_user or l.user
+    return {
+        "id": l.id,
+        "user_id": l.user_id,
+        "start_date": l.start_date,
+        "end_date": l.end_date,
+        "leave_type": l.leave_type or "CASUAL",
+        "day_type": getattr(l, "day_type", "FULL") or "FULL",
+        "reason": l.reason,
+        "status": l.status,
+        "approved_by": l.approved_by,
+        "remarks": getattr(l, "remarks", None),
+        "user_name": (user.name or user.email) if user else None,
+        "approver_name": (l.approver.name or l.approver.email) if l.approver else None,
+    }
 

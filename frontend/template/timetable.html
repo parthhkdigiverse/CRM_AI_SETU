@@ -985,10 +985,10 @@
 
     <!-- ─── Scripts ───────────────────────────────────────── -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/api.js"></script>
+    <script src="../js/api.js?v=1772780187"></script>
     <script src="../js/utils.js?v=1772780187"></script>
     <script src="../js/ui_components.js?v=1772780187"></script>
-    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/auth.js?v=1772780187"></script>
 
     <script>
         // ── Auth & Sidebar ──────────────────────────────────────
@@ -2007,7 +2007,7 @@
             // Reconfigure modal for Update
             const saveBtn = document.getElementById('btn-save-event');
             saveBtn.onclick = () => updateActivity(ev.id, ev.event_type);
-            saveBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Update';
+            saveBtn.innerHTML = '<i class="bi bi-floppy me-1"></i>Update';
 
             // Show delete button
             let delBtn = document.getElementById('btn-delete-event');
@@ -2085,7 +2085,7 @@
 
             if (isUpdate) {
                 document.getElementById('modal-title-text').innerText = isEvent ? 'Edit Event' : 'Edit Task';
-                document.getElementById('btn-save-event').innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Update';
+                document.getElementById('btn-save-event').innerHTML = '<i class="bi bi-floppy me-1"></i>Update';
             } else {
                 document.getElementById('modal-title-text').innerText = isEvent ? 'Schedule Event' : 'Create Task';
                 document.getElementById('btn-save-event').innerHTML = isEvent ? '<i class="bi bi-check-lg me-1"></i>Schedule' : '<i class="bi bi-plus-lg me-1"></i>Create Task';

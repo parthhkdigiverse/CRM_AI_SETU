@@ -183,8 +183,10 @@
                     <div class="modal-body">
                         <form id="addUserForm">
                             <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">FULL NAME (OPTIONAL)</label>
-                                <input type="text" class="form-control" id="userName" placeholder="e.g. Jane Doe">
+                                <label class="form-label text-muted small fw-bold">FULL NAME <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="userName" required
+                                    placeholder="e.g. Jane Doe">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">EMAIL ADDRESS <span
@@ -227,9 +229,16 @@
                                 <label class="form-label text-muted small fw-bold">JOINING DATE</label>
                                 <input type="date" class="form-control" id="userJoiningDate">
                             </div>
-                            <div class="mb-4" id="departmentField">
+                            <div class="mb-3" id="departmentField">
                                 <label class="form-label text-muted small fw-bold">DEPARTMENT</label>
                                 <input type="text" class="form-control" id="userDepartment" placeholder="e.g. Sales">
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label text-muted small fw-bold">BASE SALARY</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rs.</span>
+                                    <input type="number" class="form-control" id="userBaseSalary" placeholder="e.g. 25000" min="0" step="0.01">
+                                </div>
                             </div>
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-add-user justify-content-center py-2"
@@ -256,8 +265,10 @@
                         <form id="editUserForm">
                             <input type="hidden" id="editUserId">
                             <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">FULL NAME</label>
-                                <input type="text" class="form-control" id="editUserName" placeholder="e.g. Jane Doe">
+                                <label class="form-label text-muted small fw-bold">FULL NAME <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="editUserName" required
+                                    placeholder="e.g. Jane Doe">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">EMAIL ADDRESS (READ-ONLY)</label>
@@ -288,10 +299,17 @@
                                 <label class="form-label text-muted small fw-bold">JOINING DATE</label>
                                 <input type="date" class="form-control" id="editUserJoiningDate">
                             </div>
-                            <div class="mb-4">
+                            <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">DEPARTMENT</label>
                                 <input type="text" class="form-control" id="editUserDepartment"
                                     placeholder="e.g. Sales">
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label text-muted small fw-bold">BASE SALARY</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rs.</span>
+                                    <input type="number" class="form-control" id="editUserBaseSalary" placeholder="e.g. 25000" min="0" step="0.01">
+                                </div>
                             </div>
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-add-user justify-content-center py-2"
@@ -410,6 +428,8 @@
                             if (empCode) payload.employee_code = empCode;
                             if (joiningDate) payload.joining_date = joiningDate;
                             if (department) payload.department = department;
+                            const baseSalary = document.getElementById('userBaseSalary').value;
+                            if (baseSalary !== '') payload.base_salary = parseFloat(baseSalary);
 
                             await ApiClient.request('/auth/register', { method: 'POST', body: payload });
 
@@ -473,8 +493,32 @@
                                 promises.push(ApiClient.updateUserStatus(id, newStatus));
                             }
 
-                            if (promises.length > 0) {
-                                await Promise.all(promises);
+                            const newEmpCode = document.getElementById('editUserEmpCode').value.trim();
+                            const newJoiningDate = document.getElementById('editUserJoiningDate').value;
+                            const newDepartment = document.getElementById('editUserDepartment').value.trim();
+                            const baseSalaryVal = document.getElementById('editUserBaseSalary').value;
+                            const newBaseSalary = baseSalaryVal !== '' ? parseFloat(baseSalaryVal) : null;
+
+                            const profileUpdate = {};
+                            if (originalUser.name !== newName) profileUpdate.name = newName;
+                            if ((originalUser.employee_code || '') !== newEmpCode) profileUpdate.employee_code = newEmpCode || null;
+                            if ((originalUser.joining_date || '') !== newJoiningDate) profileUpdate.joining_date = newJoiningDate || null;
+                            if ((originalUser.department || '') !== newDepartment) profileUpdate.department = newDepartment || null;
+                            if (originalUser.base_salary !== newBaseSalary && !(originalUser.base_salary == null && newBaseSalary === null)) profileUpdate.base_salary = newBaseSalary;
+
+                            const patchPromises = [];
+                            if (Object.keys(profileUpdate).length > 0) {
+                                patchPromises.push(ApiClient.request(`/users/${id}/profile`, { method: 'PATCH', body: profileUpdate }));
+                            }
+                            if (originalUser.role !== newRole) {
+                                patchPromises.push(ApiClient.updateUserRole(id, newRole));
+                            }
+                            if (originalUser.is_active !== newStatus) {
+                                patchPromises.push(ApiClient.updateUserStatus(id, newStatus));
+                            }
+
+                            if (patchPromises.length > 0) {
+                                await Promise.all(patchPromises);
                                 showToast('User updated successfully', 'success');
                                 if (editUserModalInstance) editUserModalInstance.hide();
                                 loadData();
@@ -517,6 +561,7 @@
                 document.getElementById('editUserEmpCode').value = user.employee_code || '';
                 document.getElementById('editUserJoiningDate').value = user.joining_date || '';
                 document.getElementById('editUserDepartment').value = user.department || '';
+                document.getElementById('editUserBaseSalary').value = user.base_salary != null ? user.base_salary : '';
 
                 if (editUserModalInstance) {
                     editUserModalInstance.show();

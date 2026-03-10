@@ -1,16 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
-from app.modules.users.models import UserRole
-
-class IncentiveTarget(Base):
-    __tablename__ = "incentive_targets"
-
-    id = Column(Integer, primary_key=True, index=True)
-    role = Column(Enum(UserRole), nullable=False)
-    period = Column(String, nullable=False)  # Monthly/Quarterly
-    target_count = Column(Integer, nullable=False)
 
 class IncentiveSlab(Base):
     __tablename__ = "incentive_slabs"

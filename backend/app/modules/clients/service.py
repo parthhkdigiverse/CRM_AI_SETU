@@ -79,10 +79,18 @@ class ClientService:
 
             count_map = {row.pm_id: row.client_count for row in client_counts}
 
-            # Build list of (pm, workload) and pick the least-loaded PM
+            # Build list of (pm, workload)
             pm_workloads = [(pm, count_map.get(pm.id, 0)) for pm in active_pms]
-            pm_workloads.sort(key=lambda x: x[1])
-            assigned_pm = pm_workloads[0][0]
+            
+            # Find the minimum workload
+            min_load = min(w[1] for w in pm_workloads)
+            
+            # Filter all PMs who have this minimum load
+            least_loaded_pms = [w[0] for w in pm_workloads if w[1] == min_load]
+            
+            # Randomly pick one among the least loaded to distribute fairly
+            import random
+            assigned_pm = random.choice(least_loaded_pms)
 
             db_client.pm_id = assigned_pm.id
         # -------------------------------------------

@@ -20,6 +20,7 @@ class IssueCreate(BaseModel):
     status: IssueStatus = IssueStatus.PENDING
     severity: IssueSeverity = IssueSeverity.MEDIUM
     project_id: Optional[int] = None
+    assigned_to_id: Optional[int] = None
     remarks: Optional[str] = None
 
 class IssueUpdate(BaseModel):

@@ -59,7 +59,13 @@ class IssueService:
 
     async def create_issue(self, issue: IssueCreate, client_id: int, current_user: User, request: Request, background_tasks: BackgroundTasks = None):
         client = self.db.query(Client).filter(Client.id == client_id).first()
-        pm_id = client.pm_id if client else None
+        
+        # Priority for assignment: 
+        # 1. Explicitly requested handler
+        # 2. Client's PM
+        # 3. None
+        pm_id = issue.assigned_to_id or (client.pm_id if client else None)
+        
         db_issue = Issue(**issue.model_dump(), client_id=client_id, reporter_id=current_user.id, assigned_to_id=pm_id)
 
         self.db.add(db_issue)
