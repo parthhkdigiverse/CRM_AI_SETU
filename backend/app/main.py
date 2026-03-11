@@ -60,6 +60,12 @@ if os.path.exists(frontend_path):
 else:
     print(f"WARNING: Static frontend path not found at {frontend_path}")
 
+# Uploads / Static Assets
+backend_path = os.path.join(project_root, "backend")
+static_path = os.path.join(backend_path, "static")
+os.makedirs(static_path, exist_ok=True)  # ensure it exists on first boot
+app.mount("/static", StaticFiles(directory=static_path), name="static")
+
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     favicon_path = os.path.join(frontend_path, "favicon.ico")

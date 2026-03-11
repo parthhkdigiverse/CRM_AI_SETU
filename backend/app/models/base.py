@@ -8,7 +8,7 @@ from app.modules.meetings.models import MeetingSummary  # noqa
 from app.modules.salary.models import LeaveRecord, SalarySlip  # noqa
 from app.modules.payments.models import Payment  # noqa
 from app.modules.feedback.models import Feedback  # noqa
-from app.modules.incentives.models import IncentiveTarget, IncentiveSlab, EmployeePerformance, IncentiveSlip  # noqa
+from app.modules.incentives.models import IncentiveSlab, EmployeePerformance, IncentiveSlip  # noqa
 from app.modules.shops.models import Shop  # noqa
 from app.modules.areas.models import Area  # noqa
 from app.modules.visits.models import Visit  # noqa

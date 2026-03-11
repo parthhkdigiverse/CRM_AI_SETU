@@ -306,23 +306,40 @@ class ShopService:
     @staticmethod
     def get_accepted_leads(db: Session, current_user: User):
         from sqlalchemy.orm import joinedload
+        from sqlalchemy import exists
         from app.modules.users.models import User as UserModel, UserRole
-        
+        from app.modules.visits.models import Visit
+
+        # Subquery: shop IDs already visited by this user (or any user for admins)
+        if current_user.role == UserRole.ADMIN:
+            visited_shop_ids = db.query(Visit.shop_id).distinct().subquery()
+        else:
+            visited_shop_ids = (
+                db.query(Visit.shop_id)
+                .filter(Visit.user_id == current_user.id)
+                .distinct()
+                .subquery()
+            )
+
         query = db.query(Shop).options(
             joinedload(Shop.area),
             joinedload(Shop.assigned_owners_list),
             joinedload(Shop.assigned_by)
-        ).filter(Shop.assignment_status == "ACCEPTED")
-        
+        ).filter(
+            Shop.assignment_status == "ACCEPTED",
+            ~Shop.id.in_(visited_shop_ids)     # exclude already-visited shops
+        )
+
         if current_user.role != UserRole.ADMIN:
             query = query.filter(Shop.assigned_owners_list.any(UserModel.id == current_user.id))
-            
+
         results = query.order_by(Shop.accepted_at.desc()).all()
-        
+
         history = []
         for shop in results:
             assigned_to_name = shop.assigned_owners_list[0].name if shop.assigned_owners_list else "Unknown"
             history.append({
+                "shop_id": shop.id,
                 "area_name": shop.area.name if shop.area else "N/A",
                 "shop_name": shop.name,
                 "assigned_to_name": assigned_to_name,

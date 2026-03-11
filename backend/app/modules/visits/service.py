@@ -2,7 +2,7 @@
 import os
 import shutil
 from pathlib import Path
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, UploadFile, Request
 from datetime import datetime, UTC
 
@@ -27,7 +27,12 @@ class VisitService:
 
     def get_visits(self, skip: int = 0, limit: int = 100, user_id: int = None, shop_id: int = None):
         try:
-            query = self.db.query(Visit)
+            from app.modules.shops.models import Shop as ShopModel
+            from app.modules.users.models import User as UserModel
+            query = self.db.query(Visit).options(
+                joinedload(Visit.shop).joinedload(ShopModel.area),
+                joinedload(Visit.user)
+            )
             if user_id:
                 query = query.filter(Visit.user_id == user_id)
             if shop_id:
@@ -85,7 +90,19 @@ class VisitService:
 
         self.db.add(visit)
         self.db.commit()
-        self.db.refresh(visit)
+
+        # Re-fetch with eager-loaded relationships so @property fields
+        # (shop_name, area_name, user_name) resolve during response serialization
+        from app.modules.shops.models import Shop as ShopModel
+        visit = (
+            self.db.query(Visit)
+            .options(
+                joinedload(Visit.shop).joinedload(ShopModel.area),
+                joinedload(Visit.user)
+            )
+            .filter(Visit.id == visit.id)
+            .first()
+        )
 
         # --- Auto-transition Shop status based on visit outcome ---
         from app.modules.shops.models import ShopStatus
