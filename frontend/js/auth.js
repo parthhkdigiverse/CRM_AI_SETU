@@ -1,5 +1,6 @@
-// auth.js — shared across all pages
-let API = localStorage.getItem('api_base') || (window.location.origin + '/api');
+// Use current origin by default, override only if necessary
+let API = (window.location.origin + '/api');
+localStorage.setItem('api_base', API); // Keep in sync
 
 // Background Refresh Config
 fetch((window.location.origin) + '/api/config')
@@ -63,8 +64,8 @@ function requireAuth() {
     // --- ROLE BASED ROUTING GUARD ---
     const ROLE_PERMISSIONS = {
         'ADMIN': ['*'],
-        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'search.html', 'notifications.html'],
-        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'search.html', 'notifications.html'],
+        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'feedback.html', 'search.html', 'notifications.html'],
+        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'feedback.html', 'search.html', 'notifications.html'],
         'PROJECT_MANAGER': ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'search.html', 'notifications.html'],
         'PROJECT_MANAGER_AND_SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'search.html', 'notifications.html'],
         'CLIENT': ['dashboard.html']
@@ -112,7 +113,12 @@ function requireAuth() {
         })
         .then(profile => {
             if (!profile) return;
-            const userData = { id: profile.id, name: profile.name || profile.email, role: profile.role };
+            const userData = {
+                id: profile.id,
+                name: profile.name || profile.email,
+                role: profile.role,
+                referral_code: profile.referral_code
+            };
             localStorage.setItem('crm_user', JSON.stringify(userData));
 
             enforceRoleAccess(userData.role);

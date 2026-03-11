@@ -225,6 +225,7 @@
     <script>
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('visits');
+        injectTopHeader('Visits');
 
         const user = getUser();
         const isSales = user?.role === 'SALES' || user?.role === 'PROJECT_MANAGER_AND_SALES';

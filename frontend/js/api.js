@@ -1,14 +1,16 @@
-let API_BASE_URL = 'http://127.0.0.1:8000/api'; // Fallback
-// Try to load dynamically from the backend Python config endpoint
-fetch('http://127.0.0.1:8000/api/config')
+const host = window.location.origin;
+let API_BASE_URL = `${host}/api`;
+
+// Try to load dynamically from the backend Python config endpoint for overrides if any
+fetch(`${host}/api/config`)
     .then(r => r.json())
     .then(data => {
-        if (data.API_BASE_URL) {
+        if (data.API_BASE_URL && !data.API_BASE_URL.includes('127.0.0.1')) {
             API_BASE_URL = data.API_BASE_URL;
             ApiClient.API_BASE_URL = data.API_BASE_URL;
         }
     })
-    .catch(e => console.warn('Using default API_BASE_URL due to config fetch error:', e));
+    .catch(e => console.warn('Using default origin-based API_BASE_URL:', e));
 
 class ApiClient {
     static API_BASE_URL = API_BASE_URL;
@@ -88,6 +90,10 @@ class ApiClient {
             }
 
             const isJson = response.headers.get('content-type')?.includes('application/json');
+
+            // 204 No Content — no body to parse (e.g. successful DELETE)
+            if (response.status === 204) return null;
+
             const data = isJson ? await response.json() : await response.text();
 
             if (!response.ok) {
@@ -294,6 +300,9 @@ class ApiClient {
     }
     static async createFeedback(clientId, data) {
         return this.request(`/clients/${clientId}/feedback`, { method: 'POST', body: data });
+    }
+    static async deleteFeedback(feedbackId) {
+        return this.request(`/feedback/${feedbackId}`, { method: 'DELETE' });
     }
     static async createUserFeedback(data) {
         return this.request('/clients/user', { method: 'POST', body: data });

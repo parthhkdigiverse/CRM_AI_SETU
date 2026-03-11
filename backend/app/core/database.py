@@ -35,6 +35,26 @@ def init_db():
             if 'amount_per_unit' not in cols:
                 conn.execute(text("ALTER TABLE incentive_slips ADD COLUMN amount_per_unit FLOAT DEFAULT 0.0"))
         
+        # 3. feedbacks
+        if inspector.has_table("feedbacks"):
+            cols = [c['name'] for c in inspector.get_columns('feedbacks')]
+            if 'mobile' not in cols:
+                conn.execute(text("ALTER TABLE feedbacks ADD COLUMN mobile VARCHAR"))
+            if 'shop_name' not in cols:
+                conn.execute(text("ALTER TABLE feedbacks ADD COLUMN shop_name VARCHAR"))
+            if 'product' not in cols:
+                conn.execute(text("ALTER TABLE feedbacks ADD COLUMN product VARCHAR"))
+            if 'agent_name' not in cols:
+                conn.execute(text("ALTER TABLE feedbacks ADD COLUMN agent_name VARCHAR"))
+            if 'referral_code' not in cols:
+                conn.execute(text("ALTER TABLE feedbacks ADD COLUMN referral_code VARCHAR"))
+        
+        # 4. users
+        if inspector.has_table("users"):
+            cols = [c['name'] for c in inspector.get_columns('users')]
+            if 'referral_code' not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN referral_code VARCHAR"))
+        
         conn.commit()
 
 def get_db():

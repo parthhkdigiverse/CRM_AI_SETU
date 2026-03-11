@@ -190,17 +190,26 @@ async def batch_delete_users(
 def generate_referral_code(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(admin_checker)
+    current_user: User = Depends(get_current_active_user)
 ) -> Any:
+    if current_user.role != UserRole.ADMIN and current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    allowed_roles = [UserRole.SALES, UserRole.TELESALES]
+    allowed_roles = [
+        UserRole.SALES,
+        UserRole.TELESALES,
+        UserRole.PROJECT_MANAGER,
+        UserRole.PROJECT_MANAGER_AND_SALES,
+        UserRole.ADMIN
+    ]
     if user.role not in allowed_roles:
         raise HTTPException(
             status_code=400,
-            detail=f"Referral codes can only be generated for SALES or TELESALES roles"
+            detail=f"Referral codes can only be generated for SALES, TELESALES, or PROJECT MANAGER roles"
         )
 
     if user.referral_code:
@@ -257,3 +266,18 @@ def get_pm_availability(
     free_slots = [f"{h:02d}:00" for h in range(9, 18) if h not in booked_hours]
 
     return {"pm_id": pm_id, "date": date, "free_slots": free_slots}
+
+@router.get("/public/lookup/{referral_code}")
+def lookup_user_by_referral(
+    referral_code: str,
+    db: Session = Depends(get_db)
+) -> Any:
+    """Public endpoint to get user details by referral code for feedback forms."""
+    user = db.query(User).filter(User.referral_code == referral_code).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Invalid referral code")
+        
+    role_str = user.role.value if hasattr(user.role, 'value') else str(user.role)
+    role_str = role_str.replace("_", " ").title()
+    
+    return {"name": user.name, "referral_code": user.referral_code, "role": role_str}

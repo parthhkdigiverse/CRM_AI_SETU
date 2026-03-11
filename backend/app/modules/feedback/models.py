@@ -8,9 +8,14 @@ class Feedback(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=True)
-    client_name = Column(String, nullable=True) # For anonymous/external
-    rating = Column(Integer, nullable=False)
+    client_name = Column(String, nullable=True) # Full Name
+    mobile = Column(String, nullable=True)
+    shop_name = Column(String, nullable=True)
+    product = Column(String, nullable=True)
+    rating = Column(Integer, nullable=False) # Sales Person Rating
     comments = Column(Text, nullable=True)
+    agent_name = Column(String, nullable=True)
+    referral_code = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     client = relationship("app.modules.clients.models.Client", backref="feedbacks")

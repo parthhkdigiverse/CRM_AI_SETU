@@ -164,6 +164,7 @@
         <script>
             requireAuth();
             document.getElementById('sidebar').innerHTML = renderSidebar('clients');
+            injectTopHeader('Clients');
 
             let activeClientIdForPayment = null;
 

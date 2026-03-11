@@ -124,11 +124,9 @@ function renderSidebar(active) {
     if (isAdmin || isSales || isTelesales || isPM) {
         const crItems = [
             { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
-            { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' }
+            { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' },
+            { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
         ];
-        if (isAdmin || isPM) {
-            crItems.push({ id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' });
-        }
         nav += sbSection('cr', 'Client Relations', 'bi-people', crItems);
     }
 
@@ -202,6 +200,7 @@ function injectTopHeader(pageTitle) {
         'Issues': 'Project Management',
         'Clients': 'Client Relations',
         'Billing & Invoices': 'Client Relations',
+        'Feedback': 'Client Relations',
         'Employees': 'HR & Payroll',
         'Salary': 'HR & Payroll',
         'Leaves': 'HR & Payroll',
@@ -243,36 +242,21 @@ function injectTopHeader(pageTitle) {
 
     const headerHtml = `
     <div class="top-header">
-        <div class="d-flex align-items-center">${breadcrumbHtml}</div>
-        <div class="top-header-search" style="position:relative; z-index:1000;">
-            <div class="position-relative w-100">
-                <button class="btn p-0 position-absolute text-muted" style="left:12px; top:50%; transform:translateY(-50%); border:none; background:none; z-index:5;" onclick="const val = document.getElementById('global-search-input').value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val);">
-                    <i class="bi bi-search" style="font-size:0.9rem;"></i>
-                </button>
-                <input type="text" id="global-search-input" class="form-control bg-light border-0 shadow-none" placeholder="Search..." style="padding-left: 40px; border-radius: 10px; font-size: 0.9rem; height: 42px;">
-                <div id="live-search-dropdown" class="search-results-dropdown"></div>
-            </div>
-        </div>
-        <div class="d-flex align-items-center justify-content-end gap-3">
         <!-- Left: Breadcrumb Title -->
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center flex-shrink-0">
             ${breadcrumbHtml}
         </div>
 
-        <!-- Right: Actions & Search -->
+        <!-- Right Side: Search, Actions, Notifs, Profile -->
         <div class="d-flex align-items-center justify-content-end gap-3 ms-auto flex-grow-1">
-            <!-- Center-Right: Global Search -->
-            <div class="top-header-search" style="position:relative; z-index:1000; max-width: 400px; width: 100%;">
+            <!-- Global Search -->
+            <div class="top-header-search d-none d-md-block" style="position:relative; z-index:1000; max-width: 400px; width: 100%;">
                 <div class="position-relative w-100">
                     <button class="btn p-0 position-absolute text-muted" style="left:12px; top:50%; transform:translateY(-50%); border:none; background:none; z-index:5;" onclick="const val = document.getElementById('global-search-input').value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val);">
                         <i class="bi bi-search" style="font-size:0.9rem;"></i>
                     </button>
                     <input type="text" id="global-search-input" class="form-control bg-light border-0 shadow-none" placeholder="Search clients, projects, payments..." style="padding-left: 40px; border-radius: 10px; font-size: 0.9rem; height: 42px;" onkeypress="if(event.key === 'Enter' && this.value.trim()) { window.location.href = 'search.html?q=' + encodeURIComponent(this.value.trim()); }" autocomplete="off">
-                    
-                    <!-- Live Search Dropdown -->
-                    <div id="live-search-dropdown" class="search-results-dropdown">
-                        <!-- Results injected here by JS -->
-                    </div>
+                    <div id="live-search-dropdown" class="search-results-dropdown"></div>
                 </div>
             </div>
 
@@ -287,7 +271,7 @@ function injectTopHeader(pageTitle) {
                     <li><a class="dropdown-item rounded-2 py-2" href="areas.html?add=true"><i class="bi bi-building me-2" style="color:#6366f1;"></i> New Area / Shop</a></li>
                     <li><a class="dropdown-item rounded-2 py-2" href="visits.html?add=true"><i class="bi bi-geo-alt me-2 text-success"></i> New Visit</a></li>
                     <li><a class="dropdown-item rounded-2 py-2" href="meetings.html?add=true"><i class="bi bi-calendar-event me-2 text-success"></i> New Meeting</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="todo.html"><i class="bi bi-check2-square me-2 text-primary"></i> New Task</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="todo.html"><i class="bi bi-check2-square o me-2 text-primary"></i> New Task</a></li>
                     <li><hr class="dropdown-divider my-1"></li>
                     <li><a class="dropdown-item rounded-2 py-2" href="javascript:void(0)" onclick="if(window.openNewBillModal) window.openNewBillModal();"><i class="bi bi-receipt me-2 text-danger"></i> New Payment</a></li>
                     <li><a class="dropdown-item rounded-2 py-2" href="issues.html?add=true"><i class="bi bi-exclamation-triangle me-2 text-warning"></i> New Issue</a></li>
@@ -297,6 +281,7 @@ function injectTopHeader(pageTitle) {
                     <li><a class="dropdown-item rounded-2 py-2" href="admin.html"><i class="bi bi-person-plus me-2 text-secondary"></i> New User</a></li>
                 </ul>
             </div>
+
             <!-- Notifications Bell -->
             <div class="dropdown">
                 <div class="position-relative text-muted" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer; font-size:1.25rem; width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:#f8fafc; border-radius:50%;">
@@ -318,6 +303,8 @@ function injectTopHeader(pageTitle) {
                     </div>
                 </div>
             </div>
+
+            <!-- User Profile -->
             <div class="d-flex align-items-center gap-2 ps-2 dropdown border-start ms-1">
                 <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold dropdown-toggle shadow-sm" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="width:38px;height:38px;font-size:13px;cursor:pointer;">${initials}</div>
                 <div class="d-none d-lg-block">

@@ -9,6 +9,7 @@ from app.modules.feedback.models import Feedback, UserFeedback
 from app.modules.feedback.schemas import FeedbackCreate, FeedbackRead, UserFeedbackCreate, UserFeedbackRead
 
 router = APIRouter()
+global_router = APIRouter()
 
 # Role definitions for viewing feedback
 staff_checker = RoleChecker([
@@ -35,6 +36,26 @@ def create_feedback(
     
     feedback_in.client_id = client_id
     return service.create_client_feedback(feedback_in)
+
+@global_router.post("/public/submit", response_model=FeedbackRead, status_code=status.HTTP_201_CREATED)
+def create_public_feedback(
+    feedback_in: FeedbackCreate,
+    db: Session = Depends(get_db)
+) -> Any:
+    """Public endpoint for submitting feedback via QR code scans."""
+    from app.modules.feedback.service import FeedbackService
+    service = FeedbackService(db)
+    return service.create_client_feedback(feedback_in)
+
+@global_router.get("/all", response_model=List[FeedbackRead])
+def read_all_feedback(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """Admin endpoint to view all client feedback."""
+    from app.modules.feedback.service import FeedbackService
+    service = FeedbackService(db)
+    return service.get_all_client_feedbacks()
 
 @router.get("/{client_id}/feedback", response_model=List[FeedbackRead])
 def read_client_feedback(
@@ -69,4 +90,19 @@ def read_user_feedbacks(
     else:
         user_id = current_user.id if current_user else 0
         return [f for f in service.get_user_feedbacks() if f.user_id == user_id]
+
+
+@global_router.delete("/{feedback_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_feedback(
+    feedback_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> None:
+    """Delete a feedback record by ID. Accessible to all staff roles."""
+    from app.modules.feedback.service import FeedbackService
+    service = FeedbackService(db)
+    try:
+        service.delete_feedback(feedback_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Feedback not found")
 

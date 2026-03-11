@@ -230,6 +230,7 @@
     <script>
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('employees');
+        injectTopHeader('Employees');
 
         const currentUser = getUser();
         const isAdmin = currentUser?.role === 'ADMIN';

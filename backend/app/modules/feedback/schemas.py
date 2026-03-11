@@ -6,6 +6,12 @@ class FeedbackBase(BaseModel):
     rating: int
     comments: Optional[str] = None
     client_name: Optional[str] = None
+    mobile: Optional[str] = None
+    shop_name: Optional[str] = None
+    product: Optional[str] = None
+    agent_name: Optional[str] = None
+    agent_role: Optional[str] = None
+    referral_code: Optional[str] = None
     client_id: Optional[int] = None
 
 class FeedbackCreate(FeedbackBase):
@@ -13,7 +19,6 @@ class FeedbackCreate(FeedbackBase):
 
 class FeedbackRead(FeedbackBase):
     id: int
-    client_id: int
     created_at: datetime
 
     class Config:
