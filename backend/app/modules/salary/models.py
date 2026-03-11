@@ -76,6 +76,14 @@ class SalarySlip(Base):
     confirmer = relationship("User", foreign_keys=[confirmed_by])
 
 
+class AppSetting(Base):
+    """Application-wide key-value settings store."""
+    __tablename__ = "app_settings"
+
+    key = Column(String, primary_key=True, index=True)
+    value = Column(Text, nullable=True)
+
+
 # Import models at the end to ensure they are registered without circular dependency issues
 from app.modules.users.models import User
 

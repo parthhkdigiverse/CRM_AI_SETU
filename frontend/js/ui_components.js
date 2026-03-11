@@ -113,7 +113,6 @@ function renderSidebar(active) {
     // PROJECT MANAGEMENT
     if (isAdmin || isPM) {
         nav += sbSection('pm', 'Project Management', 'bi-briefcase', [
-            { id: 'projects_demo', href: 'projects_demo.html', icon: 'bi-display', label: 'Demo' },
             { id: 'projects', href: 'projects.html', icon: 'bi-briefcase', label: 'Projects' },
             { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
             { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
@@ -799,7 +798,7 @@ window.checkHighPriorityIssues = async function () {
     if (!localStorage.getItem('access_token')) return;
     try {
         const issues = await apiGet('/issues/');
-        const unreadHigh = (Array.isArray(issues) ? issues : []).filter(i => i.severity === 'HIGH' && i.status !== 'SOLVED');
+        const unreadHigh = (Array.isArray(issues) ? issues : []).filter(i => i.severity === 'HIGH' && i.status === 'PENDING');
 
         const alertContainerId = 'high-priority-global-alert';
         let alertEl = document.getElementById(alertContainerId);
@@ -812,7 +811,10 @@ window.checkHighPriorityIssues = async function () {
                         <i class="bi bi-exclamation-triangle-fill"></i>
                         <span>System Alert: ${unreadHigh.length} Unresolved High Priority Issue(s) detected.</span>
                     </div>
-                    <a href="issues.html" class="btn btn-sm btn-light py-0 px-2 fw-bold" style="font-size: 0.75rem; color: #B91C1C;">View Issues</a>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="issues.html" class="btn btn-sm btn-light py-0 px-2 fw-bold" style="font-size: 0.75rem; color: #B91C1C;">View Issues</a>
+                        <button type="button" onclick="(function(){ var el=document.getElementById('${alertContainerId}'); if(el) el.remove(); var th=document.querySelector('.top-header'); if(th) th.style.top='0'; var sb=document.getElementById('sidebar-container'); if(sb){sb.style.height='100vh';sb.style.top='0';} })()" style="background:none;border:none;color:white;font-size:1.1rem;line-height:1;padding:0 2px;cursor:pointer;opacity:0.85;" title="Dismiss">&times;</button>
+                    </div>
                 </div>`;
                 document.body.insertAdjacentHTML('afterbegin', html);
 
@@ -828,6 +830,9 @@ window.checkHighPriorityIssues = async function () {
                 }
             } else {
                 alertEl.querySelector('span').textContent = `System Alert: ${unreadHigh.length} Unresolved High Priority Issue(s) detected.`;
+                // Re-sync layout offsets in case header shifted
+                const topHeader = document.querySelector('.top-header');
+                if (topHeader) topHeader.style.top = alertEl.offsetHeight + 'px';
             }
         } else if (alertEl) {
             alertEl.remove();

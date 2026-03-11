@@ -298,6 +298,22 @@
             display: flex;
         }
 
+        .input-field.is-invalid {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+        }
+
+        .field-hint {
+            font-size: 0.78rem;
+            color: #ef4444;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .field-hint.visible {
+            display: block;
+        }
+
         .password-toggle {
             position: absolute;
             right: 12px;
@@ -317,6 +333,12 @@
 
         .password-toggle:hover {
             color: var(--primary);
+        }
+
+        /* Hide the browser's native password reveal button (Edge/Chrome) */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
         }
 
         .btn-login {
@@ -492,9 +514,10 @@
                     <label class="form-label" for="email">Email Address</label>
                     <div class="input-wrapper">
                         <i class="bi bi-envelope input-icon"></i>
-                        <input type="email" id="email" class="input-field" placeholder="admin@example.com" required
-                            autocomplete="email">
+                        <input type="text" id="email" class="input-field" placeholder="admin@example.com" required
+                            autocomplete="email" inputmode="email">
                     </div>
+                    <p class="field-hint" id="email-hint"></p>
                 </div>
 
                 <div>
@@ -535,6 +558,28 @@
     <script src="../js/auth.js?v=1772780187"></script>
     <script>
 
+        function showError(message) {
+            const errBox = document.getElementById('error-box');
+            const errText = document.getElementById('error-text');
+            errText.textContent = message;
+            errBox.classList.add('visible');
+        }
+
+        // Returns {msg, field} or null if valid
+        function validateLoginInputs(email, password) {
+            if (!email) return { msg: 'Email address is required.', field: 'email' };
+            if (!email.includes('@')) return { msg: 'Please enter a valid email — it must include "@" (e.g. name@example.com).', field: 'email' };
+            const parts = email.split('@');
+            if (parts[0].length === 0) return { msg: 'The part before "@" cannot be empty (e.g. name@example.com).', field: 'email' };
+            if (parts.length !== 2 || !parts[1]) return { msg: 'Please enter a valid email address (e.g. name@example.com).', field: 'email' };
+            if (!parts[1].includes('.')) return { msg: 'The email domain must contain "." (e.g. example.com).', field: 'email' };
+            const domainParts = parts[1].split('.');
+            if (domainParts.some(p => p.length === 0)) return { msg: 'Please enter a valid email address (e.g. name@example.com).', field: 'email' };
+            if (!password) return { msg: 'Password is required.', field: 'password' };
+            if (password.length < 4) return { msg: 'Password is too short — please enter at least 4 characters.', field: 'password' };
+            return null; // valid
+        }
+
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('login-btn');
@@ -542,12 +587,26 @@
             const errText = document.getElementById('error-text');
 
             errBox.classList.remove('visible');
+
+            const emailVal = document.getElementById('email').value.trim();
+            const passwordVal = document.getElementById('password').value;
+
+            const validationError = validateLoginInputs(emailVal, passwordVal);
+            if (validationError) {
+                showError(validationError.msg);
+                if (validationError.field === 'email') {
+                    setEmailInvalid(validationError.msg);
+                }
+                document.getElementById(validationError.field).focus();
+                return;
+            }
+
             btn.disabled = true;
             btn.innerHTML = `<div class="spinner"></div> Verifying...`;
 
             const formData = new URLSearchParams();
-            formData.append('username', document.getElementById('email').value.trim());
-            formData.append('password', document.getElementById('password').value);
+            formData.append('username', emailVal);
+            formData.append('password', passwordVal);
 
             try {
                 const res = await fetch(`${API}/auth/login`, {
@@ -586,6 +645,54 @@
                 btn.innerHTML = `<i class="bi bi-box-arrow-in-right"></i> Sign In to Dashboard`;
             }
         });
+
+        // Real-time inline validation on blur
+        const emailInput = document.getElementById('email');
+        const emailHint = document.getElementById('email-hint');
+
+        emailInput.addEventListener('blur', () => {
+            const val = emailInput.value.trim();
+            if (!val) {
+                setEmailInvalid('Email address is required.');
+            } else if (!val.includes('@')) {
+                setEmailInvalid('Missing "@" — try name@example.com');
+            } else {
+                const parts = val.split('@');
+                if (parts[0].length === 0) {
+                    setEmailInvalid('The part before "@" cannot be empty.');
+                } else if (!parts[1] || !parts[1].includes('.')) {
+                    setEmailInvalid('Domain must contain "." — try name@example.com');
+                } else {
+                    setEmailValid();
+                }
+            }
+        });
+
+        emailInput.addEventListener('input', () => {
+            document.getElementById('error-box').classList.remove('visible');
+            if (emailInput.classList.contains('is-invalid')) {
+                const val = emailInput.value.trim();
+                if (val.includes('@') && val.split('@').length === 2 && val.split('@')[1].includes('.') && val.split('@')[0].length > 0) {
+                    setEmailValid();
+                }
+            }
+        });
+
+        document.getElementById('password').addEventListener('input', () => {
+            document.getElementById('error-box').classList.remove('visible');
+        });
+
+        function setEmailInvalid(msg) {
+            emailInput.classList.add('is-invalid');
+            emailHint.textContent = msg;
+            emailHint.classList.add('visible');
+        }
+
+        function setEmailValid() {
+            emailInput.classList.remove('is-invalid');
+            emailHint.textContent = '';
+            emailHint.classList.remove('visible');
+        }
     </script>
 </body>
 

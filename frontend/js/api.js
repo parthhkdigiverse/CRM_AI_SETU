@@ -362,6 +362,12 @@ class ApiClient {
     static async confirmSalarySlip(slipId) {
         return this.request(`/hrm/salary/confirm/${slipId}`, { method: 'PATCH' });
     }
+    static async getPayslipSettings() {
+        return this.request('/hrm/payslip-settings');
+    }
+    static async updatePayslipSettings(data) {
+        return this.request('/hrm/payslip-settings', { method: 'PUT', body: data });
+    }
 
     // ─── Leave ───────────────────────────────────────────────
     static async getMyLeaves() {
@@ -418,11 +424,31 @@ class ApiClient {
     static async verifyPayment(paymentId) {
         return this.request(`/payments/${paymentId}/verify`, { method: 'PATCH' });
     }
+    // ─── Billing / Invoices ──────────────────────────────────
+    /** @deprecated use createInvoice instead */
     static async generateBill(data) {
+        return this.request('/billing/', { method: 'POST', body: data });
+    }
+    static async createInvoice(data) {
         return this.request('/billing/', { method: 'POST', body: data });
     }
     static async getBills() {
         return this.request('/billing/');
+    }
+    static async getInvoice(billId) {
+        return this.request(`/billing/${billId}`);
+    }
+    static async verifyInvoice(billId) {
+        return this.request(`/billing/${billId}/verify`, { method: 'PATCH' });
+    }
+    static async sendInvoiceWhatsApp(billId) {
+        return this.request(`/billing/${billId}/send-whatsapp`, { method: 'POST' });
+    }
+    static async getInvoiceSettings() {
+        return this.request('/billing/settings');
+    }
+    static async updateInvoiceSettings(data) {
+        return this.request('/billing/settings', { method: 'PUT', body: data });
     }
 
     // ─── Projects ────────────────────────────────────────────

@@ -34,7 +34,7 @@
                         <button class="nav-link active" id="dashboard-tab" data-bs-toggle="pill"
                             data-bs-target="#tab-dashboard" type="button" role="tab">Dashboard</button>
                     </li>
-                    <li class="nav-item" role="presentation">
+                    <li class="nav-item admin-only-tab" role="presentation">
                         <button class="nav-link" id="employee-tab" data-bs-toggle="pill" data-bs-target="#tab-employee"
                             type="button" role="tab" onclick="loadEmployeeReport()">Employee Report</button>
                     </li>
@@ -145,11 +145,13 @@
                                                 <th>Sales</th>
                                                 <th>Revenue</th>
                                                 <th>Incentive</th>
+                                                <th>Projects</th>
+                                                <th>Open Issues</th>
                                             </tr>
                                         </thead>
                                         <tbody id="employee-report-body">
                                             <tr>
-                                                <td colspan="7" class="text-center py-3 text-muted">Select filter &
+                                                <td colspan="9" class="text-center py-3 text-muted">Select filter &
                                                     refresh</td>
                                             </tr>
                                         </tbody>
@@ -224,6 +226,12 @@
         document.getElementById('sidebar').innerHTML = renderSidebar('reports');
         injectTopHeader('Reports');
 
+        // Hide admin-only tabs from non-admins
+        const _userRole = (localStorage.getItem('role') || '').toUpperCase();
+        if (_userRole !== 'ADMIN') {
+            document.querySelectorAll('.admin-only-tab').forEach(el => el.style.display = 'none');
+        }
+
         // Set default month to current
         window.onload = () => {
             const now = new Date();
@@ -279,12 +287,12 @@
         async function loadEmployeeReport() {
             const month = getSelectedMonth();
             const tbody = document.getElementById('employee-report-body');
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-muted">Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-3 text-muted">Loading...</td></tr>';
 
             try {
                 const data = await apiGet(`/reports/employees?month=${month}`);
                 if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-muted">No data for this month</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-3 text-muted">No data for this month</td></tr>';
                     return;
                 }
                 tbody.innerHTML = data.map(emp => `
@@ -299,10 +307,12 @@
                         <td>${emp.total_sales}</td>
                         <td class="fw-bold">₹${emp.total_revenue.toLocaleString()}</td>
                         <td class="text-primary fw-bold">₹${emp.total_incentive.toLocaleString()}</td>
+                        <td>${emp.total_projects}</td>
+                        <td>${emp.total_open_issues > 0 ? `<span class="badge bg-warning text-dark">${emp.total_open_issues}</span>` : '0'}</td>
                     </tr>
                 `).join('');
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-danger">Error loading data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-3 text-danger">Error loading data</td></tr>';
             }
         }
 

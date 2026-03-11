@@ -227,6 +227,15 @@ class ReportService:
                 IncentiveSlip.user_id == u.id,
                 IncentiveSlip.period == month
             ).scalar() or 0.0
+
+            projects = db.query(func.count(Project.id)).filter(
+                Project.pm_id == u.id
+            ).scalar() or 0
+
+            open_issues = db.query(func.count(Issue.id)).filter(
+                Issue.assigned_to_id == u.id,
+                Issue.status.notin_([IssueStatus.SOLVED, IssueStatus.RESOLVED, IssueStatus.COMPLETED, IssueStatus.CANCELLED])
+            ).scalar() or 0
             
             performance.append({
                 "user_id": u.id,
@@ -237,7 +246,9 @@ class ReportService:
                 "total_leads": leads,
                 "total_sales": payments,
                 "total_revenue": float(revenue),
-                "total_incentive": float(incentive)
+                "total_incentive": float(incentive),
+                "total_projects": projects,
+                "total_open_issues": open_issues
             })
             
         return performance

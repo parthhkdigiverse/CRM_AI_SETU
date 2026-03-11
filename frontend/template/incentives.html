@@ -15,78 +15,68 @@
 
 <body>
     <style>
-        :root {
-            --glass-bg: rgba(255, 255, 255, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.3);
-            --accent-primary: #6366f1;
-            --accent-secondary: #0ea5e9;
+        /* Incentive-specific adjustments while respecting theme.css */
+        .stat-card {
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md) !important;
         }
 
-        .grid-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 1rem;
+        .achievement-progress {
+            height: 6px;
+            background: var(--primary-light);
+            border-radius: 100px;
+            overflow: hidden;
+            margin-top: 8px;
         }
-
-        .btn-premium {
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            color: white;
-            border: none;
-            box-shadow: 0 4px 12px rgba(99,102,241,0.3);
-        }
-        .btn-premium:hover { opacity: 0.92; color: white; }
-
-        .stat-icon {
-            width: 40px; height: 40px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 12px; margin-bottom: 12px;
-        }
-
-        /* Prevent any horizontal overflow on the whole page */
-        body { overflow-x: hidden; }
-        .page-content { overflow-x: hidden; }
-
-        /* Tables: never scroll horizontally */
-        .no-scroll-table { overflow-x: hidden; width: 100%; }
-        .no-scroll-table table { width: 100%; table-layout: fixed; }
-        .no-scroll-table td, .no-scroll-table th {
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        .achievement-bar {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 100px;
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .table thead th {
-            text-transform: uppercase;
-            font-size: 0.72rem;
-            letter-spacing: 0.04em;
-            color: #64748b;
-            font-weight: 700;
+            background: var(--bg-app) !important;
+            border-bottom: 1.5px solid var(--border) !important;
         }
 
         .badge-pending {
-            background: #fff7ed; color: #c2410c;
-            border: 1px solid #fed7aa;
-            font-size: 0.68rem; padding: 2px 7px; border-radius: 20px;
+            background: var(--warning-light);
+            color: var(--warning-text);
+            border: 1px solid rgba(217, 119, 6, 0.2);
+            font-size: 0.72rem;
+            padding: 3px 8px;
+            border-radius: 20px;
             white-space: nowrap;
         }
         .badge-ready {
-            background: #f0fdf4; color: #15803d;
-            border: 1px solid #bbf7d0;
-            font-size: 0.68rem; padding: 2px 7px; border-radius: 20px;
+            background: var(--success-light);
+            color: var(--success-text);
+            border: 1px solid rgba(5, 150, 105, 0.2);
+            font-size: 0.72rem;
+            padding: 3px 8px;
+            border-radius: 20px;
             white-space: nowrap;
         }
 
         .emp-avatar {
-            width: 30px; height: 30px; flex-shrink: 0;
-            background: #eff6ff; color: #3b82f6;
-            font-weight: 700; font-size: 0.78rem;
+            width: 32px; height: 32px; flex-shrink: 0;
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 700; font-size: 0.8rem;
+            border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            border-radius: 50%;
+            box-shadow: var(--shadow-xs);
         }
 
-        .pct-badge {
-            font-size: 0.7rem; padding: 2px 7px;
-            border-radius: 20px; white-space: nowrap; flex-shrink: 0;
+        .pct-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+            display: block;
         }
     </style>
 
@@ -95,33 +85,61 @@
         <div class="flex-grow-1" style="min-width:0;">
             <div class="page-content">
 
-                <!-- Header -->
-                <div class="d-flex justify-content-between align-items-center mb-4 pb-2 flex-wrap gap-2">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
                     <div>
-                        <h2 class="page-section-title fw-bold mb-1" style="font-size:1.6rem;color:#1e293b;">Incentive Intelligence</h2>
+                        <h2 class="page-section-title fw-bold mb-1">Incentive Intelligence</h2>
                         <p class="text-muted mb-0 small">Performance tracking, slab configuration and incentive management.</p>
                     </div>
                     <div id="admin-header-actions" style="display:none;">
-                        <button class="btn btn-sm btn-premium rounded-pill px-4" onclick="openCalcModal()">
+                        <button class="btn btn-primary shadow-sm" onclick="openCalcModal()">
                             <i class="bi bi-lightning-charge-fill me-1"></i>Calculate Incentive
                         </button>
                     </div>
                 </div>
 
-                <!-- Stats -->
-                <div class="row g-3 mb-4">
+                <div class="row g-4 mb-5">
                     <div class="col-6 col-md-3">
-                        <div class="grid-card p-3 shadow-sm">
-                            <div class="stat-icon bg-primary-subtle text-primary"><i class="bi bi-layers-half"></i></div>
-                            <div class="text-muted" style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Slabs</div>
-                            <div class="h3 fw-bold mb-0" id="stat-slabs">-</div>
+                        <div class="card stat-card border-0 h-100 p-3">
+                            <div class="text-muted fw-bold text-uppercase mb-2" style="font-size:0.65rem; letter-spacing:0.08em;">Active Slabs</div>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-primary-light text-primary rounded-3 d-flex align-items-center justify-content-center" style="width:42px; height:42px;">
+                                    <i class="bi bi-layers-half fs-5"></i>
+                                </div>
+                                <div class="h3 fw-bold mb-0" id="stat-slabs">-</div>
+                            </div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="grid-card p-3 shadow-sm">
-                            <div class="stat-icon bg-success-subtle text-success"><i class="bi bi-person-check"></i></div>
-                            <div class="text-muted" style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Slips</div>
-                            <div class="h3 fw-bold mb-0" id="stat-slips">-</div>
+                        <div class="card stat-card border-0 h-100 p-3">
+                            <div class="text-muted fw-bold text-uppercase mb-2" style="font-size:0.65rem; letter-spacing:0.08em;">Incentive Slips</div>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-success-light text-success rounded-3 d-flex align-items-center justify-content-center" style="width:42px; height:42px;">
+                                    <i class="bi bi-person-check fs-5"></i>
+                                </div>
+                                <div class="h3 fw-bold mb-0" id="stat-slips">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="card stat-card border-0 h-100 p-3">
+                            <div class="text-muted fw-bold text-uppercase mb-2" style="font-size:0.65rem; letter-spacing:0.08em;">Total Incentive</div>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:42px; height:42px; background:rgba(245,158,11,0.12); color:#b45309;">
+                                    <i class="bi bi-cash-stack fs-5"></i>
+                                </div>
+                                <div class="fw-bold mb-0" id="stat-total" style="font-size:1.1rem;">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="card stat-card border-0 h-100 p-3">
+                            <div class="text-muted fw-bold text-uppercase mb-2" style="font-size:0.65rem; letter-spacing:0.08em;">Avg per Employee</div>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:42px; height:42px; background:rgba(99,102,241,0.12); color:#4338ca;">
+                                    <i class="bi bi-bar-chart-line fs-5"></i>
+                                </div>
+                                <div class="fw-bold mb-0" id="stat-avg" style="font-size:1.1rem;">-</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -129,29 +147,37 @@
                 <!-- Main Grid -->
                 <div class="row g-4">
 
-                    <!-- Left: Slabs -->
-                    <div class="col-xl-4 col-lg-5">
-                        <div class="grid-card shadow-sm overflow-hidden">
-
-                            <!-- Card header -->
-                            <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-white">
-                                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-shield-lock me-2 text-primary"></i>Incentive Slabs</h6>
-                                <button id="btn-add-slab" class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="toggleAddSlabForm()" style="display:none;">
-                                    <i class="bi bi-plus me-1"></i>Add
+                    <div class="col-xl-4">
+                        <div class="card border-0 shadow-sm overflow-hidden">
+                            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                                <h6 class="fw-bold mb-0"><i class="bi bi-shield-lock me-2 text-primary"></i>Incentive Slabs</h6>
+                                <button id="btn-add-slab" class="btn btn-sm btn-outline-primary" onclick="toggleAddSlabForm()" style="display:none;">
+                                    <i class="bi bi-plus-lg"></i>
                                 </button>
                             </div>
 
-                            <!-- Add form -->
-                            <div id="add-slab-form" class="px-3 py-3 border-bottom bg-light" style="display:none;">
-                                <div class="row g-2 mb-2">
-                                    <div class="col-6"><input type="number" id="slab-min" class="form-control form-control-sm" placeholder="Min Units" min="0"></div>
-                                    <div class="col-6"><input type="number" id="slab-max" class="form-control form-control-sm" placeholder="Max Units" min="1"></div>
-                                    <div class="col-6"><input type="number" id="slab-per-unit" class="form-control form-control-sm" placeholder="Rs Per Unit" min="0"></div>
-                                    <div class="col-6"><input type="number" id="slab-bonus" class="form-control form-control-sm" placeholder="Rs Bonus" min="0"></div>
+                            <div id="add-slab-form" class="px-4 py-4 border-bottom bg-light bg-opacity-50" style="display:none;">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label">Min Units</label>
+                                        <input type="number" id="slab-min" class="form-control form-control-sm" placeholder="e.g. 0">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label">Max Units</label>
+                                        <input type="number" id="slab-max" class="form-control form-control-sm" placeholder="e.g. 5">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label">Rs Per Unit</label>
+                                        <input type="number" id="slab-per-unit" class="form-control form-control-sm" placeholder="500">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label">Bonus (Optional)</label>
+                                        <input type="number" id="slab-bonus" class="form-control form-control-sm" placeholder="1000">
+                                    </div>
                                 </div>
                                 <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-success flex-fill" onclick="addSlab()"><i class="bi bi-check me-1"></i>Save</button>
-                                    <button class="btn btn-sm btn-light border flex-fill" onclick="toggleAddSlabForm()">Cancel</button>
+                                    <button class="btn btn-sm btn-primary flex-grow-1" onclick="addSlab()">Save Slab</button>
+                                    <button class="btn btn-sm btn-secondary" onclick="toggleAddSlabForm()">Cancel</button>
                                 </div>
                                 <span id="slab-msg" class="small d-none mt-2 d-block"></span>
                             </div>
@@ -189,34 +215,37 @@
                         </div>
                     </div>
 
-                    <!-- Right: Slips -->
-                    <div class="col-xl-8 col-lg-7">
-                        <div class="grid-card shadow-sm overflow-hidden">
-
-                            <!-- Card header -->
-                            <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-white flex-wrap gap-2">
+                    <div class="col-xl-8">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-start flex-wrap gap-2">
                                 <div>
                                     <h6 class="fw-bold mb-0">Performance Insights</h6>
-                                    <p class="text-muted mb-0" style="font-size:0.78rem;">All employee incentive slips</p>
+                                    <p class="text-muted mb-0 small" style="font-size:0.75rem;">Comprehensive overview of employee incentives</p>
                                 </div>
-                                <div class="d-flex gap-2 align-items-center">
-                                    <select id="slip-user-filter" class="form-select form-select-sm rounded-pill" style="max-width:160px;" onchange="loadSlips()">
+                                <div class="d-flex gap-2 flex-wrap align-items-center">
+                                    <input type="month" id="slip-period-filter" class="form-control form-control-sm" style="min-width:140px;" onchange="loadSlips()" title="Filter by period">
+                                    <select id="slip-user-filter" class="form-select form-select-sm" style="min-width:150px;" onchange="loadSlips()">
                                         <option value="">All Employees</option>
                                     </select>
-                                    <button id="btn-calc" class="btn btn-sm btn-premium rounded-pill px-3" onclick="openCalcModal()" style="display:none;">
+                                    <select id="slip-status-filter" class="form-select form-select-sm" style="min-width:130px;" onchange="loadSlips()">
+                                        <option value="">All Status</option>
+                                        <option value="ready">In Salary</option>
+                                        <option value="pending">Pending</option>
+                                    </select>
+                                    <button id="btn-calc" class="btn btn-sm btn-primary" onclick="openCalcModal()" style="display:none;">
                                         <i class="bi bi-lightning-charge-fill me-1"></i>Calculate
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- Slips table - fixed layout, no horizontal scroll -->
-                            <div class="no-scroll-table">
-                                <table class="table table-hover align-middle mb-0" style="font-size:0.82rem;">
+                            <!-- Slips table -->
+                            <div style="overflow-x:auto;">
+                                <table class="table table-hover align-middle mb-0" style="font-size:0.82rem; min-width:680px;">
                                     <colgroup>
+                                        <col style="width:20%">
+                                        <col style="width:11%">
+                                        <col style="width:27%">
                                         <col style="width:22%">
-                                        <col style="width:12%">
-                                        <col style="width:28%">
-                                        <col style="width:18%">
                                         <col style="width:20%">
                                     </colgroup>
                                     <thead class="table-light">
@@ -224,7 +253,7 @@
                                             <th class="ps-3">Employee</th>
                                             <th>Period</th>
                                             <th>Achievement</th>
-                                            <th>Salary Status</th>
+                                            <th>Status</th>
                                             <th class="pe-3 text-end">Incentive</th>
                                         </tr>
                                     </thead>
@@ -464,12 +493,28 @@
                 } else {
                     slips = await ApiClient.getMyIncentiveSlips();
                 }
+                // (stat cards updated after client-side filtering below)
+                const fmt = n => Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+
+                // Apply client-side filters
+                const periodFilter = document.getElementById('slip-period-filter').value;
+                const statusFilter = document.getElementById('slip-status-filter').value;
+                if (periodFilter) slips = slips.filter(s => s.period === periodFilter);
+                if (statusFilter === 'ready') slips = slips.filter(s => daysSince(s.generated_at) >= 10);
+                else if (statusFilter === 'pending') slips = slips.filter(s => daysSince(s.generated_at) < 10);
+
+                // Update stat cards
                 document.getElementById('stat-slips').innerText = slips.length;
+                const totalIncentive = slips.reduce((acc, s) => acc + Number(s.total_incentive), 0);
+                const avgIncentive = slips.length > 0 ? totalIncentive / slips.length : 0;
+                document.getElementById('stat-total').innerText = 'Rs\u00a0' + fmt(totalIncentive);
+                document.getElementById('stat-avg').innerText = 'Rs\u00a0' + fmt(avgIncentive);
+
                 if (!slips.length) {
                     tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No incentive slips found.</td></tr>';
                     return;
                 }
-                const fmt = n => Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+
                 tbody.innerHTML = slips.map(s => {
                     const pct = Number(s.percentage).toFixed(1);
                     const pctColor = s.percentage >= 100 ? '#10b981' : s.percentage >= 75 ? '#3b82f6' : s.percentage >= 50 ? '#f59e0b' : '#ef4444';
@@ -483,20 +528,29 @@
                         <td class="ps-3">
                             <div class="d-flex align-items-center gap-2">
                                 <div class="emp-avatar">${initials}</div>
-                                <span class="fw-semibold text-dark" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
+                                <span class="fw-semibold text-dark">${name}</span>
                             </div>
                         </td>
-                        <td class="text-muted" style="font-size:0.78rem;">${s.period}</td>
                         <td>
-                            <div style="font-size:0.82rem; font-weight:700;">${s.achieved}<span class="text-muted fw-normal"> / ${s.target}</span></div>
-                            <span class="pct-badge" style="background:${pctColor}18;color:${pctColor};border:1px solid ${pctColor}30;">${pct}%</span>
+                            <span class="text-muted small">${s.period}</span>
+                        </td>
+                        <td>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-semibold" style="font-size:0.82rem;">${s.achieved} <span class="text-muted fw-normal">/ ${s.target}</span></span>
+                                <span class="pct-label" style="color:${pctColor};">${pct}%</span>
+                            </div>
+                            <div class="achievement-progress">
+                                <div class="achievement-bar" style="width:${Math.min(pct, 100)}%; background-color:${pctColor};"></div>
+                            </div>
                         </td>
                         <td>${badge}</td>
-                        <td class="pe-3 text-end fw-bold" style="font-size:0.95rem;">Rs ${fmt(s.total_incentive)}</td>
+                        <td class="pe-3 text-end fw-bold">Rs\u00a0${fmt(s.total_incentive)}</td>
                     </tr>`;
                 }).join('');
             } catch (e) {
                 tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-danger small">${e.message || 'Error'}</td></tr>`;
+                document.getElementById('stat-total').innerText = '-';
+                document.getElementById('stat-avg').innerText = '-';
             }
         }
 

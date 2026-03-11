@@ -32,6 +32,8 @@ class EmployeePerformance(BaseModel):
     total_sales: int
     total_revenue: float
     total_incentive: float
+    total_projects: int
+    total_open_issues: int
 
 class BusinessSummary(BaseModel):
     month: str

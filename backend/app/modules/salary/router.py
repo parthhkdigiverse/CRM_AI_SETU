@@ -6,7 +6,7 @@ from datetime import datetime, UTC
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
 from app.modules.users.models import User, UserRole
-from app.modules.salary.models import LeaveRecord, SalarySlip, LeaveStatus
+from app.modules.salary.models import LeaveRecord, SalarySlip, LeaveStatus, AppSetting
 from app.modules.salary.schemas import (
     LeaveApplicationCreate, LeaveRecordRead, LeaveApproval,
     SalarySlipGenerate, SalarySlipRead, SalaryPreviewResponse
@@ -248,6 +248,48 @@ def get_salary_invoice(
 
     html = SalaryService(db).generate_invoice_html(slip_id)
     return HTMLResponse(content=html)
+
+
+# ═══════════════════════════════════════════════════════
+# PAYSLIP COMPANY SETTINGS (admin configurable)
+# ═══════════════════════════════════════════════════════
+
+DEFAULT_PAYSLIP_EMAIL = "hrmangukiya3494@gmail.com"
+DEFAULT_PAYSLIP_PHONE = "8866005029"
+
+
+@router.get("/payslip-settings")
+def get_payslip_settings(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    email_row = db.query(AppSetting).filter(AppSetting.key == "payslip_email").first()
+    phone_row = db.query(AppSetting).filter(AppSetting.key == "payslip_phone").first()
+    return {
+        "email": email_row.value if email_row else DEFAULT_PAYSLIP_EMAIL,
+        "phone": phone_row.value if phone_row else DEFAULT_PAYSLIP_PHONE,
+    }
+
+
+@router.put("/payslip-settings")
+def update_payslip_settings(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(hr_checker)
+) -> Any:
+    email = (payload.get("email") or "").strip()
+    phone = (payload.get("phone") or "").strip()
+    if not email or not phone:
+        raise HTTPException(status_code=400, detail="Email and phone are required")
+
+    for key, val in [("payslip_email", email), ("payslip_phone", phone)]:
+        row = db.query(AppSetting).filter(AppSetting.key == key).first()
+        if row:
+            row.value = val
+        else:
+            db.add(AppSetting(key=key, value=val))
+    db.commit()
+    return {"email": email, "phone": phone}
 
 
 # ═══════════════════════════════════════════════════════

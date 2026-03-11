@@ -61,7 +61,7 @@
                                 <select id="slip-status-filter" class="form-select form-select-sm" style="min-width:150px;" onchange="loadSlips(); updateFilterBadge();">
                                     <option value="">All Statuses</option>
                                     <option value="DRAFT">Draft</option>
-                                    <option value="CONFIRMED">Confirmed</option>
+                                    <option value="CONFIRMED">Paid</option>
                                 </select>
                             </div>
                             <div class="col-sm-auto col-12">
@@ -409,10 +409,10 @@
                         ? 'badge-green-light'
                         : 'badge-yellow-light';
                     const statusIcon = s.status === 'CONFIRMED' ? 'bi-check-circle' : 'bi-hourglass-split';
-                    const statusLabel = s.status === 'CONFIRMED' ? 'Confirmed' : 'Draft';
+                    const statusLabel = s.status === 'CONFIRMED' ? 'Paid' : 'Draft';
 
                     const confirmBtn = isAdmin && s.status === 'DRAFT'
-                        ? `<button class="btn btn-sm btn-outline-success" title="Confirm" onclick="confirmSlip(${s.id})"><i class="bi bi-check-lg"></i></button>`
+                        ? `<button class="btn btn-sm btn-outline-success" title="Mark as Paid" onclick="confirmSlip(${s.id})"><i class="bi bi-check-lg"></i></button>`
                         : '';
                     const invoiceBtn = s.status === 'CONFIRMED'
                         ? `<button class="btn btn-sm btn-outline-primary" title="View Invoice" onclick="downloadInvoice(${s.id})"><i class="bi bi-file-earmark-text"></i></button>`
@@ -520,7 +520,7 @@
         }
 
         async function confirmSlip(slipId) {
-            if (!confirm('Confirm this salary slip? Once confirmed, the employee will be able to view it.')) return;
+            if (!confirm('Mark this salary slip as Paid? Once confirmed, the employee will be able to view it.')) return;
             try {
                 await ApiClient.confirmSalarySlip(slipId);
                 showToast('Salary slip confirmed.', 'success');
@@ -528,18 +528,8 @@
             } catch (e) { showToast(e.data?.detail || e.message || 'Failed', 'error'); }
         }
 
-        async function downloadInvoice(slipId) {
-            try {
-                const response = await fetch(
-                    `${API_BASE_URL}/hrm/salary/slip/${slipId}/invoice`,
-                    { headers: { 'Authorization': `Bearer ${ApiClient.getAccessToken()}` } }
-                );
-                if (!response.ok) throw new Error('Failed to fetch invoice');
-                const html = await response.text();
-                const win = window.open('', '_blank');
-                win.document.write(html);
-                win.document.close();
-            } catch (err) { showToast('Error loading invoice', 'error'); }
+        function downloadInvoice(slipId) {
+            window.open(`salary_slip_view.html?id=${slipId}`, '_blank');
         }
 
         function clearFilters() {
