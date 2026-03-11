@@ -67,64 +67,76 @@
                     </div>
                 </div>
 
-                <!-- Accepted Leads History -->
-                <div class="grid-card mb-4">
-                    <div class="d-flex justify-content-between align-items-center p-4 border-bottom bg-light bg-gradient">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width:32px;height:32px;">
-                                <i class="bi bi-person-check-fill"></i>
+                <!-- Accordion Wrapper -->
+                <div class="accordion shadow-sm" id="visitsAccordion">
+                    
+                    <!-- Accepted Leads History -->
+                    <div class="accordion-item border-0 mb-3 rounded">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                <i class="bi bi-person-check-fill text-success me-2"></i> Accepted Lead History
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#visitsAccordion">
+                            <div class="accordion-body p-0 border border-top-0 rounded-bottom">
+                                <div class="table-responsive">
+                                    <table class="table mb-0 align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Area</th>
+                                                <th>Shop</th>
+                                                <th id="dynamic-assign-header">Agent Info</th>
+                                                <th>Accepted Date & Time</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="accepted-leads-table">
+                                            <tr>
+                                                <td colspan="4" class="text-center py-4 text-muted">
+                                                    <span class="spinner-border spinner-border-sm me-2"></span>Loading history...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                            <h6 class="fw-bold mb-0" style="color:#1e293b;">Accepted Lead History</h6>
                         </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Area</th>
-                                    <th>Shop</th>
-                                    <th id="dynamic-assign-header">Agent Info</th>
-                                    <th>Accepted Date & Time</th>
-                                </tr>
-                            </thead>
-                            <tbody id="accepted-leads-table">
-                                <tr>
-                                    <td colspan="4" class="text-center py-4 text-muted">
-                                        <span class="spinner-border spinner-border-sm me-2"></span>Loading history...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
 
-                <!-- Visits Table -->
-                <div class="grid-card">
-                    <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
-                        <h6 class="fw-bold mb-0" style="color:#334155;">All Visit Records</h6>
+                    <!-- Visits Table -->
+                    <div class="accordion-item border-0 mb-3 rounded">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                <i class="bi bi-list-ul text-primary me-2"></i> All Visit Records
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#visitsAccordion">
+                            <div class="accordion-body p-0 border border-top-0 rounded-bottom">
+                                <div class="table-responsive">
+                                    <table class="table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Shop</th>
+                                                <th>Area</th>
+                                                <th>Agent</th>
+                                                <th>Date & Time</th>
+                                                <th>Outcome</th>
+                                                <th>Remarks</th>
+                                                <th>Photo</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="visits-table">
+                                            <tr>
+                                                <td colspan="7" class="text-center py-5 text-muted">
+                                                    <span class="spinner-border spinner-border-sm me-2"></span>Loading visits...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Shop</th>
-                                    <th>Area</th>
-                                    <th>Agent</th>
-                                    <th>Date & Time</th>
-                                    <th>Outcome</th>
-                                    <th>Remarks</th>
-                                    <th>Photo</th>
-                                </tr>
-                            </thead>
-                            <tbody id="visits-table">
-                                <tr>
-                                    <td colspan="7" class="text-center py-5 text-muted">
-                                        <span class="spinner-border spinner-border-sm me-2"></span>Loading visits...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+
                 </div>
 
             </div><!-- /page-content -->
