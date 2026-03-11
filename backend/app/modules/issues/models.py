@@ -7,12 +7,10 @@ from app.core.database import Base
 
 class IssueStatus(str, enum.Enum):
     PENDING     = "PENDING"
-    OPEN        = "OPEN"
     IN_PROGRESS = "IN_PROGRESS"
     SOLVED      = "SOLVED"
-    RESOLVED    = "RESOLVED"
-    COMPLETED   = "COMPLETED"
-    CANCELLED   = "CANCEL"
+    RE_OPENED   = "RE_OPENED"
+    CANCELLED   = "CANCELLED"
 
 class IssueSeverity(str, enum.Enum):
     HIGH = "HIGH"

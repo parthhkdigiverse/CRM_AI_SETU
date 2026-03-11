@@ -122,9 +122,10 @@
                     <div class="mb-3"><label class="form-label">Update Status</label>
                         <select id="h-status" class="form-select">
                             <option value="PENDING">Pending</option>
+                            <option value="IN_PROGRESS">In Progress</option>
                             <option value="SOLVED">Solved</option>
-                            <option value="COMPLETED">Completed</option>
-                            <option value="CANCEL">Cancelled</option>
+                            <option value="RE_OPENED">Re-Opened</option>
+                            <option value="CANCELLED">Cancelled</option>
                         </select>
                     </div>
                     <div class="mb-3"><label class="form-label">Remarks / Notes <span
@@ -157,10 +158,11 @@
             LOW: 'color: #0d6efd; background-color: #e6f0ff;'
         };
         const stStyle = {
-            PENDING: 'color: #d39e00; background-color: #fff8e1;',
-            SOLVED: 'color: #0ea5e9; background-color: #e0f2fe;',
-            COMPLETED: 'color: #198754; background-color: #e8f5e9;',
-            CANCEL: 'color: #dc3545; background-color: #ffeef0;'
+            PENDING:     'color: #d39e00; background-color: #fff8e1;',
+            IN_PROGRESS: 'color: #7c3aed; background-color: #ede9fe;',
+            SOLVED:      'color: #198754; background-color: #e8f5e9;',
+            RE_OPENED:   'color: #dc3545; background-color: #ffeef0;',
+            CANCELLED:   'color: #6c757d; background-color: #f8f9fa;'
         };
 
         const sevIcons = {
@@ -206,7 +208,7 @@
                     <td class="text-end" onclick="event.stopPropagation()">
                         <div class="d-flex gap-2 justify-content-end">
                             <button class="btn btn-sm btn-outline-primary" onclick="openHandleModal(${i.id}, '${i.status}', '${(i.remarks || '').replace(/'/g, "\\'")}')" title="Handle"><i class="bi bi-wrench-adjustable"></i></button>
-                            ${i.status !== 'SOLVED' && i.status !== 'COMPLETED' && i.status !== 'CANCEL' ? `<button class="btn btn-sm btn-outline-success" onclick="quickResolve(${i.id})" title="Quick Resolve"><i class="bi bi-check-lg"></i></button>` : ''}
+                            ${i.status !== 'SOLVED' && i.status !== 'CANCELLED' ? `<button class="btn btn-sm btn-outline-success" onclick="quickResolve(${i.id})" title="Quick Resolve"><i class="bi bi-check-lg"></i></button>` : ''}
                             <button class="btn btn-sm btn-outline-danger" onclick="deleteIssue(${i.id})" title="Delete"><i class="bi bi-trash"></i></button>
                         </div>
                     </td>

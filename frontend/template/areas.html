@@ -353,6 +353,12 @@
                                         style="padding: 1.25rem; border-bottom: 1px solid var(--border);">
                                         <input type="text" id="area-search" placeholder="Search areas..."
                                             style="width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px 9px 38px; font-size: 0.875rem; font-weight: 500; outline: none; background: var(--bg-app) url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E&quot;) no-repeat 14px center;">
+                                        <select id="sourceFilter" class="form-select form-select-sm mt-2"
+                                            style="font-size: 0.8rem; border-radius: 8px; border: 1px solid var(--border);">
+                                            <option value="ALL">All Leads</option>
+                                            <option value="ADMIN">Admin Assigned</option>
+                                            <option value="SELF">Self-Sourced</option>
+                                        </select>
                                     </div>
                                     <ul class="area-list flex-grow-1" id="area-list"
                                         style="list-style: none; padding: 10px; margin: 0; overflow-y: auto;">
@@ -801,7 +807,24 @@
         // ── Render Area List ──
         function renderAreaList(filter = '') {
             const ul = document.getElementById('area-list');
-            const filtered = allAreas.filter(a => a.name.toLowerCase().includes(filter.toLowerCase()));
+            const currentUser = ApiClient.getCurrentUser();
+            const sourceFilter = document.getElementById('sourceFilter')?.value || 'ALL';
+
+            const filtered = allAreas.filter(a => {
+                // Text search
+                if (!a.name.toLowerCase().includes(filter.toLowerCase())) return false;
+
+                // Source filter
+                if (sourceFilter === 'ADMIN') {
+                    // Admin-assigned: no creator OR creator is the current admin user
+                    return !a.created_by_id || (currentUser && a.created_by_id === currentUser.id && currentUser.role?.toUpperCase() === 'ADMIN');
+                } else if (sourceFilter === 'SELF') {
+                    // Self-sourced: has a creator who is NOT the current user (or any staff-sourced lead)
+                    return !!a.created_by_id && !(currentUser && a.created_by_id === currentUser.id && currentUser.role?.toUpperCase() === 'ADMIN');
+                }
+                return true; // ALL
+            });
+
             if (!filtered.length) {
                 ul.innerHTML = '<li class="p-4 text-center text-muted small">No areas found</li>';
                 return;
@@ -809,7 +832,10 @@
             ul.innerHTML = filtered.map(a => {
                 const shopCount = allShops.filter(s => s.area_id === a.id).length;
                 const isActive = a.id === selectedAreaId;
-                const sourcedBadge = a.created_by_name && a.created_by_id !== 1 ? `<span class="badge bg-info-subtle text-info border-info-subtle ms-1" style="font-size:0.6rem;padding:1px 4px;">Sourced</span>` : '';
+                // Only show Sourced badge if created by someone OTHER than the current user
+                const sourcedBadge = a.created_by_name && a.created_by_id && (!currentUser || a.created_by_id !== currentUser.id)
+                    ? `<span class="badge bg-info-subtle text-info border-info-subtle ms-1" style="font-size:0.6rem;padding:1px 4px;">Sourced</span>`
+                    : '';
                 return `<li class="area-item ${isActive ? 'active' : ''}" onclick="selectArea(${a.id}, '${a.name.replace(/'/g, "\\'")}')"
                         ondblclick="openEditAreaModal(${a.id})" title="Double-click to edit">
                     <span class="area-info"><i class="bi bi-geo-alt-fill"></i>${a.name}${sourcedBadge}</span>
@@ -842,8 +868,9 @@
             const isPendingArea = area && area.assignment_status === 'PENDING';
             const isAcceptedArea = area && area.assignment_status === 'ACCEPTED';
             let statusBadge = '';
-            let sourcedByBadge = area && area.created_by_name 
-                ? `<span class="badge bg-info text-dark ms-2 align-self-center" style="font-size:0.75rem;"><i class="bi bi-person-plus"></i> Sourced by: ${area.created_by_name}</span>` 
+            // Only show 'Sourced by' badge when the creator is a different person from the viewer
+            let sourcedByBadge = area && area.created_by_name && area.created_by_id && (!user || area.created_by_id !== user.id)
+                ? `<span class="badge bg-info text-dark ms-2 align-self-center" style="font-size:0.75rem;"><i class="bi bi-person-plus"></i> Sourced by: ${area.created_by_name}</span>`
                 : "";
             
             if (isPendingArea) {
@@ -943,8 +970,9 @@
                     shopStatusBadge = `<br><span class="badge bg-success mt-1">Claimed / Accepted</span>`;
                 }
 
-                const sourcedByShop = s.created_by_name 
-                    ? `<div class="mt-1"><span class="badge bg-info text-dark" style="font-size:0.7rem;"><i class="bi bi-person-plus"></i> Sourced by: ${s.created_by_name}</span></div>` 
+                // Hide 'Sourced by' badge for the user who created the shop themselves
+                const sourcedByShop = s.created_by_name && s.created_by_id && (!user || s.created_by_id !== user.id)
+                    ? `<div class="mt-1"><span class="badge bg-info text-dark" style="font-size:0.7rem;"><i class="bi bi-person-plus"></i> Sourced by: ${s.created_by_name}</span></div>`
                     : "";
 
                 return `<tr>
@@ -985,8 +1013,9 @@
             </table>`;
         }
 
-        // ── Search ──
+        // ── Search & Source Filter ──
         document.getElementById('area-search').addEventListener('input', e => renderAreaList(e.target.value));
+        document.getElementById('sourceFilter').addEventListener('change', () => renderAreaList(document.getElementById('area-search').value));
 
         // ── Modal Tab Switch ──
         function switchModalTab(tab) {
