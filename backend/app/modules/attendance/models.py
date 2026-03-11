@@ -1,3 +1,4 @@
+# backend/app/modules/attendance/models.py
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Date, Float
 from sqlalchemy.orm import relationship
 from app.core.database import Base

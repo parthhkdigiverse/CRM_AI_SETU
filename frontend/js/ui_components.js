@@ -1,3 +1,4 @@
+// frontend/js/ui_components.js
 // Helper to get initials
 window.getInitials = function (name) {
     if (!name) return '??';

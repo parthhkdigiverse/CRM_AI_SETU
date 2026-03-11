@@ -1,3 +1,4 @@
+# backend/app/modules/meetings/service.py
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Request

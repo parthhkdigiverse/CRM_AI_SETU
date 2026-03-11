@@ -1,3 +1,4 @@
+# backend/app/modules/projects/service.py
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Request
 from app.modules.projects.models import Project

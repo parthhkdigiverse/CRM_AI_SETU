@@ -1,3 +1,4 @@
+# backend/alembic/versions/87c6b6f81a60_add_synchronization_fields.py
 """Add synchronization fields
 
 Revision ID: 87c6b6f81a60

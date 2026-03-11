@@ -1,3 +1,4 @@
+# backend/app/modules/settings/models.py
 from sqlalchemy import Column, Integer, JSON
 from app.core.database import Base
 

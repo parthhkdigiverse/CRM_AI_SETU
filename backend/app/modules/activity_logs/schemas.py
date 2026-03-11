@@ -1,3 +1,4 @@
+# backend/app/modules/activity_logs/schemas.py
 from pydantic import BaseModel
 from typing import Optional, Any
 from datetime import datetime

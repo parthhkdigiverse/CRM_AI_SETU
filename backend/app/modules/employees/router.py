@@ -1,3 +1,4 @@
+# backend/app/modules/employees/router.py
 """
 Employees router — thin alias over /users/ for backward-compatibility.
 The 'employees' concept was merged into 'users'; this router keeps the

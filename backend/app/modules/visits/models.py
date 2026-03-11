@@ -1,3 +1,4 @@
+# backend/app/modules/visits/models.py
 import enum
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum, Text
 from sqlalchemy.orm import relationship

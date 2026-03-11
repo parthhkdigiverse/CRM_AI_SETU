@@ -1,3 +1,4 @@
+# backend/app/modules/auth/router.py
 from datetime import timedelta
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status

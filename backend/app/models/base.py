@@ -1,3 +1,4 @@
+# backend/app/models/base.py
 from app.core.database import Base
 from app.modules.users.models import User  # noqa
 from app.modules.clients.models import Client  # noqa

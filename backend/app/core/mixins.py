@@ -1,3 +1,4 @@
+# backend/app/core/mixins.py
 from sqlalchemy import Column, Integer, Boolean, ForeignKey
 from sqlalchemy.orm import relationship, declared_attr
 

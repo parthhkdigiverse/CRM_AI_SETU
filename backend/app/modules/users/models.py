@@ -1,3 +1,4 @@
+# backend/app/modules/users/models.py
 import enum
 from sqlalchemy import Column, Integer, String, Enum, Boolean, Date, Float, JSON
 from app.core.database import Base

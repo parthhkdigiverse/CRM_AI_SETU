@@ -1,3 +1,4 @@
+# backend/scripts/seed_data.py
 """
 seed_data.py — Run from the backend/ directory:
     python seed_data.py

@@ -1,3 +1,4 @@
+# backend/alembic/versions/add_meeting_transcript_columns.py
 """Add calendar_event_id, transcript, ai_summary to meeting_summaries
 
 Revision ID: add_meeting_transcript_columns

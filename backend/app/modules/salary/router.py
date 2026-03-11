@@ -1,3 +1,4 @@
+# backend/app/modules/salary/router.py
 from typing import List, Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session

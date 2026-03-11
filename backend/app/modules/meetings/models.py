@@ -1,3 +1,4 @@
+# backend/app/modules/meetings/models.py
 import enum
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Enum, JSON, Boolean
 from sqlalchemy.orm import relationship

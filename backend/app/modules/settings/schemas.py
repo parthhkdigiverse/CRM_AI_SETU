@@ -1,3 +1,4 @@
+# backend/app/modules/settings/schemas.py
 from pydantic import BaseModel
 from typing import Dict, Any
 

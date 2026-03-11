@@ -1,3 +1,4 @@
+# backend/app/modules/shops/models.py
 import enum
 from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, ForeignKey, Table, Boolean
 from sqlalchemy.orm import relationship

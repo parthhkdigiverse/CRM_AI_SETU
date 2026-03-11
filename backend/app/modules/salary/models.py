@@ -1,3 +1,4 @@
+# backend/app/modules/salary/models.py
 import enum
 from datetime import datetime, UTC
 

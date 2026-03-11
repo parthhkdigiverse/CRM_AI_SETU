@@ -1,3 +1,4 @@
+# backend/check_columns.py
 import sys
 sys.path.insert(0, 'e:/CRM AI SETU/backend')
 from sqlalchemy import text, inspect

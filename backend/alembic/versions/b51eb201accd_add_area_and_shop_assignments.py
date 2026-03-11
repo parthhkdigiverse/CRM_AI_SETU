@@ -1,3 +1,4 @@
+# backend/alembic/versions/b51eb201accd_add_area_and_shop_assignments.py
 """Add area and shop assignments
 
 Revision ID: b51eb201accd

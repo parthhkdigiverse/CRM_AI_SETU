@@ -1,3 +1,4 @@
+# backend/app/modules/meetings/schemas.py
 from typing import Optional
 from pydantic import BaseModel
 from datetime import datetime

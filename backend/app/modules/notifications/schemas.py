@@ -1,3 +1,4 @@
+# backend/app/modules/notifications/schemas.py
 from pydantic import BaseModel, ConfigDict, field_serializer
 from datetime import datetime, timezone
 from typing import Optional

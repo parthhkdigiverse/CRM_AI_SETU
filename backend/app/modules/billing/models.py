@@ -1,3 +1,4 @@
+# backend/app/modules/billing/models.py
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime

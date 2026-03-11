@@ -1,3 +1,4 @@
+// frontend/js/app.js
 // ─── Toast Helper ─────────────────────────────────────
 function showToast(msg, type = 'success') {
     let container = document.getElementById('toast-container');

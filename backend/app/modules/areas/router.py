@@ -1,3 +1,4 @@
+# backend/app/modules/areas/router.py
 from typing import List, Any
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
@@ -11,17 +12,17 @@ router = APIRouter()
 
 # Role Checkers
 admin_access = RoleChecker([UserRole.ADMIN])
-# staff_access = RoleChecker([
-#     UserRole.ADMIN, UserRole.SALES, UserRole.TELESALES,
-#     UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES
-# ])
-read_access = RoleChecker([
-    UserRole.ADMIN,
-    UserRole.SALES,
-    UserRole.TELESALES,
-    UserRole.PROJECT_MANAGER,
-    UserRole.PROJECT_MANAGER_AND_SALES
+staff_access = RoleChecker([
+    UserRole.ADMIN, UserRole.SALES, UserRole.TELESALES,
+    UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES
 ])
+# read_access = RoleChecker([
+#     UserRole.ADMIN,
+#     UserRole.SALES,
+#     UserRole.TELESALES,
+#     UserRole.PROJECT_MANAGER,
+#     UserRole.PROJECT_MANAGER_AND_SALES
+# ])
 
 @router.post("/", response_model=AreaRead, status_code=status.HTTP_201_CREATED)
 def create_area(
@@ -64,7 +65,7 @@ def read_areas(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: User = Depends(read_access) # Admin usually manages areas, others can read
+    current_user: User = Depends(staff_access) # Admin usually manages areas, others can read
 ) -> Any:
     service = AreaService(db)
     return service.get_areas(current_user, skip, limit)

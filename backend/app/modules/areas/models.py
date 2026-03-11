@@ -1,3 +1,4 @@
+# backend/app/modules/areas/models.py
 from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean, JSON, Table, DateTime
 from sqlalchemy.orm import relationship
 from app.core.database import Base

@@ -1,3 +1,4 @@
+# backend/alembic/versions/7e0c071448c9_add_name_column_to_users.py
 """Add name column to users
 
 Revision ID: 7e0c071448c9

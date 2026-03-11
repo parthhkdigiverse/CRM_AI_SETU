@@ -1,3 +1,4 @@
+# backend/app/modules/timetable/models.py
 from sqlalchemy import Column, Integer, String, Date, Time, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base

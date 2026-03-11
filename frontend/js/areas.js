@@ -1,3 +1,4 @@
+// frontend/js/areas.js
 window.map = null;
 window.marker = null;
 window.autocomplete = null;

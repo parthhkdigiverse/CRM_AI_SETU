@@ -1,3 +1,4 @@
+# backend/app/modules/notifications/models.py
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship

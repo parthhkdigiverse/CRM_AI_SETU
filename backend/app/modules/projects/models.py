@@ -1,3 +1,4 @@
+# backend/app/modules/projects/models.py
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum, Float
 
 from sqlalchemy.orm import relationship

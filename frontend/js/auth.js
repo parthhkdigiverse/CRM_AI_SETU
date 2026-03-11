@@ -1,3 +1,4 @@
+// frontend/js/auth.js
 // auth.js — shared across all pages
 let API = localStorage.getItem('api_base') || (window.location.origin + '/api');
 

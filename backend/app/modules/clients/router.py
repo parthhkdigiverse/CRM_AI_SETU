@@ -1,3 +1,4 @@
+# backend/app/modules/clients/router.py
 from typing import List, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
