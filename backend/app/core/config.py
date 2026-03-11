@@ -6,12 +6,25 @@ backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__
 env_file_path = os.path.join(backend_dir, ".env")
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "CRM AI SETU"
-    DATABASE_URL: str = "postgresql://user:password@localhost/dbname"
+    PROJECT_NAME: str = "SRM AI SETU"
+    DATABASE_URL: str = "sqlite:///./crm.db"
     SECRET_KEY: str = "your-secret-key-for-development"  # Change in production!
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     
-    model_config = SettingsConfigDict(env_file=env_file_path)
+    encryption_key: str = "default_placeholder_if_missing"
+    google_api_key: str = "default_placeholder_if_missing"
+
+    # SMTP Settings
+    SMTP_SERVER: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SENDER_EMAIL: str = ""
+
+    model_config = SettingsConfigDict(
+        env_file=env_file_path,
+        extra="allow"
+    )
 
 settings = Settings()

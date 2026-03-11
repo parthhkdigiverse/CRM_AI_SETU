@@ -7,6 +7,7 @@ class VisitBase(BaseModel):
     shop_id: int
     status: Optional[VisitStatus] = VisitStatus.SATISFIED
     remarks: Optional[str] = None
+    decline_remarks: Optional[str] = None
     visit_date: Optional[datetime] = None
 
 class VisitCreate(VisitBase):
@@ -15,11 +16,16 @@ class VisitCreate(VisitBase):
 class VisitUpdate(BaseModel):
     status: Optional[VisitStatus] = None
     remarks: Optional[str] = None
+    decline_remarks: Optional[str] = None
     visit_date: Optional[datetime] = None
 
 class VisitRead(VisitBase):
+
     id: int
     user_id: int
+    shop_name: Optional[str] = None
+    area_name: Optional[str] = None
+    user_name: Optional[str] = None
     photo_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime

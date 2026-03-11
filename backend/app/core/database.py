@@ -1,11 +1,41 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.engine import make_url
 from app.core.config import settings
 
-engine = create_engine(settings.DATABASE_URL)
+# Use make_url to properly handle encoded characters (like %20 for spaces)
+url = make_url(settings.DATABASE_URL)
+engine = create_engine(url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
+def init_db():
+    from sqlalchemy import inspect, text
+    Base.metadata.create_all(bind=engine)
+    
+    # Manual schema checks for existing tables
+    inspector = inspect(engine)
+    with engine.connect() as conn:
+        # 1. incentive_slabs
+        if inspector.has_table("incentive_slabs"):
+            cols = [c['name'] for c in inspector.get_columns('incentive_slabs')]
+            if 'min_units' not in cols:
+                conn.execute(text("ALTER TABLE incentive_slabs ADD COLUMN min_units INTEGER DEFAULT 1"))
+            if 'max_units' not in cols:
+                conn.execute(text("ALTER TABLE incentive_slabs ADD COLUMN max_units INTEGER DEFAULT 10"))
+            if 'incentive_per_unit' not in cols:
+                conn.execute(text("ALTER TABLE incentive_slabs ADD COLUMN incentive_per_unit FLOAT DEFAULT 0.0"))
+            if 'slab_bonus' not in cols:
+                conn.execute(text("ALTER TABLE incentive_slabs ADD COLUMN slab_bonus FLOAT DEFAULT 0.0"))
+        
+        # 2. incentive_slips
+        if inspector.has_table("incentive_slips"):
+            cols = [c['name'] for c in inspector.get_columns('incentive_slips')]
+            if 'amount_per_unit' not in cols:
+                conn.execute(text("ALTER TABLE incentive_slips ADD COLUMN amount_per_unit FLOAT DEFAULT 0.0"))
+        
+        conn.commit()
 
 def get_db():
     db = SessionLocal()

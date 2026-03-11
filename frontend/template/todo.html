@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>To-Do List — SRM AI SETU</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
+    <link rel="stylesheet" href="../css/components.css?v=1772780187">
+    <style>
+        body {
+            background-color: var(--bg-app);
+        }
+
+        .filter-bar {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px 24px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-input-group {
+            position: relative;
+            flex: 2;
+            min-width: 250px;
+        }
+
+        .search-input-group i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .search-input-group .form-control {
+            padding-left: 40px;
+            border-radius: 12px;
+            height: 45px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+        }
+
+        .search-input-group .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        .filter-select {
+            min-width: 140px;
+            border-radius: 10px;
+            height: 45px;
+            flex: 1;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .todo-table-container {
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .todo-row {
+            transition: all 0.2s;
+        }
+
+        .todo-row:hover {
+            background-color: #f8fafc;
+        }
+
+        .todo-row.completed {
+            opacity: 0.7;
+            background-color: #f1f5f9;
+        }
+
+        .priority-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .priority-high {
+            background-color: #ef4444;
+        }
+
+        .priority-medium {
+            background-color: #f59e0b;
+        }
+
+        .priority-low {
+            background-color: #10b981;
+        }
+
+        .avatar-circle-sm {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #eef2ff;
+            color: #4f46e5;
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px #e2e8f0;
+        }
+
+        /* PREMIUM MY TASKS BUTTON */
+        .btn-premium-action {
+            height: 45px;
+            border-radius: 12px;
+            padding: 0 24px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+            border: none;
+        }
+
+        .btn-my-tasks-new {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            color: #4f46e5;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-my-tasks-new:hover {
+            background: #fff;
+            color: #4338ca;
+            border-color: #c7d2fe;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn-my-tasks-new i {
+            font-size: 1.1rem;
+            transition: transform 0.3s;
+        }
+
+        .btn-my-tasks-new:hover i {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+
+<body class="bg-app">
+    <div class="d-flex">
+        <div id="sidebar"></div>
+        <div class="flex-grow-1">
+            <div class="page-content">
+                <div id="main-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Premium Unified Modal ──────────────────────── -->
+    <div class="modal fade" id="taskModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                <div class="modal-header border-0 bg-white p-4 pb-0 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-10 p-2 rounded-3 text-primary">
+                            <i class="bi bi-list-check fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0" id="modal-title-text">New Task</h5>
+                            <p class="text-muted small mb-0">Workspace Objective</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <!-- Mode Switcher -->
+                    <div class="type-pill-container mb-4" id="mode-switcher-container">
+                        <div class="type-pill active" id="pillTask" onclick="switchModalMode('TASK')">To-Do Task</div>
+                        <div class="type-pill" id="pillEvent" onclick="switchModalMode('EVENT')">Event / Meeting</div>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <input type="text" id="ev-title" class="form-control" placeholder="Title">
+                                <label>Task Title <span class="text-danger">*</span></label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select id="ev-user" class="form-select">
+                                    <option value="">— Unassigned —</option>
+                                </select>
+                                <label>Assign to</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 task-fields">
+                            <div class="form-floating">
+                                <select id="td-priority" class="form-select">
+                                    <option value="HIGH">High</option>
+                                    <option value="MEDIUM" selected>Medium</option>
+                                    <option value="LOW">Low</option>
+                                </select>
+                                <label>Priority</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="date" id="td-due" class="form-control">
+                                <label id="date-label">Due Date</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select id="td-client" class="form-select">
+                                    <option value="">— No Client —</option>
+                                </select>
+                                <label>Target Client</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="form-floating">
+                                <input type="time" id="ev-start" class="form-control">
+                                <label>Start</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-floating">
+                                <input type="time" id="ev-end" class="form-control">
+                                <label>End</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12 event-fields" style="display: none;">
+                            <div class="form-floating">
+                                <input type="text" id="ev-loc" class="form-control" placeholder="Location">
+                                <label>Location / Meeting Link</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12 task-fields">
+                            <div class="form-floating">
+                                <input type="text" id="td-related" class="form-control" placeholder="Related">
+                                <label>Reference (Lead/Project)</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea id="td-desc" class="form-control" style="height: 100px"
+                                    placeholder="Description"></textarea>
+                                <label>Task Details</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button class="btn btn-outline-danger border-0 me-auto" id="btn-delete-event" style="display: none;"
+                        onclick="deleteTask(editingTaskId)">
+                        <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                    <button class="btn btn-light text-muted fw-bold px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary px-5 py-2 fw-bold" id="save-task-btn" onclick="saveActivity()"
+                        style="border-radius: 12px;">Create Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Scripts ───────────────────────────────────────── -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/api.js?v=1772780187"></script>
+    <script src="../js/utils.js?v=1772780187"></script>
+    <script src="../js/ui_components.js?v=1772780187"></script>
+    <script src="../js/auth.js?v=2.3"></script>
+
+    <script>
+        requireAuth();
+        document.getElementById('sidebar').innerHTML = renderSidebar('todo');
+        injectTopHeader('To-Do List');
+        let tasks = [];
+        let filteredTasks = [];
+        let currentMode = 'TASK';
+        let editingTaskId = null;
+        let bsModal = null;
+
+        let filters = {
+            search: '',
+            status: 'ALL',
+            priority: 'ALL',
+            assignee: 'ALL'
+        };
+
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        const STATUS_DETAILS = {
+            'PENDING': { label: 'Pending', cls: 'badge-purple-light', icon: 'bi-hourglass' },
+            'IN_PROGRESS': { label: 'In Progress', cls: 'badge-blue-light', icon: 'bi-gear-fill' },
+            'COMPLETED': { label: 'Completed', cls: 'badge-green-light', icon: 'bi-check-circle-fill' },
+            'CANCELLED': { label: 'Cancelled', cls: 'badge-red-light', icon: 'bi-x-circle' }
+        };
+
+        async function loadTasks() {
+            try {
+                tasks = await ApiClient.getTodos();
+                applyFilters();
+            } catch (error) {
+                console.error("Failed to load tasks", error);
+            }
+        }
+
+        function statBadge(s) {
+            const data = STATUS_DETAILS[s] || { label: s || 'Active', cls: 'bg-secondary text-white', icon: 'bi-info-circle' };
+            return `<span class="status-pill ${data.cls} px-3"><i class="bi ${data.icon} me-1"></i>${data.label}</span>`;
+        }
+
+        function priorityBadge(p) {
+            const label = p ? p.charAt(0).toUpperCase() + p.slice(1).toLowerCase() : 'None';
+            const cls = p === 'HIGH' ? 'badge-red-light' : (p === 'MEDIUM' ? 'badge-yellow-light' : 'badge-green-light');
+            const dot = p === 'HIGH' ? 'priority-high' : (p === 'MEDIUM' ? 'priority-medium' : 'priority-low');
+            return `<span class="status-pill ${cls}"><span class="priority-dot ${dot}"></span>${label}</span>`;
+        }
+
+        function applyFilters() {
+            filteredTasks = tasks.filter(t => {
+                const matchesSearch = t.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+                    (t.related_entity && t.related_entity.toLowerCase().includes(filters.search.toLowerCase())) ||
+                    (t.assigned_to && t.assigned_to.toLowerCase().includes(filters.search.toLowerCase()));
+                const matchesStatus = filters.status === 'ALL' || t.status === filters.status;
+                const matchesPriority = filters.priority === 'ALL' || t.priority === filters.priority;
+                const matchesAssignee = filters.assignee === 'ALL' || t.assigned_to === filters.assignee;
+
+                return matchesSearch && matchesStatus && matchesPriority && matchesAssignee;
+            });
+
+            filteredTasks.sort((a, b) => {
+                if (a.status === 'COMPLETED' && b.status !== 'COMPLETED') return 1;
+                if (a.status !== 'COMPLETED' && b.status === 'COMPLETED') return -1;
+                return new Date(b.due_date || b.created_at || 0) - new Date(a.due_date || a.created_at || 0);
+            });
+
+            renderTodo();
+        }
+
+        function handleFilterChange(key, value) {
+            filters[key] = value;
+            applyFilters();
+        }
+
+        function filterMyTasks() {
+            const u = getUser();
+            if (!u) return;
+            const myId = u.email || u.name;
+            handleFilterChange('assignee', myId);
+            const sel = document.getElementById('filter-assignee');
+            if (sel) sel.value = myId;
+        }
+
+        function renderTableBody() {
+            const tbody = document.getElementById('todo-tbody');
+            if (!tbody) return;
+
+            if (filteredTasks.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-5"><i class="bi bi-search fs-1 opacity-25"></i><br>No matching objectives found</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filteredTasks.map(t => {
+                const assignee = t.assigned_to || 'Unassigned';
+                const initials = (assignee.split(' ').map(n => n[0]).join('') || '?').toUpperCase().slice(0, 2);
+                let timeStr = t.start_time ? `${t.start_time.slice(0, 5)}` : '';
+                if (t.end_time) timeStr += ` - ${t.end_time.slice(0, 5)}`;
+                const displayDate = t.due_date ? new Date(t.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'No date';
+                const isCompleted = t.status === 'COMPLETED';
+
+                return `
+                <tr class="todo-row ${isCompleted ? 'completed' : ''}">
+                    <td class="ps-4">
+                        <div class="fw-bold text-slate-900" style="font-size:0.95rem;">${t.title}</div>
+                        <div class="text-muted smaller mt-1"><i class="bi bi-link-45deg me-1"></i>${t.related_entity || 'Global Objective'}</div>
+                    </td>
+                    <td>${priorityBadge(t.priority)}</td>
+                    <td>${statBadge(t.status)}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="avatar-circle-sm">${initials}</div>
+                            <span class="small fw-medium">${assignee}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="small fw-bold">${displayDate}</div>
+                        <div class="smaller text-muted mt-1"><i class="bi bi-clock me-1"></i>${timeStr || 'Anytime'}</div>
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="dropdown">
+                            <button class="btn btn-ghost btn-sm rounded-3 px-2" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-2" style="border-radius:14px; min-width: 170px;">
+                                <li><a class="dropdown-item rounded-3 py-2 small fw-bold" href="javascript:void(0)" onclick="openEditModal('${t.id}')"><i class="bi bi-pencil-square me-2 text-primary"></i> Edit Details</a></li>
+                                ${!isCompleted ? `<li><a class="dropdown-item rounded-3 py-2 small fw-bold" href="javascript:void(0)" onclick="changeStatus('${t.id}', 'IN_PROGRESS')"><i class="bi bi-hourglass-split me-2 text-info"></i> Mark In Progress</a></li>` : ''}
+                                ${!isCompleted ? `<li><a class="dropdown-item rounded-3 py-2 small fw-bold" href="javascript:void(0)" onclick="changeStatus('${t.id}', 'COMPLETED')"><i class="bi bi-check2-all me-2 text-success"></i> Mark Done</a></li>` : ''}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item rounded-3 py-2 small fw-bold text-danger" href="javascript:void(0)" onclick="deleteTask('${t.id}')"><i class="bi bi-trash3 me-2"></i> Delete Objective</a></li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderTodo() {
+            const total = tasks.length;
+            const highPri = tasks.filter(t => t.priority === 'HIGH').length;
+            const completed = tasks.filter(t => t.status === 'COMPLETED').length;
+            const pending = total - completed;
+
+            const container = document.getElementById('main-content');
+            if (container.innerHTML === '') {
+                container.innerHTML = `
+                <div class="container-fluid py-4 px-lg-5">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="page-section-title">TO-DO List</h2>
+                            <p class="text-muted mb-0">Track and manage SRM workspace objectives with precision</p>
+                        </div>
+                        <div class="d-flex gap-3">
+                            <button class="btn-premium-action btn-my-tasks-new" onclick="filterMyTasks()">
+                                <i class="bi bi-person-circle"></i> View My Tasks
+                            </button>
+                            <button class="btn-premium-action btn-primary text-white" onclick="openModal()" style="background: var(--primary);">
+                                <i class="bi bi-plus-circle-fill"></i> New Activity
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="stats-row" class="row g-4 mb-4"></div>
+
+                    <div class="filter-bar shadow-sm border-0">
+                        <div class="search-input-group">
+                            <i class="bi bi-search"></i>
+                            <input type="text" class="form-control shadow-none border-light-subtle" placeholder="Search objectives, projects, or operators..." oninput="handleFilterChange('search', this.value)">
+                        </div>
+                        <div class="d-flex gap-2 flex-grow-1">
+                            <select class="form-select filter-select shadow-none border-light-subtle" onchange="handleFilterChange('status', this.value)">
+                                <option value="ALL">Status</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="IN_PROGRESS">In Progress</option>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="CANCELLED">Cancelled</option>
+                            </select>
+                            <select class="form-select filter-select shadow-none border-light-subtle" onchange="handleFilterChange('priority', this.value)">
+                                <option value="ALL">Priority</option>
+                                <option value="HIGH">High</option>
+                                <option value="MEDIUM">Medium</option>
+                                <option value="LOW">Low</option>
+                            </select>
+                            <select id="filter-assignee" class="form-select filter-select shadow-none border-light-subtle" onchange="handleFilterChange('assignee', this.value)">
+                                <option value="ALL">All Operators</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="todo-table-container border-0 shadow-sm">
+                        <div class="table-responsive">
+                            <table class="table table-premium mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4">Task</th>
+                                        <th>Priority</th>
+                                        <th>Status</th>
+                                        <th>Operator</th>
+                                        <th>Time</th>
+                                        <th class="text-end pe-4">Control</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="todo-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>`;
+
+                ApiClient.getEmployees().then(emps => {
+                    const sel = document.getElementById('filter-assignee');
+                    if (sel) {
+                        emps.forEach(e => {
+                            const opt = document.createElement('option');
+                            const uniqueVal = e.email || e.name;
+                            const role = (e.role || '').replace(/_/g, ' ');
+                            opt.value = uniqueVal;
+                            opt.textContent = `${e.name || e.email} (${role})`;
+                            sel.appendChild(opt);
+                        });
+                    }
+                });
+            }
+
+            document.getElementById('stats-row').innerHTML = `
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-content-left">
+                            <div class="stat-label">Total Volume</div>
+                            <div class="stat-value">${total}</div>
+                        </div>
+                        <div class="stat-icon-wrapper icon-purple shadow-sm"><i class="bi bi-stack"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-content-left">
+                            <div class="stat-label">Critical Alerts</div>
+                            <div class="stat-value text-danger">${highPri}</div>
+                        </div>
+                        <div class="stat-icon-wrapper icon-red shadow-sm"><i class="bi bi-lightning-charge-fill"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-content-left">
+                            <div class="stat-label">Active Flow</div>
+                            <div class="stat-value text-primary">${pending}</div>
+                        </div>
+                        <div class="stat-icon-wrapper icon-blue shadow-sm"><i class="bi bi-cpu-fill"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-content-left">
+                            <div class="stat-label">Objective Done</div>
+                            <div class="stat-value" style="color:var(--success) !important;">${completed}</div>
+                        </div>
+                        <div class="stat-icon-wrapper shadow-sm" style="background:#ecfdf5; color:var(--success);"><i class="bi bi-check-all"></i></div>
+                    </div>
+                </div>`;
+
+            renderTableBody();
+        }
+
+        // ── Modal Logic ──────────────────────────────────────────
+        function openModal() {
+            editingTaskId = null;
+            if (!bsModal) bsModal = new bootstrap.Modal(document.getElementById('taskModal'));
+
+            // Reset fields
+            ['ev-title', 'td-related', 'td-desc', 'ev-loc', 'ev-start', 'ev-end', 'ev-user'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.value = '';
+            });
+            document.getElementById('td-priority').value = 'MEDIUM';
+            document.getElementById('td-due').value = todayStr;
+
+            document.getElementById('modal-title-text').innerText = 'New Task';
+            document.getElementById('btn-delete-event').style.display = 'none';
+            document.getElementById('save-task-btn').innerText = 'Create Task';
+            document.getElementById('mode-switcher-container').style.display = 'flex';
+            switchModalMode('TASK');
+            bsModal.show();
+        }
+
+        function openEditModal(taskId) {
+            console.log("CRITICAL: openEditModal triggered with taskId:", taskId);
+            const task = tasks.find(t => String(t.id) === String(taskId));
+            if (!task) {
+                console.error("DEBUG: Task not found in the current list", taskId);
+                return;
+            }
+
+            editingTaskId = taskId;
+            if (!bsModal) bsModal = new bootstrap.Modal(document.getElementById('taskModal'));
+
+            document.getElementById('ev-title').value = task.title || '';
+            document.getElementById('ev-user').value = task.assigned_to || '';
+            document.getElementById('td-priority').value = task.priority || 'MEDIUM';
+            document.getElementById('td-due').value = task.due_date ? task.due_date.split('T')[0] : '';
+            document.getElementById('ev-start').value = task.start_time ? task.start_time.slice(0, 5) : '';
+            document.getElementById('ev-end').value = task.end_time ? task.end_time.slice(0, 5) : '';
+            document.getElementById('td-related').value = task.related_entity || '';
+            document.getElementById('td-desc').value = task.description || '';
+
+            document.getElementById('modal-title-text').innerText = 'Edit Objective Details';
+            document.getElementById('btn-delete-event').style.display = 'inline-block';
+            document.getElementById('save-task-btn').innerText = 'Update Changes';
+            document.getElementById('mode-switcher-container').style.display = 'none';
+
+            switchModalMode('TASK');
+            bsModal.show();
+        }
+
+        function switchModalMode(mode) {
+            currentMode = mode;
+            const isTask = mode === 'TASK';
+            document.getElementById('pillTask').classList.toggle('active', isTask);
+            document.getElementById('pillEvent').classList.toggle('active', !isTask);
+            document.querySelectorAll('.task-fields').forEach(el => el.style.display = isTask ? 'block' : 'none');
+            document.querySelectorAll('.event-fields').forEach(el => el.style.display = isTask ? 'none' : 'block');
+            document.getElementById('date-label').innerText = isTask ? 'Due Date' : 'Event Date';
+        }
+
+        async function saveActivity() {
+            const title = document.getElementById('ev-title').value.trim();
+            if (!title) {
+                showToast('Objective title is required', 'error');
+                return;
+            }
+
+            const commonData = {
+                title: title,
+                assigned_to: document.getElementById('ev-user').value || null,
+                due_date: document.getElementById('td-due').value ? new Date(document.getElementById('td-due').value).toISOString() : null,
+                start_time: document.getElementById('ev-start').value || null,
+                end_time: document.getElementById('ev-end').value || null,
+                description: document.getElementById('td-desc').value.trim() || null
+            };
+
+            try {
+                if (currentMode === 'EVENT') {
+                    if (!document.getElementById('td-due').value || !commonData.start_time || !commonData.end_time) {
+                        showToast('Date and both times are required for Meetings', 'error');
+                        return;
+                    }
+                    await ApiClient.createTimetableEvent({
+                        ...commonData,
+                        date: document.getElementById('td-due').value,
+                        assignee_name: commonData.assigned_to,
+                        location: document.getElementById('ev-loc').value.trim() || ''
+                    });
+                } else {
+                    const payload = {
+                        ...commonData,
+                        priority: document.getElementById('td-priority').value,
+                        related_entity: document.getElementById('td-related').value.trim() || null,
+                        client_id: document.getElementById('td-client').value || null
+                    };
+
+                    if (editingTaskId) {
+                        await ApiClient.updateTodo(editingTaskId, payload);
+                        showToast('Objective updated updated successfully');
+                    } else {
+                        await ApiClient.createTodo(payload);
+                        showToast('New activity logic deployed');
+                    }
+                }
+                bsModal.hide();
+                loadTasks();
+            } catch (error) {
+                console.error("Save error", error);
+                showToast(error?.data?.detail || "Operation failed", "error");
+            }
+        }
+
+        async function deleteTask(id) {
+            if (!confirm('Are you sure you want to delete this activity?')) return;
+            try {
+                await ApiClient.deleteTodo(id);
+                showToast('Activity purged from SRM');
+                loadTasks();
+                if (bsModal) bsModal.hide();
+            } catch (e) {
+                showToast("Failed to delete", "error");
+            }
+        }
+
+        async function changeStatus(id, newStat) {
+            try {
+                await ApiClient.updateTodo(id, { status: newStat });
+                showToast(`Status updated to ${newStat.toLowerCase()}`);
+                loadTasks();
+            } catch (e) {
+                showToast("Failed to update status", "error");
+            }
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast shadow-lg p-3 ${type}`;
+            toast.style.cssText = 'position:fixed;bottom:32px;right:32px;z-index:99999;border-radius:12px;background:#fff;';
+            toast.innerHTML = `
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi ${type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-danger'} fs-5"></i>
+                    <span class="fw-bold small text-dark">${msg}</span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.6s';
+                setTimeout(() => toast.remove(), 600);
+            }, 3500);
+        }
+
+        // Init
+        ApiClient.getEmployees().then(emps => {
+            const sel = document.getElementById('ev-user');
+            if (sel) {
+                sel.innerHTML = '<option value="">— Unassigned —</option>' +
+                    emps.map(e => {
+                        const uniqueVal = e.email || e.name;
+                        const role = (e.role || '').replace(/_/g, ' ');
+                        return `<option value="${uniqueVal}">${e.name || e.email} (${role})</option>`;
+                    }).join('');
+            }
+        });
+
+        ApiClient.getClients().then(clients => {
+            const sel = document.getElementById('td-client');
+            if (sel) {
+                sel.innerHTML = '<option value="">— No Client —</option>' +
+                    clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            }
+        });
+
+        loadTasks();
+    </script>
+</body>
+
+</html>

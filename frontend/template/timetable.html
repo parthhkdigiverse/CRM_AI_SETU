@@ -1,0 +1,2370 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Timetable — SRM AI SETU</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
+    <link rel="stylesheet" href="../css/components.css?v=1772780187">
+    <style>
+        body {
+            background: #f8fafc;
+            overflow: auto !important;
+        }
+
+        /* ── Toolbar ─────────────────────────────────────────── */
+        .cal-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .cal-toolbar .nav-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: .85rem;
+            color: #475569;
+        }
+
+        .cal-toolbar .nav-btn:hover {
+            background: #f1f5f9;
+        }
+
+        .nav-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+            min-width: 180px;
+        }
+
+        .view-pill {
+            display: inline-flex;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .view-pill button {
+            border: none;
+            background: #fff;
+            padding: 4px 14px;
+            font-size: .8rem;
+            color: #64748b;
+            cursor: pointer;
+        }
+
+        .view-pill button.active {
+            background: #4f46e5;
+            color: #fff;
+        }
+
+        /* ── Calendar container ──────────────────────────────── */
+        .cal-wrapper {
+            display: flex;
+            min-height: calc(100vh - 200px);
+            background: #fff;
+            border-top: 1px solid #e2e8f0;
+            border-radius: 0 0 16px 16px;
+            overflow: hidden;
+        }
+
+        .cal-sidebar {
+            width: 256px;
+            flex-shrink: 0;
+            padding: 16px;
+            overflow-y: auto;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .cal-root {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 0;
+            height: 100%;
+            background: #fff;
+        }
+
+        /* ── Sidebar Checks ──────────────────────────────────── */
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .sidebar-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: .85rem;
+            font-weight: 500;
+            color: #3c4043;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .sidebar-title:hover {
+            color: #202124;
+        }
+
+        .check-item {
+            display: flex;
+            align-items: center;
+            font-size: .85rem;
+            color: #3c4043;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .accent-checkbox {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 2px solid var(--c);
+            background: transparent;
+            margin: 0;
+            margin-right: 12px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .accent-checkbox:checked {
+            background: var(--c);
+        }
+
+        .accent-checkbox:checked::after {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 1px;
+            width: 5px;
+            height: 9px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        /* ── Mini Calendar ───────────────────────────────────── */
+        .mini-grid {
+            padding: 0 4px;
+        }
+
+        .mini-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .mini-row.head .mc {
+            color: #70757a;
+            font-weight: 500;
+            font-size: .65rem;
+            pointer-events: none;
+            background: transparent !important;
+        }
+
+        .mc {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .75rem;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #3c4043;
+            transition: background .15s;
+            font-weight: 500;
+        }
+
+        .mc:hover {
+            background: #f1f3f4;
+        }
+
+        .mc.off {
+            color: #70757a;
+        }
+
+        .mc.s {
+            background: #e8eafd;
+            color: #1a73e8;
+        }
+
+        .mc.t {
+            background: #1a73e8;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .mc.t:hover {
+            background: #1765cc;
+        }
+
+        /* Day header row */
+        .cal-day-header-row {
+            display: flex;
+            border-bottom: 2px solid #e2e8f0;
+            flex-shrink: 0;
+            background: #fff;
+        }
+
+        .cal-gutter-head {
+            width: 56px;
+            flex-shrink: 0;
+        }
+
+        .cal-dh {
+            flex: 1;
+            text-align: center;
+            padding: 6px 0;
+            border-left: 1px solid #f1f5f9;
+        }
+
+        .cal-dh .dn {
+            font-size: .68rem;
+            letter-spacing: .06em;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .cal-dh .dd {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #334155;
+            line-height: 1.3;
+        }
+
+        .cal-dh.today .dn {
+            color: #4f46e5;
+        }
+
+        .cal-dh .today-dot {
+            background: #4f46e5;
+            color: #fff;
+            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        /* Scrollable time grid */
+        .cal-scroll {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .cal-body-inner {
+            display: flex;
+            position: relative;
+        }
+
+        /* Time gutter */
+        .cal-gutter {
+            width: 56px;
+            flex-shrink: 0;
+            position: sticky;
+            left: 0;
+            background: #fff;
+            z-index: 4;
+        }
+
+        .cal-hour-lbl {
+            height: 60px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+            padding: 3px 8px 0 0;
+            font-size: .68rem;
+            color: #94a3b8;
+            box-sizing: border-box;
+        }
+
+        /* Day columns */
+        .cal-cols {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+        }
+
+        .cal-col {
+            position: relative;
+            border-left: 1px solid #f1f5f9;
+            box-sizing: border-box;
+        }
+
+        .cal-col.today-col {
+            background: rgba(79, 70, 229, .03);
+        }
+
+        .cal-hline {
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-top: 1px solid #e2e8f0;
+            pointer-events: none;
+        }
+
+        .cal-hline-half {
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-top: 1px dashed #f1f5f9;
+            pointer-events: none;
+        }
+
+        /* Events */
+        .cal-evt {
+            position: absolute;
+            left: 2px;
+            right: 2px;
+            border-radius: 6px;
+            padding: 4px 6px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: filter .15s;
+            z-index: 2;
+            box-sizing: border-box;
+            max-height: 64px;
+        }
+
+        .cal-evt:hover {
+            filter: brightness(.93);
+        }
+
+        .evt-title {
+            font-size: .72rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .evt-time {
+            font-size: .65rem;
+            opacity: .8;
+            margin-top: 1px;
+        }
+
+        .evt-user {
+            position: absolute;
+            bottom: 3px;
+            right: 5px;
+            font-size: .6rem;
+            font-weight: 700;
+            opacity: .65;
+        }
+
+        /* Current time indicator */
+        .now-dot {
+            position: absolute;
+            left: -5px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ef4444;
+            transform: translateY(-50%);
+            z-index: 6;
+        }
+
+        .now-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-top: 2px solid #ef4444;
+            transform: translateY(-50%);
+            z-index: 5;
+        }
+
+        /* ── Modal styling ───────────────────────────────────── */
+        /* Modal styling */
+        .modal-content {
+            border-radius: 16px;
+            border: none;
+        }
+
+        .modal-header {
+            border-bottom: none;
+            padding: 24px 24px 8px;
+        }
+
+        .modal-body {
+            padding: 8px 24px 16px;
+        }
+
+        .modal-footer {
+            border-top: none;
+            padding: 0 24px 20px;
+        }
+
+        /* Complete circle button on each event */
+        .evt-complete-btn {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            background: transparent;
+            cursor: pointer;
+            flex-shrink: 0;
+            z-index: 3;
+            transition: background .15s, transform .15s;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .evt-complete-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .evt-complete-btn.done {
+            background: currentColor;
+        }
+
+        .evt-complete-btn.done::after {
+            content: '';
+            display: block;
+            width: 6px;
+            height: 4px;
+            border-left: 1.5px solid #fff;
+            border-bottom: 1.5px solid #fff;
+            transform: rotate(-45deg) translateY(-1px);
+        }
+
+        /* Completed event: strikethrough + faded */
+        .cal-evt.evt-done .evt-inner-title {
+            text-decoration: line-through;
+            opacity: .5;
+        }
+
+        .cal-evt.evt-done {
+            opacity: .6;
+        }
+
+        /* ── Month view ─────────── */
+        .month-header .cal-dh {
+            padding: 8px 0;
+            border: none;
+            border-right: 1px solid #e2e8f0;
+        }
+
+        .month-header .cal-dh:last-child {
+            border-right: none;
+        }
+
+        .month-grid {
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+            border-left: 1px solid #e2e8f0;
+        }
+
+        .month-row {
+            display: flex;
+            flex: 1;
+            min-height: 120px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .month-cell {
+            flex: 1;
+            border-right: 1px solid #e2e8f0;
+            padding: 4px;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: background .1s;
+        }
+
+        .month-cell:hover {
+            background: #f8fafc;
+        }
+
+        .month-cell.off-month {
+            background: #fafafa;
+            opacity: .7;
+        }
+
+        .month-cell.today-cell {
+            background: rgba(79, 70, 229, .02);
+        }
+
+        .month-cell-num {
+            font-size: .85rem;
+            font-weight: 500;
+            color: #475569;
+            padding: 4px;
+            text-align: center;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            line-height: 18px;
+            margin: 0 auto 4px auto;
+        }
+
+        .month-cell-num.today-num {
+            background: #4f46e5;
+            color: #fff;
+        }
+
+        .month-cell-evts {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .month-evt {
+            font-size: .7rem;
+            padding: 2px 4px;
+            border-radius: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+
+        .month-evt:hover {
+            filter: brightness(.9);
+        }
+
+        .month-evt.evt-done {
+            text-decoration: line-through;
+            opacity: .6;
+        }
+
+        .month-evt-more {
+            font-size: .65rem;
+            color: #64748b;
+            text-align: center;
+            margin-top: 2px;
+            font-weight: 600;
+        }
+
+        /* ── Legend pill ─────────────────────────────────────── */
+        .leg-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ── Switch to Tasks view ─────────────────────────────── */
+        .task-toggle-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #5f6368;
+            font-size: 1rem;
+            position: relative;
+            transition: background .15s, color .15s;
+        }
+
+        .task-toggle-btn:hover {
+            background: #f1f5f9;
+            color: #4f46e5;
+        }
+
+        .task-toggle-btn.active {
+            background: #e8eafd;
+            color: #4f46e5;
+            border-color: #c7d2fe;
+        }
+
+        .task-toggle-btn .tt-tip {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            background: #3c4043;
+            color: #fff;
+            font-size: .72rem;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s;
+            z-index: 20;
+        }
+
+        .task-toggle-btn:hover .tt-tip {
+            opacity: 1;
+        }
+
+        /* Task list view */
+        .task-view-wrap {
+            padding: 24px 32px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .task-date-group {
+            margin-bottom: 28px;
+        }
+
+        .task-date-lbl {
+            font-size: .78rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: 10px;
+        }
+
+        .task-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+            margin-bottom: 8px;
+            border-left: 4px solid;
+            transition: box-shadow .15s;
+        }
+
+        .task-row:hover {
+            box-shadow: 0 3px 10px rgba(0, 0, 0, .1);
+        }
+
+        .task-row.done-row {
+            opacity: .55;
+        }
+
+        .task-row .t-circle {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s, transform .15s;
+        }
+
+        .task-row .t-circle:hover {
+            transform: scale(1.15);
+        }
+
+        .task-row .t-circle.t-done {
+            background: currentColor;
+        }
+
+        .task-row .t-circle.t-done::after {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 5px;
+            border-left: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+            transform: rotate(-45deg) translateY(-1px);
+        }
+
+        .task-row .t-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .task-row .t-title {
+            font-weight: 600;
+            font-size: .88rem;
+            color: #1e293b;
+        }
+
+        .task-row.done-row .t-title {
+            text-decoration: line-through;
+            color: #94a3b8;
+        }
+
+        .task-row .t-meta {
+            font-size: .75rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .task-filter-pill {
+            display: inline-flex;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .task-filter-pill button {
+            border: none;
+            background: #fff;
+            padding: 5px 16px;
+            font-size: .8rem;
+            color: #64748b;
+            cursor: pointer;
+        }
+
+        .task-filter-pill button.active {
+            background: #4f46e5;
+            color: #fff;
+        }
+
+        /* Premium Modal Overhaul */
+        #scheduleModal .modal-content {
+            border-radius: 24px;
+            border: none;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15) !important;
+        }
+
+        #scheduleModal .modal-header {
+            padding: 24px 32px;
+            background: #fff;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        #scheduleModal .modal-body {
+            padding: 32px;
+        }
+
+        #scheduleModal .modal-footer {
+            padding: 20px 32px;
+            background: #f8fafc;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .form-floating>.form-control,
+        .form-floating>.form-select {
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.95rem;
+            color: #1e293b;
+        }
+
+        .form-floating>.form-control:focus,
+        .form-floating>.form-select:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-floating>label {
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .type-toggle-premium {
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 14px;
+            display: flex;
+            border: 1px solid #e2e8f0;
+        }
+
+        .type-toggle-premium .btn-check+.btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .type-toggle-premium .btn-check:checked+.btn {
+            background: #fff;
+            color: #4f46e5;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ─── App Layout ───────────────────────────────────── -->
+    <div class="d-flex" style="min-height:100vh;">
+        <div id="sidebar" style="flex-shrink:0;"></div>
+        <div class="flex-grow-1 d-flex flex-column">
+            <div class="page-content" style="display:flex; flex-direction:column; flex:1;">
+                <div id="main-content" class="card border-0 shadow-sm"
+                    style="flex:1; display:flex; flex-direction:column; border-radius:16px; overflow:hidden;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Premium Unified Schedule/Task Modal ──────────────────────── -->
+    <div class="modal fade" id="scheduleModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:620px;">
+            <div class="modal-content">
+                <div class="modal-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-10 p-2 rounded-3 text-primary">
+                            <i class="bi bi-calendar-plus-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0" id="modal-title-text">Create Activity</h5>
+                            <p class="text-muted small mb-0">Plan your meetings or track your tasks</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Premium Type Toggle -->
+                    <div class="type-toggle-premium mb-4">
+                        <input type="radio" class="btn-check" name="activityType" id="typeEvent" value="EVENT" checked
+                            onchange="toggleModalType()">
+                        <label class="btn" for="typeEvent">Event / Meeting</label>
+
+                        <input type="radio" class="btn-check" name="activityType" id="typeTask" value="TASK"
+                            onchange="toggleModalType()">
+                        <label class="btn" for="typeTask">To-Do Task</label>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Common Header Field -->
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <input type="text" id="ev-title" class="form-control" placeholder="Title">
+                                <label><i class="bi bi-type me-2"></i>Title <span class="text-danger">*</span></label>
+                            </div>
+                        </div>
+
+                        <!-- Assignee & Priority -->
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select id="ev-user" class="form-select">
+                                    <option value="">— Loading... —</option>
+                                </select>
+                                <label><i class="bi bi-person me-2"></i>Assignee</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 task-fields" style="display: none;">
+                            <div class="form-floating">
+                                <select id="td-priority" class="form-select">
+                                    <option value="LOW">Low</option>
+                                    <option value="MEDIUM" selected>Medium</option>
+                                    <option value="HIGH">High</option>
+                                </select>
+                                <label><i class="bi bi-flag me-2"></i>Priority</label>
+                            </div>
+                        </div>
+
+                        <!-- Date group -->
+                        <div class="col-md-6 event-fields">
+                            <div class="form-floating">
+                                <input type="date" id="ev-date" class="form-control">
+                                <label id="ev-date-label"><i class="bi bi-calendar-event me-2"></i>Event Date</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 task-fields" style="display: none;">
+                            <div class="form-floating">
+                                <input type="date" id="td-due" class="form-control">
+                                <label><i class="bi bi-calendar-check me-2"></i>Task Date</label>
+                            </div>
+                        </div>
+
+                        <!-- Times group (Shared layout but different IDs) -->
+                        <div class="col-md-6 event-fields">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="form-floating">
+                                        <input type="time" id="ev-start" class="form-control">
+                                        <label id="ev-start-label">Start Time</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-floating">
+                                        <input type="time" id="ev-end" class="form-control">
+                                        <label id="ev-end-label">End Time</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 task-fields" style="display: none;">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="form-floating">
+                                        <input type="time" id="td-start" class="form-control">
+                                        <label>Start (Opt)</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-floating">
+                                        <input type="time" id="td-end" class="form-control">
+                                        <label>End (Opt)</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Extra info -->
+                        <div class="col-12 event-fields">
+                            <div class="form-floating">
+                                <input type="text" id="ev-loc" class="form-control" placeholder="Location">
+                                <label><i class="bi bi-geo-alt me-2"></i>Location / Notes</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12 task-fields" style="display: none;">
+                            <div class="form-floating">
+                                <input type="text" id="td-related" class="form-control" placeholder="Related">
+                                <label><i class="bi bi-link-45deg me-2"></i>Related Entity (Project/Client)</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12 task-fields" style="display: none;">
+                            <div class="form-floating">
+                                <textarea id="td-desc" class="form-control" style="height: 100px"
+                                    placeholder="Description"></textarea>
+                                <label><i class="bi bi-card-text me-2"></i>Description</label>
+                            </div>
+                        </div>
+
+                        <!-- Client Selection -->
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <select id="ev-client" class="form-select">
+                                    <option value="">— No Client —</option>
+                                </select>
+                                <label><i class="bi bi-building me-2"></i>Link to Client (Auto-syncs Meeting)</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4 pe-4 ps-4">
+                    <button class="btn btn-outline-danger border-0 me-auto" id="btn-delete-event" style="display: none;"
+                        onclick="deleteEvent()">
+                        <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                    <button class="btn btn-link text-muted text-decoration-none fw-semibold"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary px-5 py-2 fw-bold" style="border-radius: 12px;" id="btn-save-event"
+                        onclick="saveActivity()">
+                        <i class="bi bi-check-lg me-1"></i>Save Activity
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Scripts ───────────────────────────────────────── -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/api.js?v=1772780187"></script>
+    <script src="../js/utils.js?v=1772780187"></script>
+    <script src="../js/ui_components.js?v=1772780187"></script>
+    <script src="../js/auth.js?v=1772780187"></script>
+
+    <script>
+        // ── Auth & Sidebar ──────────────────────────────────────
+        requireAuth();
+        document.getElementById('sidebar').innerHTML = renderSidebar('timetable');
+        injectTopHeader('Timetable');
+
+        // ── Constants ───────────────────────────────────────────
+        const HOUR_H = 60;   // px per hour
+        const START_HR = 7;    // 7 AM
+        const END_HR = 21;   // 9 PM
+        const DAY_NAMES = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+        // ── User colour palette ─────────────────────────────────
+        let USERS = {};
+        let ALL_USERS_LIST = [];
+        let selectedCalendars = new Set();
+        let currentUser = null;
+
+        const PALETTE = [
+            { color: '#4f46e5', bg: 'rgba(79,70,229,.13)' },
+            { color: '#0891b2', bg: 'rgba(8,145,178,.13)' },
+            { color: '#16a34a', bg: 'rgba(22,163,74,.13)' },
+            { color: '#dc2626', bg: 'rgba(220,38,38,.13)' },
+            { color: '#eab308', bg: 'rgba(234,179,8,.13)' },
+            { color: '#d946ef', bg: 'rgba(217,70,239,.13)' },
+            { color: '#f97316', bg: 'rgba(249,115,22,.13)' },
+            { color: '#8b5cf6', bg: 'rgba(139,92,246,.13)' }
+        ];
+
+        function getInitials(name) {
+            if (!name) return '?';
+            const parts = name.trim().split(' ');
+            if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return name.substring(0, 2).toUpperCase();
+        }
+
+        function saveSelectedCalendars() {
+            localStorage.setItem('timetable_selected_cals', JSON.stringify(Array.from(selectedCalendars)));
+        }
+
+        function toggleCalendar(identifier, isChecked) {
+            if (isChecked) {
+                selectedCalendars.add(identifier);
+            } else {
+                selectedCalendars.delete(identifier);
+            }
+            saveSelectedCalendars();
+
+            const scrollY = window.scrollY;
+            const ms = document.getElementById('main-content');
+            const mainScroll = ms ? ms.scrollTop : 0;
+            const sbDOM = document.querySelector('.cal-sidebar');
+            const sbScroll = sbDOM ? sbDOM.scrollTop : 0;
+            if (ms && ms.offsetHeight > 0) ms.style.minHeight = ms.offsetHeight + 'px';
+
+            renderCalendarLocal();
+
+            requestAnimationFrame(() => {
+                window.scrollTo(0, scrollY);
+                const newMs = document.getElementById('main-content');
+                if (newMs) {
+                    newMs.scrollTop = mainScroll;
+                    newMs.style.minHeight = '';
+                }
+                const newSb = document.querySelector('.cal-sidebar');
+                if (newSb) newSb.scrollTop = sbScroll;
+            });
+        }
+
+        // ── Navigation state ─────────────────────────────────────
+        let weekStart = getWeekStart(new Date());
+        let selectedDate = new Date();
+        let currentView = 'week';
+        let showTaskView = false;          // NEW: task list mode toggle
+        let taskFilter = 'all';          // 'all' | 'pending' | 'done' | 'my' | 'employees'
+        let bsModal;
+        const completedIds = new Set();
+        let miniMonthOffset = 0;
+        let isMyCalsOpen = true;         // Track accordion state to prevent closing on re-render
+        let isOtherCalsOpen = false;
+
+        // ── Status colour palette ───────────────────────────────
+        const STATUS_COLORS = {
+            'PENDING': { color: '#007bff', bg: 'rgba(0,123,255,0.13)' },
+            'SCHEDULED': { color: '#007bff', bg: 'rgba(0,123,255,0.13)' },
+            'COMPLETED': { color: '#28a745', bg: 'rgba(40,167,69,0.13)' },
+            'DONE': { color: '#28a745', bg: 'rgba(40,167,69,0.13)' },
+            'CANCELLED': { color: '#dc3545', bg: 'rgba(220,53,69,0.13)' },
+            'CANCEL': { color: '#dc3545', bg: 'rgba(220,53,69,0.13)' },
+            'RESCHEDULE': { color: '#17a2b8', bg: 'rgba(23,162,184,0.13)' }
+        };
+
+        function getEventStyles(ev) {
+            const status = (ev.status || '').toUpperCase();
+
+            // Generate basic styles for unknown users dynamically
+            const defaultInitials = (ev.user || '?').substring(0, 2).toUpperCase();
+            const baseUser = USERS[ev.user] || { color: '#6b7280', bg: 'rgba(107,114,128,0.13)', initials: defaultInitials };
+
+            // Priority for Meetings or if status is explicitly actionable (Done/Cancelled)
+            if (ev.event_type === 'MEETING' || status === 'COMPLETED' || status === 'CANCELLED' || status === 'DONE' || status === 'CANCEL') {
+                if (STATUS_COLORS[status]) {
+                    return {
+                        ...STATUS_COLORS[status],
+                        initials: baseUser.initials
+                    };
+                }
+            }
+            return baseUser;
+        }
+
+        // ── Computed week events ─────────────────────────────────
+        let events = [];
+
+        // ── Helpers ─────────────────────────────────────────────
+        function getWeekStart(d) {
+            const dt = new Date(d);
+            dt.setDate(dt.getDate() - dt.getDay());
+            dt.setHours(0, 0, 0, 0);
+            return dt;
+        }
+        function addDays(d, n) {
+            const r = new Date(d); r.setDate(r.getDate() + n); return r;
+        }
+        function dStr(d) {
+            const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function fmtH(h, m) {
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const h12 = h % 12 || 12;
+            return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+        }
+
+        function topPx(h, m) { return (h - START_HR) * HOUR_H + (m / 60) * HOUR_H; }
+        function hPx(sh, sm, eh, em) {
+            return Math.max(((eh - sh) * 60 + (em - sm)) / 60 * HOUR_H, 20);
+        }
+
+        // ── Load events from API ────────────────────────────────
+        async function fetchEvents(startStr, endStr) {
+            try {
+                const data = await ApiClient.getTimetable(startStr, endStr);
+                const evts = data.events || [];
+                evts.forEach(e => { e._uid = e.event_type + '_' + e.id; });
+                return evts;
+            } catch (error) {
+                console.error("Failed to load timetable events:", error);
+                return [];
+            }
+        }
+
+        // ── Event actions ───────────────────────────────────────
+        async function saveEvent() {
+            const title = document.getElementById('ev-title').value.trim();
+            const user = document.getElementById('ev-user').value;
+            const date = document.getElementById('ev-date').value;
+            const start = document.getElementById('ev-start').value;
+            const end = document.getElementById('ev-end').value;
+
+            if (!title || !date || !start || !end) {
+                document.getElementById('ev-title').classList.add('is-invalid');
+                setTimeout(() => document.getElementById('ev-title').classList.remove('is-invalid'), 2000);
+                return;
+            }
+
+            const eventData = {
+                title: title,
+                assignee_name: user,
+                date: date,
+                start_time: start,
+                end_time: end,
+                location: document.getElementById('ev-loc').value.trim() || ''
+            };
+
+            try {
+                await ApiClient.createTimetableEvent(eventData);
+
+                if (user && !selectedCalendars.has(user)) {
+                    selectedCalendars.add(user);
+                    saveSelectedCalendars();
+                }
+
+                // Reset form
+                ['ev-title', 'ev-date', 'ev-start', 'ev-end', 'ev-loc'].forEach(id => {
+                    const el = document.getElementById(id); if (el) el.value = '';
+                });
+                document.getElementById('ev-user').value = '';
+
+                bsModal.hide();
+                await renderCalendar();
+                showToastMsg('Activity scheduled!');
+            } catch (error) {
+                console.error("Failed to schedule event", error);
+                alert("Failed to schedule event. Note: You can only edit custom API Timetable events.");
+            }
+        }
+
+        async function completeEvent(uid) {
+            const [type, id] = uid.split('_');
+            const isDoneNow = !completedIds.has(uid);
+
+            if (isDoneNow) {
+                completedIds.add(uid);
+            } else {
+                completedIds.delete(uid);
+            }
+
+            // Re-render immediately for UI responsiveness
+            renderCalendarLocal();
+
+            if (type === 'TODO') {
+                try {
+                    await ApiClient.updateTodo(id, { status: isDoneNow ? 'COMPLETED' : 'PENDING' });
+                    // Refresh data from server to ensure consistency
+                    await renderCalendar();
+                } catch (error) {
+                    console.error("Failed to update task status:", error);
+                    // Rollback on error? Maybe just show toast.
+                }
+            }
+        }
+
+        // ── Navigation functions ────────────────────────────────
+        function navWeek(n) {
+            weekStart = addDays(weekStart, n * 7);
+            renderCalendar();
+        }
+
+        function navDay(n) {
+            selectedDate = addDays(selectedDate, n);
+            weekStart = getWeekStart(selectedDate);
+            renderCalendar();
+        }
+
+        function goToday() {
+            weekStart = getWeekStart(new Date());
+            selectedDate = new Date();
+            renderCalendar();
+        }
+
+        function setView(view) {
+            currentView = view;
+            renderCalendar();
+        }
+
+        function selectDay(dateStr) {
+            selectedDate = new Date(dateStr);
+            currentView = 'day';
+            renderCalendar();
+        }
+
+        function toggleTaskView() {
+            showTaskView = !showTaskView;
+            renderCalendar();
+        }
+
+        function setTaskFilter(filter) {
+            taskFilter = filter;
+            renderCalendar();
+        }
+
+        // ── Sidebar generator ───────────────────────────────────
+        function buildSidebar() {
+            const currUserName = currentUser ? (currentUser.name || currentUser.email) : '';
+            const currUserObj = USERS[currUserName] || { color: '#1a73e8' };
+
+            // Generate My calendars list (Current user + Birthdays + Tasks)
+            const myCals = `
+            <div class="sidebar-section">
+                <div class="sidebar-title" data-bs-toggle="collapse" data-bs-target="#myCalendarsCollapse" aria-expanded="${isMyCalsOpen ? 'true' : 'false'}" style="cursor:pointer;" onclick="isMyCalsOpen=!isMyCalsOpen">
+                    <span>My calendars</span>
+                    <i class="bi bi-chevron-down text-muted"></i>
+                </div>
+                <div id="myCalendarsCollapse" class="collapse ${isMyCalsOpen ? 'show' : ''}">
+                    ${currUserName ? `
+                    <label class="check-item">
+                        <input type="checkbox" ${selectedCalendars.has(currUserName) ? 'checked' : ''} onchange="toggleCalendar('${currUserName.replace(/'/g, "\\'")}', this.checked)" class="accent-checkbox" style="--c:${currUserObj.color}"> ${currUserName}
+                    </label>` : ''}
+                    <label class="check-item">
+                        <input type="checkbox" ${selectedCalendars.has('Birthdays') ? 'checked' : ''} onchange="toggleCalendar('Birthdays', this.checked)" class="accent-checkbox" style="--c:#3b82f6"> Birthdays
+                    </label>
+                    <label class="check-item">
+                        <input type="checkbox" ${selectedCalendars.has('Tasks') ? 'checked' : ''} onchange="toggleCalendar('Tasks', this.checked)" class="accent-checkbox" style="--c:#8b5cf6"> Tasks
+                    </label>
+                </div>
+            </div>`;
+
+            // Other calendars
+            let otherCalsHtml = '';
+            ALL_USERS_LIST.forEach(emp => {
+                const identifier = emp.name || emp.email;
+                if (identifier && identifier !== currUserName) {
+                    const uColor = USERS[identifier]?.color || '#0ea5e9';
+                    otherCalsHtml += `
+                    <label class="check-item">
+                        <input type="checkbox" ${selectedCalendars.has(identifier) ? 'checked' : ''} onchange="toggleCalendar('${identifier.replace(/'/g, "\\'")}', this.checked)" class="accent-checkbox" style="--c:${uColor}"> ${identifier}
+                    </label>`;
+                }
+            });
+
+            const otherCals = `
+            <div class="sidebar-section">
+                <div class="sidebar-title" data-bs-toggle="collapse" data-bs-target="#otherCalendarsCollapse" aria-expanded="${isOtherCalsOpen ? 'true' : 'false'}" style="cursor:pointer;" onclick="isOtherCalsOpen=!isOtherCalsOpen">
+                    <span>Other calendars</span>
+                    <i class="bi bi-chevron-down text-muted"></i>
+                </div>
+                <div id="otherCalendarsCollapse" class="collapse ${isOtherCalsOpen ? 'show' : ''}">
+                    ${otherCalsHtml || '<div class="text-muted small">No other users</div>'}
+                </div>
+            </div>`;
+
+            // Mini Calendar
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            let mMonthDate;
+            if (currentView === 'day' || currentView === 'month') {
+                mMonthDate = new Date(selectedDate);
+            } else {
+                mMonthDate = new Date(weekStart);
+            }
+            mMonthDate.setDate(1);
+            mMonthDate.setMonth(mMonthDate.getMonth() + miniMonthOffset);
+
+            const moStr = mMonthDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+            const firstDay = new Date(mMonthDate.getFullYear(), mMonthDate.getMonth(), 1);
+            let cur = addDays(firstDay, -firstDay.getDay()); // go back to Sunday
+
+            let minidays = '<div class="mini-row head"><div class="mc">S</div><div class="mc">M</div><div class="mc">T</div><div class="mc">W</div><div class="mc">T</div><div class="mc">F</div><div class="mc">S</div></div>';
+
+            for (let w = 0; w < 6; w++) {
+                let r = '<div class="mini-row">';
+                for (let d = 0; d < 7; d++) {
+                    const isM = (cur.getMonth() === mMonthDate.getMonth());
+                    const isT = (cur.getTime() === today.getTime());
+
+                    // Selected week/day logic
+                    let isSel = false;
+                    if (currentView === 'week') {
+                        isSel = cur >= weekStart && cur < addDays(weekStart, 7);
+                    } else if (currentView === 'day' || currentView === 'month') {
+                        isSel = cur.getTime() === selectedDate.getTime() || (currentView === 'month' && cur.getMonth() === selectedDate.getMonth() && cur.getFullYear() === selectedDate.getFullYear());
+                    }
+
+                    const c = `mc ${isM ? '' : 'off'} ${isT ? 't' : ''} ${isSel && !isT ? 's' : ''}`;
+                    r += `<div class="${c}" onclick="selectDay('${dStr(cur)}')">${cur.getDate()}</div>`;
+
+                    cur = addDays(cur, 1);
+                }
+                r += '</div>';
+                minidays += r;
+                if (cur.getMonth() !== mMonthDate.getMonth() && cur > firstDay) break; // stop if month changes and we're done
+            }
+
+            const miniCal = `
+            <div class="sidebar-section mb-3 mt-2">
+                <div class="d-flex align-items-center justify-content-between px-1 mb-2">
+                    <span style="font-size:.875rem; font-weight:500; color:#3c4043;">${moStr}</span>
+                    <div>
+                        <i class="bi bi-chevron-left me-3 text-muted" style="cursor:pointer;font-size:.8rem;" onclick="navMini(-1)"></i>
+                        <i class="bi bi-chevron-right text-muted" style="cursor:pointer;font-size:.8rem;" onclick="navMini(1)"></i>
+                    </div>
+                </div>
+                <div class="mini-grid">
+                    ${minidays}
+                </div>
+            </div>`;
+
+            return `
+            <div class="cal-sidebar">
+                <button class="btn btn-light shadow-sm rounded-pill px-3 py-2 d-flex align-items-center gap-2 border" 
+                    style="font-weight:500; background:#fff; align-self:flex-start; margin-bottom:12px; transition:box-shadow .15s;" 
+                    onmouseover="this.style.boxShadow='0 2px 6px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)'"
+                    onclick="openCreateModal(dStr(new Date()), '', '')">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#202124" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Create
+                </button>
+                ${miniCal}
+                ${myCals}
+                ${otherCals}
+            </div>`;
+        }
+
+        // ── Helper: Pack overlapping events ────────────────────────
+        function packEvents(eventsList) {
+            eventsList.sort((a, b) => {
+                const sA = a.sh * 60 + a.sm, eA = a.eh * 60 + a.em;
+                const sB = b.sh * 60 + b.sm, eB = b.eh * 60 + b.em;
+                if (sA !== sB) return sA - sB;
+                return eB - eA;
+            });
+            const placed = [];
+            let columns = [];
+            let lastEnd = null;
+            function flush() {
+                const numCols = columns.length;
+                columns.forEach((col, c) => col.forEach(ev => placed.push({ ev, slot: c, slots: numCols })));
+            }
+            eventsList.forEach(ev => {
+                const evS = ev.sh * 60 + ev.sm, evE = ev.eh * 60 + ev.em;
+                if (lastEnd !== null && evS >= lastEnd) {
+                    flush(); columns = []; lastEnd = null;
+                }
+                let placedInCol = false;
+                for (let c = 0; c < columns.length; c++) {
+                    const col = columns[c];
+                    const lastEv = col[col.length - 1];
+                    if (evS >= lastEv.eh * 60 + lastEv.em) {
+                        col.push(ev); placedInCol = true; break;
+                    }
+                }
+                if (!placedInCol) columns.push([ev]);
+                if (lastEnd === null || evE > lastEnd) lastEnd = evE;
+            });
+            if (columns.length > 0) flush();
+            return placed;
+        }
+
+        // ── Render calendar ─────────────────────────────────────
+        async function renderCalendar() {
+            let startD, endD;
+            if (currentView === 'day') {
+                startD = dStr(selectedDate);
+                endD = dStr(selectedDate);
+            } else if (currentView === 'month') {
+                const centerDate = selectedDate || new Date();
+                const mStart = new Date(centerDate.getFullYear(), centerDate.getMonth(), 1);
+                startD = dStr(addDays(mStart, -mStart.getDay()));
+                endD = dStr(addDays(mStart, 42)); // 6 weeks cover
+            } else {
+                startD = dStr(weekStart);
+                endD = dStr(addDays(weekStart, 6)); // Week view
+            }
+
+            // Allow larger ranges for Tasks view
+            if (showTaskView) {
+                events = await fetchEvents(
+                    dStr(addDays(new Date(), -30)),
+                    dStr(addDays(new Date(), 30))
+                );
+            } else {
+                events = await fetchEvents(startD, endD);
+            }
+            renderCalendarLocal();
+        }
+
+        function renderCalendarLocal() {
+
+            // Always preserve accordion states before nuking the DOM
+            const mcDOM = document.getElementById('myCalendarsCollapse');
+            if (mcDOM) isMyCalsOpen = mcDOM.classList.contains('show');
+            const ocDOM = document.getElementById('otherCalendarsCollapse');
+            if (ocDOM) isOtherCalsOpen = ocDOM.classList.contains('show');
+
+            const today = new Date();
+            const todayStr = dStr(today);
+
+            const filteredEvents = events.filter(ev => {
+                const user = ev.user || ev.assignee_name;
+                if (!user) return true;
+                return selectedCalendars.has(user);
+            });
+
+            // ── TASK LIST VIEW ──────────────────────────────────────
+            if (showTaskView) {
+                // Group events by date, sort by time
+                const currUserUnique = currentUser ? (currentUser.email || currentUser.name) : '';
+                const grouped = {};
+                filteredEvents.forEach(ev => {
+                    const s = (ev.status || '').toUpperCase();
+                    const isDone = (s === 'COMPLETED' || s === 'DONE' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
+                    const isMyTask = (ev.user === currUserUnique || ev.assignee_name === currUserUnique);
+
+                    if (taskFilter === 'pending' && isDone) return;
+                    if (taskFilter === 'done' && !isDone) return;
+                    if (taskFilter === 'my' && !isMyTask) return;
+                    if (taskFilter === 'employees' && isMyTask) return;
+
+                    if (!grouped[ev.date]) grouped[ev.date] = [];
+                    grouped[ev.date].push(ev);
+                });
+
+                // Sort dates ascending
+                const dates = Object.keys(grouped).sort();
+
+                let html = '';
+                if (dates.length === 0) {
+                    html = `<div class="text-center text-muted mt-5" style="max-width:300px;margin:0 auto;">
+                                <i class="bi bi-inbox fs-1 mb-2"></i>
+                                <h6>No tasks found</h6>
+                                <p class="small">There are no tasks matching this filter for the selected scope.</p>
+                            </div>`;
+                } else {
+                    dates.forEach(d => {
+                        const dateObj = new Date(d);
+                        const dayName = dateObj.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+                        const isTodayStr = (d === todayStr) ? ' <span class="badge bg-primary ms-2 rounded-pill px-2">Today</span>' : '';
+
+                        // Sort events in day by time
+                        grouped[d].sort((a, b) => (a.sh * 60 + a.sm) - (b.sh * 60 + b.sm));
+
+                        const rows = grouped[d].map(ev => {
+                            const u = getEventStyles(ev);
+                            const timeLbl = `${fmtH(ev.sh, ev.sm)} – ${fmtH(ev.eh, ev.em)}`;
+                            const s = (ev.status || '').toUpperCase();
+                            const isDone = (s === 'COMPLETED' || s === 'DONE' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
+                            return `
+                            <div class="task-row ${isDone ? 'done-row' : ''}" style="border-left-color:${u.color};">
+                                ${ev.event_type === 'TODO' ? `<div class="t-circle ${isDone ? 't-done' : ''}" style="color:${u.color};"
+                                    onclick="completeEvent('${ev._uid}')" title="${isDone ? 'Mark incomplete' : 'Mark complete'}"></div>` : '<div style="width:24px; flex-shrink:0;"></div>'}
+                                <div class="t-info">
+                                    <div class="t-title">${ev.event_type === 'MEETING' ? '<i class="bi bi-camera-video me-1"></i>' : ''}${ev.title}</div>
+                                    <div class="t-meta"><i class="bi bi-clock me-1"></i>${timeLbl} <span class="mx-2">•</span> <i class="bi bi-geo-alt me-1"></i>${ev.loc} <span class="mx-2">•</span> <i class="bi bi-person me-1"></i>${ev.user}</div>
+                                </div>
+                                <div class="t-actions">
+                                    <button class="btn btn-sm btn-light border rounded-pill px-3" onclick="openEditModal('${ev._uid}')" style="font-size:.75rem;">Edit</button>
+                                </div>
+                            </div>`;
+                        }).join('');
+
+                        html += `
+                        <div class="task-date-group">
+                            <div class="task-date-lbl">${dayName}${isTodayStr}</div>
+                            ${rows}
+                        </div>`;
+                    });
+                }
+
+                document.getElementById('main-content').innerHTML = `
+                <div class="cal-toolbar">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="nav-title fs-5"><i class="bi bi-check2-square text-primary me-2"></i>Tasks &amp; To-Do</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="task-filter-pill mb-0 me-3">
+                            <button class="${taskFilter === 'all' ? 'active' : ''}" onclick="setTaskFilter('all')">All</button>
+                            <button class="${taskFilter === 'pending' ? 'active' : ''}" onclick="setTaskFilter('pending')">Pending</button>
+                            <button class="${taskFilter === 'done' ? 'active' : ''}" onclick="setTaskFilter('done')">Completed</button>
+                            <button class="${taskFilter === 'my' ? 'active' : ''}" onclick="setTaskFilter('my')">My Tasks</button>
+                            <button class="${taskFilter === 'employees' ? 'active' : ''}" onclick="setTaskFilter('employees')">Employee Tasks</button>
+                        </div>
+                        <button class="task-toggle-btn active" onclick="toggleTaskView()" style="background:#e8eafd;color:#4f46e5;border-color:#c7d2fe;">
+                            <i class="bi bi-calendar3"></i>
+                            <span class="tt-tip">Switch to Calendar</span>
+                        </button>
+                        <button class="btn btn-primary btn-sm px-3" onclick="openCreateModal(dStr(new Date()), '', '', 'TASK')">
+                            <i class="bi bi-plus-lg me-1"></i>Add Task
+                        </button>
+                    </div>
+                </div>
+                <div class="task-view-wrap bg-light">
+                    <div style="max-width:800px;margin:0 auto;">
+                        ${html}
+                    </div>
+                </div>`;
+                return;
+            }
+
+            // ── DAY VIEW ──────────────────────────────────────────
+            if (currentView === 'day') {
+                const sd = selectedDate;
+                const sdStr = dStr(sd);
+                const isToday = sdStr === todayStr;
+                const dayName = DAY_NAMES[sd.getDay()];
+                const dateNum = sd.getDate();
+                const navTitle = sd.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+                // Hour labels
+                const hourLabels = Array.from({ length: END_HR - START_HR }, (_, i) => {
+                    const h = START_HR + i;
+                    const lbl = h === 12 ? '12 PM' : h < 12 ? `${h} AM` : `${h - 12} PM`;
+                    return `<div class="cal-hour-lbl">${lbl}</div>`;
+                }).join('');
+
+                // Hour lines
+                const TOTAL_H = (END_HR - START_HR) * HOUR_H;
+                let lines = '';
+                for (let r = 0; r < (END_HR - START_HR); r++) {
+                    lines += `<div class="cal-hline"      style="top:${r * HOUR_H}px"></div>`;
+                    lines += `<div class="cal-hline-half" style="top:${r * HOUR_H + HOUR_H / 2}px"></div>`;
+                }
+
+                // Events for this day
+                const dayEvts = filteredEvents.filter(e => e.date === sdStr);
+                const placed = packEvents(dayEvts);
+                const evHtml = placed.map(({ ev, slot, slots }) => {
+                    const u = getEventStyles(ev);
+                    const t = Math.max(topPx(ev.sh, ev.sm), 0);
+                    const h = Math.max(hPx(ev.sh, ev.sm, ev.eh, ev.em), 22);
+                    const wPct = 96 / slots;
+                    const lPct = 2 + slot * wPct;
+                    const rPct = 2 + (slots - slot - 1) * wPct;
+                    const timeLbl = `${fmtH(ev.sh, ev.sm)} – ${fmtH(ev.eh, ev.em)}`;
+                    const s = (ev.status || '').toUpperCase();
+                    const isDone = (s === 'COMPLETED' || s === 'DONE' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
+                    return `
+                    <div class="cal-evt${isDone ? ' evt-done' : ''}" style="top:${t}px;height:${h}px;left:${lPct}%;right:${rPct}%;background:${u.bg};border-left:3px solid ${u.color};display:flex;flex-direction:column;padding-left:${ev.event_type === 'TODO' ? '17px' : '8px'};overflow:hidden;"
+                         title="${ev.title} (${ev.user})\n${timeLbl}\n${ev.loc}"
+                         onclick="event.stopPropagation();openEditModal('${ev._uid}')">
+                        ${ev.event_type === 'TODO' ? `<button class="evt-complete-btn${isDone ? ' done' : ''}" style="color:${u.color};"
+                            onclick="event.stopPropagation();completeEvent('${ev._uid}')" title="${isDone ? 'Mark incomplete' : 'Mark complete'}"></button>` : ''}
+                        <div class="evt-inner-title" style="color:${u.color};font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            ${ev.event_type === 'MEETING' ? '<i class="bi bi-camera-video me-1"></i>' : ''}${ev.title}
+                        </div>
+                        ${h > 30 ? `<div class="evt-time" style="color:${u.color};font-size:0.7rem;">${timeLbl}</div>` : ''}
+                        <div style="font-size:.72rem;color:${u.color};opacity:.7;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><i class="bi bi-person me-1"></i>${ev.user}</div>
+                    </div>`;
+                }).join('');
+
+                // Current time
+                const nowH = today.getHours(), nowM = today.getMinutes();
+                const nowTop = topPx(nowH, nowM);
+                const showNow = isToday && nowH >= START_HR && nowH < END_HR;
+                const nowHtml = showNow ? `<div class="now-dot" style="top:${nowTop}px;"></div><div class="now-line" style="top:${nowTop}px;"></div>` : '';
+
+                document.getElementById('main-content').innerHTML = `
+                <!-- Toolbar -->
+                <div class="cal-toolbar">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="nav-btn" onclick="navDay(-1)" title="Previous day"><i class="bi bi-chevron-left"></i></button>
+                        <button class="nav-btn" onclick="navDay(1)"  title="Next day"><i class="bi bi-chevron-right"></i></button>
+                        <button class="btn btn-sm btn-light border px-3" onclick="goToday()">Today</button>
+                        <span class="nav-title">${navTitle}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <div class="view-pill">
+                            <button class="active">Day</button>
+                            <button onclick="setView('week')">Week</button>
+                            <button onclick="setView('month')">Month</button>
+                        </div>
+                        <button class="task-toggle-btn ${showTaskView ? 'active' : ''}" onclick="toggleTaskView()">
+                            <i class="bi bi-ui-checks"></i>
+                            <span class="tt-tip">Switch to Tasks</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="cal-wrapper">
+                    ${buildSidebar()}
+                    <!-- Day calendar -->
+                    <div class="cal-root">
+                        <!-- Day header: single column -->
+                        <div class="cal-day-header-row" style="grid-template-columns:56px 1fr;">
+                            <div class="cal-gutter-head"></div>
+                            <div class="cal-dh${isToday ? ' today' : ''}" style="flex:1;">
+                                <div class="dn">${dayName}</div>
+                                ${isToday ? `<div class="today-dot">${dateNum}</div>` : `<div class="dd">${dateNum}</div>`}
+                            </div>
+                        </div>
+                        <!-- Scrollable body -->
+                        <div class="cal-scroll" id="calScrollBody">
+                            <div class="cal-body-inner">
+                                <div class="cal-gutter">${hourLabels}</div>
+                                <div style="flex:1;position:relative;height:${TOTAL_H}px;border-left:1px solid #f1f5f9;${isToday ? 'background:rgba(79,70,229,.03);' : ''}">
+                                    ${lines}${evHtml}${nowHtml}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+
+                const sb = document.getElementById('calScrollBody');
+                if (sb) sb.scrollTop = showNow ? Math.max(nowTop - 120, 0) : HOUR_H;
+                return; // exit — week view not needed
+            }
+
+            // ── MONTH VIEW ─────────────────────────────────────────
+            if (currentView === 'month') {
+                const centerDate = selectedDate || new Date();
+                const mStart = new Date(centerDate.getFullYear(), centerDate.getMonth(), 1);
+                let cur = addDays(mStart, -mStart.getDay()); // Sunday
+
+                const mo1 = mStart.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+                const navTitle = mo1;
+
+                const dayHeaders = DAY_NAMES.map(dn => `<div class="cal-dh"><div class="dn">${dn}</div></div>`).join('');
+
+                let rowsHtml = '';
+                for (let r = 0; r < 6; r++) {
+                    let cellsHtml = '';
+                    for (let c = 0; c < 7; c++) {
+                        const ds = dStr(cur);
+                        const isToday = ds === todayStr;
+                        const isCurMonth = cur.getMonth() === mStart.getMonth();
+
+                        const dayEvts = filteredEvents.filter(e => e.date === ds);
+                        const evHtml = dayEvts.slice(0, 4).map(ev => {
+                            const u = getEventStyles(ev);
+                            const s = (ev.status || '').toUpperCase();
+                            const isDone = (s === 'COMPLETED' || s === 'DONE' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
+                            const icon = ev.event_type === 'MEETING' ? '<i class="bi bi-camera-video me-1"></i>' : '';
+                            return `<div class="month-evt ${isDone ? 'evt-done' : ''}" style="background:${u.bg}; border-left:2px solid ${u.color}; color:${u.color};" onclick="event.stopPropagation();openEditModal('${ev._uid}')">${fmtH(ev.sh, ev.sm).replace(' AM', 'a').replace(' PM', 'p')} ${icon}${ev.title}</div>`;
+                        }).join('');
+                        const extra = dayEvts.length > 4 ? `<div class="month-evt-more">+${dayEvts.length - 4} more</div>` : '';
+
+                        cellsHtml += `
+                        <div class="month-cell ${!isCurMonth ? 'off-month' : ''} ${isToday ? 'today-cell' : ''}" onclick="selectDay('${ds}')">
+                            <div class="month-cell-num ${isToday ? 'today-num' : ''}">${cur.getDate()}</div>
+                            <div class="month-cell-evts">${evHtml}${extra}</div>
+                        </div>`;
+                        cur = addDays(cur, 1);
+                    }
+                    rowsHtml += `<div class="month-row">${cellsHtml}</div>`;
+                    if (cur.getMonth() !== mStart.getMonth() && cur > mStart) {
+                        break;
+                    }
+                }
+
+                document.getElementById('main-content').innerHTML = `
+                <!-- Toolbar -->
+                <div class="cal-toolbar">
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="nav-btn" onclick="navMonth(-1)" title="Previous month"><i class="bi bi-chevron-left"></i></button>
+                        <button class="nav-btn" onclick="navMonth(1)"  title="Next month"><i class="bi bi-chevron-right"></i></button>
+                        <button class="btn btn-sm btn-light border px-3" onclick="goToday()">Today</button>
+                        <span class="nav-title">${navTitle}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <div class="view-pill">
+                            <button onclick="setView('day')">Day</button>
+                            <button onclick="setView('week')">Week</button>
+                            <button class="active">Month</button>
+                        </div>
+                        <button class="task-toggle-btn ${showTaskView ? 'active' : ''}" onclick="toggleTaskView()"><i class="bi bi-ui-checks"></i></button>
+                    </div>
+                </div>
+                <div class="cal-wrapper">
+                    ${buildSidebar()}
+                    <div class="cal-root">
+                        <!-- header -->
+                        <div class="cal-day-header-row month-header" style="height:auto;">
+                            <div class="cal-gutter-head" style="width:16px;"></div>
+                            ${dayHeaders}
+                        </div>
+                        <div class="cal-scroll month-scroll">
+                            <div class="month-grid" style="padding-left:16px;">
+                                ${rowsHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+                return;
+            }
+
+            // ── WEEK VIEW (continued below) ───────────────────────
+
+
+            // Week date range label
+            const wEnd = addDays(weekStart, 6);
+            const mo1 = weekStart.toLocaleDateString('en-IN', { month: 'long' });
+            const mo2 = wEnd.toLocaleDateString('en-IN', { month: 'long' });
+            const yr = wEnd.getFullYear();
+            const navTitle = (mo1 === mo2)
+                ? `${mo1} ${yr}`
+                : `${mo1} – ${mo2} ${yr}`;
+
+            // Day header cells — clicking a date number opens day view
+            const dayHeaders = Array.from({ length: 7 }, (_, i) => {
+                const d = addDays(weekStart, i);
+                const ds = dStr(d);
+                const isToday = ds === todayStr;
+                const numHtml = isToday
+                    ? `<div class="today-dot" onclick="selectDay('${ds}')" style="cursor:pointer;">${d.getDate()}</div>`
+                    : `<div class="dd" onclick="selectDay('${ds}')" style="cursor:pointer;font-size:1.35rem;font-weight:700;color:#334155;transition:color .15s;" onmouseover="this.style.color='#4f46e5'" onmouseout="this.style.color='#334155'">${d.getDate()}</div>`;
+                return `<div class="cal-dh${isToday ? ' today' : ''}"><div class="dn">${DAY_NAMES[i]}</div>${numHtml}</div>`;
+            }).join('');
+
+            // Hour labels
+            const hourLabels = Array.from({ length: END_HR - START_HR }, (_, i) => {
+                const h = START_HR + i;
+                const lbl = h === 12 ? '12 PM' : h < 12 ? `${h} AM` : `${h - 12} PM`;
+                return `<div class="cal-hour-lbl">${lbl}</div>`;
+            }).join('');
+
+            // Now line position
+            const nowH = today.getHours();
+            const nowM = today.getMinutes();
+            const nowTop = topPx(nowH, nowM);
+            const showNow = nowH >= START_HR && nowH < END_HR;
+
+            // Day columns
+            const TOTAL_H = (END_HR - START_HR) * HOUR_H;
+            const colsHtml = Array.from({ length: 7 }, (_, i) => {
+                const d = addDays(weekStart, i);
+                const ds = dStr(d);
+                const isToday = ds === todayStr;
+
+                // Hour lines with click-to-create capability
+                let lines = '';
+                for (let r = 0; r < (END_HR - START_HR); r++) {
+                    const h = START_HR + r;
+                    const hStr = h.toString().padStart(2, '0');
+                    lines += `<div class="cal-hline"      style="top:${r * HOUR_H}px; height:${HOUR_H / 2}px; pointer-events:auto; cursor:pointer;" onclick="openCreateModal('${ds}', '${hStr}:00', '${hStr}:30')"></div>`;
+                    lines += `<div class="cal-hline-half" style="top:${r * HOUR_H + HOUR_H / 2}px; height:${HOUR_H / 2}px; pointer-events:auto; cursor:pointer;" onclick="openCreateModal('${ds}', '${hStr}:30', '${(h + 1).toString().padStart(2, '0')}:00')"></div>`;
+                }
+
+                // Events for this day — handle robust overlap packing
+                const dayEvts = filteredEvents.filter(e => e.date === ds);
+                const placed = packEvents(dayEvts);
+
+                const evHtml = placed.map(({ ev, slot, slots }) => {
+                    const u = getEventStyles(ev);
+                    const t = Math.max(topPx(ev.sh, ev.sm), 0);
+                    const h = Math.max(hPx(ev.sh, ev.sm, ev.eh, ev.em), 22);
+                    const w = 96 / slots;
+                    const l = 2 + slot * w;
+                    const r = 2 + (slots - slot - 1) * w;
+                    const timeLbl = `${fmtH(ev.sh, ev.sm)} – ${fmtH(ev.eh, ev.em)}`;
+                    const s = (ev.status || '').toUpperCase();
+                    const isDone = (s === 'COMPLETED' || s === 'DONE' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
+                    return `
+            <div class="cal-evt${isDone ? ' evt-done' : ''}" title="${ev.title} (${ev.user})\n${timeLbl}\n${ev.loc}"
+                style="top:${t}px;height:${h}px;left:${l}%;width:${w}%;background:${u.bg};border-left:3px solid ${u.color};padding-left:${ev.event_type === 'TODO' ? '17px' : '8px'};min-width:40px;display:flex;flex-direction:column;"
+                onclick="event.stopPropagation();openEditModal('${ev._uid}')">
+                ${ev.event_type === 'TODO' ? `<button class="evt-complete-btn${isDone ? ' done' : ''}" style="color:${u.color};"
+                    onclick="event.stopPropagation();completeEvent('${ev._uid}')" title="${isDone ? 'Mark incomplete' : 'Mark complete'}"></button>` : ''}
+                <div class="evt-inner-title" style="color:${u.color};font-size:.7rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    ${ev.event_type === 'MEETING' ? '<i class="bi bi-camera-video me-1"></i>' : ''}${ev.title}
+                </div>
+                ${h > 30 ? `<div class="evt-time" style="font-size:0.6rem;white-space:nowrap;overflow:hidden;">${timeLbl}</div>` : ''}
+                <div class="evt-user" style="color:${u.color};">${u.initials}</div>
+            </div>`;
+                }).join('');
+
+                const nowHtml = (isToday && showNow && nowTop >= 0 && nowTop <= TOTAL_H) ? `
+            <div class="now-dot" style="top:${nowTop}px;"></div>
+            <div class="now-line" style="top:${nowTop}px;"></div>` : '';
+
+                return `
+        <div class="cal-col${isToday ? ' today-col' : ''}" style="height:${TOTAL_H}px; position:relative;">
+            ${lines}${evHtml}${nowHtml}
+        </div>`;
+            }).join('');
+
+            // Build the full calendar HTML
+            document.getElementById('main-content').innerHTML = `
+        <!-- Toolbar -->
+        <div class="cal-toolbar">
+            <div class="d-flex align-items-center gap-2">
+                <button class="nav-btn" title="Previous week" onclick="navWeek(-1)"><i class="bi bi-chevron-left"></i></button>
+                <button class="nav-btn" title="Next week"     onclick="navWeek(1)"><i class="bi bi-chevron-right"></i></button>
+                <button class="btn btn-sm btn-light border px-3" onclick="goToday()">Today</button>
+                <span class="nav-title">${navTitle}</span>
+            </div>
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <!-- View toggle -->
+                <div class="view-pill">
+                    <button class="${currentView === 'day' ? 'active' : ''}"   onclick="setView('day')">Day</button>
+                    <button class="${currentView === 'week' ? 'active' : ''}"  onclick="setView('week')">Week</button>
+                    <button class="${currentView === 'month' ? 'active' : ''}" onclick="setView('month')">Month</button>
+                </div>
+                <!-- Switch to Tasks icon button -->
+                <button class="task-toggle-btn ${showTaskView ? 'active' : ''}" onclick="toggleTaskView()">
+                    <i class="bi bi-ui-checks"></i>
+                    <span class="tt-tip">Switch to Tasks</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="cal-wrapper">
+            ${buildSidebar()}
+            <!-- Calendar -->
+            <div class="cal-root">
+                <!-- Day header row -->
+                <div class="cal-day-header-row">
+                    <div class="cal-gutter-head"></div>
+                    ${dayHeaders}
+                </div>
+                <!-- Scrollable body -->
+                <div class="cal-scroll" id="calScrollBody">
+                    <div class="cal-body-inner">
+                        <div class="cal-gutter">${hourLabels}</div>
+                        <div class="cal-cols">${colsHtml}</div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+            // Scroll to 8 AM on initial load
+            const sb = document.getElementById('calScrollBody');
+            if (sb) {
+                // Scroll to current time if today is visible, else scroll to 8 AM
+                const targetScroll = showNow ? Math.max(nowTop - 100, 0) : HOUR_H;
+                sb.scrollTop = targetScroll;
+            }
+        }
+
+        // ── Navigation ──────────────────────────────────────────
+        function navWeek(dir) {
+            miniMonthOffset = 0;
+            if (currentView === 'day') {
+                selectedDate = addDays(selectedDate, dir);
+            } else {
+                weekStart = addDays(weekStart, dir * 7);
+            }
+            renderCalendar();
+        }
+        function navMonth(dir) {
+            miniMonthOffset = 0;
+            const refDate = currentView === 'month' ? selectedDate : weekStart;
+            selectedDate = new Date(refDate.getFullYear(), refDate.getMonth() + dir, 1);
+            weekStart = getWeekStart(selectedDate);
+            renderCalendar();
+        }
+        function navMini(dir) {
+            miniMonthOffset += dir;
+            renderCalendarLocal();
+        }
+        function goToday() {
+            miniMonthOffset = 0;
+            selectedDate = new Date();
+            weekStart = getWeekStart(new Date());
+            renderCalendar();
+        }
+        function setView(v) {
+            miniMonthOffset = 0;
+            currentView = v;
+            if (v === 'month') {
+                selectedDate = new Date(weekStart.getFullYear(), weekStart.getMonth(), 1);
+            }
+            renderCalendar();
+        }
+
+        // ── Select a day (click on day number) → switch to day view ──
+        function selectDay(ds) {
+            if (showTaskView) { showTaskView = false; }
+            const parts = ds.split('-');
+            selectedDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            currentView = 'day';
+            renderCalendar();
+        }
+
+        // ── Tasks view toggle ───────────────────────────────────
+        function toggleTaskView() {
+            showTaskView = !showTaskView;
+            renderCalendar();
+        }
+        function setTaskFilter(f) {
+            taskFilter = f;
+            renderCalendar();
+        }
+
+        // ── Actions ─────────────────────────────────────────────
+        function openCreateModal(dateStr, startStr, endStr, preferredType = 'EVENT') {
+            document.getElementById('ev-date').value = dateStr;
+            document.getElementById('ev-start').value = startStr;
+            document.getElementById('ev-end').value = endStr;
+            document.getElementById('ev-title').value = '';
+            document.getElementById('ev-loc').value = '';
+
+            // Clear task fields too
+            ['td-related', 'td-desc'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.value = '';
+            });
+
+            if (preferredType === 'TASK') {
+                document.getElementById('typeTask').checked = true;
+            } else {
+                document.getElementById('typeEvent').checked = true;
+            }
+            toggleModalType();
+
+            // Reconfigure modal for Create
+            const saveBtn = document.getElementById('btn-save-event');
+            saveBtn.onclick = saveActivity;
+            saveBtn.innerHTML = preferredType === 'TASK' ? '<i class="bi bi-plus-lg me-1"></i>Create Task' : '<i class="bi bi-check-lg me-1"></i>Schedule';
+
+            const delBtn = document.getElementById('btn-delete-event');
+            if (delBtn) delBtn.style.display = 'none';
+
+            bsModal.show();
+        }
+
+        function openEditModal(eventUid) {
+            const ev = events.find(e => e._uid === eventUid);
+            if (!ev) return;
+
+            if (ev.event_type === 'VISIT' || ev.event_type === 'MEETING') {
+                showToastMsg(`Cannot edit synced ${ev.event_type.toLowerCase()}s from the calendar.`);
+                return;
+            }
+
+            const isTask = ev.event_type === 'TODO';
+
+            // Populate Shared Fields
+            document.getElementById('ev-title').value = ev.title.replace(/^Todo: /, '');
+            document.getElementById('ev-date').value = ev.date;
+            document.getElementById('ev-start').value = `${String(ev.sh).padStart(2, '0')}:${String(ev.sm).padStart(2, '0')}`;
+            document.getElementById('ev-end').value = `${String(ev.eh).padStart(2, '0')}:${String(ev.em).padStart(2, '0')}`;
+
+            // Populate Type Specific
+            if (isTask) {
+                document.getElementById('td-priority').value = ev.priority || 'MEDIUM';
+                document.getElementById('td-due').value = ev.date;
+                document.getElementById('td-related').value = ev.loc || '';
+                document.getElementById('td-desc').value = ev.description || '';
+                document.getElementById('typeTask').checked = true;
+            } else {
+                document.getElementById('ev-loc').value = ev.loc || '';
+                document.getElementById('typeEvent').checked = true;
+            }
+
+            // Try to set user if available in dropdown
+            const userSelect = document.getElementById('ev-user');
+            Array.from(userSelect.options).forEach(opt => {
+                if (opt.value === ev.user) userSelect.value = ev.user;
+            });
+
+            document.getElementById('modal-title-text').innerText = isTask ? 'Edit Task' : 'Edit Event';
+            toggleModalType();
+
+            // Reconfigure modal for Update
+            const saveBtn = document.getElementById('btn-save-event');
+            saveBtn.onclick = () => updateActivity(ev.id, ev.event_type);
+            saveBtn.innerHTML = '<i class="bi bi-floppy me-1"></i>Update';
+
+            // Show delete button
+            let delBtn = document.getElementById('btn-delete-event');
+            if (delBtn) {
+                delBtn.style.display = 'block';
+                delBtn.onclick = () => deleteActivity(ev.id, ev.event_type);
+            }
+
+            bsModal.show();
+        }
+
+        async function updateActivity(id, type) {
+            const isEvent = document.getElementById('typeEvent').checked;
+            const title = document.getElementById('ev-title').value.trim();
+            const user = document.getElementById('ev-user').value;
+            const date = document.getElementById('ev-date').value;
+            const start = document.getElementById('ev-start').value;
+            const end = document.getElementById('ev-end').value;
+
+            if (!title || !date) return;
+
+            if (type === 'TODO') {
+                const payload = {
+                    title: title,
+                    description: document.getElementById('td-desc').value.trim() || null,
+                    priority: document.getElementById('td-priority').value,
+                    assigned_to: user,
+                    due_date: new Date(date).toISOString(),
+                    start_time: start ? start + ":00" : null,
+                    end_time: end ? end + ":00" : null,
+                    related_entity: document.getElementById('td-related').value.trim() || null,
+                    client_id: document.getElementById('ev-client').value || null
+                };
+                try {
+                    await ApiClient.updateTodo(id, payload);
+                    bsModal.hide();
+                    await renderCalendar();
+                    showToastMsg('Task updated!');
+                } catch (e) { alert("Update failed"); }
+            } else {
+                if (!start || !end) { alert("Times required"); return; }
+                const eventData = {
+                    title: title, assignee_name: user, date: date,
+                    start_time: start, end_time: end,
+                    location: document.getElementById('ev-loc').value.trim() || ''
+                };
+                try {
+                    await ApiClient.updateTimetableEvent(id, eventData);
+                    bsModal.hide();
+                    await renderCalendar();
+                    showToastMsg('Event updated!');
+                } catch (e) { alert("Update failed"); }
+            }
+        }
+
+        async function deleteActivity(id, type) {
+            if (!confirm("Are you sure?")) return;
+            try {
+                if (type === 'TODO') await ApiClient.deleteTodo(id);
+                else await ApiClient.deleteTimetableEvent(id);
+                bsModal.hide();
+                await renderCalendar();
+                showToastMsg('Deleted!');
+            } catch (e) { alert("Delete failed"); }
+        }
+
+        // ── Save event from modal ────────────────────────────────
+        // ── Modal UI Toggles ─────────────────────────────────────
+        function toggleModalType() {
+            const isEvent = document.getElementById('typeEvent').checked;
+            document.querySelectorAll('.event-fields').forEach(el => el.style.display = isEvent ? 'block' : 'none');
+            document.querySelectorAll('.task-fields').forEach(el => el.style.display = isEvent ? 'none' : 'block');
+
+            const isUpdate = document.getElementById('btn-save-event').innerHTML.includes('Update');
+
+            if (isUpdate) {
+                document.getElementById('modal-title-text').innerText = isEvent ? 'Edit Event' : 'Edit Task';
+                document.getElementById('btn-save-event').innerHTML = '<i class="bi bi-floppy me-1"></i>Update';
+            } else {
+                document.getElementById('modal-title-text').innerText = isEvent ? 'Schedule Event' : 'Create Task';
+                document.getElementById('btn-save-event').innerHTML = isEvent ? '<i class="bi bi-check-lg me-1"></i>Schedule' : '<i class="bi bi-plus-lg me-1"></i>Create Task';
+            }
+
+            if (isEvent) {
+                document.getElementById('ev-date-label').innerHTML = '<i class="bi bi-calendar-event me-2"></i>Event Date <span class="text-danger">*</span>';
+                document.getElementById('ev-start-label').innerHTML = 'Start Time <span class="text-danger">*</span>';
+                document.getElementById('ev-end-label').innerHTML = 'End Time <span class="text-danger">*</span>';
+            }
+        }
+
+        // ── Save logic (Unified Event/Task) ──────────────────────
+        async function saveActivity() {
+            const isEvent = document.getElementById('typeEvent').checked;
+
+            if (isEvent) {
+                // Event Creation
+                const title = document.getElementById('ev-title').value.trim();
+                const user = document.getElementById('ev-user').value;
+                const date = document.getElementById('ev-date').value;
+                const start = document.getElementById('ev-start').value;
+                const end = document.getElementById('ev-end').value;
+
+                if (!title || !date || !start || !end) {
+                    if (!title) document.getElementById('ev-title').classList.add('is-invalid');
+                    if (!date) document.getElementById('ev-date').classList.add('is-invalid');
+                    if (!start) document.getElementById('ev-start').classList.add('is-invalid');
+                    if (!end) document.getElementById('ev-end').classList.add('is-invalid');
+
+                    setTimeout(() => {
+                        ['ev-title', 'ev-date', 'ev-start', 'ev-end'].forEach(id =>
+                            document.getElementById(id).classList.remove('is-invalid')
+                        );
+                    }, 2500);
+
+                    showToastMsg('Title, Date, Start and End times are all required.');
+                    return;
+                }
+
+                if (start >= end) {
+                    showToastMsg('End time must be after start time.');
+                    return;
+                }
+
+                const eventData = {
+                    title: title,
+                    assignee_name: user,
+                    date: date,
+                    start_time: start,
+                    end_time: end,
+                    location: document.getElementById('ev-loc').value.trim() || ''
+                };
+
+                try {
+                    await ApiClient.createTimetableEvent(eventData);
+
+                    if (user && !selectedCalendars.has(user)) {
+                        selectedCalendars.add(user);
+                        saveSelectedCalendars();
+                    }
+                    bsModal.hide();
+                    await renderCalendar();
+                    showToastMsg('Activity scheduled!');
+                } catch (error) {
+                    console.error("Failed to schedule event", error);
+                    alert("Failed to schedule event. Note: You can only edit custom API Timetable events.");
+                }
+            } else {
+                // Task Creation
+                const title = document.getElementById('ev-title').value.trim();
+                const user = document.getElementById('ev-user').value;
+                const priority = document.getElementById('td-priority').value;
+                let due = document.getElementById('td-due').value;
+                const startStr = document.getElementById('td-start').value;
+                const endStr = document.getElementById('td-end').value;
+                const related = document.getElementById('td-related').value.trim();
+                const desc = document.getElementById('td-desc').value.trim();
+
+                if (!title) {
+                    document.getElementById('ev-title').classList.add('is-invalid');
+                    setTimeout(() => document.getElementById('ev-title').classList.remove('is-invalid'), 2000);
+                    return;
+                }
+
+                if (!due) {
+                    due = dStr(new Date());
+                }
+
+                let finalIsoStart = new Date(due).toISOString();
+
+                const payload = {
+                    title: title,
+                    description: desc || null,
+                    priority: priority,
+                    assigned_to: user,
+                    due_date: finalIsoStart,
+                    start_time: startStr ? startStr + ":00" : null,
+                    end_time: endStr ? endStr + ":00" : null,
+                    related_entity: related || null,
+                    client_id: document.getElementById('ev-client').value || null
+                };
+
+                try {
+                    await ApiClient.createTodo(payload);
+
+                    if (user && !selectedCalendars.has(user)) {
+                        selectedCalendars.add(user);
+                        saveSelectedCalendars();
+                    }
+
+                    // Reset form
+                    ['td-related', 'td-desc'].forEach(id => {
+                        const el = document.getElementById(id); if (el) el.value = '';
+                    });
+                    document.getElementById('ev-user').value = '';
+
+                    bsModal.hide();
+                    await renderCalendar();
+                    showToastMsg('To-Do Task created!');
+                } catch (error) {
+                    console.error("Failed to create task", error);
+                    alert("Failed to create task");
+                }
+            }
+        }
+
+        // ── Complete event (circle button click) ────────────────────
+        async function completeEvent(uid) {
+            const ev = events.find(e => e._uid === uid);
+            if (!ev) return;
+
+            if (ev.event_type === 'TODO') {
+                const isCompleted = ev.status === 'COMPLETED';
+                const newStatus = isCompleted ? 'PENDING' : 'COMPLETED';
+                try {
+                    await ApiClient.updateTodo(ev.id, { status: newStatus });
+                    ev.status = newStatus;
+                    renderCalendarLocal();
+                    if (!isCompleted) showCompletedToast(uid);
+                } catch (e) {
+                    console.error("Failed to update Todo status.", e);
+                    showToastMsg("Failed to update Todo");
+                }
+            } else {
+                const wasCompleted = completedIds.has(uid);
+                if (wasCompleted) {
+                    completedIds.delete(uid);
+                    renderCalendarLocal();
+                    showToastMsg('Task marked as incomplete.');
+                } else {
+                    completedIds.add(uid);
+                    renderCalendarLocal();
+                    showCompletedToast(uid);
+                }
+            }
+        }
+
+        // Google Calendar-style completed toast with Undo
+        let _toastEl = null;
+        function showCompletedToast(uid) {
+            if (_toastEl) _toastEl.remove();
+            _toastEl = document.createElement('div');
+            _toastEl.style.cssText = [
+                'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);',
+                'background:#3c4043;color:#fff;padding:12px 20px;border-radius:8px;',
+                'font-size:.875rem;font-weight:400;z-index:9999;',
+                'display:flex;align-items:center;gap:16px;',
+                'box-shadow:0 4px 16px rgba(0,0,0,.3);min-width:260px;'
+            ].join('');
+            _toastEl.innerHTML = `
+                <span>Task completed</span>
+                <button onclick="undoComplete('${uid}')" style="background:none;border:none;color:#8ab4f8;
+                    font-size:.875rem;font-weight:600;cursor:pointer;padding:0;">Undo</button>
+                <button onclick="this.closest('div').remove()" style="background:none;border:none;
+                    color:#9aa0a6;font-size:1rem;cursor:pointer;padding:0;line-height:1;">&times;</button>`;
+            document.body.appendChild(_toastEl);
+            setTimeout(() => { if (_toastEl) { _toastEl.remove(); _toastEl = null; } }, 5000);
+        }
+
+        async function undoComplete(uid) {
+            const ev = events.find(e => e._uid === uid);
+            if (ev && ev.event_type === 'TODO') {
+                try {
+                    await ApiClient.updateTodo(ev.id, { status: 'PENDING' });
+                    ev.status = 'PENDING';
+                } catch (e) { console.error("Could not undo Todo status:", e); }
+            } else {
+                completedIds.delete(uid);
+            }
+            if (_toastEl) { _toastEl.remove(); _toastEl = null; }
+            renderCalendarLocal();
+        }
+
+        // ── Toast ────────────────────────────────────────────────
+        function showToastMsg(msg) {
+            const t = document.createElement('div');
+            t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#22c55e;color:#fff;padding:12px 20px;border-radius:10px;font-size:.875rem;font-weight:500;z-index:9999;box-shadow:0 4px 12px rgba(34,197,94,.4);';
+            t.innerHTML = `<i class="bi bi-check-circle me-2"></i>${msg}`;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        // ── Auto-update current time line every minute ───────────
+        setInterval(() => renderCalendar(), 60000);
+
+        // ── Init ─────────────────────────────────────────────────
+        async function initApp() {
+            bsModal = new bootstrap.Modal(document.getElementById('scheduleModal'));
+            document.getElementById('ev-date').value = dStr(new Date());
+
+            try {
+                currentUser = ApiClient.getCurrentUser();
+                const emps = await ApiClient.getEmployees();
+                ALL_USERS_LIST = emps;
+
+                // Populate Assignee dropdown
+                const sel = document.getElementById('ev-user');
+                sel.innerHTML = '<option value="">— Unassigned —</option>' +
+                    emps.map(e => {
+                        const uniqueVal = e.email || e.name;
+                        const role = (e.role || '').replace(/_/g, ' ');
+                        return `<option value="${uniqueVal}">${e.name || e.email} (${role})</option>`;
+                    }).join('');
+
+                const clients = await ApiClient.getClients();
+                const clientSel = document.getElementById('ev-client');
+                if (clientSel) {
+                    clientSel.innerHTML = '<option value="">— No Client —</option>' +
+                        clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                }
+
+                const currUserName = currentUser ? (currentUser.name || currentUser.email) : '';
+
+                // Populate USERS palette
+                emps.forEach((emp, index) => {
+                    const identifier = emp.name || emp.email;
+                    if (identifier) {
+                        const paletteContext = PALETTE[index % PALETTE.length];
+                        USERS[identifier] = {
+                            color: paletteContext.color,
+                            bg: paletteContext.bg,
+                            initials: getInitials(identifier)
+                        };
+                    }
+                });
+
+                // Load from localStorage or set defaults
+                const savedCals = localStorage.getItem('timetable_selected_cals');
+                if (savedCals) {
+                    try {
+                        const parsedCals = JSON.parse(savedCals);
+                        if (Array.isArray(parsedCals)) {
+                            parsedCals.forEach(c => selectedCalendars.add(c));
+                        }
+                    } catch (e) {
+                        console.error('Failed to parse cached calendars', e);
+                    }
+                }
+
+                // If nothing was parsed in localStorage, apply defaults
+                if (selectedCalendars.size === 0) {
+                    if (currUserName) selectedCalendars.add(currUserName);
+                    selectedCalendars.add('Tasks');
+                    selectedCalendars.add('Birthdays');
+                    saveSelectedCalendars();
+                }
+
+            } catch (error) {
+                console.error("Failed to initialize users", error);
+                const userSel = document.getElementById('ev-user');
+                if (userSel) userSel.innerHTML = '<option value="">— Unassigned —</option>';
+            }
+
+            renderCalendar();
+        }
+
+        initApp();
+    </script>
+</body>
+
+</html>

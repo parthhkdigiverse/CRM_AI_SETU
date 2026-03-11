@@ -2,12 +2,715 @@
 <html lang="en">
 
 <head>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dashboard — CRM AI SETU</title>
+    <title>Overview — SRM AI SETU</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
+    <link rel="stylesheet" href="../css/components.css?v=1772780187">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        /* ── Page content padding ── */
+        .page-content {
+            padding: 24px 28px !important;
+        }
+
+        /* ── Dashboard header ── */
+        .dash-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #6d28d9 100%);
+            border-radius: 20px;
+            padding: 28px 32px;
+            color: white;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dash-header::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 220px;
+            height: 220px;
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 50%;
+        }
+
+        .dash-header::after {
+            content: '';
+            position: absolute;
+            bottom: -60px;
+            left: 40%;
+            width: 180px;
+            height: 180px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
+        .dash-greeting {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .dash-subtext {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .dash-header-actions {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .dash-date-chip {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.92);
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            backdrop-filter: blur(8px);
+            white-space: nowrap;
+            letter-spacing: 0.01em;
+        }
+
+        .dash-live-dot {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            border-radius: 100px;
+            padding: 4px 12px;
+            font-size: 0.72rem;
+            color: #6ee7b7;
+            font-weight: 600;
+        }
+
+        .dash-live-dot::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: live-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes live-pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.4;
+                transform: scale(0.7);
+            }
+        }
+
+        /* ── Filter panel ── */
+        .filter-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            margin-bottom: 22px;
+            box-shadow: var(--shadow-xs);
+            overflow: hidden;
+        }
+
+        .filter-panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--bg-app);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .filter-panel-head-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-body);
+        }
+
+        .filter-panel-head-left i {
+            color: var(--primary);
+            font-size: 0.85rem;
+        }
+
+        .filter-active-pills {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .filter-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 100px;
+            padding: 2px 10px 2px 8px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .filter-pill-remove {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            padding: 0;
+            font-size: 0.75rem;
+            line-height: 1;
+            opacity: 0.7;
+        }
+
+        .filter-pill-remove:hover {
+            opacity: 1;
+        }
+
+        .filter-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .filter-toggle-btn:hover {
+            background: var(--border-subtle);
+            color: var(--text-body);
+        }
+
+        .filter-toggle-btn i {
+            font-size: 0.75rem;
+            transition: transform 0.22s;
+        }
+
+        .filter-toggle-btn.open i {
+            transform: rotate(180deg);
+        }
+
+        .filter-panel-body {
+            padding: 14px 16px 16px;
+            display: none;
+        }
+
+        .filter-panel-body.open {
+            display: block;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .filter-field label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 5px;
+        }
+
+        .filter-field .form-control,
+        .filter-field .form-select {
+            height: 34px;
+            font-size: 0.845rem;
+            padding-top: 0;
+            padding-bottom: 0;
+            width: 100%;
+        }
+
+        .filter-date-range {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-date-range .form-control {
+            flex: 1;
+        }
+
+        .filter-date-range span {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .filter-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: flex-end;
+            padding-top: 4px;
+            border-top: 1px solid var(--border-subtle);
+            margin-top: 4px;
+        }
+
+        .btn-filter-apply {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            height: 32px;
+            padding: 0 16px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: background 0.18s;
+        }
+
+        .btn-filter-apply:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-filter-reset {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            height: 32px;
+            padding: 0 13px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s;
+        }
+
+        .btn-filter-reset:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: var(--danger-light);
+        }
+
+        /* ── KPI Cards ── */
+        .kpi-card {
+            background: var(--surface);
+            border: 1px solid var(--border) !important;
+            border-radius: var(--radius-md) !important;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+            padding: 20px 22px !important;
+            box-shadow: var(--shadow-sm) !important;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .kpi-card.kpi-visits::before {
+            background: linear-gradient(90deg, #4f46e5, #818cf8);
+        }
+
+        .kpi-card.kpi-clients::before {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+
+        .kpi-card.kpi-projects::before {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+
+        .kpi-card.kpi-revenue::before {
+            background: linear-gradient(90deg, #2563eb, #38bdf8);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md) !important;
+        }
+
+        .kpi-label {
+            font-size: 0.67rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .kpi-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.85rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            color: var(--text-main);
+            margin-bottom: 12px;
+        }
+
+        .kpi-card.kpi-revenue .kpi-value {
+            color: var(--info);
+        }
+
+        .kpi-icon-wrapper {
+            width: 42px;
+            height: 42px;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: transform 0.22s ease;
+            flex-shrink: 0;
+        }
+
+        .kpi-card:hover .kpi-icon-wrapper {
+            transform: scale(1.10) rotate(-5deg);
+        }
+
+        .kpi-trend {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-subtle);
+            font-size: 0.73rem;
+        }
+
+        /* ── Section card ── */
+        .section-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .section-card-header {
+            padding: 16px 18px 13px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-card-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-card-title .title-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+
+        .section-card-body {
+            padding: 14px 18px;
+        }
+
+        .view-all-btn {
+            font-size: 0.76rem;
+            font-weight: 600;
+            color: var(--primary);
+            background: var(--primary-light);
+            border: none;
+            border-radius: 7px;
+            padding: 4px 11px;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+
+        .view-all-btn:hover {
+            background: #e0e7ff;
+            color: var(--primary-hover);
+        }
+
+        /* ── Charts ── */
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 18px 20px;
+            height: 100%;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .chart-card-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 2px;
+        }
+
+        .chart-card-sub {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+
+        /* ── Activity Feed ── */
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            transition: background 0.14s;
+            border-radius: 8px;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-item:hover {
+            background: var(--bg-app);
+            padding-left: 4px;
+        }
+
+        .act-icon {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.82rem;
+        }
+
+        .act-time-group {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            padding: 8px 0 3px;
+        }
+
+        /* ── Issues list ── */
+        .issue-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .issue-row:last-child {
+            border-bottom: none;
+        }
+
+        .sev-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .sev-HIGH {
+            background: var(--danger);
+        }
+
+        .sev-MEDIUM {
+            background: var(--warning);
+        }
+
+        .sev-LOW {
+            background: var(--success);
+        }
+
+        /* ── Clients table ── */
+        .clients-table th {
+            background: var(--bg-app);
+            font-size: 0.64rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-muted);
+            padding: 9px 14px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .clients-table td {
+            padding: 10px 14px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.845rem;
+        }
+
+        .clients-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .clients-table tr:hover td {
+            background: var(--bg-app);
+        }
+
+        /* ── Team Members ── */
+        .emp-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .emp-row:last-child {
+            border-bottom: none;
+        }
+
+        /* ── Avatar ── */
+        .avatar-sq {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+
+        .avatar-sq-sm {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.62rem;
+            flex-shrink: 0;
+        }
+
+        /* ── Status / Severity badges ── */
+        .badge-pill {
+            font-size: 0.64rem;
+            font-weight: 700;
+            border-radius: 100px;
+            padding: 3px 9px;
+            letter-spacing: 0.01em;
+        }
+
+        .badge-active {
+            background: var(--success-light);
+            color: var(--success-text);
+        }
+
+        .badge-inactive {
+            background: #F1F5F9;
+            color: #475569;
+        }
+
+        .badge-new {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .badge-pending {
+            background: var(--warning-light);
+            color: var(--warning-text);
+        }
+
+        .badge-solved {
+            background: var(--success-light);
+            color: var(--success-text);
+        }
+
+        .badge-cancel {
+            background: var(--danger-light);
+            color: var(--danger-text);
+        }
+
+        .badge-high {
+            background: var(--danger-light);
+            color: var(--danger-text);
+        }
+
+        .badge-medium {
+            background: var(--warning-light);
+            color: var(--warning-text);
+        }
+
+        .badge-low {
+            background: var(--success-light);
+            color: var(--success-text);
+        }
+
+        /* ── Empty state (compact) ── */
+        .empty-state {
+            text-align: center;
+            padding: 28px 16px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 1.75rem;
+            margin-bottom: 8px;
+            display: block;
+            opacity: 0.35;
+        }
+
+        .empty-state p {
+            font-size: 0.8rem;
+            margin: 0;
+        }
+    </style>
 </head>
 
 <body class="bg-light">
@@ -15,142 +718,243 @@
         <div id="sidebar"></div>
 
         <div class="flex-grow-1">
-            <!-- Top header injected by auth.js -->
+            <!-- Top header injected by auth.js?v=2.3 -->
 
             <div class="page-content">
 
-                <!-- Page Title -->
-                <div class="mb-4">
-                    <h2 class="fw-bold fs-3 mb-1">Dashboard</h2>
-                    <p class="text-muted mb-0" style="font-size:0.93rem;">
-                        Welcome back! Here's what's happening today — <span id="today-date"></span>
-                    </p>
+                <!-- Dashboard Hero Header -->
+                <div class="dash-header mb-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div style="position:relative;z-index:1;">
+                            <div class="dash-greeting">Good <span id="dash-greeting-time"></span>, <span
+                                    id="dash-user-name"></span></div>
+                            <div class="dash-subtext">Here's your business overview</div>
+                        </div>
+                        <div class="dash-header-actions">
+                            <div id="punch-container" class="d-none">
+                                <button id="btn-punch" class="btn btn-light fw-bold px-4"
+                                    style="border-radius:20px; color:var(--primary);">
+                                    <i class="bi bi-clock-history me-2"></i><span id="punch-text">Punch In</span>
+                                </button>
+                            </div>
+                            <div class="dash-date-chip" id="dash-full-date"></div>
+                            <div class="dash-live-dot">Live</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Panel -->
+                <div class="filter-panel">
+                    <div class="filter-panel-head" id="filter-panel-toggle">
+                        <div class="filter-panel-head-left">
+                            <i class="bi bi-sliders2"></i>
+                            Filters
+                            <div class="filter-active-pills" id="filter-pills"></div>
+                        </div>
+                        <button class="filter-toggle-btn" id="filter-toggle-btn" type="button">
+                            <span id="filter-toggle-label">Show</span>
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div class="filter-panel-body" id="filter-panel-body">
+                        <div class="filter-grid">
+                            <div class="filter-field">
+                                <label>Area</label>
+                                <select id="filter-area" class="form-select">
+                                    <option value="">All Areas</option>
+                                </select>
+                            </div>
+                            <div class="filter-field">
+                                <label>User</label>
+                                <select id="filter-user" class="form-select">
+                                    <option value="">All Users</option>
+                                </select>
+                            </div>
+                            <div class="filter-field" style="grid-column: span 2;">
+                                <label>Date Range</label>
+                                <div class="filter-date-range">
+                                    <input type="date" id="filter-start" class="form-control" placeholder="Start date">
+                                    <span><i class="bi bi-arrow-right"></i></span>
+                                    <input type="date" id="filter-end" class="form-control" placeholder="End date">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="filter-actions">
+                            <button class="btn-filter-reset" id="reset-filters"><i class="bi bi-x-circle"></i>
+                                Clear</button>
+                            <button class="btn-filter-apply" id="apply-filters"><i class="bi bi-check2"></i> Apply
+                                Filters</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- KPI Cards -->
-                <div class="row g-3 mb-4">
-                    <div class="col-6 col-lg-3">
-                        <a href="visits.html" class="text-decoration-none h-100">
-                            <div class="card border-0 shadow-sm kpi-card h-100" style="cursor:pointer;">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div class="kpi-title">Total Leads</div>
-                                    <div class="kpi-icon-wrapper icon-purple"><i class="bi bi-bullseye"></i></div>
-                                </div>
-                                <div class="kpi-value" id="kpi-leads">
-                                    <span class="spinner-border spinner-border-sm text-muted"></span>
+                <div class="row g-3 mb-4" id="admin-kpis">
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <a href="visits.html" class="text-decoration-none d-block h-100">
+                            <div class="kpi-card kpi-visits h-100">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1 me-3">
+                                        <div class="kpi-label">Total Visits</div>
+                                        <div class="kpi-value" id="kpi-leads">
+                                            <span class="spinner-border spinner-border-sm text-secondary"></span>
+                                        </div>
+                                    </div>
+                                    <div class="kpi-icon-wrapper" style="background:#eef2ff;color:#4f46e5;">
+                                        <i class="bi bi-calendar-check"></i>
+                                    </div>
                                 </div>
                                 <div class="kpi-trend" id="kpi-leads-trend">—</div>
                             </div>
                         </a>
                     </div>
-                    <div class="col-6 col-lg-3">
-                        <a href="clients.html" class="text-decoration-none h-100">
-                            <div class="card border-0 shadow-sm kpi-card h-100" style="cursor:pointer;">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div class="kpi-title">Active Clients</div>
-                                    <div class="kpi-icon-wrapper icon-teal"><i class="bi bi-people-fill"></i></div>
-                                </div>
-                                <div class="kpi-value" id="kpi-clients">
-                                    <span class="spinner-border spinner-border-sm text-muted"></span>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <a href="clients.html" class="text-decoration-none d-block h-100">
+                            <div class="kpi-card kpi-clients h-100">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1 me-3">
+                                        <div class="kpi-label">Active Clients</div>
+                                        <div class="kpi-value" id="kpi-clients">
+                                            <span class="spinner-border spinner-border-sm text-secondary"></span>
+                                        </div>
+                                    </div>
+                                    <div class="kpi-icon-wrapper" style="background:#ecfdf5;color:#059669;">
+                                        <i class="bi bi-people"></i>
+                                    </div>
                                 </div>
                                 <div class="kpi-trend" id="kpi-clients-trend">—</div>
                             </div>
                         </a>
                     </div>
-                    <div class="col-6 col-lg-3">
-                        <a href="issues.html" class="text-decoration-none h-100">
-                            <div class="card border-0 shadow-sm kpi-card h-100" style="cursor:pointer;">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div class="kpi-title">Open Issues</div>
-                                    <div class="kpi-icon-wrapper icon-yellow"><i class="bi bi-exclamation-triangle"></i>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <a href="projects.html" class="text-decoration-none d-block h-100">
+                            <div class="kpi-card kpi-projects h-100">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1 me-3">
+                                        <div class="kpi-label">Ongoing Projects</div>
+                                        <div class="kpi-value" id="kpi-projects">
+                                            <span class="spinner-border spinner-border-sm text-secondary"></span>
+                                        </div>
+                                    </div>
+                                    <div class="kpi-icon-wrapper" style="background:#fffbeb;color:#d97706;">
+                                        <i class="bi bi-briefcase"></i>
                                     </div>
                                 </div>
-                                <div class="kpi-value" id="kpi-issues">
-                                    <span class="spinner-border spinner-border-sm text-muted"></span>
-                                </div>
-                                <div class="kpi-trend" id="kpi-issues-trend">—</div>
+                                <div class="kpi-trend" id="kpi-projects-trend">—</div>
                             </div>
                         </a>
                     </div>
-                    <div class="col-6 col-lg-3">
-                        <a href="visits.html" class="text-decoration-none h-100">
-                            <div class="card border-0 shadow-sm kpi-card h-100" style="cursor:pointer;">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div class="kpi-title">Total Visits</div>
-                                    <div class="kpi-icon-wrapper icon-green"><i class="bi bi-geo-alt-fill"></i></div>
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <a href="billing.html" class="text-decoration-none d-block h-100">
+                            <div class="kpi-card kpi-revenue h-100">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1 me-3">
+                                        <div class="kpi-label">Revenue (MTD)</div>
+                                        <div class="kpi-value" id="kpi-revenue">
+                                            <span class="spinner-border spinner-border-sm text-secondary"></span>
+                                        </div>
+                                    </div>
+                                    <div class="kpi-icon-wrapper" style="background:#eff6ff;color:#2563eb;">
+                                        <i class="bi bi-currency-rupee"></i>
+                                    </div>
                                 </div>
-                                <div class="kpi-value" id="kpi-visits">
-                                    <span class="spinner-border spinner-border-sm text-muted"></span>
-                                </div>
-                                <div class="kpi-trend" id="kpi-visits-trend">—</div>
+                                <div class="kpi-trend" id="kpi-revenue-trend">—</div>
                             </div>
                         </a>
+                    </div>
+                </div>
+
+                <!-- User Attendance KPIs (Initially Hidden) -->
+                <div class="row g-3 mb-4 d-none" id="user-kpis">
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <div class="kpi-card kpi-visits h-100">
+                            <div class="kpi-label">Today's Hours</div>
+                            <div class="kpi-value" id="kpi-hours-today">0.00</div>
+                            <div class="kpi-trend">Production Today</div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <div class="kpi-card kpi-clients h-100">
+                            <div class="kpi-label">This Week</div>
+                            <div class="kpi-value" id="kpi-hours-week">0.00</div>
+                            <div class="kpi-trend">Total Hours</div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <div class="kpi-card kpi-revenue h-100">
+                            <div class="kpi-label">This Month</div>
+                            <div class="kpi-value" id="kpi-hours-month">0.00</div>
+                            <div class="kpi-trend">Total Hours</div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Charts Row -->
                 <div class="row g-3 mb-4">
-                    <!-- Bar: Visits/Leads by Month -->
-                    <div class="col-md-5">
-                        <div class="card border-0 shadow-sm h-100 p-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold mb-0">Leads by Month</h6>
-                                <span class="badge rounded-pill"
-                                    style="background:#eef2ff;color:#4f46e5;font-size:0.7rem;">Live</span>
-                            </div>
-                            <canvas id="leadsChart" height="230"></canvas>
-                        </div>
-                    </div>
-                    <!-- Status Breakdown: Issues -->
-                    <div class="col-md-3">
-                        <div class="card border-0 shadow-sm h-100 p-4">
-                            <h6 class="fw-bold mb-3">Issues by Severity</h6>
-                            <canvas id="issuesChart" height="220"></canvas>
-                            <div id="issues-legend" class="mt-3" style="font-size:0.78rem;"></div>
-                        </div>
-                    </div>
-                    <!-- Lead Status Donut -->
                     <div class="col-md-4">
-                        <div class="card border-0 shadow-sm h-100 p-4">
-                            <h6 class="fw-bold mb-3">Lead Status Breakdown</h6>
-                            <canvas id="leadStatusChart" height="200"></canvas>
-                            <div id="lead-status-legend" class="d-flex flex-wrap gap-2 mt-3" style="font-size:0.78rem;">
+                        <div class="chart-card">
+                            <div class="chart-card-title">Visits by Month</div>
+                            <div class="chart-card-sub">Field visit activity — last 6 months</div>
+                            <div style="position:relative;height:220px;">
+                                <canvas id="leadsChart"></canvas>
                             </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="chart-card">
+                            <div class="chart-card-title">Revenue Trend</div>
+                            <div class="chart-card-sub">Monthly revenue movement</div>
+                            <div style="position:relative;height:220px;">
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="chart-card d-flex flex-column">
+                            <div class="chart-card-title">Shop Sources</div>
+                            <div class="chart-card-sub">Distribution by acquisition channel</div>
+                            <div class="d-flex justify-content-center flex-grow-1"
+                                style="position:relative;height:180px;">
+                                <canvas id="sourcesChart"></canvas>
+                            </div>
+                            <div id="sources-legend" class="d-flex flex-wrap justify-content-center gap-3 mt-3"
+                                style="font-size:0.72rem;"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Activity + Tasks Row -->
-                <div class="row g-3">
-                    <!-- Recent Activity (from activity logs API) -->
+                <!-- Activity + Issues Row -->
+                <div class="row g-3 mb-4">
                     <div class="col-md-7">
-                        <div class="card border-0 shadow-sm h-100 p-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold mb-0">Recent Activity</h6>
-                                <button onclick="loadActivity()" class="btn btn-sm text-primary fw-semibold"
-                                    style="background:#eef2ff;font-size:0.8rem;">
-                                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
-                                </button>
+                        <div class="section-card h-100">
+                            <div class="section-card-header">
+                                <div class="section-card-title">
+                                    <div class="title-icon" style="background:#eef2ff;color:#4f46e5;"><i
+                                            class="bi bi-activity"></i></div>
+                                    Recent Activity
+                                </div>
+                                <span class="view-all-btn" style="cursor:default;opacity:0.5;">Last 10 actions</span>
                             </div>
-                            <div id="activity-feed">
-                                <div class="text-center text-muted py-4">
+                            <div class="section-card-body" id="activity-feed">
+                                <div class="text-center py-4 text-secondary">
                                     <div class="spinner-border spinner-border-sm"></div>
-                                    <p class="mt-2 small">Loading activity...</p>
+                                    <p class="mt-2 small mb-0">Loading activity...</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Open Issues Table -->
                     <div class="col-md-5">
-                        <div class="card border-0 shadow-sm h-100 p-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold mb-0">Open Issues</h6>
-                                <a href="issues.html" class="btn btn-sm text-primary fw-semibold"
-                                    style="background:#eef2ff;font-size:0.8rem;">View All</a>
+                        <div class="section-card h-100">
+                            <div class="section-card-header">
+                                <div class="section-card-title">
+                                    <div class="title-icon" style="background:#fff1f2;color:#e11d48;"><i
+                                            class="bi bi-exclamation-circle"></i></div>
+                                    Open Issues
+                                </div>
+                                <a href="issues.html" class="view-all-btn">View All</a>
                             </div>
-                            <div id="open-issues-list">
-                                <div class="text-center text-muted py-4">
+                            <div class="section-card-body" id="open-issues-list">
+                                <div class="text-center py-4 text-secondary">
                                     <div class="spinner-border spinner-border-sm"></div>
                                 </div>
                             </div>
@@ -159,19 +963,19 @@
                 </div>
 
                 <!-- Clients + Employees Row -->
-                <div class="row g-3 mt-1">
-                    <!-- Recent Clients -->
+                <div class="row g-3">
                     <div class="col-md-7">
-                        <div class="card border-0 shadow-sm">
-                            <div
-                                class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                                <span class="fw-bold"><i class="bi bi-people me-2 text-primary"></i>Recent
-                                    Clients</span>
-                                <a href="clients.html" class="btn btn-sm text-primary fw-semibold"
-                                    style="background:#eef2ff;">View All</a>
+                        <div class="section-card">
+                            <div class="section-card-header">
+                                <div class="section-card-title">
+                                    <div class="title-icon" style="background:#ecfdf5;color:#059669;"><i
+                                            class="bi bi-people"></i></div>
+                                    Recent Clients
+                                </div>
+                                <a href="clients.html" class="view-all-btn">View All</a>
                             </div>
-                            <div class="card-body p-0">
-                                <table class="table mb-0" style="font-size:0.875rem;">
+                            <div class="p-0">
+                                <table class="table clients-table mb-0">
                                     <thead>
                                         <tr>
                                             <th>Name</th>
@@ -182,7 +986,7 @@
                                     </thead>
                                     <tbody id="clients-table">
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted py-4">
+                                            <td colspan="4" class="text-center text-secondary py-4">
                                                 <div class="spinner-border spinner-border-sm"></div>
                                             </td>
                                         </tr>
@@ -191,22 +995,19 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Employees quick view -->
                     <div class="col-md-5">
-                        <div class="card border-0 shadow-sm">
-                            <div
-                                class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                                <span class="fw-bold"><i class="bi bi-person-badge me-2 text-primary"></i>Team
-                                    Members</span>
-                                <a href="hrm.html" class="btn btn-sm text-primary fw-semibold"
-                                    style="background:#eef2ff;">HR &amp; Payroll</a>
+                        <div class="section-card">
+                            <div class="section-card-header">
+                                <div class="section-card-title">
+                                    <div class="title-icon" style="background:#eef2ff;color:#4f46e5;"><i
+                                            class="bi bi-person-badge"></i></div>
+                                    Team Members
+                                </div>
+                                <a href="employees.html" class="view-all-btn">View All</a>
                             </div>
-                            <div class="card-body p-0">
-                                <div id="employees-list" class="px-3 pb-3">
-                                    <div class="text-center text-muted py-4">
-                                        <div class="spinner-border spinner-border-sm"></div>
-                                    </div>
+                            <div class="section-card-body" id="employees-list">
+                                <div class="text-center py-4 text-secondary">
+                                    <div class="spinner-border spinner-border-sm"></div>
                                 </div>
                             </div>
                         </div>
@@ -217,16 +1018,91 @@
         </div>
     </div>
 
-    <script src="../js/auth.js"></script>
+    <script src="../js/utils.js?v=1772780187"></script>
+    <script src="../js/api.js?v=2.3"></script>
+    <script src="../js/ui_components.js?v=1772780187"></script>
+    <script src="../js/auth.js?v=2.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
         document.getElementById('sidebar').innerHTML = renderSidebar('dashboard');
-        document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-IN', {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-        });
+        injectTopHeader('Overview');
+
+        // Greeting by time of day + user name
+        const hour = new Date().getHours();
+        document.getElementById('dash-greeting-time').textContent =
+            hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening';
+
+        var crmUser = (function () { try { return JSON.parse(localStorage.getItem('crm_user')); } catch (e) { return null; } })();
+        var firstName = (crmUser && crmUser.name) ? crmUser.name.trim().split(' ')[0] : '';
+        document.getElementById('dash-user-name').textContent = firstName;
+
+        const now = new Date();
+        document.getElementById('dash-full-date').textContent = now.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
+        // ─── Attendance Logic ──────────────────────────────────────────
+        async function initAttendance() {
+            const u = getUser();
+            if (!u || u.role === 'ADMIN') return;
+
+            // Show user-specific UI
+            document.getElementById('punch-container').classList.remove('d-none');
+            document.getElementById('admin-kpis').classList.add('d-none');
+            document.getElementById('user-kpis').classList.remove('d-none');
+
+            await refreshAttendance();
+
+            document.getElementById('btn-punch').onclick = async () => {
+                try {
+                    const btn = document.getElementById('btn-punch');
+                    btn.disabled = true;
+                    await ApiClient.punch();
+                    showToast('Punch entry recorded');
+                    await refreshAttendance();
+                } catch (e) {
+                    showToast('Failed to record punch', 'error');
+                } finally {
+                    document.getElementById('btn-punch').disabled = false;
+                }
+            };
+        }
+
+        async function refreshAttendance() {
+            try {
+                const status = await ApiClient.getPunchStatus();
+                const btn = document.getElementById('btn-punch');
+                const text = document.getElementById('punch-text');
+
+                if (status.is_punched_in) {
+                    btn.classList.replace('btn-light', 'btn-danger');
+                    btn.style.color = 'white';
+                    text.textContent = 'Punch Out';
+                } else {
+                    btn.classList.replace('btn-danger', 'btn-light');
+                    btn.style.color = 'var(--primary)';
+                    text.textContent = 'Punch In';
+                }
+
+                document.getElementById('kpi-hours-today').textContent = status.today_hours.toFixed(2);
+                document.getElementById('kpi-hours-week').textContent = status.week_hours.toFixed(2);
+                document.getElementById('kpi-hours-month').textContent = status.month_hours.toFixed(2);
+            } catch (e) {
+                console.error('Failed to load attendance status', e);
+            }
+        }
+
+        initAttendance();
 
         // ── Utility ─────────────────────────────────────────────────────
+        function getInitials(name) {
+            if (!name) return '??';
+            const parts = name.trim().split(' ').filter(part => part.length > 0);
+            if (parts.length === 1) {
+                return parts[0].substring(0, 2).toUpperCase();
+            }
+            return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+        }
+
         function timeAgo(dateStr) {
             if (!dateStr) return '—';
             const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
@@ -251,76 +1127,113 @@
         }
 
         // ── Charts (now using backend-aggregated data) ──────────────────
-        let leadsChart, issuesChart, leadStatusChart;
+        let leadsChartObj, revenueChartObj, sourcesChartObj;
 
         function initCharts(stats) {
-            // 1. Leads by Month (bar)
-            const labels = Object.keys(stats.leads_by_month);
-            const data = Object.values(stats.leads_by_month);
+            Chart.defaults.font.family = "'Inter', 'Segoe UI', sans-serif";
 
-            if (leadsChart) leadsChart.destroy();
-            leadsChart = new Chart(document.getElementById('leadsChart'), {
-                type: 'bar',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: 'Visits/Leads', data,
-                        backgroundColor: '#4f46e5', borderRadius: 5
-                    }]
-                },
-                options: {
-                    plugins: { legend: { display: false } }, scales: {
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
-                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+            // 1. Visits by Month (bar)
+            try {
+                let labels = Object.keys(stats.visits_by_month || {});
+                let data = Object.values(stats.visits_by_month || {});
+                if (labels.length === 0) { labels = ['No Data']; data = [0]; }
+
+                if (leadsChartObj) leadsChartObj.destroy();
+                leadsChartObj = new Chart(document.getElementById('leadsChart'), {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Visits', data,
+                            backgroundColor: '#4f46e5', borderRadius: 4, barPercentage: 0.6
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, border: { display: false }, grid: { color: '#f1f5f9', drawTicks: false }, ticks: { font: { size: 10 }, padding: 10, stepSize: 35 } },
+                            x: { border: { display: false }, grid: { display: false }, ticks: { font: { size: 10 } } }
+                        },
+                        maintainAspectRatio: false
                     }
-                }
-            });
+                });
+            } catch (e) { console.error("Visits Chart Error:", e); }
 
-            // 2. Issues by Severity (donut)
-            const sevData = stats.issue_severity_breakdown;
-            if (issuesChart) issuesChart.destroy();
-            issuesChart = new Chart(document.getElementById('issuesChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(sevData),
-                    datasets: [{
-                        data: Object.values(sevData),
-                        backgroundColor: ['#ef4444', '#f59e0b', '#10b981'], borderWidth: 0
-                    }]
-                },
-                options: { plugins: { legend: { display: false } }, cutout: '65%' }
-            });
-            document.getElementById('issues-legend').innerHTML = Object.entries(sevData).map(([l, v]) => {
-                const colors = { HIGH: '#ef4444', MEDIUM: '#f59e0b', LOW: '#10b981' };
-                return `<div class="d-flex align-items-center gap-1 mb-1">
-                <span style="width:10px;height:10px;border-radius:50%;background:${colors[l] || '#94a3b8'};display:inline-block;flex-shrink:0;"></span>
-                <span>${l}: <b>${v}</b></span></div>`;
-            }).join('');
+            // 2. Revenue Trend (Line)
+            try {
+                let rLabels = Object.keys(stats.revenue_by_month || {});
+                let rData = Object.values(stats.revenue_by_month || {});
+                if (rLabels.length === 0) { rLabels = ['No Data']; rData = [0]; }
 
-            // 3. Lead/Visit Status donut
-            const stData = stats.visit_status_breakdown;
-            const stColors = ['#10b981', '#4f46e5', '#ef4444', '#f59e0b', '#06b6d4', '#94a3b8'];
-            if (leadStatusChart) leadStatusChart.destroy();
-            leadStatusChart = new Chart(document.getElementById('leadStatusChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(stData),
-                    datasets: [{ data: Object.values(stData), backgroundColor: stColors, borderWidth: 0 }]
-                },
-                options: { plugins: { legend: { display: false } }, cutout: '60%' }
-            });
-            document.getElementById('lead-status-legend').innerHTML = Object.keys(stData).map((s, i) =>
-                `<span><span style="width:10px;height:10px;background:${stColors[i % stColors.length]};border-radius:50%;display:inline-block;"></span> ${s}: <b>${stData[s]}</b></span>`
-            ).join(' ');
+                if (revenueChartObj) revenueChartObj.destroy();
+                revenueChartObj = new Chart(document.getElementById('revenueChart'), {
+                    type: 'line',
+                    data: {
+                        labels: rLabels,
+                        datasets: [{
+                            label: 'Revenue', data: rData,
+                            borderColor: '#10b981', backgroundColor: '#10b981',
+                            tension: 0.4, borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#10b981'
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true, border: { display: false }, grid: { color: '#f1f5f9' },
+                                ticks: { font: { size: 10 }, callback: (value) => '₹' + (value >= 1000 ? (value / 1000) + 'K' : value) }
+                            },
+                            x: { border: { display: false }, grid: { display: false }, ticks: { font: { size: 10 } } }
+                        },
+                        maintainAspectRatio: false
+                    }
+                });
+            } catch (e) { console.error("Revenue Chart Error:", e); }
+
+            // 3. Shop Sources (Donut)
+            try {
+                let sData = stats.shop_sources_breakdown || {};
+                if (Object.keys(sData).length === 0) { sData = { 'No Data': 1 }; }
+
+                const sLabels = Object.keys(sData);
+                const sValues = Object.values(sData);
+                const sColors = ['#6366f1', '#06b6d4', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6'];
+
+                if (sourcesChartObj) sourcesChartObj.destroy();
+                sourcesChartObj = new Chart(document.getElementById('sourcesChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: sLabels,
+                        datasets: [{
+                            data: sValues,
+                            backgroundColor: sColors.slice(0, sLabels.length),
+                            borderWidth: 0,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { display: false } },
+                        cutout: '75%',
+                        maintainAspectRatio: false
+                    }
+                });
+
+                document.getElementById('sources-legend').innerHTML = sLabels.map((s, i) =>
+                    `<div class="d-flex align-items-center gap-2 fw-medium text-secondary" style="font-size: 0.7rem;">
+                        <span style="width:8px;height:8px;background:${sColors[i % sColors.length]};border-radius:2px;display:inline-block;"></span> 
+                        <span>${s}</span>
+                    </div>`
+                ).join('');
+            } catch (e) { console.error("Sources Chart Error:", e); }
         }
 
         // ── Activity Feed ─────────────────────────────────────────────────
         const ACTION_META = {
-            CREATE: { icon: 'bi-plus-circle-fill', cls: 'purple', label: 'Created' },
-            UPDATE: { icon: 'bi-pencil-fill', cls: 'blue', label: 'Updated' },
-            DELETE: { icon: 'bi-trash-fill', cls: 'red', label: 'Deleted' },
-            LOGIN: { icon: 'bi-person-check-fill', cls: 'green', label: 'Logged in' },
-            LOGOUT: { icon: 'bi-box-arrow-right', cls: 'teal', label: 'Logged out' },
+            CREATE: { icon: 'bi-plus-lg', bg: '#e0e7ff', color: '#4f46e5', label: 'Created' },
+            UPDATE: { icon: 'bi-pencil-fill', bg: '#e0f2fe', color: '#0ea5e9', label: 'Updated' },
+            DELETE: { icon: 'bi-trash-fill', bg: '#ffe4e6', color: '#e11d48', label: 'Deleted' },
+            LOGIN: { icon: 'bi-box-arrow-in-right', bg: '#dcfce7', color: '#16a34a', label: 'Logged in' },
+            LOGOUT: { icon: 'bi-box-arrow-right', bg: '#f1f5f9', color: '#64748b', label: 'Logged out' },
         };
 
         async function loadActivity() {
@@ -329,29 +1242,47 @@
             try {
                 const logs = await apiGet('/activity-logs/?limit=10');
                 if (!logs.length) {
-                    feed.innerHTML = `<p class="text-muted small text-center py-4">No recent activity.</p>`;
+                    feed.innerHTML = `<div class="empty-state"><i class="bi bi-clock-history"></i><p>No recent activity to show.</p></div>`;
                     return;
                 }
+                const entityStyles = {
+                    CLIENT: { bg: '#ecfdf5', color: '#059669' },
+                    ISSUE: { bg: '#fff1f2', color: '#e11d48' },
+                    VISIT: { bg: '#fffbeb', color: '#d97706' },
+                    PROJECT: { bg: '#eef2ff', color: '#4f46e5' },
+                    LEAD: { bg: '#f0f9ff', color: '#0369a1' },
+                };
                 feed.innerHTML = logs.map(log => {
-                    const m = ACTION_META[log.action] || { icon: 'bi-activity', cls: 'teal', label: log.action };
+                    const m = ACTION_META[log.action] || { icon: 'bi-activity', bg: '#f1f5f9', color: '#64748b', label: log.action };
+                    const es = entityStyles[log.entity_type] || { bg: '#f1f5f9', color: '#64748b' };
+                    const initials = getInitials(log.user_name || 'System');
+
                     return `
-                <div class="activity-item">
-                    <div class="activity-icon ${m.cls}"><i class="bi ${m.icon}"></i></div>
-                    <div class="flex-grow-1">
-                        <div class="fw-semibold small">${m.label}: ${log.entity_type}</div>
-                        <div class="text-muted" style="font-size:0.78rem;">
-                            User #${log.user_id} · ${log.user_role.replace(/_/g, ' ')}
+                    <div class="activity-item">
+                        <div class="act-icon" style="background:${m.bg};color:${m.color};">
+                            <i class="bi ${m.icon}"></i>
                         </div>
-                    </div>
-                    <div class="text-muted d-flex align-items-center gap-1" style="font-size:0.78rem;white-space:nowrap;">
-                        <i class="bi bi-clock"></i> ${timeAgo(log.created_at)}
-                    </div>
-                </div>`;
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-1" style="margin-bottom:2px;">
+                                <span class="fw-semibold" style="font-size:0.84rem;color:#0f172a;">
+                                    ${m.label}
+                                    <span class="ms-1 px-2 py-0" style="font-size:0.68rem;font-weight:600;border-radius:6px;background:${es.bg};color:${es.color};">
+                                        ${log.entity_type || ''}
+                                    </span>
+                                </span>
+                                <span style="font-size:0.68rem;color:#94a3b8;white-space:nowrap;">
+                                    ${timeAgo(log.created_at)}
+                                </span>
+                            </div>
+                            <div style="font-size:0.75rem;color:#64748b;">
+                                <span style="font-weight:600;color:#334155;">${log.user_name || 'System'}</span>
+                                ${log.user_role ? `<span class="mx-1 opacity-50">&middot;</span><span>${log.user_role.replace(/_/g, ' ')}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
                 }).join('');
             } catch (e) {
-                feed.innerHTML = `<p class="text-muted small text-center py-4">
-                <i class="bi bi-wifi-off me-1"></i>Activity logs unavailable (admin only).
-            </p>`;
+                feed.innerHTML = `<div class="empty-state"><i class="bi bi-wifi-off"></i><p>Activity logs unavailable.</p></div>`;
             }
         }
 
@@ -359,23 +1290,30 @@
         async function loadOpenIssues() {
             const el = document.getElementById('open-issues-list');
             try {
-                const issues = await apiGet('/issues/?status=OPEN&limit=5');
-                if (!issues.length) {
-                    el.innerHTML = `<div class="text-center py-4 text-success">
-                    <i class="bi bi-check2-circle" style="font-size:2rem;"></i>
-                    <p class="mt-2 small mb-0">No open issues! Great job.</p></div>`;
+                const issues = await apiGet('/issues/?status=PENDING,SOLVED,RESOLVED&limit=20');
+                const filtered = issues.filter(i => ['PENDING', 'SOLVED', 'RESOLVED'].includes(i.status)).slice(0, 5);
+                if (!filtered.length) {
+                    el.innerHTML = `<div class="empty-state"><i class="bi bi-check-circle text-success"></i><p class="text-success fw-semibold">No open issues — great work!</p></div>`;
                     return;
                 }
-                el.innerHTML = issues.map(i => `
-            <div class="task-item">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge ${sevBadge(i.severity)} rounded-pill" style="font-size:0.68rem;">${i.severity || '?'}</span>
-                    <span class="small fw-semibold text-truncate" style="max-width:170px;">${i.title}</span>
-                </div>
-                <span class="text-muted small">#${i.client_id}</span>
-            </div>`).join('');
+                const sevStyle = {
+                    HIGH: 'background:#fee2e2;color:#b91c1c;',
+                    MEDIUM: 'background:#fef3c7;color:#92400e;',
+                    LOW: 'background:#d1fae5;color:#059669;',
+                };
+                el.innerHTML = filtered.map(i => `
+                    <div class="issue-row">
+                        <div class="sev-dot sev-${i.severity || 'LOW'}"></div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="fw-semibold text-truncate" style="font-size:0.84rem;color:#0f172a;" title="${i.title}">${i.title}</div>
+                            <div style="font-size:0.72rem;color:#94a3b8;">${i.reporter_name || 'Unknown'}</div>
+                        </div>
+                        <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
+                            <span class="badge-pill" style="${sevStyle[i.severity] || sevStyle.LOW}">${i.severity || 'LOW'}</span>
+                        </div>
+                    </div>`).join('');
             } catch (e) {
-                el.innerHTML = `<p class="text-muted small text-center py-4">Could not load issues.</p>`;
+                el.innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-triangle"></i><p>Could not load issues.</p></div>`;
             }
         }
 
@@ -388,20 +1326,34 @@
                     tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">No clients yet.</td></tr>`;
                     return;
                 }
-                tbody.innerHTML = clients.map(c => `
-            <tr>
-                <td class="fw-semibold">${c.name}</td>
-                <td class="text-muted small">${c.organization || '—'}</td>
-                <td><span class="badge rounded-pill ${c.status === 'ACTIVE' ? 'badge-success' : 'bg-secondary'}"
-                    style="font-size:0.68rem;">${c.status || 'NEW'}</span></td>
-                <td>${c.pm_id ? `<span class="badge badge-primary rounded-pill" style="font-size:0.68rem;">PM #${c.pm_id}</span>` : '<span class="text-muted small">Unassigned</span>'}</td>
-            </tr>`).join('');
+                tbody.innerHTML = clients.map(c => {
+                    const initials = getInitials(c.name || 'Client');
+                    const statusStyle = c.status === 'ACTIVE'
+                        ? 'background:#d1fae5;color:#059669;'
+                        : c.status === 'INACTIVE'
+                            ? 'background:#f1f5f9;color:#64748b;'
+                            : 'background:#e0e7ff;color:#4f46e5;';
+                    return `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="avatar-sq-sm" style="background:#eef2ff;color:#4f46e5;">${initials}</div>
+                                <div>
+                                    <div class="fw-semibold" style="font-size:0.84rem;color:#0f172a;">${c.name}</div>
+                                    <div style="font-size:0.72rem;color:#94a3b8;">${c.email || ''}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color:#64748b;font-size:0.84rem;">${c.organization || '—'}</td>
+                        <td><span class="badge-pill" style="${statusStyle}">${(c.status || 'NEW').replace('_', ' ')}</span></td>
+                        <td style="font-size:0.82rem;color:#334155;">${c.pm_name || '<span style="color:#94a3b8;">Unassigned</span>'}</td>
+                    </tr>`;
+                }).join('');
             } catch (e) {
                 tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Could not load clients.</td></tr>`;
             }
         }
 
-        // ── Employees list ────────────────────────────────────────────────
         async function loadEmployees() {
             const el = document.getElementById('employees-list');
             try {
@@ -410,62 +1362,84 @@
                     el.innerHTML = `<p class="text-muted small text-center py-3">No employees found.</p>`;
                     return;
                 }
-                el.innerHTML = emps.map(e => {
-                    const initials = (e.full_name || e.user?.name || 'EMP').slice(0, 2).toUpperCase();
-                    const name = e.full_name || e.user?.name || `Employee #${e.id}`;
+                const pastelColors = ['#eef2ff', '#ecfdf5', '#fffbeb', '#fef2f2', '#f0f9ff'];
+                const textColors = ['#4f46e5', '#059669', '#d97706', '#dc2626', '#0ea5e9'];
+                el.innerHTML = emps.map((e, idx) => {
+                    const initials = getInitials(e.name || 'Employee');
+                    const name = e.name || `Employee #${e.id}`;
                     const role = (e.department || e.user?.role || '').replace(/_/g, ' ');
+                    const bg = pastelColors[idx % pastelColors.length];
+                    const fg = textColors[idx % textColors.length];
                     return `
-                <div class="d-flex align-items-center gap-3 py-2" style="border-bottom:1px solid #f1f5f9;">
-                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
-                        style="width:36px;height:36px;font-size:0.75rem;">${initials}</div>
-                    <div class="flex-grow-1 overflow-hidden">
-                        <div class="fw-semibold small text-truncate">${name}</div>
-                        <div class="text-muted" style="font-size:0.72rem;">${role}</div>
-                    </div>
-                </div>`;
+                    <div class="emp-row">
+                        <div class="avatar-sq" style="background:${bg};color:${fg};">${initials}</div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="fw-semibold text-truncate" style="font-size:0.84rem;color:#0f172a;">${name}</div>
+                            <div style="font-size:0.72rem;color:#94a3b8;">${role || 'Team Member'}</div>
+                        </div>
+                    </div>`;
                 }).join('');
             } catch (e) {
-                el.innerHTML = `<p class="text-muted small text-center py-3">Could not load team (admin only).</p>`;
+                el.innerHTML = `<p class="text-muted small text-center py-4">Could not load team info.</p>`;
             }
         }
 
         // ── Main loader ───────────────────────────────────────────────────
+        function formatTrend(pct) {
+            const isPos = pct >= 0;
+            const color = isPos ? 'text-success' : 'text-danger';
+            const icon = isPos ? 'bi-arrow-up-right' : 'bi-arrow-down-right';
+            const prefix = isPos ? '+' : '';
+            return `<span class="${color} fw-bold me-1" style="font-size: 0.7rem;"><i class="bi ${icon}"></i> ${prefix}${pct}%</span><span class="text-secondary opacity-75" style="font-size: 0.65rem;">vs last month</span>`;
+        }
+
         async function loadDashboard() {
+            const areaId = document.getElementById('filter-area').value;
+            const userId = document.getElementById('filter-user').value;
+            const start = document.getElementById('filter-start').value;
+            const end = document.getElementById('filter-end').value;
+
+            let query = '';
+            if (areaId) query += `&area_id=${areaId}`;
+            if (userId) query += `&user_id=${userId}`;
+            if (start) query += `&start_date=${start}`;
+            if (end) query += `&end_date=${end}`;
+
+            if (query) query = '?' + query.substring(1);
+
             try {
                 // Load pre-aggregated stats from backend
-                const stats = await apiGet('/reports/dashboard');
+                const stats = await apiGet('/reports/dashboard' + query);
 
                 // Update KPIs
-                document.getElementById('kpi-leads').textContent = stats.total_leads.toLocaleString('en-IN');
-                document.getElementById('kpi-leads-trend').innerHTML =
-                    `<i class="bi bi-bullseye text-success"></i> <span class="text-success fw-semibold">${stats.visit_status_breakdown['COMPLETED'] || 0}</span>
-                 <span class="text-muted fw-normal small"> completed visits</span>`;
+                document.getElementById('kpi-leads').textContent = (stats.total_visits || 0).toLocaleString('en-IN');
+                document.getElementById('kpi-leads-trend').innerHTML = formatTrend(stats.visits_mom_pct || 0);
 
-                document.getElementById('kpi-clients').textContent = stats.active_clients.toLocaleString('en-IN');
-                document.getElementById('kpi-clients-trend').innerHTML =
-                    `<i class="bi bi-people text-primary"></i> <span class="text-primary fw-semibold">${stats.ongoing_projects}</span>
-                 <span class="text-muted fw-normal small"> with PM assigned</span>`;
+                document.getElementById('kpi-clients').textContent = (stats.active_clients || 0).toLocaleString('en-IN');
+                document.getElementById('kpi-clients-trend').innerHTML = formatTrend(stats.clients_mom_pct || 0);
 
-                document.getElementById('kpi-issues').textContent = stats.open_issues.toLocaleString('en-IN');
-                const highSevCount = stats.issue_severity_breakdown['HIGH'] || 0;
-                document.getElementById('kpi-issues-trend').innerHTML =
-                    highSevCount > 0
-                        ? `<i class="bi bi-exclamation-triangle-fill text-danger"></i> <span class="text-danger fw-semibold">${highSevCount}</span> <span class="text-muted fw-normal small">critical</span>`
-                        : `<i class="bi bi-check-circle text-success"></i> <span class="text-muted fw-normal small">No critical issues</span>`;
+                document.getElementById('kpi-projects').textContent = (stats.ongoing_projects || 0).toLocaleString('en-IN');
+                document.getElementById('kpi-projects-trend').innerHTML = formatTrend(stats.projects_mom_pct || 0);
 
-                document.getElementById('kpi-visits').textContent = stats.total_leads.toLocaleString('en-IN');
-                const scheduled = stats.visit_status_breakdown['SCHEDULED'] || 0;
-                document.getElementById('kpi-visits-trend').innerHTML =
-                    `<i class="bi bi-calendar-check text-info"></i> <span class="text-info fw-semibold">${scheduled}</span>
-                 <span class="text-muted fw-normal small"> scheduled</span>`;
+                // Format Revenue (e.g. 24.5L, 300K, etc.)
+                const rev = stats.revenue_mtd || 0;
+                let revText = '₹' + rev.toLocaleString('en-IN');
+                if (rev >= 100000) {
+                    revText = '₹' + (rev / 100000).toFixed(1) + 'L';
+                } else if (rev >= 1000) {
+                    revText = '₹' + (rev / 1000).toFixed(1) + 'K';
+                }
+                document.getElementById('kpi-revenue').textContent = revText;
+                document.getElementById('kpi-revenue-trend').innerHTML = formatTrend(stats.revenue_mom_pct || 0);
 
                 // Charts
                 initCharts(stats);
 
             } catch (e) {
                 console.error("Dashboard Stats Error:", e);
-                ['kpi-leads', 'kpi-clients', 'kpi-issues', 'kpi-visits'].forEach(id => {
-                    document.getElementById(id).textContent = '—';
+                ['leads', 'clients', 'projects', 'revenue'].forEach(id => {
+                    const el = document.getElementById('kpi-' + id);
+                    if (el) el.textContent = '—';
                 });
             }
 
@@ -478,6 +1452,90 @@
             ]);
         }
 
+        async function populateFilters() {
+            try {
+                const [areas, users] = await Promise.all([
+                    apiGet('/areas/'),
+                    apiGet('/users/')
+                ]);
+
+                const areaSel = document.getElementById('filter-area');
+                const userSel = document.getElementById('filter-user');
+
+                areas.forEach(a => {
+                    const opt = document.createElement('option');
+                    opt.value = a.id;
+                    opt.textContent = a.name;
+                    areaSel.appendChild(opt);
+                });
+
+                users.filter(u => u.role !== 'CLIENT').forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.id;
+                    opt.textContent = u.name || u.email.split('@')[0];
+                    userSel.appendChild(opt);
+                });
+            } catch (e) {
+                console.warn("Failed to populate filters", e);
+            }
+        }
+
+        document.getElementById('apply-filters').onclick = loadDashboard;
+        document.getElementById('reset-filters').onclick = function () {
+            document.getElementById('filter-area').value = '';
+            document.getElementById('filter-user').value = '';
+            document.getElementById('filter-start').value = '';
+            document.getElementById('filter-end').value = '';
+            updateFilterPills();
+            loadDashboard();
+        };
+
+        // Auto-apply on any filter change
+        ['filter-area', 'filter-user', 'filter-start', 'filter-end'].forEach(function (id) {
+            document.getElementById(id).addEventListener('change', function () {
+                updateFilterPills();
+                loadDashboard();
+            });
+        });
+
+        // Filter panel toggle
+        var filterPanelBody = document.getElementById('filter-panel-body');
+        var filterToggleBtn = document.getElementById('filter-toggle-btn');
+        var filterToggleLabel = document.getElementById('filter-toggle-label');
+        document.getElementById('filter-panel-toggle').addEventListener('click', function () {
+            var isOpen = filterPanelBody.classList.toggle('open');
+            filterToggleBtn.classList.toggle('open', isOpen);
+            filterToggleLabel.textContent = isOpen ? 'Hide' : 'Show';
+        });
+
+        // Active filter pills in header
+        function updateFilterPills() {
+            var pills = document.getElementById('filter-pills');
+            if (!pills) return;
+            var parts = [];
+            var area = document.getElementById('filter-area');
+            var user = document.getElementById('filter-user');
+            var start = document.getElementById('filter-start').value;
+            var end = document.getElementById('filter-end').value;
+            if (area.value) parts.push({ key: 'area', label: area.options[area.selectedIndex].text, inputId: 'filter-area' });
+            if (user.value) parts.push({ key: 'user', label: user.options[user.selectedIndex].text, inputId: 'filter-user' });
+            if (start) parts.push({ key: 'start', label: 'From: ' + start, inputId: 'filter-start' });
+            if (end) parts.push({ key: 'end', label: 'To: ' + end, inputId: 'filter-end' });
+            pills.innerHTML = parts.map(function (p) {
+                return '<span class="filter-pill">' + p.label +
+                    '<button class="filter-pill-remove" data-input="' + p.inputId + '" title="Remove">&times;</button></span>';
+            }).join('');
+            pills.querySelectorAll('.filter-pill-remove').forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    document.getElementById(btn.dataset.input).value = '';
+                    updateFilterPills();
+                    loadDashboard();
+                });
+            });
+        }
+
+        populateFilters();
         loadDashboard();
     </script>
 </body>

@@ -1,3 +1,4 @@
+from typing import Optional, List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Request
 from app.modules.issues.models import Issue
@@ -20,23 +21,53 @@ class IssueService:
     def get_issues(self, skip: int = 0, limit: int = 100):
         return self.db.query(Issue).offset(skip).limit(limit).all()
 
-    def get_all_issues(self, skip: int = 0, limit: int = 100, status=None, severity=None, client_id=None, assigned_to_id=None, pm_id=None):
-        query = self.db.query(Issue)
-        if pm_id: 
-            query = query.join(Client).filter(Client.pm_id == pm_id)
-        if status:
-            query = query.filter(Issue.status == status)
-        if severity:
-            query = query.filter(Issue.severity == severity)
-        if client_id:
-            query = query.filter(Issue.client_id == client_id)
-        if assigned_to_id:
-            query = query.filter(Issue.assigned_to_id == assigned_to_id)
+    def get_all_issues(self, skip: int = 0, limit: int = 100, status: Optional[str] = None, severity: Optional[str] = None, client_id: Optional[int] = None, assigned_to_id: Optional[int] = None, pm_id: Optional[int] = None):
+        try:
+            query = self.db.query(Issue)
+            if pm_id: 
+                query = query.join(Client).filter(Client.pm_id == pm_id)
+            if status:
+                if ',' in status:
+                    status_list = [s.strip() for s in status.split(',')]
+                    query = query.filter(Issue.status.in_(status_list))
+                else:
+                    query = query.filter(Issue.status == status)
+            if severity:
+                query = query.filter(Issue.severity == severity)
+            if client_id:
+                query = query.filter(Issue.client_id == client_id)
+            if assigned_to_id:
+                query = query.filter(Issue.assigned_to_id == assigned_to_id)
+                
+            issues = query.order_by(Issue.id.desc()).offset(skip).limit(limit).all()
             
-        return query.order_by(Issue.id.desc()).offset(skip).limit(limit).all()
+            # Populate logical properties manually
+            for issue in issues:
+                if issue.assigned_to:
+                    issue.pm_name = issue.assigned_to.name or issue.assigned_to.email or issue.assigned_to.employee_code or f"PM #{issue.assigned_to_id}"
+                if issue.project:
+                    issue.project_name = issue.project.name
+                elif issue.client:
+                    issue.project_name = issue.client.name
+                if issue.reporter:
+                    issue.reporter_name = issue.reporter.name or issue.reporter.email or issue.reporter.employee_code or f"User #{issue.reporter_id}"
+                
+            return issues
+        except Exception as e:
+            print(f"Error fetching issues: {e}")
+            return []
 
     async def create_issue(self, issue: IssueCreate, client_id: int, current_user: User, request: Request, background_tasks: BackgroundTasks = None):
-        db_issue = Issue(**issue.dict(), client_id=client_id, reporter_id=current_user.id)
+        client = self.db.query(Client).filter(Client.id == client_id).first()
+        
+        # Priority for assignment: 
+        # 1. Explicitly requested handler
+        # 2. Client's PM
+        # 3. None
+        pm_id = issue.assigned_to_id or (client.pm_id if client else None)
+        
+        db_issue = Issue(**issue.model_dump(), client_id=client_id, reporter_id=current_user.id, assigned_to_id=pm_id)
+
         self.db.add(db_issue)
         self.db.commit()
         self.db.refresh(db_issue)
@@ -48,7 +79,8 @@ class IssueService:
             entity_type=EntityType.ISSUE,
             entity_id=db_issue.id,
             old_data=None,
-            new_data=issue.dict(),
+            new_data=issue.model_dump(),
+
             request=request
         )
 
@@ -93,7 +125,12 @@ class IssueService:
             "assigned_to_id": db_issue.assigned_to_id
         }
 
-        update_data = issue_update.dict(exclude_unset=True)
+        update_data = issue_update.model_dump(exclude_unset=True)
+
+        if "status" in update_data:
+            if "remarks" not in update_data or not update_data["remarks"] or not update_data["remarks"].strip():
+                raise HTTPException(status_code=400, detail="Remarks are compulsory when updating an issue")
+
         for key, value in update_data.items():
             setattr(db_issue, key, value)
 

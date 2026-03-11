@@ -1,13 +1,17 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, EmailStr, field_validator
+from datetime import datetime
 import re
 
 # Client Schemas
 class ClientBase(BaseModel):
     name: str
-    email: EmailStr
-    phone: Optional[str] = None
+    phone: str
+    email: Optional[EmailStr] = None
     organization: Optional[str] = None
+    address: Optional[str] = None
+    project_type: Optional[str] = None
+    requirements: Optional[str] = None
 
     @field_validator("phone")
     @classmethod
@@ -37,7 +41,32 @@ class ClientPMAssign(BaseModel):
 class ClientRead(ClientBase):
     id: int
     pm_id: Optional[int] = None
+    pm_name: Optional[str] = None
     owner_id: Optional[int] = None
+    address: Optional[str] = None
+    project_type: Optional[str] = None
+    requirements: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class PMWorkloadRead(BaseModel):
+    pm_id: int
+    pm_name: str
+    pm_email: str
+    role: str
+    active_client_count: int
+
+    class Config:
+        from_attributes = True
+
+
+class ClientPMHistoryRead(BaseModel):
+    id: int
+    client_id: int
+    pm_id: int
+    assigned_at: datetime
 
     class Config:
         from_attributes = True

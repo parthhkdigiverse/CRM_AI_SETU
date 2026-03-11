@@ -1,15 +1,17 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum, Float
+
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
 from app.core.database import Base
 
 class ProjectStatus(str, enum.Enum):
-    PLANNING = "PLANNING"
+    PLANNING    = "PLANNING"
     IN_PROGRESS = "IN_PROGRESS"
-    COMPLETED = "COMPLETED"
-    ON_HOLD = "ON_HOLD"
-    CANCELLED = "CANCELLED"
+    ONGOING     = "ONGOING"     # legacy alias — map to IN_PROGRESS in UI
+    COMPLETED   = "COMPLETED"
+    ON_HOLD     = "ON_HOLD"
+    CANCELLED   = "CANCELLED"
 
 class Project(Base):
     __tablename__ = "projects"
@@ -25,6 +27,8 @@ class Project(Base):
     
     start_date = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
+    budget = Column(Float, default=0.0)
+
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -1,29 +1,22 @@
-from typing import Optional, List
+from typing import Optional
 from pydantic import BaseModel
 from datetime import datetime
-from app.modules.users.models import UserRole
-
-# Targets
-class IncentiveTargetBase(BaseModel):
-    role: UserRole
-    period: str # Monthly/Quarterly
-    target_count: int
-
-class IncentiveTargetCreate(IncentiveTargetBase):
-    pass
-
-class IncentiveTargetRead(IncentiveTargetBase):
-    id: int
-    class Config:
-        from_attributes = True
 
 # Slabs
 class IncentiveSlabBase(BaseModel):
-    min_percentage: float
-    amount_per_unit: float
+    min_units: int
+    max_units: int
+    incentive_per_unit: float
+    slab_bonus: float
 
 class IncentiveSlabCreate(IncentiveSlabBase):
     pass
+
+class IncentiveSlabUpdate(BaseModel):
+    min_units: Optional[int] = None
+    max_units: Optional[int] = None
+    incentive_per_unit: Optional[float] = None
+    slab_bonus: Optional[float] = None
 
 class IncentiveSlabRead(IncentiveSlabBase):
     id: int
@@ -32,13 +25,13 @@ class IncentiveSlabRead(IncentiveSlabBase):
 
 # Calculation & Slips
 class IncentiveCalculationRequest(BaseModel):
-    employee_id: int
-    period: str # YYYY-MM
+    user_id: int
+    period: str  # YYYY-MM
     closed_units: Optional[int] = None
 
 class IncentiveSlipRead(BaseModel):
     id: int
-    employee_id: int
+    user_id: int
     period: str
     target: int
     achieved: int
@@ -47,6 +40,8 @@ class IncentiveSlipRead(BaseModel):
     amount_per_unit: Optional[float]
     total_incentive: float
     generated_at: datetime
+    user_name: Optional[str] = None
 
     class Config:
         from_attributes = True
+

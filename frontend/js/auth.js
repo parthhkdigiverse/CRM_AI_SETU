@@ -1,46 +1,165 @@
 // auth.js — shared across all pages
-let API = 'http://127.0.0.1:8000/api'; // Fallback
-fetch('http://127.0.0.1:8000/api/config')
+let API = localStorage.getItem('api_base') || (window.location.origin + '/api');
+
+// Background Refresh Config
+fetch((window.location.origin) + '/api/config')
     .then(r => r.json())
-    .then(data => { API = data.API_BASE_URL; })
-    .catch(e => console.warn('Using default API due to fetch error:', e));
+    .then(data => {
+        if (data.API_BASE_URL) {
+            API = data.API_BASE_URL;
+            localStorage.setItem('api_base', API);
+        }
+    })
+    .catch(e => console.warn('Config fetch error:', e));
 
-// Inject global theme styles
-document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/theme.css">');
+// Inject global theme styles (but NOT on the login page to avoid style degradation)
+const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/') || window.location.pathname === '';
+if (!isLoginPage) {
+    document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/theme.css?v=2.6">');
+    document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/components.css?v=2.6">');
+    document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/global.css?v=2.6">');
+}
 
-function getToken() { return sessionStorage.getItem('access_token'); }
+function getToken() {
+    const t = localStorage.getItem('access_token');
+    if (!t || t === 'null' || t === 'undefined' || t === '') return null;
+    return t;
+}
 function setTokens(a, r) {
-    sessionStorage.setItem('access_token', a);
-    if (r) sessionStorage.setItem('refresh_token', r);
+    localStorage.setItem('access_token', a);
+    if (r) localStorage.setItem('refresh_token', r);
 }
 function clearTokens() {
-    sessionStorage.removeItem('access_token');
-    sessionStorage.removeItem('refresh_token');
-    sessionStorage.removeItem('crm_user');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('crm_user');
 }
 function getUser() {
-    try { return JSON.parse(sessionStorage.getItem('crm_user')); } catch { return null; }
+    try { return JSON.parse(localStorage.getItem('crm_user')); } catch { return null; }
 }
 
 // Guard: call on every protected page
 function requireAuth() {
-    if (!getToken()) { window.location.replace('index.html'); return; }
-    const u = getUser();
-    const el = document.getElementById('username-display');
-    if (el && u) el.textContent = u.name || u.email || 'User';
+    const params = new URLSearchParams(window.location.search);
+    const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
+    const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
 
-    // Auto-inject theme header
-    let pageName = document.title.split('—')[0].trim();
-    if (!pageName || pageName === 'CRM AI SETU') pageName = 'Dashboard';
-    injectTopHeader(pageName);
+    if (params.get('dev') === 'true' && isLocal) {
+        document.body.style.visibility = 'visible';
+        let pageName = document.title.split('—')[0].trim();
+        if (!pageName || pageName === 'SRM AI SETU') pageName = 'Dashboard';
+        if (typeof injectTopHeader === 'function') injectTopHeader(pageName);
+        return;
+    }
+
+    const token = getToken();
+    const user = getUser();
+
+    if (!token) {
+        if (!isLoginPage) window.location.replace('index.html');
+        return;
+    }
+
+    // --- ROLE BASED ROUTING GUARD ---
+    const ROLE_PERMISSIONS = {
+        'ADMIN': ['*'],
+        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html'],
+        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html'],
+        'PROJECT_MANAGER': ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html'],
+        'PROJECT_MANAGER_AND_SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html'],
+        'CLIENT': ['dashboard.html']
+    };
+
+    function enforceRoleAccess(role) {
+        if (!role || role === 'ADMIN') return;
+        const path = window.location.pathname.split('/').pop();
+        if (!path || path === 'index.html') return;
+
+        const allowed = ROLE_PERMISSIONS[role] || [];
+        if (!allowed.includes(path) && !allowed.includes('*')) {
+            alert(`Access Denied: Your role (${role.replace(/_/g, ' ')}) is not authorized to view this page.`);
+            window.location.replace('dashboard.html');
+        }
+    }
+
+    // --- OPTIMISTIC UI ---
+    // If we have a user in session, show the page IMMEDIATELY.
+    if (user) {
+        enforceRoleAccess(user.role);
+        document.body.style.visibility = 'visible';
+        const el = document.getElementById('username-display');
+        if (el) el.textContent = user.name || 'User';
+    } else {
+        // Fallback: hide until we get a profile (rare)
+        document.body.style.visibility = 'hidden';
+        // Emergency unhide after 3 seconds to prevent permanent black screen
+        setTimeout(() => { document.body.style.visibility = 'visible'; }, 3000);
+    }
+
+    // Background Verification
+    fetch(`${API}/auth/profile`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+        .then(r => {
+            if (!r.ok) {
+                if (r.status === 401) {
+                    clearTokens();
+                    if (!isLoginPage) window.location.replace('index.html');
+                }
+                return null;
+            }
+            return r.json();
+        })
+        .then(profile => {
+            if (!profile) return;
+            const userData = { id: profile.id, name: profile.name || profile.email, role: profile.role };
+            localStorage.setItem('crm_user', JSON.stringify(userData));
+
+            enforceRoleAccess(userData.role);
+            document.body.style.visibility = 'visible';
+            const el = document.getElementById('username-display');
+            if (el) el.textContent = profile.name || 'User';
+
+            // Fetch and check for critical issues across the app
+            checkCriticalIssues();
+        })
+        .catch((err) => {
+            console.warn('Background auth check failed:', err);
+            document.body.style.visibility = 'visible';
+        });
 }
+
 
 // Re-evaluate auth on back/forward navigation
 window.addEventListener('pageshow', (event) => {
+    const params = new URLSearchParams(window.location.search);
+    const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
+    if (params.get('dev') === 'true' && isLocal) return;
+
+    const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
+
     // If the page was restored from the bfcache and we have no token, kick them
-    if (event.persisted && !getToken() && window.location.pathname.indexOf('index.html') === -1) {
+    if (event.persisted && !getToken() && !isLoginPage) {
         window.location.replace('index.html');
     }
+
+    // If we land on the login page but already have a VALID token, go to dashboard.
+    // DISABLE: This can cause redirect loops if the dashboard is failing or if the user wants to switch accounts.
+    /*
+    const isBypass = params.get('dev') === 'true' || params.get('msg') === 'logged_out';
+
+    if (isLoginPage && getToken() && !isBypass) {
+        // Debounce: wait a tiny bit to ensure API is set from config
+        setTimeout(() => {
+            fetch(API + '/auth/profile', {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            }).then(r => {
+                if (r.ok) window.location.replace('dashboard.html');
+                else clearTokens();
+            }).catch(() => clearTokens());
+        }, 300);
+    }
+    */
 });
 
 // Logout
@@ -49,8 +168,79 @@ function logout() {
     window.location.replace('index.html');
 }
 
+// Global Critical Issue Check
+async function checkCriticalIssues() {
+    // Only check if we are on a valid inner page
+    const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
+    if (isLoginPage) return;
+
+    try {
+        const issues = await apiGet('/issues/?limit=100');
+        const criticalIssues = issues.filter(i => i.severity === 'HIGH' && i.status === 'PENDING');
+
+        if (criticalIssues.length > 0) {
+            // 1. Highlight the sidebar link
+            // Wait for sidebar to render just in case
+            setTimeout(() => {
+                const issuesLink = document.querySelector('a.sb-link[href="issues.html"]');
+                if (issuesLink) {
+                    issuesLink.classList.add('has-critical-issue');
+                    // Optional: auto-expand the PM section if it's hidden
+                    const parentSection = issuesLink.closest('.sb-section');
+                    if (parentSection) {
+                        const hdr = parentSection.querySelector('.sb-section-header');
+                        const lst = parentSection.querySelector('.sb-section-items');
+                        if (hdr && !hdr.classList.contains('open')) {
+                            hdr.classList.add('open');
+                            if (lst) lst.classList.add('open');
+                        }
+                    }
+                }
+            }, 500);
+
+            // 2. Inject into the notification dropdown
+            setTimeout(() => {
+                const bellIcon = document.querySelector('.bi-bell')?.parentElement;
+                if (bellIcon) {
+                    // Make sure the red dot is visible
+                    let dot = bellIcon.querySelector('.bg-danger');
+                    if (!dot) {
+                        bellIcon.insertAdjacentHTML('beforeend', '<span class="position-absolute bg-danger border border-white rounded-circle" style="width:10px;height:10px;top:8px;right:8px;"></span>');
+                    }
+
+                    // Update the dropdown menu content
+                    const dropdownMenu = bellIcon.nextElementSibling;
+                    if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
+                        const notifCountBadge = dropdownMenu.querySelector('.badge.bg-danger');
+                        if (notifCountBadge) {
+                            notifCountBadge.textContent = criticalIssues.length;
+                        }
+
+                        // Replace the "No new alerts" text with the critical issue alert
+                        const contentBody = dropdownMenu.querySelector('.p-3.text-center');
+                        if (contentBody) {
+                            contentBody.className = 'p-0';
+                            contentBody.innerHTML = `
+                                <div class="px-3 py-3 border-bottom d-flex gap-3 align-items-start" style="background-color: #FEF2F2; cursor: pointer;" onclick="window.location.href='issues.html'">
+                                    <i class="bi bi-exclamation-octagon-fill text-danger mt-1 fs-5"></i>
+                                    <div>
+                                        <div class="fw-bold text-dark mb-1">Critical Issue Alert</div>
+                                        <p class="mb-0 text-muted small" style="line-height: 1.4;">There ${criticalIssues.length === 1 ? 'is' : 'are'} ${criticalIssues.length} unresolved high-severity issue(s) requiring immediate attention.</p>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+            }, 600);
+        }
+    } catch (e) {
+        console.warn("Could not check critical issues", e);
+    }
+}
+
 // Session Management (Inactivity Timeout)
-const INACTIVITY_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
+const INACTIVITY_LIMIT_MS = 7 * 24 * 60 * 60 * 1000; // 7 days (more persistent)
 let inactivityTimer;
 
 function resetInactivityTimer() {
@@ -79,7 +269,17 @@ async function apiFetch(path, options = {}) {
     const token = getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch(API + path, { ...options, headers });
-    if (res.status === 401) { clearTokens(); window.location.replace('index.html'); return; }
+    if (res.status === 401) {
+        const params = new URLSearchParams(window.location.search);
+        const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
+        if (params.get('dev') === 'true' && isLocal) {
+            console.warn('API 401 suppressed in dev mode.');
+            return res;
+        }
+        clearTokens();
+        window.location.replace('index.html');
+        return;
+    }
     return res;
 }
 
@@ -110,6 +310,17 @@ async function apiPatch(path, body) {
     return res.json();
 }
 
+// DELETE shorthand
+async function apiDelete(path) {
+    const res = await apiFetch(path, { method: 'DELETE' });
+    if (!res || !res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `DELETE ${path} failed`);
+    }
+    // DELETE often returns 204 No Content, so we don't always expect JSON
+    return res.status === 204 ? null : res.json();
+}
+
 // Show bootstrap toast
 function showToast(msg, type = 'success') {
     const bg = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
@@ -135,172 +346,3 @@ function showToast(msg, type = 'success') {
     el.addEventListener('hidden.bs.toast', () => el.remove());
 }
 
-// Shared sidebar HTML
-function renderSidebar(active) {
-    const u = getUser();
-    const role = u?.role || 'TELESALES';
-
-    const isAdmin = role === 'ADMIN';
-    const isSales = role === 'SALES' || role === 'PROJECT_MANAGER_AND_SALES';
-    const isTelesales = role === 'TELESALES';
-    const isPM = role === 'PROJECT_MANAGER' || role === 'PROJECT_MANAGER_AND_SALES';
-    const isClient = role === 'CLIENT';
-
-    function sbSection(id, label, icon, items) {
-        const isActiveSection = items.some(i => i.id === active);
-        return `
-        <div class="sb-section">
-            <div class="sb-section-header ${isActiveSection ? 'open' : ''}" onclick="toggleSbSection('${id}')">
-                <i class="bi ${icon} sb-sec-icon"></i>
-                <span>${label}</span>
-                <i class="bi bi-chevron-right sb-arrow"></i>
-            </div>
-            <ul class="sb-section-items ${isActiveSection ? 'open' : ''}">
-                ${items.map(item => `
-                <li><a href="${item.href}" class="sb-link ${active === item.id ? 'active' : ''}">
-                    <i class="bi ${item.icon}"></i><span>${item.label}</span></a></li>`).join('')}
-            </ul>
-        </div>`;
-    }
-
-    // ─── ALWAYS: Dashboard ───────────────────────────────────────
-    let nav = `
-    <div class="sb-section">
-        <div class="sb-section-header ${active === 'dashboard' ? 'open' : ''}" onclick="toggleSbSection('db')">
-            <i class="bi bi-grid-1x2 sb-sec-icon"></i><span>Dashboard</span>
-            <i class="bi bi-chevron-${active === 'dashboard' ? 'down' : 'right'} sb-arrow"></i>
-        </div>
-        <ul class="sb-section-items ${active === 'dashboard' ? 'open' : ''}">
-            <li><a href="dashboard.html" class="sb-link ${active === 'dashboard' ? 'active' : ''}">
-                <i class="bi bi-bar-chart-line-fill"></i><span>Overview</span></a></li>
-        </ul>
-    </div>`;
-
-    // ─── ADMINISTRATION ──────────────────────────────────────────
-    nav += sbSection('admin', 'Administration', 'bi-shield-check', [
-        { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
-    ]);
-
-    // ─── FIELD OPERATIONS ────────────────────────────────────────
-    nav += sbSection('field', 'Field Operations', 'bi-geo-alt', [
-        { id: 'visits', href: 'visits.html', icon: 'bi-bullseye', label: 'Leads' },
-        { id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas & Shops' },
-        { id: 'visits_log', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' }
-    ]);
-
-    // ─── PROJECT MANAGEMENT ──────────────────────────────────────
-    nav += sbSection('pm', 'Project Management', 'bi-briefcase', [
-        { id: 'projects', href: 'reports.html', icon: 'bi-briefcase', label: 'Projects' },
-        { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
-        { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
-    ]);
-
-    // ─── CLIENT RELATIONS ────────────────────────────────────────
-    nav += sbSection('cr', 'Client Relations', 'bi-people', [
-        { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
-        { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
-    ]);
-
-    // ─── HR & PAYROLL ────────────────────────────────────────────
-    nav += sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', [
-        { id: 'hrm', href: 'hrm.html', icon: 'bi-people', label: 'Employees' },
-        { id: 'salary', href: 'hrm.html#tab-salary', icon: 'bi-calendar3', label: 'Salary & Leaves' },
-        { id: 'incentives', href: 'hrm.html#tab-incentives', icon: 'bi-trophy', label: 'Incentives' }
-    ]);
-
-    // ─── REPORTS & ANALYTICS ─────────────────────────────────────
-    nav += sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
-        { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
-    ]);
-
-    return `
-    <div id="sidebar-container">
-        <div class="sidebar-brand">
-            <div class="sidebar-brand-icon"><i class="bi bi-diagram-3-fill"></i></div>
-            <span>CRM AI SETU</span>
-        </div>
-        <div class="sb-scroll-area">${nav}</div>
-        <div class="sb-bottom">
-            <a href="#" class="sb-bottom-link"><i class="bi bi-gear"></i> Settings</a>
-            <a href="#" class="sb-bottom-link" onclick="logout();return false;"><i class="bi bi-box-arrow-right"></i> Logout</a>
-        </div>
-    </div>`;
-}
-
-window.toggleSbSection = function (id) {
-    document.querySelectorAll('.sb-section').forEach(sec => {
-        const hdr = sec.querySelector('.sb-section-header');
-        const lst = sec.querySelector('.sb-section-items');
-        const arr = sec.querySelector('.sb-arrow');
-        if (!hdr) return;
-        const isMe = (hdr.getAttribute('onclick') || '').includes(`'${id}'`);
-        const isOpen = hdr.classList.contains('open');
-        if (isMe) {
-            hdr.classList.toggle('open');
-            lst && lst.classList.toggle('open');
-            if (arr) arr.className = `bi ${hdr.classList.contains('open') ? 'bi-chevron-down' : 'bi-chevron-right'} sb-arrow`;
-        }
-    });
-};
-
-function injectTopHeader(pageTitle) {
-    const u = getUser();
-    const role = (u?.role || '').replace(/_/g, ' ');
-    const initials = (u?.name || u?.email || 'AD').slice(0, 2).toUpperCase();
-    const headerHtml = `
-    <div class="top-header">
-        <div class="d-flex align-items-center">
-            <div class="fw-semibold fs-5 text-dark" style="text-transform: capitalize;">${pageTitle}</div>
-        </div>
-        <div class="d-flex align-items-center gap-3">
-            <div class="position-relative d-none d-md-block">
-                <i class="bi bi-search position-absolute text-muted" style="left:12px;top:10px;font-size:0.85rem;"></i>
-                <input type="text" class="search-bar" placeholder="Search anything...">
-            </div>
-            <div class="dropdown">
-                <button class="btn btn-primary d-flex align-items-center gap-2 px-3 dropdown-toggle" type="button" id="addNewDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:0.875rem;">
-                    <i class="bi bi-plus-lg"></i> Add New
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px;">
-                    <li><a class="dropdown-item py-2" href="visits.html" style="border-radius:8px;"><i class="bi bi-bullseye me-2 text-primary"></i> New Lead / Visit</a></li>
-                    <li><a class="dropdown-item py-2" href="clients.html" style="border-radius:8px;"><i class="bi bi-people me-2 text-info"></i> New Client</a></li>
-                    <li><a class="dropdown-item py-2" href="issues.html" style="border-radius:8px;"><i class="bi bi-exclamation-triangle me-2 text-warning"></i> New Issue</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item py-2" href="admin.html" style="border-radius:8px;"><i class="bi bi-person-plus me-2 text-success"></i> New User</a></li>
-                </ul>
-            </div>
-            <div class="position-relative text-muted" style="cursor:pointer; font-size:1.25rem; width:40px; height:40px; display:flex; align-items:center; justify-content:center;">
-                <i class="bi bi-bell"></i>
-                <span class="position-absolute bg-danger border border-white rounded-circle" style="width:8px;height:8px;top:8px;right:8px;"></span>
-            </div>
-            <div class="d-flex align-items-center gap-2 ps-2 dropdown">
-                <div class="rounded-circle bg-primary-light text-primary d-flex align-items-center justify-content-center fw-bold dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="width:36px;height:36px;font-size:13px;cursor:pointer;">${initials}</div>
-                <div class="d-none d-lg-block">
-                    <div class="fw-bold text-dark" style="font-size:0.85rem; line-height:1;">${u?.name || 'Admin'}</div>
-                    <div class="text-muted small" style="font-size:0.75rem; line-height:1.5;">${role}</div>
-                </div>
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="profileDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px;">
-                    <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="if(window.loadView) window.loadView('profile');" style="border-radius:8px;"><i class="bi bi-person me-2 text-primary"></i> My Profile</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="logout()" style="border-radius:8px; color:var(--danger);"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
-                </ul>
-            </div>
-        </div>
-    </div>`;
-    const rightSide = document.querySelector('.flex-grow-1');
-    if (rightSide) {
-        rightSide.classList.remove('p-4');
-        rightSide.classList.add('d-flex', 'flex-column', 'bg-light');
-        rightSide.style.minHeight = '100vh';
-        rightSide.insertAdjacentHTML('afterbegin', headerHtml);
-        const nodesToMove = [];
-        for (const child of rightSide.childNodes) {
-            if (child.nodeType === 1 && child.classList.contains('top-header')) continue;
-            nodesToMove.push(child);
-        }
-        const contentContainer = document.createElement('div');
-        contentContainer.className = 'page-content';
-        nodesToMove.forEach(node => contentContainer.appendChild(node));
-        rightSide.appendChild(contentContainer);
-    }
-}

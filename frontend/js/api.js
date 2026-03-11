@@ -2,7 +2,12 @@ let API_BASE_URL = 'http://127.0.0.1:8000/api'; // Fallback
 // Try to load dynamically from the backend Python config endpoint
 fetch('http://127.0.0.1:8000/api/config')
     .then(r => r.json())
-    .then(data => { API_BASE_URL = data.API_BASE_URL; ApiClient.API_BASE_URL = data.API_BASE_URL; })
+    .then(data => {
+        if (data.API_BASE_URL) {
+            API_BASE_URL = data.API_BASE_URL;
+            ApiClient.API_BASE_URL = data.API_BASE_URL;
+        }
+    })
     .catch(e => console.warn('Using default API_BASE_URL due to config fetch error:', e));
 
 class ApiClient {
@@ -30,11 +35,11 @@ class ApiClient {
     }
 
     static setCurrentUser(user) {
-        localStorage.setItem('current_user', JSON.stringify(user));
+        localStorage.setItem('crm_user', JSON.stringify(user));
     }
 
     static getCurrentUser() {
-        try { return JSON.parse(localStorage.getItem('current_user')); } catch { return null; }
+        try { return JSON.parse(localStorage.getItem('crm_user')); } catch { return null; }
     }
 
     static async request(path, options = {}) {
@@ -54,7 +59,10 @@ class ApiClient {
             headers,
         };
 
-        if (options.body && typeof options.body !== 'string') {
+        if (options.body instanceof FormData) {
+            config.body = options.body;
+            delete headers['Content-Type']; // Let browser set boundary
+        } else if (options.body && typeof options.body !== 'string') {
             config.body = JSON.stringify(options.body);
         } else if (options.body) {
             config.body = options.body;
@@ -62,6 +70,9 @@ class ApiClient {
 
         try {
             let response = await fetch(url, config);
+
+            // If we successfully get a response, hide offline banner if it exists
+            if (window.showOfflineBanner) window.showOfflineBanner(false);
 
             // Handle token expiry transparently
             if (response.status === 401 && !options.isRetry && this.getRefreshToken()) {
@@ -87,10 +98,16 @@ class ApiClient {
             return data;
 
         } catch (error) {
+            // Check if it's a network error (server down)
+            if (error instanceof TypeError && error.message === 'Failed to fetch') {
+                console.warn("Server appears to be offline:", error);
+                if (window.showOfflineBanner) window.showOfflineBanner(true);
+            }
             console.error("Network or parsing error:", error);
             throw error;
         }
     }
+
 
     static async refreshTokens() {
         const refresh_token = this.getRefreshToken();
@@ -151,15 +168,34 @@ class ApiClient {
 
     // ─── Users ───────────────────────────────────────────────
     static async getUsers() {
-        return this.request('/employees/');
+        return this.request('/users/');
     }
     static async updateUserRole(userId, role) {
         return this.request(`/users/${userId}/role`, { method: 'PATCH', body: { role } });
+    }
+    static async updateUserStatus(userId, isActive) {
+        return this.request(`/users/${userId}/status`, { method: 'PATCH', body: { is_active: isActive } });
     }
 
     // ─── Dashboard ───────────────────────────────────────────
     static async getDashboardStats() {
         return this.request('/reports/dashboard');
+    }
+
+    // ─── Attendance ──────────────────────────────────────────
+    static async getPunchStatus() {
+        return this.request('/attendance/status');
+    }
+    static async punch() {
+        return this.request('/attendance/punch', { method: 'POST' });
+    }
+
+    // ─── Attendance ──────────────────────────────────────────
+    static async getPunchStatus() {
+        return this.request('/attendance/status');
+    }
+    static async punch() {
+        return this.request('/attendance/punch', { method: 'POST' });
     }
 
     // ─── Clients ─────────────────────────────────────────────
@@ -181,6 +217,9 @@ class ApiClient {
     static async assignPM(clientId, pmId) {
         return this.request(`/clients/${clientId}/assign-pm`, { method: 'POST', body: { pm_id: pmId } });
     }
+    static async getMyClients(params = '') {
+        return this.request(`/clients/my-clients?${params}`);
+    }
 
     // ─── Areas ───────────────────────────────────────────────
     static async getAreas() {
@@ -189,8 +228,14 @@ class ApiClient {
     static async createArea(data) {
         return this.request('/areas/', { method: 'POST', body: data });
     }
-    static async assignAreaAgents(areaId, userId) {
-        return this.request(`/areas/${areaId}/assign`, { method: 'PATCH', body: { user_id: userId } });
+    static async updateArea(areaId, data) {
+        return this.request(`/areas/${areaId}`, { method: 'PATCH', body: data });
+    }
+    static async deleteArea(areaId) {
+        return this.request(`/areas/${areaId}`, { method: 'DELETE' });
+    }
+    static async assignArea(areaId, userId, shopIds = []) {
+        return this.request(`/areas/${areaId}/assign`, { method: 'PATCH', body: { assigned_user_id: userId, shop_ids: shopIds } });
     }
 
     // ─── Shops ───────────────────────────────────────────────
@@ -206,6 +251,9 @@ class ApiClient {
     static async deleteShop(shopId) {
         return this.request(`/shops/${shopId}`, { method: 'DELETE' });
     }
+    static async approvePipelineEntry(shopId) {
+        return this.request(`/shops/${shopId}/approve`, { method: 'POST' });
+    }
     static async getShopsByArea(areaId) {
         return this.request(`/shops/?area_id=${areaId}&limit=200`);
     }
@@ -214,8 +262,8 @@ class ApiClient {
     static async getVisits(params = '') {
         return this.request(`/visits/${params}`);
     }
-    static async createVisit(data) {
-        return this.request('/visits/', { method: 'POST', body: data });
+    static async createVisit(formData) {
+        return this.request('/visits/', { method: 'POST', body: formData });
     }
     static async updateVisit(visitId, data) {
         return this.request(`/visits/${visitId}`, { method: 'PATCH', body: data });
@@ -263,13 +311,19 @@ class ApiClient {
     static async createFeedback(clientId, data) {
         return this.request(`/clients/${clientId}/feedback`, { method: 'POST', body: data });
     }
+    static async createUserFeedback(data) {
+        return this.request('/clients/user', { method: 'POST', body: data });
+    }
+    static async getUserFeedbacks() {
+        return this.request('/clients/user');
+    }
 
     // ─── Employees / HR ──────────────────────────────────────
     static async getEmployees() {
-        return this.request('/employees/');
+        return this.request('/users/');
     }
     static async getEmployee(employeeId) {
-        return this.request(`/employees/${employeeId}`);
+        return this.request(`/users/${employeeId}`);
     }
     static async createEmployee(data) {
         return this.request('/employees/', { method: 'POST', body: data });
@@ -285,8 +339,47 @@ class ApiClient {
     static async getSalaryRecords(employeeId) {
         return this.request(`/hrm/salary/${employeeId}`);
     }
+    static async getAllSalarySlips() {
+        return this.request('/hrm/salary/all');
+    }
+    static async getMySalarySlips() {
+        return this.request('/hrm/salary/me');
+    }
+    static async previewSalary(userId, month, extraDeduction = 0, baseSalary = null) {
+        let url = `/hrm/salary/preview?user_id=${userId}&month=${encodeURIComponent(month)}&extra_deduction=${extraDeduction}`;
+        if (baseSalary !== null && !isNaN(baseSalary)) url += `&base_salary=${baseSalary}`;
+        return this.request(url);
+    }
     static async generateSalary(data) {
         return this.request('/hrm/salary/generate', { method: 'POST', body: data });
+    }
+    static async regenerateSalarySlip(data) {
+        return this.request('/hrm/salary/regenerate', { method: 'POST', body: data });
+    }
+    static async updateDraftSalarySlip(slipId, data) {
+        return this.request(`/hrm/salary/update-draft/${slipId}`, { method: 'PATCH', body: data });
+    }
+    static async confirmSalarySlip(slipId) {
+        return this.request(`/hrm/salary/confirm/${slipId}`, { method: 'PATCH' });
+    }
+
+    // ─── Leave ───────────────────────────────────────────────
+    static async getMyLeaves() {
+        return this.request('/hrm/leave');
+    }
+    static async getAllLeaves() {
+        return this.request('/hrm/leave/all');
+    }
+    static async applyLeave(data) {
+        return this.request('/hrm/leave', { method: 'POST', body: data });
+    }
+    static async approveRejectLeave(leaveId, status, remarks = null) {
+        const body = { status };
+        if (remarks) body.remarks = remarks;
+        return this.request(`/hrm/leave/${leaveId}/approve`, { method: 'PATCH', body });
+    }
+    static async getLeaveSummary(userId, month) {
+        return this.request(`/hrm/leave/summary/${userId}?month=${encodeURIComponent(month)}`);
     }
 
     // ─── Incentives ──────────────────────────────────────────
@@ -296,8 +389,23 @@ class ApiClient {
     static async createIncentiveSlab(data) {
         return this.request('/incentives/slabs', { method: 'POST', body: data });
     }
+    static async updateIncentiveSlab(id, data) {
+        return this.request(`/incentives/slabs/${id}`, { method: 'PUT', body: data });
+    }
+    static async deleteIncentiveSlab(id) {
+        return this.request(`/incentives/slabs/${id}`, { method: 'DELETE' });
+    }
     static async calculateIncentive(data) {
         return this.request('/incentives/calculate', { method: 'POST', body: data });
+    }
+    static async getAllIncentiveSlips() {
+        return this.request('/incentives/slips');
+    }
+    static async getMyIncentiveSlips() {
+        return this.request('/incentives/my-slips');
+    }
+    static async getUserIncentiveSlips(userId) {
+        return this.request(`/incentives/slips/${userId}`);
     }
 
     // ─── Payments ────────────────────────────────────────────
@@ -309,6 +417,12 @@ class ApiClient {
     }
     static async verifyPayment(paymentId) {
         return this.request(`/payments/${paymentId}/verify`, { method: 'PATCH' });
+    }
+    static async generateBill(data) {
+        return this.request('/billing/', { method: 'POST', body: data });
+    }
+    static async getBills() {
+        return this.request('/billing/');
     }
 
     // ─── Projects ────────────────────────────────────────────
@@ -348,6 +462,23 @@ class ApiClient {
     }
     static async markNotificationRead(notifId) {
         return this.request(`/notifications/${notifId}/read`, { method: 'PATCH' });
+    }
+
+    // ─── Timetable ───────────────────────────────────────────
+    static async getTimetable(startDate, endDate) {
+        let params = '';
+        if (startDate) params += `?start_date=${startDate}`;
+        if (endDate) params += (params ? '&' : '?') + `end_date=${endDate}`;
+        return this.request(`/timetable/${params}`);
+    }
+    static async createTimetableEvent(data) {
+        return this.request('/timetable/', { method: 'POST', body: data });
+    }
+    static async updateTimetableEvent(eventId, data) {
+        return this.request(`/timetable/${eventId}`, { method: 'PATCH', body: data });
+    }
+    static async deleteTimetableEvent(eventId) {
+        return this.request(`/timetable/${eventId}`, { method: 'DELETE' });
     }
 
     // ─── Activity Logs ───────────────────────────────────────

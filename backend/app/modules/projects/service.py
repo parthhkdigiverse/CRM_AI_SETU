@@ -12,14 +12,43 @@ class ProjectService:
         self.db = db
         self.activity_logger = ActivityLogger(db)
 
-    def get_project(self, project_id: int):
-        return self.db.query(Project).filter(Project.id == project_id).first()
-
     def get_projects(self, skip: int = 0, limit: int = 100, pm_id: int = None):
         query = self.db.query(Project)
         if pm_id:
             query = query.filter(Project.pm_id == pm_id)
-        return query.order_by(Project.created_at.desc()).offset(skip).limit(limit).all()
+        
+        projects = query.order_by(Project.created_at.desc()).offset(skip).limit(limit).all()
+        
+        # Calculate progress for each project
+        from app.modules.issues.models import Issue, IssueStatus
+        for p in projects:
+            p.total_issues = self.db.query(Issue).filter(Issue.project_id == p.id).count()
+            p.resolved_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.status == IssueStatus.RESOLVED).count()
+            p.progress_percentage = (p.resolved_issues / p.total_issues * 100) if p.total_issues > 0 else 0.0
+            
+            # Populate names
+            if p.client:
+                p.client_name = p.client.name
+            if p.project_manager:
+                p.pm_name = p.project_manager.name or p.project_manager.email
+            
+        return projects
+
+    def get_project(self, project_id: int):
+        project = self.db.query(Project).filter(Project.id == project_id).first()
+        if project:
+            from app.modules.issues.models import Issue, IssueStatus
+            project.total_issues = self.db.query(Issue).filter(Issue.project_id == project_id).count()
+            project.resolved_issues = self.db.query(Issue).filter(Issue.project_id == project_id, Issue.status == IssueStatus.RESOLVED).count()
+            project.progress_percentage = (project.resolved_issues / project.total_issues * 100) if project.total_issues > 0 else 0.0
+            
+            # Populate names
+            if project.client:
+                project.client_name = project.client.name
+            if project.project_manager:
+                project.pm_name = project.project_manager.name or project.project_manager.email
+        return project
+
 
     def get_least_busy_pm(self) -> Optional[int]:
         """Find the PM with the lowest number of active projects (PLANNING or IN_PROGRESS)."""

@@ -14,3 +14,17 @@ class Feedback(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     client = relationship("app.modules.clients.models.Client", backref="feedbacks")
+
+
+class UserFeedback(Base):
+    __tablename__ = "user_feedbacks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    subject = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    status = Column(String, default="PENDING")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    user = relationship("app.modules.users.models.User", backref="system_feedbacks")

@@ -1,18 +1,20 @@
 import enum
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum, Text
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, UTC
+
 from app.core.database import Base
 
 class VisitStatus(str, enum.Enum):
-    SATISFIED = "SATISFIED"
-    ACCEPT = "ACCEPT"
-    DECLINE = "DECLINE"
+    SATISFIED          = "SATISFIED"
+    ACCEPT             = "ACCEPT"
+    DECLINE            = "DECLINE"
+    MISSED             = "MISSED"
     TAKE_TIME_TO_THINK = "TAKE_TIME_TO_THINK"
-    SCHEDULED = "SCHEDULED"
-    COMPLETED = "COMPLETED"
-    MISSED = "MISSED"
-    OTHER = "OTHER"
+    OTHER              = "OTHER"
+    COMPLETED          = "COMPLETED"
+    CANCELLED          = "CANCELLED"
+    SCHEDULED          = "SCHEDULED"
 
 class Visit(Base):
     __tablename__ = "visits"
@@ -23,16 +25,17 @@ class Visit(Base):
     
     status = Column(Enum(VisitStatus), default=VisitStatus.SATISFIED)
     remarks = Column(Text, nullable=True)
-    visit_date = Column(DateTime, default=datetime.utcnow)
+    decline_remarks = Column(Text, nullable=True)
+    visit_date = Column(DateTime, default=lambda: datetime.now(UTC))
     
     # Photo persistence
     photo_url = Column(String, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
-    shop = relationship("Shop", backref="visits")
-    user = relationship("User", backref="visits")
+    shop = relationship("app.modules.shops.models.Shop", backref="visits")
+    user = relationship("app.modules.users.models.User", backref="visits")
 
     @property
     def shop_name(self) -> str:
@@ -46,7 +49,3 @@ class Visit(Base):
     def area_name(self) -> str:
         return self.shop.area.name if self.shop and self.shop.area else None
 
-# Import at the end to avoid circular dependencies
-from app.modules.shops.models import Shop
-from app.modules.users.models import User
->>>>>>> Stashed changes

@@ -26,7 +26,22 @@ def get_current_user(
         token_data = TokenData(sub=user_id)
     except jwt.PyJWTError:
         raise credentials_exception
-    user = db.query(User).filter(User.id == int(token_data.sub)).first()
+    # Demo mode: synthetic admin — skip DB lookup
+    user_id_int = int(token_data.sub)
+    if user_id_int == 0:
+        return None  # Caller (/me, /profile) handles None as demo admin
+
+    from sqlalchemy.exc import OperationalError
+    try:
+        user = db.query(User).filter(User.id == user_id_int).first()
+    except OperationalError as db_err:
+        import traceback
+        print(f"DATABASE ERROR in get_current_user: {db_err}")
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database not available. Please configure your .env and run migrations.",
+        )
     if user is None:
         raise credentials_exception
     return user
@@ -34,6 +49,8 @@ def get_current_user(
 def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
+    if current_user is None:  # Demo Mode: synthetic admin is always active
+        return None
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -43,6 +60,8 @@ class RoleChecker:
         self.allowed_roles = allowed_roles
 
     def __call__(self, user: User = Depends(get_current_active_user)):
+        if user is None:  # Demo Mode: synthetic admin has all privileges
+            return None
         if user.role not in self.allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

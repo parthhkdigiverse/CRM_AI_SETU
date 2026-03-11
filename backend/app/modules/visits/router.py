@@ -1,5 +1,5 @@
 from typing import List, Any, Optional
-from fastapi import APIRouter, Depends, status, Request, UploadFile, File, Form
+from fastapi import APIRouter, Depends, status, Request, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
@@ -19,7 +19,8 @@ async def create_visit(
     request: Request,
     shop_id: int = Form(...),
     visit_date: Optional[str] = Form(None), # Parse string to datetime
-    remarks: Optional[str] = Form(None),
+    remarks: str = Form(...),
+    decline_remarks: Optional[str] = Form(None),
     status: VisitStatus = Form(VisitStatus.SATISFIED),
     photo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
@@ -29,21 +30,27 @@ async def create_visit(
     Create a visit. Supports photo upload.
     Note: Using Form data because of File upload.
     """
-    from datetime import datetime
+    if current_user.role in [UserRole.SALES, UserRole.PROJECT_MANAGER_AND_SALES] and not photo:
+        raise HTTPException(status_code=400, detail="Shop photo is mandatory for Sales visits")
+    from datetime import datetime, UTC
+
     
     parsed_date = None
     if visit_date:
         try:
             parsed_date = datetime.fromisoformat(visit_date.replace('Z', '+00:00'))
         except:
-            parsed_date = datetime.utcnow() # Fallback or error?
+            parsed_date = datetime.now(UTC) # Fallback or error?
+
             
     visit_in = VisitCreate(
         shop_id=shop_id,
         visit_date=parsed_date,
         remarks=remarks,
+        decline_remarks=decline_remarks,
         status=status
     )
+
     
     service = VisitService(db)
     return await service.create_visit(visit_in, current_user, request, photo)
@@ -57,6 +64,10 @@ def read_visits(
     db: Session = Depends(get_db),
     current_user: User = Depends(read_access) 
 ) -> Any:
+    # If the user is Sales or Telesales, they can only view their own visits.
+    if current_user and current_user.role in [UserRole.SALES, UserRole.TELESALES]:
+        user_id = current_user.id
+        
     service = VisitService(db)
     return service.get_visits(skip, limit, user_id=user_id, shop_id=shop_id)
 

@@ -1,17 +1,16 @@
 from typing import List, Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, UTC
+
 from app.core.database import get_db
-from app.core.dependencies import RoleChecker
+from app.core.dependencies import RoleChecker, get_current_active_user
 from app.modules.users.models import User, UserRole
-from app.modules.employees.models import Employee
 from app.modules.incentives.models import (
-    IncentiveTarget, IncentiveSlab, IncentiveSlip, EmployeePerformance
+    IncentiveSlab, IncentiveSlip, EmployeePerformance
 )
 from app.modules.incentives.schemas import (
-    IncentiveTargetCreate, IncentiveTargetRead,
-    IncentiveSlabCreate, IncentiveSlabRead,
+    IncentiveSlabCreate, IncentiveSlabRead, IncentiveSlabUpdate,
     IncentiveCalculationRequest, IncentiveSlipRead
 )
 
@@ -20,28 +19,13 @@ router = APIRouter()
 # Role checkers
 admin_checker = RoleChecker([UserRole.ADMIN])
 pro_checker = RoleChecker([UserRole.ADMIN, UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES])
+staff_checker = RoleChecker([
+    UserRole.ADMIN, UserRole.SALES, UserRole.TELESALES,
+    UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES
+])
 
-# TARGETS
-@router.post("/targets", response_model=IncentiveTargetRead)
-def create_incentive_target(
-    target_in: IncentiveTargetCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(admin_checker)
-) -> Any:
-    db_target = IncentiveTarget(**target_in.model_dump())
-    db.add(db_target)
-    db.commit()
-    db.refresh(db_target)
-    return db_target
+# ─── SLABS ───────────────────────────────────────────────────────────────────
 
-@router.get("/targets", response_model=List[IncentiveTargetRead])
-def read_incentive_targets(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(pro_checker)
-) -> Any:
-    return db.query(IncentiveTarget).all()
-
-# SLABS
 @router.post("/slabs", response_model=IncentiveSlabRead)
 def create_incentive_slab(
     slab_in: IncentiveSlabCreate,
@@ -54,107 +38,107 @@ def create_incentive_slab(
     db.refresh(db_slab)
     return db_slab
 
+
 @router.get("/slabs", response_model=List[IncentiveSlabRead])
 def read_incentive_slabs(
     db: Session = Depends(get_db),
-    current_user: User = Depends(pro_checker)
+    current_user: User = Depends(staff_checker)
 ) -> Any:
-    return db.query(IncentiveSlab).order_by(IncentiveSlab.min_percentage).all()
+    return db.query(IncentiveSlab).order_by(IncentiveSlab.min_units).all()
 
-# CALCULATION
+
+@router.put("/slabs/{slab_id}", response_model=IncentiveSlabRead)
+def update_incentive_slab(
+    slab_id: int,
+    slab_in: IncentiveSlabUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+) -> Any:
+    slab = db.query(IncentiveSlab).filter(IncentiveSlab.id == slab_id).first()
+    if not slab:
+        raise HTTPException(status_code=404, detail="Slab not found")
+    update_data = slab_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(slab, field, value)
+    db.commit()
+    db.refresh(slab)
+    return slab
+
+
+@router.delete("/slabs/{slab_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_incentive_slab(
+    slab_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+):
+    db_slab = db.query(IncentiveSlab).filter(IncentiveSlab.id == slab_id).first()
+    if not db_slab:
+        raise HTTPException(status_code=404, detail="Slab not found")
+    db.delete(db_slab)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/slabs/batch-delete", status_code=status.HTTP_200_OK)
+def batch_delete_slabs(
+    slab_ids: List[int],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+):
+    try:
+        count = db.query(IncentiveSlab).filter(IncentiveSlab.id.in_(slab_ids)).delete(synchronize_session=False)
+        db.commit()
+        return {"message": f"Successfully deleted {count} slabs"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── CALCULATION ─────────────────────────────────────────────────────────────
+
 @router.post("/calculate", response_model=IncentiveSlipRead)
 def calculate_incentive(
     calc_in: IncentiveCalculationRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_checker)
 ) -> Any:
-    from sqlalchemy import extract
-    from app.modules.clients.models import Client
-    
-    employee = db.query(Employee).filter(Employee.id == calc_in.employee_id).first()
-    if not employee:
-        raise HTTPException(status_code=404, detail="Employee not found")
+    from app.modules.incentives.service import IncentiveService
+    service = IncentiveService(db)
+    return service.calculate_incentive(calc_in)
 
-    existing_slip = db.query(IncentiveSlip).filter(
-        IncentiveSlip.employee_id == calc_in.employee_id,
-        IncentiveSlip.period == calc_in.period
-    ).first()
-    if existing_slip:
-        raise HTTPException(status_code=400, detail="Incentive slip for this period already exists")
 
-    user = db.query(User).filter(User.id == employee.user_id).first()
-    
-    # Determined Target
-    target = employee.target
-    if target == 0 and user:
-        # Fallback to Role based target
-        role_target = db.query(IncentiveTarget).filter(
-            IncentiveTarget.role == user.role,
-            IncentiveTarget.period == "Monthly" # Assumption
-        ).first()
-        if role_target:
-            target = role_target.target_count
-            
-    if target == 0:
-        raise HTTPException(status_code=400, detail="Target not set for employee or role")
+# ─── SLIPS ───────────────────────────────────────────────────────────────────
 
-    if calc_in.closed_units is not None:
-        achieved = calc_in.closed_units
-    else:
-        year, month = map(int, calc_in.period.split('-'))
-        achieved = 0
-        if user.role in [UserRole.SALES, UserRole.TELESALES, UserRole.PROJECT_MANAGER_AND_SALES]:
-            achieved += db.query(Client).filter(
-                Client.owner_id == user.id,
-                extract('year', Client.created_at) == year,
-                extract('month', Client.created_at) == month
-            ).count()
-        if user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
-            achieved += db.query(Client).filter(
-                Client.pm_id == user.id,
-                extract('year', Client.created_at) == year,
-                extract('month', Client.created_at) == month
-            ).count()
-            
-    percentage = (achieved / target) * 100
-    
-    # Find Slab
-    # Order by min_percentage desc to find highest match
-    applied_slab = db.query(IncentiveSlab).filter(
-        IncentiveSlab.min_percentage <= percentage
-    ).order_by(IncentiveSlab.min_percentage.desc()).first()
-    
-    amount_per_unit = 0.0
-    total_incentive = 0.0
-    applied_slab_val = 0.0
-    
-    if applied_slab:
-        amount_per_unit = applied_slab.amount_per_unit
-        total_incentive = achieved * amount_per_unit
-        applied_slab_val = applied_slab.min_percentage
-        
-    # Create Slip
-    db_slip = IncentiveSlip(
-        employee_id=calc_in.employee_id,
-        period=calc_in.period,
-        target=target,
-        achieved=achieved,
-        percentage=round(percentage, 2),
-        applied_slab=applied_slab_val,
-        amount_per_unit=amount_per_unit,
-        total_incentive=round(total_incentive, 2),
-        generated_at=datetime.utcnow()
-    )
-    db.add(db_slip)
-    db.commit()
-    db.refresh(db_slip)
-    
-    return db_slip
-
-@router.get("/slips/{employee_id}", response_model=List[IncentiveSlipRead])
-def read_incentive_slips(
-    employee_id: int,
+@router.get("/slips", response_model=List[IncentiveSlipRead])
+def read_all_incentive_slips(
     db: Session = Depends(get_db),
-    current_user: User = Depends(pro_checker)
+    current_user: User = Depends(staff_checker)
 ) -> Any:
-    return db.query(IncentiveSlip).filter(IncentiveSlip.employee_id == employee_id).all()
+    """All incentive slips across all employees (any authenticated staff can view)."""
+    from app.modules.incentives.service import IncentiveService
+    service = IncentiveService(db)
+    return service.get_all_incentive_slips()
+
+
+@router.get("/my-slips", response_model=List[IncentiveSlipRead])
+def read_my_incentive_slips(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """Current user's own incentive slips."""
+    from app.modules.incentives.service import IncentiveService
+    service = IncentiveService(db)
+    return service.get_user_incentive_slips(current_user.id)
+
+
+@router.get("/slips/{user_id}", response_model=List[IncentiveSlipRead])
+def read_incentive_slips(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """Slips for a specific user. Any staff can view any employee's slips."""
+    from app.modules.incentives.service import IncentiveService
+    service = IncentiveService(db)
+    return service.get_user_incentive_slips(user_id)
+
