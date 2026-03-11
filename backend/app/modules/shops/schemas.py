@@ -56,6 +56,7 @@ class ShopRead(ShopBase):
     created_by_name: Optional[str] = None
     assignment_status: Optional[str] = "UNASSIGNED"
     assigned_users: list[AssignedUser] = []
+    last_visitor_name: Optional[str] = None
 
     class Config:
         from_attributes = True

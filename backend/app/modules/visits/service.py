@@ -25,18 +25,34 @@ class VisitService:
     def get_visit(self, visit_id: int):
         return self.db.query(Visit).filter(Visit.id == visit_id).first()
 
-    def get_visits(self, skip: int = 0, limit: int = 100, user_id: int = None, shop_id: int = None):
+    def get_visits(self, skip: int = 0, limit: int = 100, current_user: User = None, shop_id: int = None):
         try:
             from app.modules.shops.models import Shop as ShopModel
-            from app.modules.users.models import User as UserModel
+            from sqlalchemy import or_
+            from app.modules.users.models import UserRole
+
             query = self.db.query(Visit).options(
                 joinedload(Visit.shop).joinedload(ShopModel.area),
                 joinedload(Visit.user)
             )
-            if user_id:
-                query = query.filter(Visit.user_id == user_id)
+
             if shop_id:
                 query = query.filter(Visit.shop_id == shop_id)
+
+            # Admins see everything; staff see visits they authored OR
+            # visits logged by anyone on shops assigned to them
+            if current_user and current_user.role not in [UserRole.ADMIN]:
+                query = (
+                    query
+                    .join(ShopModel, ShopModel.id == Visit.shop_id)
+                    .filter(
+                        or_(
+                            Visit.user_id == current_user.id,
+                            ShopModel.assigned_owners_list.any(id=current_user.id)
+                        )
+                    )
+                )
+
             return query.order_by(Visit.visit_date.desc()).offset(skip).limit(limit).all()
         except Exception as e:
             print(f"Error fetching visits: {e}")

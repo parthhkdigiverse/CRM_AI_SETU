@@ -97,11 +97,13 @@ class ShopService:
     @staticmethod
     def list_kanban_shops(db: Session, owner_id: int = None):
         from sqlalchemy.orm import selectinload
+        from app.modules.visits.models import Visit as VisitModel
         query = db.query(Shop).options(
             selectinload(Shop.owner),
             selectinload(Shop.area),
             selectinload(Shop.assigned_owners_list),
-            selectinload(Shop.archived_by)
+            selectinload(Shop.archived_by),
+            selectinload(Shop.visits).selectinload(VisitModel.user)  # for last_visitor_name
         ).filter(Shop.is_archived == False)
         
         if owner_id:
@@ -121,6 +123,7 @@ class ShopService:
             shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
             shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
             shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
+            shop_data["last_visitor_name"] = shop.last_visitor_name  # @property — must be copied explicitly
             shop_data.pop("_sa_instance_state", None)
             
             shop_data["assigned_users"] = [
@@ -306,19 +309,20 @@ class ShopService:
     @staticmethod
     def get_accepted_leads(db: Session, current_user: User):
         from sqlalchemy.orm import joinedload
-        from sqlalchemy import exists
+        from sqlalchemy import not_, exists
         from app.modules.users.models import User as UserModel, UserRole
         from app.modules.visits.models import Visit
 
-        # Subquery: shop IDs already visited by this user (or any user for admins)
-        if current_user.role == UserRole.ADMIN:
-            visited_shop_ids = db.query(Visit.shop_id).distinct().subquery()
+        is_admin = (current_user.role == UserRole.ADMIN)
+
+        # Correlated NOT EXISTS subquery — works correctly even when Visit table is empty
+        # For staff: only exclude visits THEY logged; for admin: exclude any visit
+        if is_admin:
+            already_visited = ~exists().where(Visit.shop_id == Shop.id)
         else:
-            visited_shop_ids = (
-                db.query(Visit.shop_id)
-                .filter(Visit.user_id == current_user.id)
-                .distinct()
-                .subquery()
+            already_visited = ~exists().where(
+                (Visit.shop_id == Shop.id) &
+                (Visit.user_id == current_user.id)
             )
 
         query = db.query(Shop).options(
@@ -327,10 +331,12 @@ class ShopService:
             joinedload(Shop.assigned_by)
         ).filter(
             Shop.assignment_status == "ACCEPTED",
-            ~Shop.id.in_(visited_shop_ids)     # exclude already-visited shops
+            Shop.status == ShopStatus.NEW,   # progressed shops (CONTACTED+) are already visited
+            already_visited                  # belt-and-suspenders: no Visit record either
         )
 
-        if current_user.role != UserRole.ADMIN:
+        # Staff can only see their own assigned shops
+        if not is_admin:
             query = query.filter(Shop.assigned_owners_list.any(UserModel.id == current_user.id))
 
         results = query.order_by(Shop.accepted_at.desc()).all()

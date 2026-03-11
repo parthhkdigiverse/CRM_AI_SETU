@@ -56,6 +56,14 @@ class Shop(SoftDeleteMixin, Base):
     area = relationship("app.modules.areas.models.Area", backref="shops")
     assigned_owners_list = relationship("app.modules.users.models.User", secondary=shop_assignments, backref="assigned_shops_list")
 
+    @property
+    def last_visitor_name(self):
+        """Name of the user who logged the most recent visit."""
+        if not self.visits:
+            return None
+        latest = max(self.visits, key=lambda v: v.visit_date or v.created_at)
+        return latest.user.name if latest.user else None
+
 
 # Explicit imports at end to avoid circular dependency issues
 from app.modules.areas.models import Area

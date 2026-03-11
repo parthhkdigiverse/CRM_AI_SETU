@@ -512,6 +512,12 @@
                                         <span>${l.owner_name || 'Unassigned'}</span>
                                     </div>
                                 </div>
+                                ${l.last_visitor_name ? `
+                                <div class="mt-2">
+                                    <span class="badge bg-light text-dark border" style="font-size:0.7rem;">
+                                        <i class="bi bi-person-walking me-1"></i>Visited by: ${l.last_visitor_name}
+                                    </span>
+                                </div>` : ''}
                             </div>
                         `;
                     }).join('');

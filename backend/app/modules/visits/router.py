@@ -64,16 +64,11 @@ def read_visits(
     skip: int = 0,
     limit: int = 100,
     shop_id: Optional[int] = None,
-    user_id: Optional[int] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(read_access) 
+    current_user: User = Depends(read_access)
 ) -> Any:
-    # If the user is Sales or Telesales, they can only view their own visits.
-    if current_user and current_user.role in [UserRole.SALES, UserRole.TELESALES]:
-        user_id = current_user.id
-        
     service = VisitService(db)
-    return service.get_visits(skip, limit, user_id=user_id, shop_id=shop_id)
+    return service.get_visits(skip, limit, current_user=current_user, shop_id=shop_id)
 
 @router.patch("/{visit_id}", response_model=VisitRead)
 async def update_visit(
