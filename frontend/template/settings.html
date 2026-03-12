@@ -522,6 +522,44 @@
                             </div>
                         </div>
 
+                        <!-- ── Employee Code Configuration (admin-only) ───── -->
+                        <div class="settings-section" id="employee-code-settings" style="display:none;">
+                            <div class="settings-section-title"><i class="bi bi-hash text-primary"></i> Employee Code Configuration</div>
+                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:16px;">Configure how automatic employee codes (e.g., EMP001) are generated for new staff.</p>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Auto-generate Employee Code</div>
+                                    <div class="setting-desc">Enable sequential employee code generation for new staff</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="emp-code-enabled" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Code Prefix</div>
+                                    <div class="setting-desc">The start of every auto-generated employee code</div>
+                                </div>
+                                <input type="text" id="emp-code-prefix" class="form-control form-control-sm" style="max-width:120px;" placeholder="e.g. EMP" maxlength="10">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Next Sequence Number</div>
+                                    <div class="setting-desc">The number to be used for the next employee</div>
+                                </div>
+                                <input type="number" id="emp-code-next-seq" class="form-control form-control-sm" style="max-width:120px;" placeholder="e.g. 1" min="1">
+                            </div>
+
+                            <div class="mt-3">
+                                <button class="btn-save-sm" onclick="saveEmployeeCodeSettings()"><i class="bi bi-save me-1"></i> Save Configuration</button>
+                                <span id="emp-code-save-msg" class="ms-3 small text-success d-none">Saved!</span>
+                            </div>
+                        </div>
+
                         <!-- ── Company / Payslip Contact ───── -->
                         <div class="settings-section" id="payslip-contact" style="display:none;">
                             <div class="settings-section-title"><i class="bi bi-building text-primary"></i> Company / Payslip Contact</div>
@@ -564,6 +602,30 @@
 
                             <div class="setting-row">
                                 <div>
+                                    <div class="setting-label">Personal Account (Without GST) Default Amount (₹)</div>
+                                    <div class="setting-desc">Used automatically for personal account invoices without GST</div>
+                                </div>
+                                <input type="number" id="inv-personal-no-gst-amount" class="form-control form-control-sm" style="max-width:190px;" placeholder="12000" min="1">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Next Invoice Sequence (With GST)</div>
+                                    <div class="setting-desc">Controls Inv/YYYY/### numbering. Set to 1 to reset.</div>
+                                </div>
+                                <input type="number" id="inv-seq-with-gst" class="form-control form-control-sm" style="max-width:160px;" placeholder="1" min="1">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Next Invoice Sequence (Without GST)</div>
+                                    <div class="setting-desc">Controls PInv/YYYY/### numbering. Set to 1 to reset.</div>
+                                </div>
+                                <input type="number" id="inv-seq-without-gst" class="form-control form-control-sm" style="max-width:160px;" placeholder="1" min="1">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
                                     <div class="setting-label">Company Name</div>
                                     <div class="setting-desc">Shown on invoice header</div>
                                 </div>
@@ -588,10 +650,42 @@
 
                             <div class="setting-row">
                                 <div>
+                                    <div class="setting-label">Company Email</div>
+                                    <div class="setting-desc">Shown in invoice header</div>
+                                </div>
+                                <input type="email" id="inv-company-email" class="form-control form-control-sm" style="max-width:260px;" placeholder="accounts@company.com">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
                                     <div class="setting-label">GSTIN</div>
                                     <div class="setting-desc">Optional GST number on invoice</div>
                                 </div>
                                 <input type="text" id="inv-company-gstin" class="form-control form-control-sm" style="max-width:220px;" placeholder="e.g. 29ABCDE1234F1Z5">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">PAN</div>
+                                    <div class="setting-desc">Permanent Account Number for invoice header</div>
+                                </div>
+                                <input type="text" id="inv-company-pan" class="form-control form-control-sm" style="max-width:220px;" placeholder="e.g. ABCDE1234F">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">CIN</div>
+                                    <div class="setting-desc">Company Identification Number</div>
+                                </div>
+                                <input type="text" id="inv-company-cin" class="form-control form-control-sm" style="max-width:260px;" placeholder="e.g. U12345GJ2024PTC123456">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">CST Code</div>
+                                    <div class="setting-desc">Optional CST/TIN code for invoice header</div>
+                                </div>
+                                <input type="text" id="inv-company-cst-code" class="form-control form-control-sm" style="max-width:220px;" placeholder="Optional">
                             </div>
 
                             <div class="settings-section-title mt-4" style="border-top:1px solid #f1f5f9;padding-top:16px;"><i class="bi bi-qr-code text-primary"></i> Payment QR / UPI</div>
@@ -614,6 +708,38 @@
 
                             <div class="setting-row">
                                 <div>
+                                    <div class="setting-label">Bank Name</div>
+                                    <div class="setting-desc">Shown in payment details section</div>
+                                </div>
+                                <input type="text" id="inv-bank-name" class="form-control form-control-sm" style="max-width:240px;" placeholder="Bank Name">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Bank Account Number</div>
+                                    <div class="setting-desc">Shown in payment details section</div>
+                                </div>
+                                <input type="text" id="inv-bank-account-number" class="form-control form-control-sm" style="max-width:240px;" placeholder="Account Number">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">IFSC Code</div>
+                                    <div class="setting-desc">Shown in payment details section</div>
+                                </div>
+                                <input type="text" id="inv-bank-ifsc" class="form-control form-control-sm" style="max-width:180px;" placeholder="IFSC">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Bank Branch</div>
+                                    <div class="setting-desc">Optional branch name</div>
+                                </div>
+                                <input type="text" id="inv-bank-branch" class="form-control form-control-sm" style="max-width:220px;" placeholder="Branch">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
                                     <div class="setting-label">QR Code Image URL</div>
                                     <div class="setting-desc">Direct link to your payment QR PNG/JPG image</div>
                                 </div>
@@ -622,6 +748,21 @@
 
                             <div class="mt-1" id="inv-qr-preview-wrap" style="display:none;padding:10px 0;">
                                 <img id="inv-qr-preview" src="" alt="QR Preview" style="width:100px;height:100px;object-fit:contain;border:1px solid #e2e8f0;border-radius:8px;">
+                            </div>
+
+                            <div class="settings-section-title mt-4" style="border-top:1px solid #f1f5f9;padding-top:16px;"><i class="bi bi-shield-check text-primary"></i> Verification Permissions</div>
+                            <div class="setting-row" style="align-items:flex-start;">
+                                <div>
+                                    <div class="setting-label">Who can verify/send invoice</div>
+                                    <div class="setting-desc">Admin can allow additional roles to verify and send invoices.</div>
+                                </div>
+                                <div id="inv-verifier-roles" style="display:flex;gap:14px;flex-wrap:wrap;max-width:420px;">
+                                    <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
+                                    <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
+                                    <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
+                                    <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
+                                    <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
+                                </div>
                             </div>
 
                             <div class="mt-3">
@@ -824,7 +965,9 @@
                 loadSlabsSettings();
                 loadIncentiveEligibilityUsers();
                 loadPayslipContact();
+                loadEmployeeCodeSettings();
                 loadInvoiceSettings();
+                document.getElementById('employee-code-settings').style.display = 'block';
 
                 const apiUrl = window.API_BASE || 'http://localhost:8000';
                 document.getElementById('api-url-display').textContent = apiUrl;
@@ -1029,6 +1172,39 @@
             }
         }
 
+        // ── Employee Code Settings (admin-only)
+        async function loadEmployeeCodeSettings() {
+            try {
+                const data = await ApiClient.getEmployeeCodeSettings();
+                document.getElementById('emp-code-enabled').checked = data.enabled !== false;
+                document.getElementById('emp-code-prefix').value = data.prefix || 'EMP';
+                document.getElementById('emp-code-next-seq').value = data.next_seq || 1;
+            } catch (e) {
+                console.warn('Could not load employee code settings:', e);
+            }
+        }
+
+        async function saveEmployeeCodeSettings() {
+            const enabled = document.getElementById('emp-code-enabled').checked;
+            const prefix = document.getElementById('emp-code-prefix').value.trim();
+            const next_seq = parseInt(document.getElementById('emp-code-next-seq').value);
+            const msg = document.getElementById('emp-code-save-msg');
+
+            if (!prefix || isNaN(next_seq)) {
+                showToast('Prefix and next sequence are required', true);
+                return;
+            }
+            try {
+                await ApiClient.updateEmployeeCodeSettings({ enabled, prefix, next_seq });
+                msg.textContent = 'Saved!';
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 2500);
+                showToast('Employee code configuration saved');
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to save', true);
+            }
+        }
+
         // ── Payslip Contact (admin-only)
         async function loadPayslipContact() {
             try {
@@ -1064,17 +1240,34 @@
             try {
                 const data = await ApiClient.getInvoiceSettings();
                 document.getElementById('inv-default-amount').value = data.invoice_default_amount || 12000;
+                document.getElementById('inv-personal-no-gst-amount').value = data.personal_without_gst_default_amount || 12000;
+                document.getElementById('inv-seq-with-gst').value = data.invoice_seq_with_gst || 1;
+                document.getElementById('inv-seq-without-gst').value = data.invoice_seq_without_gst || 1;
                 document.getElementById('inv-company-name').value = data.company_name || '';
                 document.getElementById('inv-company-address').value = data.company_address || '';
                 document.getElementById('inv-company-phone').value = data.company_phone || '';
+                document.getElementById('inv-company-email').value = data.company_email || '';
                 document.getElementById('inv-company-gstin').value = data.company_gstin || '';
+                document.getElementById('inv-company-pan').value = data.company_pan || '';
+                document.getElementById('inv-company-cin').value = data.company_cin || '';
+                document.getElementById('inv-company-cst-code').value = data.company_cst_code || '';
                 document.getElementById('inv-upi-id').value = data.payment_upi_id || '';
                 document.getElementById('inv-upi-name').value = data.payment_account_name || '';
+                document.getElementById('inv-bank-name').value = data.payment_bank_name || '';
+                document.getElementById('inv-bank-account-number').value = data.payment_account_number || '';
+                document.getElementById('inv-bank-ifsc').value = data.payment_ifsc || '';
+                document.getElementById('inv-bank-branch').value = data.payment_branch || '';
+                const verifierRoles = String(data.invoice_verifier_roles || 'ADMIN').split(',').map(v => v.trim()).filter(Boolean);
+                document.querySelectorAll('#inv-verifier-roles input[type="checkbox"]').forEach(cb => {
+                    cb.checked = verifierRoles.includes(cb.value);
+                });
                 const qrUrl = data.payment_qr_image_url || '';
                 document.getElementById('inv-qr-url').value = qrUrl;
                 if (qrUrl) {
                     document.getElementById('inv-qr-preview').src = qrUrl;
                     document.getElementById('inv-qr-preview-wrap').style.display = 'block';
+                } else {
+                    document.getElementById('inv-qr-preview-wrap').style.display = 'none';
                 }
             } catch (e) {
                 console.warn('Could not load invoice settings:', e);
@@ -1100,15 +1293,31 @@
 
         async function saveInvoiceSettings() {
             const msg = document.getElementById('inv-save-msg');
+            const selectedRoles = Array.from(document.querySelectorAll('#inv-verifier-roles input[type="checkbox"]:checked')).map(cb => cb.value);
+            if (!selectedRoles.includes('ADMIN')) {
+                selectedRoles.unshift('ADMIN');
+            }
             const payload = {
                 invoice_default_amount: parseFloat(document.getElementById('inv-default-amount').value) || 12000,
+                personal_without_gst_default_amount: parseFloat(document.getElementById('inv-personal-no-gst-amount').value) || 12000,
+                invoice_seq_with_gst: parseInt(document.getElementById('inv-seq-with-gst').value, 10) || 1,
+                invoice_seq_without_gst: parseInt(document.getElementById('inv-seq-without-gst').value, 10) || 1,
                 company_name: document.getElementById('inv-company-name').value.trim(),
                 company_address: document.getElementById('inv-company-address').value.trim(),
                 company_phone: document.getElementById('inv-company-phone').value.trim(),
+                company_email: document.getElementById('inv-company-email').value.trim(),
                 company_gstin: document.getElementById('inv-company-gstin').value.trim(),
+                company_pan: document.getElementById('inv-company-pan').value.trim(),
+                company_cin: document.getElementById('inv-company-cin').value.trim(),
+                company_cst_code: document.getElementById('inv-company-cst-code').value.trim(),
                 payment_upi_id: document.getElementById('inv-upi-id').value.trim(),
                 payment_account_name: document.getElementById('inv-upi-name').value.trim(),
+                payment_bank_name: document.getElementById('inv-bank-name').value.trim(),
+                payment_account_number: document.getElementById('inv-bank-account-number').value.trim(),
+                payment_ifsc: document.getElementById('inv-bank-ifsc').value.trim(),
+                payment_branch: document.getElementById('inv-bank-branch').value.trim(),
                 payment_qr_image_url: document.getElementById('inv-qr-url').value.trim(),
+                invoice_verifier_roles: selectedRoles.join(','),
             };
             try {
                 await ApiClient.updateInvoiceSettings(payload);

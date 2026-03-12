@@ -46,6 +46,16 @@ def read_client_feedback(
     service = FeedbackService(db)
     return service.get_client_feedbacks(client_id)
 
+
+@router.get("/feedbacks/all", response_model=List[FeedbackRead])
+def read_all_client_feedbacks(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    from app.modules.feedback.service import FeedbackService
+    service = FeedbackService(db)
+    return service.get_all_client_feedbacks()
+
 @router.post("/user", response_model=UserFeedbackRead, status_code=status.HTTP_201_CREATED)
 def create_user_feedback(
     feedback_in: UserFeedbackCreate,

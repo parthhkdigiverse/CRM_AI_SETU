@@ -23,6 +23,11 @@ class Bill(Base):
 
     # Financial
     amount = Column(Float, nullable=False, default=12000.0)
+    payment_type = Column(String, nullable=False, default="PERSONAL_ACCOUNT")
+    gst_type = Column(String, nullable=False, default="WITH_GST")
+    invoice_series = Column(String, nullable=False, default="INV")
+    invoice_sequence = Column(Integer, nullable=False, default=1)
+    requires_qr = Column(Boolean, nullable=False, default=True)
 
     # Invoice lifecycle:
     #   DRAFT → PENDING_VERIFICATION → VERIFIED → SENT

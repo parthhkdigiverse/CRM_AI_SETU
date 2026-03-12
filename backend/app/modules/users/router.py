@@ -138,6 +138,36 @@ async def update_user_status(
 
     return user
 
+# ── Employee Code Settings endpoints ────────────────────────────────────────
+
+@router.get("/config/employee-code")
+def get_employee_code_settings(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+) -> Any:
+    from app.modules.users.service import UserService
+    return UserService(db).get_employee_code_settings()
+
+@router.put("/config/employee-code")
+def update_employee_code_settings(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+) -> Any:
+    from app.modules.users.service import UserService
+    enabled = payload.get("enabled", True)
+    prefix = payload.get("prefix")
+    next_seq = payload.get("next_seq")
+    if prefix is None or next_seq is None:
+        raise HTTPException(status_code=400, detail="prefix and next_seq are required")
+    
+    try:
+        next_seq = int(next_seq)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="next_seq must be an integer")
+        
+    return UserService(db).update_employee_code_settings(enabled, prefix, next_seq)
+
 @router.patch("/{user_id}/profile", response_model=UserRead)
 async def admin_update_user_profile(
     user_id: int,
@@ -155,8 +185,16 @@ async def admin_update_user_profile(
     for field, value in update_data.items():
         setattr(user, field, value)
 
-    db.commit()
-    db.refresh(user)
+    from sqlalchemy.exc import IntegrityError
+    try:
+        db.commit()
+        db.refresh(user)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Employee code '{user.employee_code}' is already in use by another user"
+        )
 
     activity_logger = ActivityLogger(db)
     await activity_logger.log_activity(

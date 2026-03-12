@@ -119,6 +119,17 @@ async def register(
 ) -> Any:
     user = db.query(User).filter(User.email == user_in.email).first()
     user_existed = user is not None
+    # Generate / Handle Employee Code
+    from app.modules.users.service import UserService
+    user_service = UserService(db)
+    
+    # If it's a new user and not a CLIENT, and no employee_code provided
+    if not user_existed and user_in.role != UserRole.CLIENT and not user_in.employee_code:
+        emp_code, current_seq = user_service.get_next_employee_code()
+        if emp_code:
+            user_in.employee_code = emp_code
+            user_service.increment_employee_code_seq(current_seq)
+
     if user_existed:
         # Securely Update Existing User (UPSERT)
         user.name = user_in.name

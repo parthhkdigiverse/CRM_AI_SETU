@@ -91,7 +91,9 @@ class ApiClient {
             const data = isJson ? await response.json() : await response.text();
 
             if (!response.ok) {
-                console.error(`API Error [${response.status}] ${path}:`, data);
+                if (!options.quiet) {
+                    console.error(`API Error [${response.status}] ${path}:`, data);
+                }
                 throw { status: response.status, data };
             }
 
@@ -175,6 +177,13 @@ class ApiClient {
     }
     static async updateUserStatus(userId, isActive) {
         return this.request(`/users/${userId}/status`, { method: 'PATCH', body: { is_active: isActive } });
+    }
+
+    static async getEmployeeCodeSettings() {
+        return this.request('/users/config/employee-code');
+    }
+    static async updateEmployeeCodeSettings(data) {
+        return this.request('/users/config/employee-code', { method: 'PUT', body: data });
     }
 
     // ─── Dashboard ───────────────────────────────────────────
@@ -311,6 +320,24 @@ class ApiClient {
     static async createFeedback(clientId, data) {
         return this.request(`/clients/${clientId}/feedback`, { method: 'POST', body: data });
     }
+    static async getAllClientFeedbacks() {
+        const candidates = [
+            '/clients/feedbacks/all',
+            '/feedbacks/all',
+            '/clients/feedback/all',
+        ];
+
+        let lastError = null;
+        for (const path of candidates) {
+            try {
+                return await this.request(path, { quiet: true });
+            } catch (err) {
+                lastError = err;
+                if (err?.status !== 404) break;
+            }
+        }
+        throw lastError || new Error('Failed to load feedback list');
+    }
     static async createUserFeedback(data) {
         return this.request('/clients/user', { method: 'POST', body: data });
     }
@@ -407,6 +434,26 @@ class ApiClient {
     static async calculateIncentive(data) {
         return this.request('/incentives/calculate', { method: 'POST', body: data });
     }
+    static async recalculateIncentive(data) {
+        return this.request('/incentives/calculate', { method: 'POST', body: { ...data, force_recalculate: true } });
+    }
+    static async calculateIncentiveBulk(data) {
+        try {
+            return await this.request('/incentives/calculate/bulk', { method: 'POST', body: data });
+        } catch (err) {
+            if (err && err.status === 404) {
+                try {
+                    return await this.request('/incentives/calculate_bulk', { method: 'POST', body: data });
+                } catch (legacyErr) {
+                    if (legacyErr && legacyErr.status === 404) {
+                        return this.request('/incentives/bulk-calculate', { method: 'POST', body: data });
+                    }
+                    throw legacyErr;
+                }
+            }
+            throw err;
+        }
+    }
     static async getAllIncentiveSlips() {
         return this.request('/incentives/slips');
     }
@@ -435,11 +482,20 @@ class ApiClient {
     static async createInvoice(data) {
         return this.request('/billing/', { method: 'POST', body: data });
     }
-    static async getBills() {
-        return this.request('/billing/');
+    static async getBills(params = {}) {
+        const query = new URLSearchParams();
+        Object.entries(params || {}).forEach(([k, v]) => {
+            if (v === undefined || v === null || v === '') return;
+            query.set(k, String(v));
+        });
+        const qs = query.toString();
+        return this.request(`/billing/${qs ? `?${qs}` : ''}`);
     }
     static async getInvoice(billId) {
         return this.request(`/billing/${billId}`);
+    }
+    static async getInvoiceActions(billId) {
+        return this.request(`/billing/${billId}/actions`);
     }
     static async verifyInvoice(billId) {
         return this.request(`/billing/${billId}/verify`, { method: 'PATCH' });
@@ -452,6 +508,12 @@ class ApiClient {
     }
     static async updateInvoiceSettings(data) {
         return this.request('/billing/settings', { method: 'PUT', body: data });
+    }
+    static async getInvoiceWorkflowOptions() {
+        return this.request('/billing/workflow/options');
+    }
+    static async resolveInvoiceWorkflow(data) {
+        return this.request('/billing/workflow/resolve', { method: 'POST', body: data });
     }
 
     // ─── Projects ────────────────────────────────────────────
