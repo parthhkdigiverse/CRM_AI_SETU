@@ -17,14 +17,70 @@ function showToast(msg, type = 'success') {
 }
 window.showToast = showToast;
 
+// Global DOM references (initialized in DOMContentLoaded)
+let mainContent;
+
+// View Routing
+async function loadView(viewName) {
+    if (!mainContent) mainContent = document.getElementById('main-content') || document.body;
+    mainContent.innerHTML = '<div style="display:flex; justify-content:center; padding: 40px; color: var(--primary); font-size: 24px;"><i class="fa-solid fa-circle-notch fa-spin"></i></div>';
+
+    try {
+        if (viewName === 'dashboard') {
+            await renderDashboard();
+        } else if (viewName === 'clients') {
+            await renderClients();
+        } else if (viewName === 'leads') {
+            await renderLeads();
+        } else if (viewName === 'areas') {
+            await renderAreas();
+        } else if (viewName === 'visits') {
+            await renderVisits();
+        } else if (viewName === 'feedback') {
+            await renderFeedback();
+        } else if (viewName === 'projects') {
+            await renderProjects();
+        } else if (viewName === 'meetings') {
+            await renderMeetings();
+        } else if (viewName === 'issues') {
+            await renderIssues();
+        } else if (viewName === 'employees') {
+            await renderEmployees();
+        } else if (viewName === 'salary') {
+            await renderSalary();
+        } else if (viewName === 'incentives') {
+            await renderIncentives();
+        } else if (viewName === 'admin') {
+            await renderAdmin();
+        } else if (viewName === 'profile') {
+            await renderProfile();
+        } else {
+            mainContent.innerHTML = `
+                <div class="card" style="text-align:center; padding: 60px;">
+                    <i class="fa-solid fa-person-digging" style="font-size: 48px; color: var(--text-muted); margin-bottom: 16px;"></i>
+                    <h2>${viewName.charAt(0).toUpperCase() + viewName.slice(1)} View is Under Construction</h2>
+                    <p class="text-muted">Will be built out shortly.</p>
+                </div>
+            `;
+        }
+    } catch (e) {
+        console.error('View load failed:', e);
+        mainContent.innerHTML = `<div class="card text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Error loading view. Please verify backend connection.</div>`;
+    }
+}
+window.loadView = loadView; // Expose globally
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Only activate SPA routing on index/login page (not on standalone template pages)
+    const loginForm = document.getElementById('login-form');
+    if (!loginForm) return;
+
     // DOM Elements
     const loginView = document.getElementById('login-view');
     const appShell = document.getElementById('app-shell');
-    const loginForm = document.getElementById('login-form');
     const loginError = document.getElementById('login-error');
     const logoutBtn = document.getElementById('logout-btn');
-    const mainContent = document.getElementById('main-content') || document.body; // Fallback
+    mainContent = document.getElementById('main-content') || document.body;
     const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
     const topbarTitle = document.getElementById('topbar-title') || { innerText: '' };
 
@@ -144,55 +200,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // View Routing
-    async function loadView(viewName) {
-        mainContent.innerHTML = '<div style="display:flex; justify-content:center; padding: 40px; color: var(--primary); font-size: 24px;"><i class="fa-solid fa-circle-notch fa-spin"></i></div>';
+    // Kickoff
+    checkAuth();
+});
 
-        try {
-            if (viewName === 'dashboard') {
-                await renderDashboard();
-            } else if (viewName === 'clients') {
-                await renderClients();
-            } else if (viewName === 'leads') {
-                await renderLeads();
-            } else if (viewName === 'areas') {
-                await renderAreas();
-            } else if (viewName === 'visits') {
-                await renderVisits();
-            } else if (viewName === 'feedback') {
-                await renderFeedback();
-            } else if (viewName === 'projects') {
-                await renderProjects();
-            } else if (viewName === 'meetings') {
-                await renderMeetings();
-            } else if (viewName === 'issues') {
-                await renderIssues();
-            } else if (viewName === 'employees') {
-                await renderEmployees();
-            } else if (viewName === 'salary') {
-                await renderSalary();
-            } else if (viewName === 'incentives') {
-                await renderIncentives();
-            } else if (viewName === 'admin') {
-                await renderAdmin();
-            } else if (viewName === 'profile') {
-                await renderProfile();
-            } else {
-                mainContent.innerHTML = `
-                    <div class="card" style="text-align:center; padding: 60px;">
-                        <i class="fa-solid fa-person-digging" style="font-size: 48px; color: var(--text-muted); margin-bottom: 16px;"></i>
-                        <h2>${viewName.charAt(0).toUpperCase() + viewName.slice(1)} View is Under Construction</h2>
-                        <p class="text-muted">Will be built out shortly.</p>
-                    </div>
-                `;
-            }
-        } catch (e) {
-            mainContent.innerHTML = `<div class="card text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Error loading view. Please verify backend connection.</div>`;
-        }
-    }
-    window.loadView = loadView; // Expose globally for onclick= handlers in dynamically rendered HTML
-
-    async function renderDashboard() {
+async function renderDashboard() {
         let stats = { total_clients: 0, open_issues: 0, total_visits: 0, total_shops: 0 };
         let shops = [], visits = [], clients = [], todos = [];
         try {
@@ -2367,7 +2379,3 @@ document.addEventListener('DOMContentLoaded', () => {
             renderTimetable();
         }, "Schedule");
     };
-
-    // Kickoff
-    checkAuth();
-});

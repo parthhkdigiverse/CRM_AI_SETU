@@ -19,10 +19,14 @@ class ClientService:
     def get_client(self, client_id: int):
         return self.db.query(Client).filter(Client.id == client_id).first()
 
-    def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc", include_inactive: bool = False, pm_id: int = None):
+    def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc", include_inactive: bool = False, pm_id: int = None, is_active: bool | None = True):
         try:
             query = self.db.query(Client)
-            if not include_inactive:
+            if is_active is True:
+                query = query.filter(Client.is_active == True)
+            elif is_active is False:
+                query = query.filter(Client.is_active == False)
+            elif not include_inactive:
                 query = query.filter(Client.is_active == True)
             if pm_id:
                 query = query.filter(Client.pm_id == pm_id)
@@ -30,7 +34,9 @@ class ClientService:
                 search_pattern = f"%{search}%"
                 query = query.filter(
                     (Client.name.ilike(search_pattern)) | 
-                    (Client.phone.ilike(search_pattern))
+                    (Client.phone.ilike(search_pattern)) |
+                    (Client.email.ilike(search_pattern)) |
+                    (Client.organization.ilike(search_pattern))
                 )
             
             # Sorting Whitelist Hardening

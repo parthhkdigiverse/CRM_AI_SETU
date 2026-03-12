@@ -95,7 +95,7 @@ class ShopService:
         return shops
         
     @staticmethod
-    def list_kanban_shops(db: Session, owner_id: int = None):
+    def list_kanban_shops(db: Session, owner_id: int = None, source: str = None):
         from sqlalchemy.orm import selectinload
         from app.modules.visits.models import Visit as VisitModel
         query = db.query(Shop).options(
@@ -108,6 +108,8 @@ class ShopService:
         
         if owner_id:
             query = query.filter(Shop.owner_id == owner_id)
+        if source and source not in {"ALL", "all"}:
+            query = query.filter(Shop.source == source)
             
         results = query.all()
         

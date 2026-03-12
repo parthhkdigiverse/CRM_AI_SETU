@@ -85,6 +85,7 @@
             background: #fee2e2;
             color: #dc2626;
         }
+
     </style>
 </head>
 
@@ -100,9 +101,10 @@
                         <p class="text-muted mb-0" style="font-size:0.93rem;">Manage your team members, roles, and
                             profiles.</p>
                     </div>
-                    <div class="d-flex gap-2">
-                    </div>
                 </div>
+
+                <!-- Filter Panel Wrapper -->
+                <div id="filter-wrapper"></div>
 
                 <!-- Employees Table -->
                 <div class="grid-card">
@@ -223,13 +225,18 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/api.js?v=1772780187"></script>
-    <script src="../js/ui_components.js?v=1772780187"></script>
+    <script src="../js/utils.js?v=2.3"></script>
+    <script src="../js/api.js?v=2.3"></script>
     <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/app.js?v=2.3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
-        document.getElementById('sidebar').innerHTML = renderSidebar('employees');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) {
+            sidebarElement.innerHTML = renderSidebar('employees');
+        }
         injectTopHeader('Employees');
 
         const currentUser = getUser();
@@ -266,15 +273,34 @@
         async function loadEmployees() {
             const tbody = document.getElementById('employees-tbody');
             tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading employees...</td></tr>';
+            
+            const department = document.getElementById('filter-department').value;
+            const role = document.getElementById('filter-role').value;
+            const status = document.getElementById('filter-status').value;
+            const start = document.getElementById('filter-start').value;
+            const end = document.getElementById('filter-end').value;
+
+            let query = '';
+            if (department) query += `&department=${encodeURIComponent(department)}`;
+            if (role) query += `&role=${role}`;
+            if (status) query += `&is_active=${status}`;
+            if (start) query += `&start_date=${start}`;
+            if (end) query += `&end_date=${end}`;
+
+            if (query) query = '?' + query.substring(1);
+
             try {
-                // Fetch using universal API endpoint
-                employeesData = await ApiClient.getEmployees();
+                // Fetch using universal API endpoint with query params
+                employeesData = await apiGet('/employees/' + query);
                 document.getElementById('employee-count-badge').innerText = `${employeesData.length} Employee${employeesData.length !== 1 ? 's' : ''}`;
 
                 if (employeesData.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No employees found.</td></tr>';
                     return;
                 }
+
+                // Populate Department dropdown if not already set or filtering
+                populateDepartmentFilter();
 
                 tbody.innerHTML = employeesData.map(emp => {
                     const avatarLetter = (emp.name || emp.email || 'U')[0].toUpperCase();
@@ -415,10 +441,66 @@
             }
         }
 
+        // Initialize Filters
+        function initFilters() {
+            renderFilterPanel({
+                containerId: 'filter-wrapper',
+                filters: [
+                    { type: 'select', label: 'Department', id: 'filter-department', options: [{ value: '', label: 'All Departments' }] },
+                    { type: 'select', label: 'Role', id: 'filter-role', options: [
+                        { value: '', label: 'All Roles' },
+                        { value: 'ADMIN', label: 'Admin' },
+                        { value: 'SALES', label: 'Sales' },
+                        { value: 'TELESALES', label: 'Telesales' },
+                        { value: 'PROJECT_MANAGER', label: 'Project Manager' },
+                        { value: 'PROJECT_MANAGER_AND_SALES', label: 'PM & Sales' }
+                    ]},
+                    { type: 'select', label: 'Status', id: 'filter-status', options: [
+                        { value: '', label: 'All Status' },
+                        { value: 'true', label: 'Active' },
+                        { value: 'false', label: 'Inactive' }
+                    ]},
+                    { type: 'date', label: 'Start Date', id: 'filter-start' },
+                    { type: 'date', label: 'End Date', id: 'filter-end' }
+                ],
+                onApply: (data) => {
+                    loadEmployees();
+                },
+                onReset: () => {
+                    loadEmployees();
+                }
+            });
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            initFilters();
             loadEmployees();
         });
+
+
+        function populateDepartmentFilter() {
+            const deptSel = document.getElementById('filter-department');
+            const currentVal = deptSel.value;
+            
+            // Collect unique departments from employeesData
+            const departments = [...new Set(employeesData.map(e => e.department).filter(d => d))].sort();
+            
+            // Preserve "All Departments" and existing options
+            const existingOptions = Array.from(deptSel.options).map(o => o.value);
+            
+            departments.forEach(d => {
+                if (!existingOptions.includes(d)) {
+                    const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d;
+                    deptSel.appendChild(opt);
+                }
+            });
+            
+            // Restore selection if it was lost during population (though append doesn't lose it)
+            deptSel.value = currentVal;
+        }
 
     </script>
 </body>

@@ -17,6 +17,10 @@
 <body>
     <style>
         /* Incentive-specific adjustments while respecting theme.css */
+        .page-content {
+            padding-bottom: 28px;
+        }
+
         .stat-card {
             transition: transform 0.22s ease, box-shadow 0.22s ease;
         }
@@ -79,6 +83,164 @@
             margin-bottom: 2px;
             display: block;
         }
+
+        .incentive-card-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .preview-breakdown {
+            background: var(--bg-app);
+            border-radius: 12px;
+            padding: 16px 18px;
+            border: 1px solid var(--border);
+        }
+        .preview-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            font-size: 0.88rem;
+            border-bottom: 1px dashed var(--border);
+        }
+        .preview-row:last-child { border-bottom: none; }
+        .preview-row .label { color: var(--text-muted); }
+        .preview-row .value { font-weight: 600; color: var(--text-main); }
+        .preview-total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0 0;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+        .preview-total-row .label { color: var(--text-main); }
+        .preview-total-row .value { color: #16a34a; font-size: 1.1rem; }
+
+        .slab-form-shell {
+            background: linear-gradient(180deg, rgba(79,70,229,0.05), rgba(79,70,229,0.02));
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .slab-metric {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            background: var(--bg-app);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .slab-range-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 64px;
+            padding: 6px 10px;
+            border-radius: 10px;
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 800;
+            font-size: 0.78rem;
+        }
+
+        .slab-cell-note {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .slab-modal-grid {
+            background: var(--bg-app);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .slab-input-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .slabs-table {
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .slabs-table td,
+        .slabs-table th {
+            padding-top: 0.78rem;
+            padding-bottom: 0.78rem;
+            vertical-align: middle;
+        }
+
+        .slips-table-wrap {
+            overflow-x: auto;
+        }
+
+        .slips-table {
+            width: 100%;
+            min-width: 760px;
+            table-layout: auto;
+            font-size: 0.82rem;
+        }
+
+        .slips-table col.col-employee { width: 24%; }
+        .slips-table col.col-period { width: 18%; }
+        .slips-table col.col-tasks { width: 10%; }
+        .slips-table col.col-slab { width: 20%; }
+        .slips-table col.col-rate { width: 12%; }
+        .slips-table col.col-total { width: 16%; }
+
+        .slips-table td,
+        .slips-table th {
+            padding-top: 0.7rem;
+            padding-bottom: 0.7rem;
+            vertical-align: middle;
+        }
+
+        .slip-employee-cell {
+            min-width: 0;
+        }
+
+        .slip-employee-name,
+        .slip-slab-label {
+            display: block;
+            line-height: 1.25;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .slip-period-cell,
+        .slip-task-cell,
+        .slip-rate-cell,
+        .slip-total-cell {
+            white-space: nowrap;
+        }
+
+        @media (max-width: 991.98px) {
+            .slips-table {
+                min-width: 720px;
+            }
+
+            .slip-employee-name,
+            .slip-slab-label {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
     </style>
 
     <div class="d-flex">
@@ -88,8 +250,8 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
                     <div>
-                        <h2 class="page-section-title fw-bold mb-1">Incentive Intelligence</h2>
-                        <p class="text-muted mb-0 small">Performance tracking, slab configuration and incentive management.</p>
+                        <h2 class="page-section-title fw-bold mb-1">Incentives</h2>
+                        <p class="text-muted mb-0 small">Manage slabs and employee incentive slips.</p>
                     </div>
                     <div id="admin-header-actions" style="display:none;">
                         <button class="btn btn-primary shadow-sm" onclick="openCalcModal()">
@@ -98,7 +260,7 @@
                     </div>
                 </div>
 
-                <div class="row g-4 mb-5">
+                <div class="row g-4 mb-4">
                     <div class="col-6 col-md-3">
                         <div class="card stat-card border-0 h-100 p-3">
                             <div class="text-muted fw-bold text-uppercase mb-2" style="font-size:0.65rem; letter-spacing:0.08em;">Active Slabs</div>
@@ -112,38 +274,47 @@
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="card stat-card border-0 h-100 p-3">
-                            <div class="text-muted fw-bold text-uppercase mb-2" style="font-size:0.65rem; letter-spacing:0.08em;">Incentive Slips</div>
+                            <div class="text-muted fw-bold text-uppercase mb-2" style="font-size:0.65rem; letter-spacing:0.08em;">Total Tasks Done</div>
                             <div class="d-flex align-items-center gap-3">
                                 <div class="bg-success-light text-success rounded-3 d-flex align-items-center justify-content-center" style="width:42px; height:42px;">
-                                    <i class="bi bi-person-check fs-5"></i>
+                                    <i class="bi bi-check2-circle fs-5"></i>
                                 </div>
-                                <div class="h3 fw-bold mb-0" id="stat-slips">-</div>
+                                <div class="h3 fw-bold mb-0" id="stat-tasks">-</div>
                             </div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="card stat-card border-0 h-100 p-3">
-                            <div class="text-muted fw-bold text-uppercase mb-2" style="font-size:0.65rem; letter-spacing:0.08em;">Total Incentive</div>
+                            <div class="text-muted fw-bold text-uppercase mb-2" style="font-size:0.65rem; letter-spacing:0.08em;">Confirmed Incentive</div>
                             <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:42px; height:42px; background:rgba(245,158,11,0.12); color:#b45309;">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:42px; height:42px; background:rgba(22,163,74,0.12); color:#16a34a;">
                                     <i class="bi bi-cash-stack fs-5"></i>
                                 </div>
-                                <div class="fw-bold mb-0" id="stat-total" style="font-size:1.1rem;">-</div>
+                                <div>
+                                    <div class="fw-bold mb-0" id="stat-confirmed" style="font-size:1.05rem;">-</div>
+                                    <div class="text-muted" style="font-size:0.68rem;">In Salary (&gt;10 days)</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="card stat-card border-0 h-100 p-3">
-                            <div class="text-muted fw-bold text-uppercase mb-2" style="font-size:0.65rem; letter-spacing:0.08em;">Avg per Employee</div>
+                            <div class="text-muted fw-bold text-uppercase mb-2" style="font-size:0.65rem; letter-spacing:0.08em;">Pending Incentive</div>
                             <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:42px; height:42px; background:rgba(99,102,241,0.12); color:#4338ca;">
-                                    <i class="bi bi-bar-chart-line fs-5"></i>
+                                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:42px; height:42px; background:rgba(245,158,11,0.12); color:#b45309;">
+                                    <i class="bi bi-hourglass-split fs-5"></i>
                                 </div>
-                                <div class="fw-bold mb-0" id="stat-avg" style="font-size:1.1rem;">-</div>
+                                <div>
+                                    <div class="fw-bold mb-0" id="stat-pending" style="font-size:1.05rem;">-</div>
+                                    <div class="text-muted" style="font-size:0.68rem;">Awaiting 10-day lock</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Filter Panel Wrapper -->
+                <div id="filter-wrapper"></div>
 
                 <!-- Main Grid -->
                 <div class="row g-4">
@@ -157,24 +328,29 @@
                                 </button>
                             </div>
 
-                            <div id="add-slab-form" class="px-4 py-4 border-bottom bg-light bg-opacity-50" style="display:none;">
+                            <div id="add-slab-form" class="px-4 py-4 slab-form-shell" style="display:none;">
                                 <div class="row g-3 mb-3">
                                     <div class="col-6">
-                                        <label class="form-label">Min Units</label>
-                                        <input type="number" id="slab-min" class="form-control form-control-sm" placeholder="e.g. 0">
+                                        <label class="form-label slab-input-label">Min Tasks</label>
+                                        <input type="number" id="slab-min" class="form-control form-control-sm" placeholder="e.g. 1" min="0">
                                     </div>
                                     <div class="col-6">
-                                        <label class="form-label">Max Units</label>
-                                        <input type="number" id="slab-max" class="form-control form-control-sm" placeholder="e.g. 5">
+                                        <label class="form-label slab-input-label">Max Tasks</label>
+                                        <input type="number" id="slab-max" class="form-control form-control-sm" placeholder="e.g. 10" min="1">
                                     </div>
                                     <div class="col-6">
-                                        <label class="form-label">Rs Per Unit</label>
-                                        <input type="number" id="slab-per-unit" class="form-control form-control-sm" placeholder="500">
+                                        <label class="form-label slab-input-label">Incentive Per Task</label>
+                                        <input type="number" id="slab-per-unit" class="form-control form-control-sm" placeholder="1200" min="0" step="0.01">
                                     </div>
                                     <div class="col-6">
-                                        <label class="form-label">Bonus (Optional)</label>
-                                        <input type="number" id="slab-bonus" class="form-control form-control-sm" placeholder="1000">
+                                        <label class="form-label slab-input-label">Slab Bonus</label>
+                                        <input type="number" id="slab-bonus" class="form-control form-control-sm" placeholder="0" min="0" step="0.01">
                                     </div>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    <span class="slab-metric"><i class="bi bi-check2-square"></i> Task range based</span>
+                                    <span class="slab-metric"><i class="bi bi-cash-stack"></i> Flat per-task rate</span>
+                                    <span class="slab-metric"><i class="bi bi-stars"></i> Optional slab bonus</span>
                                 </div>
                                 <div class="d-flex gap-2">
                                     <button class="btn btn-sm btn-primary flex-grow-1" onclick="addSlab()">Save Slab</button>
@@ -185,7 +361,7 @@
 
                             <!-- Slab table - fixed layout, no horizontal scroll -->
                             <div class="no-scroll-table">
-                                <table class="table table-hover align-middle small mb-0">
+                                <table class="table table-hover align-middle small mb-0 slabs-table">
                                     <colgroup>
                                         <col style="width:28%">
                                         <col style="width:28%">
@@ -206,60 +382,44 @@
                                 </table>
                             </div>
 
-                            <!-- Footer note -->
-                            <div class="px-4 py-3 bg-light border-top">
-                                <p class="mb-0 text-muted" style="font-size:0.75rem;">
-                                    <i class="bi bi-info-circle me-1 text-warning"></i>
-                                    Incentive added to salary only after <strong>10 days</strong> (7-day client refund window + buffer).
-                                </p>
-                            </div>
                         </div>
                     </div>
 
                     <div class="col-xl-8">
                         <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-start flex-wrap gap-2">
+                            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center gap-2 flex-wrap">
                                 <div>
-                                    <h6 class="fw-bold mb-0">Performance Insights</h6>
-                                    <p class="text-muted mb-0 small" style="font-size:0.75rem;">Comprehensive overview of employee incentives</p>
+                                    <h6 class="fw-bold mb-0 incentive-card-title">Incentive Slips</h6>
+                                    <div class="text-muted" id="slip-filter-summary" style="font-size:0.75rem;">All slips</div>
                                 </div>
-                                <div class="d-flex gap-2 flex-wrap align-items-center">
-                                    <input type="month" id="slip-period-filter" class="form-control form-control-sm" style="min-width:140px;" onchange="loadSlips()" title="Filter by period">
-                                    <select id="slip-user-filter" class="form-select form-select-sm" style="min-width:150px;" onchange="loadSlips()">
-                                        <option value="">All Employees</option>
-                                    </select>
-                                    <select id="slip-status-filter" class="form-select form-select-sm" style="min-width:130px;" onchange="loadSlips()">
-                                        <option value="">All Status</option>
-                                        <option value="ready">In Salary</option>
-                                        <option value="pending">Pending</option>
-                                    </select>
-                                    <button id="btn-calc" class="btn btn-sm btn-primary" onclick="openCalcModal()" style="display:none;">
-                                        <i class="bi bi-lightning-charge-fill me-1"></i>Calculate
-                                    </button>
-                                </div>
+                                <button id="btn-calc" class="btn btn-sm btn-primary" onclick="openCalcModal()" style="display:none;">
+                                    <i class="bi bi-lightning-charge-fill me-1"></i>Calculate Incentive
+                                </button>
                             </div>
 
                             <!-- Slips table -->
-                            <div style="overflow-x:auto;">
-                                <table class="table table-hover align-middle mb-0" style="font-size:0.82rem; min-width:680px;">
+                            <div class="slips-table-wrap">
+                                <table class="table table-hover align-middle mb-0 slips-table">
                                     <colgroup>
-                                        <col style="width:20%">
-                                        <col style="width:11%">
-                                        <col style="width:27%">
-                                        <col style="width:22%">
-                                        <col style="width:20%">
+                                        <col class="col-employee">
+                                        <col class="col-period">
+                                        <col class="col-tasks">
+                                        <col class="col-slab">
+                                        <col class="col-rate">
+                                        <col class="col-total">
                                     </colgroup>
                                     <thead class="table-light">
                                         <tr>
                                             <th class="ps-3">Employee</th>
-                                            <th>Period</th>
-                                            <th>Achievement</th>
-                                            <th>Status</th>
-                                            <th class="pe-3 text-end">Incentive</th>
+                                            <th>Period / Time</th>
+                                            <th class="text-center">Tasks</th>
+                                            <th>Slab</th>
+                                            <th class="text-end">Per Task</th>
+                                            <th class="pe-3 text-end">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody id="slips-tbody">
-                                        <tr><td colspan="5" class="text-center py-5 text-muted">
+                                        <tr><td colspan="6" class="text-center py-5 text-muted">
                                             <span class="spinner-border spinner-border-sm me-2"></span>Loading...
                                         </td></tr>
                                     </tbody>
@@ -274,59 +434,126 @@
         </div>
     </div>
 
-    <!-- Calculate Modal -->
+    <!-- Calculate Incentive Modal (2-step: preview then save) -->
     <div class="crm-overlay" id="calcModal">
-        <div class="crm-box">
+        <div class="crm-box" style="max-width:520px;">
             <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                 <h5 class="fw-bold mb-0"><i class="bi bi-calculator text-success me-2"></i>Calculate Incentive</h5>
                 <button class="btn-close" onclick="closeCalcModal()"></button>
             </div>
-            <div class="row g-3 mb-3">
-                <div class="col-12">
-                    <label class="form-label fw-semibold small">Employee <span class="text-danger">*</span></label>
-                    <select id="calc-user" class="form-select"><option value="">Loading...</option></select>
+
+            <!-- Step 1: Inputs -->
+            <div id="calc-step-inputs">
+                <div class="row g-3 mb-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold small">Employee <span class="text-danger">*</span></label>
+                        <select id="calc-user" class="form-select"><option value="">Loading...</option></select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold small">Period <span class="text-danger">*</span></label>
+                        <input type="month" id="calc-period" class="form-control">
+                    </div>
                 </div>
-                <div class="col-12">
-                    <label class="form-label fw-semibold small">Period <span class="text-danger">*</span></label>
-                    <input type="month" id="calc-period" class="form-control">
-                </div>
-                <div class="col-12">
-                    <label class="form-label fw-semibold small">Closed / Converted Units</label>
-                    <input type="number" id="calc-units" class="form-control" placeholder="Leave blank to auto-detect" min="0">
-                    <div class="form-text text-muted">System auto-counts conversions if left blank.</div>
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <button class="btn btn-light border" onclick="closeCalcModal()">Cancel</button>
+                    <button class="btn btn-primary px-4 fw-semibold" id="calc-preview-btn" onclick="previewCalcIncentive()">
+                        <i class="bi bi-eye me-1"></i>Preview Calculation
+                    </button>
                 </div>
             </div>
-            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                <button class="btn btn-light border" onclick="closeCalcModal()">Cancel</button>
-                <button class="btn btn-success px-4 fw-semibold" id="calc-submit-btn" onclick="calcIncentive()">Calculate</button>
+
+            <!-- Step 2: Preview Results -->
+            <div id="calc-step-preview" style="display:none;">
+                <div class="preview-breakdown mb-3">
+                    <div class="preview-row">
+                        <span class="label">Employee</span>
+                        <span class="value" id="prev-employee">-</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="label">Period</span>
+                        <span class="value" id="prev-period">-</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="label">Calculated On</span>
+                        <span class="value" id="prev-datetime">-</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="label">Confirmed Tasks <small class="text-muted">(active &amp; &gt;10 days)</small></span>
+                        <span class="value" id="prev-confirmed" style="color:#16a34a;">-</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="label">Pending Tasks <small class="text-muted">(&le;10 days, at risk)</small></span>
+                        <span class="value" id="prev-pending" style="color:#b45309;">-</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="label">Refunded / Removed</span>
+                        <span class="value" id="prev-refunded" style="color:#dc2626;">-</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="label">Applied Slab</span>
+                        <span class="value" id="prev-slab">-</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="label">Per Task Rate</span>
+                        <span class="value" id="prev-per-task">-</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="label">Base Incentive <small class="text-muted">(tasks &times; rate)</small></span>
+                        <span class="value" id="prev-base">-</span>
+                    </div>
+                    <div class="preview-row">
+                        <span class="label">Slab Bonus</span>
+                        <span class="value" id="prev-slab-bonus" style="color:#7c3aed;">-</span>
+                    </div>
+                </div>
+                <div class="preview-total-row px-2">
+                    <span class="label">Total Confirmed Incentive</span>
+                    <span class="value" id="prev-total">-</span>
+                </div>
+                <div id="slip-exists-warning" class="alert alert-warning small py-2 mt-3" style="display:none;">
+                    <i class="bi bi-exclamation-triangle me-1"></i>A slip already exists for this period. Saving will fail.
+                </div>
+                <div class="d-flex justify-content-between gap-2 pt-3 border-top mt-3">
+                    <button class="btn btn-light border" onclick="backToCalcInputs()">
+                        <i class="bi bi-arrow-left me-1"></i>Back
+                    </button>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-light border" onclick="closeCalcModal()">Cancel</button>
+                        <button class="btn btn-success px-4 fw-semibold" id="calc-submit-btn" onclick="calcIncentive()">
+                            <i class="bi bi-floppy me-1"></i>Save as Slip
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Edit Slab Modal -->
     <div class="crm-overlay" id="editSlabModal">
-        <div class="crm-box" style="max-width:400px;">
+        <div class="crm-box" style="max-width:460px;">
             <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                 <h5 class="fw-bold mb-0"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Slab</h5>
                 <button class="btn-close" onclick="closeEditSlabModal()"></button>
             </div>
             <input type="hidden" id="edit-slab-id">
-            <div class="row g-3 mb-3">
-                <div class="col-6">
-                    <label class="form-label fw-semibold small">Min Units <span class="text-danger">*</span></label>
-                    <input type="number" id="edit-slab-min" class="form-control" min="0">
-                </div>
-                <div class="col-6">
-                    <label class="form-label fw-semibold small">Max Units <span class="text-danger">*</span></label>
-                    <input type="number" id="edit-slab-max" class="form-control" min="1">
-                </div>
-                <div class="col-6">
-                    <label class="form-label fw-semibold small">Per Unit (Rs) <span class="text-danger">*</span></label>
-                    <input type="number" id="edit-slab-per-unit" class="form-control" min="0">
-                </div>
-                <div class="col-6">
-                    <label class="form-label fw-semibold small">Slab Bonus (Rs)</label>
-                    <input type="number" id="edit-slab-bonus" class="form-control" min="0">
+            <div class="slab-modal-grid mb-3">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label slab-input-label">Min Tasks <span class="text-danger">*</span></label>
+                        <input type="number" id="edit-slab-min" class="form-control" min="0">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label slab-input-label">Max Tasks <span class="text-danger">*</span></label>
+                        <input type="number" id="edit-slab-max" class="form-control" min="1">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label slab-input-label">Per Task (Rs) <span class="text-danger">*</span></label>
+                        <input type="number" id="edit-slab-per-unit" class="form-control" min="0" step="0.01">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label slab-input-label">Slab Bonus (Rs)</label>
+                        <input type="number" id="edit-slab-bonus" class="form-control" min="0" step="0.01">
+                    </div>
                 </div>
             </div>
             <div class="d-flex justify-content-end gap-2 pt-3 border-top">
@@ -336,14 +563,26 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/api.js?v=1772780187"></script>
-    <script src="../js/ui_components.js?v=1772780187"></script>
+    <script src="../js/utils.js?v=2.3"></script>
+    <script src="../js/api.js?v=2.3"></script>
     <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/app.js?v=2.3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
-        document.getElementById('sidebar').innerHTML = renderSidebar('incentives');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) {
+            sidebarElement.innerHTML = renderSidebar('incentives');
+        }
         injectTopHeader('Incentives');
+
+        // Backward-compatible shim for stale cached api.js builds.
+        if (window.ApiClient && typeof ApiClient.previewIncentive !== 'function') {
+            ApiClient.previewIncentive = function (data) {
+                return ApiClient.request('/incentives/calculate/preview', { method: 'POST', body: data });
+            };
+        }
 
         const user = getUser();
         const isAdmin = user?.role === 'ADMIN';
@@ -357,20 +596,37 @@
         }
 
         // Modal helpers
-        function openCalcModal()      { document.getElementById('calcModal').classList.add('show'); }
+        function openCalcModal() {
+            // Reset to step 1
+            document.getElementById('calc-step-inputs').style.display = '';
+            document.getElementById('calc-step-preview').style.display = 'none';
+            document.getElementById('slip-exists-warning').style.display = 'none';
+            document.getElementById('calcModal').classList.add('show');
+        }
         function closeCalcModal()     { document.getElementById('calcModal').classList.remove('show'); }
         function openEditSlabModal()  { document.getElementById('editSlabModal').classList.add('show'); }
         function closeEditSlabModal() { document.getElementById('editSlabModal').classList.remove('show'); }
         document.getElementById('calcModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeCalcModal(); });
         document.getElementById('editSlabModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeEditSlabModal(); });
 
-        // Load employees into selects
-        ApiClient.getEmployees().then(emps => {
-            const filterOpts = '<option value="">All Employees</option>' + emps.map(e => `<option value="${e.id}">${e.name || e.email}</option>`).join('');
-            document.getElementById('slip-user-filter').innerHTML = filterOpts;
-            const calcOpts = '<option value="">-- Select Employee --</option>' + emps.map(e => `<option value="${e.id}">${e.name || e.email}</option>`).join('');
-            document.getElementById('calc-user').innerHTML = calcOpts;
-        }).catch(() => {});
+        function backToCalcInputs() {
+            document.getElementById('calc-step-inputs').style.display = '';
+            document.getElementById('calc-step-preview').style.display = 'none';
+        }
+
+
+        // Load employees into filter and calc selects (admin only)
+        function populateEmployeeFilters() {
+            if (!isAdmin) return;
+            ApiClient.getEmployees().then(emps => {
+                const filterEl = document.getElementById('slip-user-filter');
+                const calcEl = document.getElementById('calc-user');
+                const filterOpts = '<option value="">All Employees</option>' + emps.map(e => `<option value="${e.id}">${e.name || ('Employee #' + e.id)}</option>`).join('');
+                const calcOpts = '<option value="">-- Select Employee --</option>' + emps.map(e => `<option value="${e.id}">${e.name || ('Employee #' + e.id)}</option>`).join('');
+                if (filterEl) filterEl.innerHTML = filterOpts;
+                if (calcEl) calcEl.innerHTML = calcOpts;
+            }).catch(() => {});
+        }
 
         // Toggle add slab form
         function toggleAddSlabForm() {
@@ -381,26 +637,28 @@
         // Load slabs
         async function loadSlabs() {
             const tbody = document.getElementById('slabs-tbody');
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted small"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+            const slabColspan = isAdmin ? 4 : 3;
+            tbody.innerHTML = `<tr><td colspan="${slabColspan}" class="text-center py-4 text-muted small"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>`;
             try {
                 const slabs = await ApiClient.getIncentiveSlabs();
+                window.__incentiveSlabsCache = slabs || [];
                 document.getElementById('stat-slabs').innerText = slabs?.length || 0;
                 if (!slabs || !slabs.length) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted small">No slabs configured yet.</td></tr>';
+                    tbody.innerHTML = `<tr><td colspan="${slabColspan}" class="text-center py-4 text-muted small">No slabs configured yet.</td></tr>`;
                     return;
                 }
                 const fmt = n => Number(n).toLocaleString('en-IN');
                 tbody.innerHTML = slabs.map(s => `<tr>
-                    <td class="ps-3 fw-semibold text-dark">${s.min_units}-${s.max_units}</td>
+                    <td class="ps-3 fw-semibold text-dark"><span class="slab-range-badge">${s.min_units}-${s.max_units}</span></td>
                     <td class="fw-bold text-primary">Rs ${fmt(s.incentive_per_unit)}</td>
                     <td class="fw-bold text-success">Rs ${fmt(s.slab_bonus)}</td>
                     ${isAdmin ? `<td class="pe-3 text-center">
                         <button class="btn btn-sm py-0 px-2" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:0.72rem;border-radius:6px;" onclick="openEditSlab(${s.id},${s.min_units},${s.max_units},${s.incentive_per_unit},${s.slab_bonus})"><i class="bi bi-pencil"></i></button>
                         <button class="btn btn-sm py-0 px-2 ms-1" style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;font-size:0.72rem;border-radius:6px;" onclick="deleteSlab(${s.id})"><i class="bi bi-trash"></i></button>
-                    </td>` : '<td></td>'}
+                    </td>` : ''}
                 </tr>`).join('');
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-danger small">${e.message || 'Error'}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${slabColspan}" class="text-center py-4 text-danger small">${e.message || 'Error'}</td></tr>`;
             }
         }
 
@@ -446,7 +704,10 @@
             const perUnit = parseFloat(document.getElementById('edit-slab-per-unit').value);
             const bonus = parseFloat(document.getElementById('edit-slab-bonus').value || '0');
             const btn = document.getElementById('edit-slab-submit-btn');
-            if (isNaN(min) || isNaN(max) || isNaN(perUnit) || min > max) { showToast('Fill all fields correctly.','error'); return; }
+            if (isNaN(min) || isNaN(max) || isNaN(perUnit) || min > max) {
+                showToast('Fill all fields correctly.', 'error');
+                return;
+            }
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
             try {
@@ -462,7 +723,6 @@
             }
         }
 
-        // Delete slab
         async function deleteSlab(id) {
             if (!confirm('Delete this slab?')) return;
             try {
@@ -480,11 +740,21 @@
             return Math.floor((Date.now() - new Date(isoStr)) / 86400000);
         }
 
+        // Format date + time
+        function fmtDateTime(isoStr) {
+            if (!isoStr) return '-';
+            const d = new Date(isoStr);
+            const date = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+            const time = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            return `${date}<br><span class="text-muted" style="font-size:0.72rem;">${time}</span>`;
+        }
+
         // Load slips
         async function loadSlips() {
-            const userId = document.getElementById('slip-user-filter').value;
+            const userFilterEl = document.getElementById('slip-user-filter');
+            const userId = userFilterEl ? userFilterEl.value : '';
             const tbody = document.getElementById('slips-tbody');
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
             try {
                 let slips;
                 if (userId) {
@@ -494,7 +764,7 @@
                 } else {
                     slips = await ApiClient.getMyIncentiveSlips();
                 }
-                // (stat cards updated after client-side filtering below)
+
                 const fmt = n => Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
                 // Apply client-side filters
@@ -505,84 +775,162 @@
                 else if (statusFilter === 'pending') slips = slips.filter(s => daysSince(s.generated_at) < 10);
 
                 // Update stat cards
-                document.getElementById('stat-slips').innerText = slips.length;
-                const totalIncentive = slips.reduce((acc, s) => acc + Number(s.total_incentive), 0);
-                const avgIncentive = slips.length > 0 ? totalIncentive / slips.length : 0;
-                document.getElementById('stat-total').innerText = 'Rs\u00a0' + fmt(totalIncentive);
-                document.getElementById('stat-avg').innerText = 'Rs\u00a0' + fmt(avgIncentive);
+                const confirmedSlips = slips.filter(s => daysSince(s.generated_at) >= 10);
+                const pendingSlips   = slips.filter(s => daysSince(s.generated_at) < 10);
+                const totalTasks     = slips.reduce((acc, s) => acc + Number(s.achieved), 0);
+                const confirmedTotal = confirmedSlips.reduce((acc, s) => acc + Number(s.total_incentive), 0);
+                const pendingTotal   = pendingSlips.reduce((acc, s) => acc + Number(s.total_incentive), 0);
+
+                document.getElementById('stat-tasks').innerText = totalTasks;
+                document.getElementById('stat-confirmed').innerText = 'Rs\u00a0' + fmt(confirmedTotal);
+                document.getElementById('stat-pending').innerText = 'Rs\u00a0' + fmt(pendingTotal);
+                document.getElementById('slip-filter-summary').innerText = `${slips.length} slip${slips.length === 1 ? '' : 's'}`;
 
                 if (!slips.length) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No incentive slips found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No incentive slips found.</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = slips.map(s => {
-                    const pct = Number(s.percentage).toFixed(1);
-                    const pctColor = s.percentage >= 100 ? '#10b981' : s.percentage >= 75 ? '#3b82f6' : s.percentage >= 50 ? '#f59e0b' : '#ef4444';
-                    const days = daysSince(s.generated_at);
-                    const badge = days >= 10
-                        ? `<span class="badge-ready"><i class="bi bi-check-circle me-1"></i>In Salary</span>`
-                        : `<span class="badge-pending"><i class="bi bi-hourglass-split me-1"></i>${10 - days}d left</span>`;
                     const initials = (s.user_name || 'U').charAt(0).toUpperCase();
-                    const name = s.user_name || ('User #' + s.user_id);
+                    const name = s.user_name || ('Employee #' + s.user_id);
+                    const perTask = Number(s.amount_per_unit || 0);
+                    const slabBonus = Number(s.slab_bonus_amount || 0);
+                    const slabLabel = s.applied_slab || (Number(s.achieved || 0) > 0 ? `${s.achieved} tasks` : 'No slab');
                     return `<tr>
-                        <td class="ps-3">
+                        <td class="ps-3 slip-employee-cell">
                             <div class="d-flex align-items-center gap-2">
                                 <div class="emp-avatar">${initials}</div>
-                                <span class="fw-semibold text-dark">${name}</span>
+                                <span class="fw-semibold text-dark slip-employee-name" style="font-size:0.82rem;">${name}</span>
                             </div>
+                        </td>
+                        <td class="slip-period-cell" style="line-height:1.3;">
+                            <span class="fw-semibold text-dark" style="font-size:0.82rem;">${s.period}</span>
+                            <span class="text-muted d-block" style="font-size:0.72rem;">${fmtDateTime(s.generated_at)}</span>
+                        </td>
+                        <td class="text-center slip-task-cell">
+                            <span class="fw-bold" style="font-size:0.88rem;">${s.achieved}</span>
+                            <span class="text-muted" style="font-size:0.72rem; display:block;">Completed tasks</span>
                         </td>
                         <td>
-                            <span class="text-muted small">${s.period}</span>
+                            <span class="fw-semibold text-dark slip-slab-label" style="font-size:0.82rem;">${slabLabel}</span>
+                            <span class="text-muted d-block" style="font-size:0.72rem;">Bonus: Rs&nbsp;${fmt(slabBonus)}</span>
                         </td>
-                        <td>
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="fw-semibold" style="font-size:0.82rem;">${s.achieved} <span class="text-muted fw-normal">/ ${s.target}</span></span>
-                                <span class="pct-label" style="color:${pctColor};">${pct}%</span>
-                            </div>
-                            <div class="achievement-progress">
-                                <div class="achievement-bar" style="width:${Math.min(pct, 100)}%; background-color:${pctColor};"></div>
-                            </div>
+                        <td class="text-end slip-rate-cell">
+                            <span class="text-primary fw-semibold">Rs&nbsp;${fmt(perTask)}</span>
                         </td>
-                        <td>${badge}</td>
-                        <td class="pe-3 text-end fw-bold">Rs\u00a0${fmt(s.total_incentive)}</td>
+                        <td class="pe-3 text-end fw-bold slip-total-cell">Rs&nbsp;${fmt(s.total_incentive)}</td>
                     </tr>`;
                 }).join('');
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-danger small">${e.message || 'Error'}</td></tr>`;
-                document.getElementById('stat-total').innerText = '-';
-                document.getElementById('stat-avg').innerText = '-';
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger small">${e.message || 'Error'}</td></tr>`;
+                document.getElementById('stat-tasks').innerText = '-';
+                document.getElementById('stat-confirmed').innerText = '-';
+                document.getElementById('stat-pending').innerText = '-';
+                document.getElementById('slip-filter-summary').innerText = 'Unable to load';
             }
         }
 
-        // Calculate incentive
-        async function calcIncentive() {
+        // Step 1: Preview calculation
+        async function previewCalcIncentive() {
             const userId = document.getElementById('calc-user').value;
             const period = document.getElementById('calc-period').value;
-            const units = document.getElementById('calc-units').value;
-            const btn = document.getElementById('calc-submit-btn');
+            const btn = document.getElementById('calc-preview-btn');
             if (!userId || !period) { showToast('Select employee and period', 'error'); return; }
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Calculating...';
             try {
-                const payload = { user_id: parseInt(userId), period };
-                if (units) payload.closed_units = parseInt(units);
-                await ApiClient.calculateIncentive(payload);
-                closeCalcModal();
-                showToast('Incentive calculated!', 'success');
-                document.getElementById('slip-user-filter').value = userId;
-                loadSlips();
+                const prev = await ApiClient.previewIncentive({ user_id: parseInt(userId), period });
+                const fmt = n => 'Rs\u00a0' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+                const now = new Date();
+                document.getElementById('prev-employee').textContent = prev.user_name;
+                document.getElementById('prev-period').textContent = prev.period;
+                document.getElementById('prev-datetime').textContent = now.toLocaleString('en-IN');
+                document.getElementById('prev-confirmed').textContent = `${prev.confirmed_tasks} task${prev.confirmed_tasks !== 1 ? 's' : ''}`;
+                document.getElementById('prev-pending').textContent = `${prev.pending_tasks} task${prev.pending_tasks !== 1 ? 's' : ''}`;
+                document.getElementById('prev-refunded').textContent = `${prev.refunded_tasks} task${prev.refunded_tasks !== 1 ? 's' : ''}`;
+                document.getElementById('prev-slab').textContent = prev.slab_range ? `${prev.slab_range} tasks` : 'No slab matched';
+                document.getElementById('prev-per-task').textContent = fmt(prev.incentive_per_task);
+                document.getElementById('prev-base').textContent = `${prev.confirmed_tasks} × ${fmt(prev.incentive_per_task)} = ${fmt(prev.base_incentive)}`;
+                document.getElementById('prev-slab-bonus').textContent = fmt(prev.slab_bonus);
+                document.getElementById('prev-total').textContent = fmt(prev.total_incentive);
+
+                if (prev.slip_exists) {
+                    document.getElementById('slip-exists-warning').style.display = '';
+                    document.getElementById('calc-submit-btn').disabled = true;
+                } else {
+                    document.getElementById('slip-exists-warning').style.display = 'none';
+                    document.getElementById('calc-submit-btn').disabled = false;
+                }
+
+                document.getElementById('calc-step-inputs').style.display = 'none';
+                document.getElementById('calc-step-preview').style.display = '';
             } catch (e) {
-                showToast(e.data?.detail || e.message || 'Failed', 'error');
+                showToast(e.data?.detail || e.message || 'Preview failed', 'error');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = 'Calculate';
+                btn.innerHTML = '<i class="bi bi-eye me-1"></i>Preview Calculation';
             }
         }
 
+        // Step 2: Save incentive slip
+        async function calcIncentive() {
+            const userId = document.getElementById('calc-user').value;
+            const period = document.getElementById('calc-period').value;
+            const btn = document.getElementById('calc-submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+            try {
+                await ApiClient.calculateIncentive({ user_id: parseInt(userId), period });
+                closeCalcModal();
+                showToast('Incentive slip saved!', 'success');
+                const userFilterEl = document.getElementById('slip-user-filter');
+                if (userFilterEl) userFilterEl.value = userId;
+                loadSlips();
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to save slip', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-floppy me-1"></i>Save as Slip';
+            }
+        }
+
+        // Initialize Filters
+        function initFilters() {
+            const filterRenderer = window.renderFilterPanel;
+            if (typeof filterRenderer !== 'function') return;
+
+            const filters = [
+                { type: 'month', label: 'Month', id: 'slip-period-filter' },
+                { type: 'select', label: 'Status', id: 'slip-status-filter', options: [
+                    { value: '', label: 'All Status' },
+                    { value: 'ready', label: 'In Salary' },
+                    { value: 'pending', label: 'Pending' }
+                ]}
+            ];
+            if (isAdmin) {
+                filters.splice(1, 0, { type: 'select', label: 'Employee', id: 'slip-user-filter', options: [{ value: '', label: 'All Employees' }] });
+            }
+
+            filterRenderer({
+                containerId: 'filter-wrapper',
+                filters,
+                onApply: (data) => {
+                    loadSlips();
+                },
+                onReset: () => {
+                    loadSlips();
+                }
+            });
+        }
+
         // Init
-        loadSlabs();
-        loadSlips();
+        document.addEventListener('DOMContentLoaded', () => {
+            initFilters();
+            populateEmployeeFilters();
+            loadSlabs();
+            loadSlips();
+        });
     </script>
 </body>
 </html>

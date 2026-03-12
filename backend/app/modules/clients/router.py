@@ -49,6 +49,8 @@ def read_clients(
     skip: int = 0,
     limit: int = 100,
     search: Optional[str] = None,
+    status: Optional[str] = None,
+    pm_id: Optional[str] = None,
     sort_by: Optional[str] = "created_at",
     sort_order: Optional[str] = "desc",
     current_user: User = Depends(staff_checker)
@@ -58,9 +60,21 @@ def read_clients(
     PMs only see their assigned clients.
     """
     service = ClientService(db)
-    pm_id = None
+    client_active_status: Optional[bool] = True
+    normalized_status = (status or "").strip().lower()
+    if normalized_status in {"inactive", "false"}:
+        client_active_status = False
+    elif normalized_status in {"all", ""}:
+        client_active_status = None if normalized_status == "all" else True
+
+    pm_filter_id = None
     if current_user and current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
-        pm_id = current_user.id
+        pm_filter_id = current_user.id
+    elif pm_id and pm_id not in {"ALL", "all"}:
+        try:
+            pm_filter_id = int(pm_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid pm_id")
 
     return service.get_clients(
         skip=skip,
@@ -68,7 +82,8 @@ def read_clients(
         search=search,
         sort_by=sort_by,
         sort_order=sort_order,
-        pm_id=pm_id
+        is_active=client_active_status,
+        pm_id=pm_filter_id
     )
 
 

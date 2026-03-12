@@ -104,6 +104,9 @@ def get_leave_summary(
     current_user: User = Depends(staff_checker)
 ) -> Any:
     """Return leave counts for a user in the given month."""
+    if current_user.role != UserRole.ADMIN and user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
     from sqlalchemy import extract
     year, month_num = map(int, month.split('-'))
     leaves = db.query(LeaveRecord).filter(

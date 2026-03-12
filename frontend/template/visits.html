@@ -331,13 +331,17 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/api.js?v=1772780187"></script>
-    <script src="../js/ui_components.js?v=1772780187"></script>
+    <script src="../js/utils.js?v=2.3"></script>
+    <script src="../js/api.js?v=2.3"></script>
     <script src="../js/auth.js?v=2.3"></script>
-
+    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/app.js?v=2.3"></script>
     <script>
         requireAuth();
-        document.getElementById('sidebar').innerHTML = renderSidebar('visits');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) {
+            sidebarElement.innerHTML = renderSidebar('visits');
+        }
         injectTopHeader('Visits');
 
         const user = getUser();
@@ -349,7 +353,7 @@
         const addBtn = document.getElementById('add-visit-btn');
         if (isPM && !isSales) {
             addBtn.style.display = 'none';
-        } else if (isTelesales) {
+        } else if (addBtn && isTelesales) {
             addBtn.innerHTML = '<i class="bi bi-telephone me-2"></i>Log Call Outcome';
             document.getElementById('photo-upload-container').style.display = 'none';
         }
@@ -369,9 +373,12 @@
         document.querySelectorAll('input[name="v-status"]').forEach(radio => {
             radio.addEventListener('change', () => {
                 const val = radio.value;
-                document.getElementById('accept-infobox').style.display = val === 'ACCEPT' ? 'flex' : 'none';
-                document.getElementById('decline-reasonbox').style.display = val === 'DECLINE' ? 'block' : 'none';
-                document.getElementById('other-status-div').style.display = val === 'OTHER' ? 'block' : 'none';
+                const acceptInfobox = document.getElementById('accept-infobox');
+                const declineReasonbox = document.getElementById('decline-reasonbox');
+                const otherStatusDiv = document.getElementById('other-status-div');
+                if (acceptInfobox) acceptInfobox.style.display = val === 'ACCEPT' ? 'flex' : 'none';
+                if (declineReasonbox) declineReasonbox.style.display = val === 'DECLINE' ? 'block' : 'none';
+                if (otherStatusDiv) otherStatusDiv.style.display = val === 'OTHER' ? 'block' : 'none';
             });
         });
 
@@ -405,17 +412,27 @@
         // ── Load Shops ──────────────────────────────────────────
         apiGet('/shops/').then(shops => {
             const sel = document.getElementById('v-shop');
+            if (!sel) return;
             sel.innerHTML = '<option value="">— Select Shop —</option>' +
                 shops.map(s => `<option value="${s.id}">${s.name}${s.address ? ' · ' + s.address : ''}</option>`).join('');
         }).catch(err => console.error("Failed to load shops dropdown:", err));
 
         // ── Load Visits ─────────────────────────────────────────
-        async function loadVisits() {
+        async function loadVisits(filters = {}) {
             const tbody = document.getElementById('visits-table');
+            if (!tbody) return;
             tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
 
+            const params = new URLSearchParams();
+            params.append('limit', '200');
+            if (filters.area) params.append('area_id', filters.area);
+            if (filters.user) params.append('user_id', filters.user);
+            if (filters.status) params.append('status', filters.status);
+            if (filters.start) params.append('start_date', filters.start);
+            if (filters.end) params.append('end_date', filters.end);
+
             try {
-                const visits = await apiGet('/visits/?limit=200');
+                const visits = await ApiClient.getVisits(`?${params.toString()}`);
 
                 const todayStr = new Date().toLocaleDateString('en-CA');
                 let todayCount = 0, acceptedCount = 0, declinedCount = 0;
@@ -427,9 +444,12 @@
                     if (v.status === 'DECLINE') declinedCount++;
                 });
 
-                document.getElementById('stat-today').textContent = todayCount;
-                document.getElementById('stat-accepted').textContent = acceptedCount;
-                document.getElementById('stat-declined').textContent = declinedCount;
+                const statToday = document.getElementById('stat-today');
+                const statAccepted = document.getElementById('stat-accepted');
+                const statDeclined = document.getElementById('stat-declined');
+                if (statToday) statToday.textContent = todayCount;
+                if (statAccepted) statAccepted.textContent = acceptedCount;
+                if (statDeclined) statDeclined.textContent = declinedCount;
 
                 const statusMap = {
                     SATISFIED: { bg: '#dbeafe', color: '#1d4ed8', label: 'Satisfied', icon: 'bi-emoji-smile' },

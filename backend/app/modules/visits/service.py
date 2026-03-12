@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, UploadFile, Request
-from datetime import datetime, UTC
+from datetime import date as dt_date, datetime, UTC, time, timedelta
 
 from app.modules.visits.models import Visit, VisitStatus
 from app.modules.visits.schemas import VisitCreate, VisitUpdate
@@ -25,7 +25,7 @@ class VisitService:
     def get_visit(self, visit_id: int):
         return self.db.query(Visit).filter(Visit.id == visit_id).first()
 
-    def get_visits(self, skip: int = 0, limit: int = 100, current_user: User = None, shop_id: int = None):
+    def get_visits(self, skip: int = 0, limit: int = 100, current_user: User = None, shop_id: int = None, user_id: int | None = None):
         try:
             from app.modules.shops.models import Shop as ShopModel
             from sqlalchemy import or_
@@ -38,6 +38,9 @@ class VisitService:
 
             if shop_id:
                 query = query.filter(Visit.shop_id == shop_id)
+            
+            if user_id is not None:
+                query = query.filter(Visit.user_id == user_id)
 
             # Admins see everything; staff see visits they authored OR
             # visits logged by anyone on shops assigned to them

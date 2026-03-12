@@ -32,6 +32,7 @@ from app.modules.todos.models      import Todo
 from app.modules.notifications.models import Notification
 
 db = SessionLocal()
+now = datetime.now(UTC)
 
 def already_exists(model, **kwargs):
     return db.query(model).filter_by(**kwargs).first()
@@ -43,6 +44,7 @@ users_data = [
     dict(email="admin@crmsetu.com",     name="Arjun Mehta",    role=UserRole.ADMIN,                    phone="9800000001"),
     dict(email="sales1@crmsetu.com",    name="Priya Sharma",   role=UserRole.SALES,                    phone="9800000002"),
     dict(email="sales2@crmsetu.com",    name="Rahul Verma",    role=UserRole.SALES,                    phone="9800000003"),
+    dict(email="incentive.test@crmsetu.com", name="Incentive Test User", role=UserRole.SALES,          phone="9800000008"),
     dict(email="tele1@crmsetu.com",     name="Sneha Joshi",    role=UserRole.TELESALES,                phone="9800000004"),
     dict(email="pm1@crmsetu.com",       name="Vikram Nair",    role=UserRole.PROJECT_MANAGER,          phone="9800000005"),
     dict(email="pm2@crmsetu.com",       name="Neha Gupta",     role=UserRole.PROJECT_MANAGER_AND_SALES, phone="9800000006"),
@@ -59,6 +61,7 @@ for u in users_data:
             phone=u["phone"],
             hashed_password=get_password_hash("Test@1234"),
             is_active=True,
+            incentive_enabled=True,
         )
         db.add(user)
         db.flush()
@@ -73,6 +76,7 @@ db.commit()
 admin = created_users["admin@crmsetu.com"]
 sales1 = created_users["sales1@crmsetu.com"]
 sales2 = created_users["sales2@crmsetu.com"]
+incentive_test_user = created_users["incentive.test@crmsetu.com"]
 pm1   = created_users["pm1@crmsetu.com"]
 pm2   = created_users["pm2@crmsetu.com"]
 
@@ -87,6 +91,32 @@ clients_data = [
     dict(name="BlueSky Logistics",    email="bluesky@logistics.com",phone="9855555555", organization="BlueSky Pvt Ltd",  owner_id=sales1.id, pm_id=pm1.id),
 ]
 
+incentive_test_clients = [
+    dict(
+        name=f"Incentive Confirmed {index}",
+        email=f"incentive.confirmed{index}@crmsetu.test",
+        phone=f"98777000{index:02d}",
+        organization="Incentive QA Accounts",
+        owner_id=incentive_test_user.id,
+        pm_id=pm1.id,
+        is_active=True,
+        created_at=now - timedelta(days=12 + index),
+    )
+    for index in range(1, 11)
+] + [
+    dict(
+        name=f"Incentive Pending {index}",
+        email=f"incentive.pending{index}@crmsetu.test",
+        phone=f"98777100{index:02d}",
+        organization="Incentive QA Accounts",
+        owner_id=incentive_test_user.id,
+        pm_id=pm1.id,
+        is_active=True,
+        created_at=now - timedelta(days=index),
+    )
+    for index in range(1, 3)
+]
+
 created_clients = []
 for c in clients_data:
     if not already_exists(Client, email=c["email"]):
@@ -99,7 +129,25 @@ for c in clients_data:
         created_clients.append(already_exists(Client, email=c["email"]))
         print(f"  ~ Exists: {c['email']}")
 
+confirmed_added = 0
+pending_added = 0
+for client_data in incentive_test_clients:
+    existing_client = already_exists(Client, email=client_data["email"])
+    if existing_client:
+        print(f"  ~ Exists: {client_data['email']}")
+        continue
+
+    client = Client(**client_data)
+    db.add(client)
+    db.flush()
+    if (now - client.created_at).days >= 10:
+        confirmed_added += 1
+    else:
+        pending_added += 1
+    print(f"  + Incentive Client: {client.name}")
+
 db.commit()
+print(f"  + Incentive test clients: {confirmed_added} confirmed, {pending_added} pending")
 
 # ── 3. SHOPS ──────────────────────────────────────────────────────────────────
 print("\nSeeding shops...")
@@ -130,7 +178,6 @@ db.commit()
 # ── 4. VISITS ─────────────────────────────────────────────────────────────────
 print("\nSeeding visits...")
 
-now = datetime.now(UTC)
 visits_data = [
     dict(shop_id=created_shops[0].id, user_id=sales1.id, status="SCHEDULED",  remarks="Scheduled demo call",               visit_date=now - timedelta(days=5)),
     dict(shop_id=created_shops[1].id, user_id=sales1.id, status="COMPLETED",  remarks="Very happy with the product",       visit_date=now - timedelta(days=4)),
@@ -258,5 +305,6 @@ print("\n[DONE] Seed complete! Login credentials:")
 print("   All users password: Test@1234")
 print("   Admin   -> admin@crmsetu.com")
 print("   Sales   -> sales1@crmsetu.com / sales2@crmsetu.com")
+print("   Incentive Test -> incentive.test@crmsetu.com")
 print("   Tele    -> tele1@crmsetu.com")
 print("   PM      -> pm1@crmsetu.com / pm2@crmsetu.com")

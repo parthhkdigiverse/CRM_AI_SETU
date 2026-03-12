@@ -31,6 +31,7 @@ def read_global_issues(
     severity: Optional[str] = None,
     client_id: Optional[int] = None,
     assigned_to_id: Optional[int] = None,
+    pm_id: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
 ) -> Any:
@@ -38,12 +39,17 @@ def read_global_issues(
     Global issue search with filters. PMs can only see issues for their assigned clients.
     """
     service = IssueService(db)
-    pm_id = current_user.id if (current_user and current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]) else None
+    pm_scope_id = current_user.id if (current_user and current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]) else None
+    if assigned_to_id is None and pm_id and pm_id not in {"ALL", "all"}:
+        try:
+            assigned_to_id = int(pm_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid pm_id")
 
     
     return service.get_all_issues(
         skip=skip, limit=limit, status=status, severity=severity, 
-        client_id=client_id, assigned_to_id=assigned_to_id, pm_id=pm_id
+        client_id=client_id, assigned_to_id=assigned_to_id, pm_id=pm_scope_id
     )
 
 @router.post("/{client_id}/issues", response_model=IssueRead)
@@ -92,7 +98,7 @@ async def update_issue(
     issue_in: IssueUpdate,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(staff_checker)
+    current_user: User = Depends(admin_checker)
 ) -> Any:
     service = IssueService(db)
     return await service.update_issue(issue_id, issue_in, current_user, request)

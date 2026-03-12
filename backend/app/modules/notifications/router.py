@@ -19,9 +19,10 @@ def read_notifications(
 ) -> Any:
     """Get all notifications for current user, newest first."""
     try:
+        user_id = current_user.id if current_user else 0
         return (
             db.query(Notification)
-            .filter(Notification.user_id == current_user.id)
+            .filter(Notification.user_id == user_id)
             .order_by(Notification.created_at.desc())
             .offset(skip)
             .limit(limit)
@@ -41,9 +42,10 @@ def get_unread_count(
     current_user: User = Depends(get_current_user)
 ) -> dict:
     """Returns the count of unread notifications — used by the bell badge."""
+    user_id = current_user.id if current_user else 0
     count = (
         db.query(Notification)
-        .filter(Notification.user_id == current_user.id, Notification.is_read == False)  # noqa: E712
+        .filter(Notification.user_id == user_id, Notification.is_read == False)  # noqa: E712
         .count()
     )
     return {"unread": count}
@@ -54,9 +56,10 @@ def mark_notification_as_read(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
+    user_id = current_user.id if current_user else 0
     notification = db.query(Notification).filter(
         Notification.id == notification_id,
-        Notification.user_id == current_user.id
+        Notification.user_id == user_id
     ).first()
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
@@ -71,8 +74,9 @@ def mark_all_read(
     current_user: User = Depends(get_current_user)
 ) -> dict:
     """Mark all of the current user's notifications as read."""
+    user_id = current_user.id if current_user else 0
     db.query(Notification).filter(
-        Notification.user_id == current_user.id,
+        Notification.user_id == user_id,
         Notification.is_read == False  # noqa: E712
     ).update({"is_read": True})
     db.commit()

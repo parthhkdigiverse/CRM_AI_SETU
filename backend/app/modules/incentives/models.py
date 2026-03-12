@@ -33,10 +33,11 @@ class IncentiveSlip(Base):
     target = Column(Integer, nullable=False)
     achieved = Column(Integer, nullable=False)
     percentage = Column(Float, nullable=False)
-    applied_slab = Column(Float, nullable=True)
+    applied_slab = Column(String, nullable=True)
     amount_per_unit = Column(Float, default=0.0)
     total_incentive = Column(Float, nullable=False)
 
+    slab_bonus_amount = Column(Float, default=0.0)
     generated_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", backref="incentive_slips")

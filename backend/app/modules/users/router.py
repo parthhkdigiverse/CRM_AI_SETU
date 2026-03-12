@@ -19,6 +19,13 @@ class UserStatusUpdate(BaseModel):
 class UserRoleUpdate(BaseModel):
     role: UserRole
 
+class UserIncentiveEligibilityUpdate(BaseModel):
+    enabled: bool
+
+class RoleIncentiveEligibilityUpdate(BaseModel):
+    role: UserRole
+    enabled: bool
+
 router = APIRouter()
 
 admin_checker = RoleChecker([UserRole.ADMIN])
@@ -28,7 +35,47 @@ async def list_users(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ) -> Any:
+    if current_user.role != UserRole.ADMIN:
+        return [current_user]
     return db.query(User).filter(User.is_deleted != True).all()
+
+@router.patch("/incentive-eligibility/by-role")
+async def update_role_incentive_eligibility(
+    payload: RoleIncentiveEligibilityUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+) -> Any:
+    if payload.role == UserRole.CLIENT:
+        raise HTTPException(status_code=400, detail="CLIENT role cannot receive incentives")
+
+    count = db.query(User).filter(
+        User.is_deleted != True,
+        User.role == payload.role
+    ).update({"incentive_enabled": payload.enabled}, synchronize_session=False)
+    db.commit()
+    return {
+        "updated": count,
+        "role": payload.role,
+        "incentive_enabled": payload.enabled
+    }
+
+@router.patch("/{user_id}/incentive-eligibility", response_model=UserRead)
+async def update_user_incentive_eligibility(
+    user_id: int,
+    payload: UserIncentiveEligibilityUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+) -> Any:
+    user = db.query(User).filter(User.id == user_id, User.is_deleted != True).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.role == UserRole.CLIENT:
+        raise HTTPException(status_code=400, detail="CLIENT role cannot receive incentives")
+
+    user.incentive_enabled = payload.enabled
+    db.commit()
+    db.refresh(user)
+    return user
 
 @router.patch("/{user_id}/role", response_model=UserRead)
 async def update_user_role(

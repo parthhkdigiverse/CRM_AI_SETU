@@ -134,6 +134,64 @@ window.togglePasswordVisibility = togglePasswordVisibility;
 window.requireAuth = requireAuth;
 window.showOfflineBanner = showOfflineBanner;
 
+// ── API Helper Functions ──
+
+/**
+ * Global convenience function for GET requests
+ * Wraps ApiClient.request() for simpler usage
+ */
+async function apiGet(path) {
+    try {
+        return await ApiClient.request(path, { method: 'GET' });
+    } catch (error) {
+        console.error(`apiGet failed for ${path}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Global convenience function for POST/PATCH requests
+ * Wraps fetch with proper auth headers
+ */
+async function apiFetch(path, options = {}) {
+    const url = `${ApiClient.API_BASE_URL}${path}`;
+    const headers = {
+        ...(options.headers || {})
+    };
+
+    if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+    }
+
+    const token = ApiClient.getAccessToken();
+    if (token && !options.noAuth) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    try {
+        return await fetch(url, {
+            ...options,
+            headers
+        });
+    } catch (error) {
+        console.error(`apiFetch failed for ${path}:`, error);
+        if (window.showOfflineBanner) window.showOfflineBanner(true);
+        throw error;
+    }
+}
+
+// Export to window
+window.apiGet = apiGet;
+window.apiFetch = apiFetch;
+
+/**
+ * Alias for toast() - some pages use showToast() instead
+ */
+function showToast(msg, type = 'success') {
+    return toast(msg, type);
+}
+window.showToast = showToast;
+
 // ── Shared Archive UI Component ──
 class ArchivedDataOffcanvas {
     constructor(options) {

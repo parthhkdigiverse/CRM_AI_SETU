@@ -174,24 +174,23 @@
 
             <!-- ── Invoice Table ─────────────────────────────────── -->
             <div class="grid-card">
-                <div class="d-flex justify-content-between align-items-center p-3 border-bottom flex-wrap gap-3">
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
                     <h6 class="fw-bold mb-0" style="color:#1e293b;">Invoice Registry</h6>
-                    <div class="d-flex gap-2 align-items-center flex-wrap">
-                        <!-- Filter tabs -->
-                        <div class="filter-tabs" id="filter-tabs">
-                            <span class="filter-tab active" data-filter="ALL">All</span>
-                            <span class="filter-tab" data-filter="PENDING_VERIFICATION">Pending</span>
-                            <span class="filter-tab" data-filter="VERIFIED">Verified</span>
-                            <span class="filter-tab" data-filter="SENT">Sent</span>
-                            <span class="filter-tab" data-filter="DRAFT">Draft</span>
-                        </div>
-                        <!-- Search -->
-                        <div class="position-relative">
-                            <i class="bi bi-search position-absolute" style="left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;"></i>
-                            <input type="text" id="inv-search" placeholder="Search invoice..." class="field-input"
-                                style="padding-left:30px;width:190px;height:36px;"
-                                oninput="renderTable()">
-                        </div>
+                    <span class="text-muted small" id="billing-filter-summary">All invoices</span>
+                </div>
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 px-3 py-2 border-bottom">
+                    <div class="filter-tabs" id="filter-tabs">
+                        <span class="filter-tab active" data-filter="ALL">All</span>
+                        <span class="filter-tab" data-filter="PENDING_VERIFICATION">Pending</span>
+                        <span class="filter-tab" data-filter="VERIFIED">Verified</span>
+                        <span class="filter-tab" data-filter="SENT">Sent</span>
+                        <span class="filter-tab" data-filter="DRAFT">Draft</span>
+                    </div>
+                    <div class="position-relative" style="min-width:200px;max-width:260px;">
+                        <i class="bi bi-search position-absolute" style="left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;"></i>
+                        <input type="text" id="inv-search" placeholder="Search invoice..." class="field-input"
+                            style="padding-left:30px;width:100%;height:36px;"
+                            oninput="renderTable()">
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -402,13 +401,18 @@
 <!-- Toast -->
 <div id="toast-container" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
 
+<script src="../js/utils.js?v=2.3"></script>
+<script src="../js/api.js?v=2.3"></script>
+<script src="../js/auth.js?v=2.3"></script>
+<script src="../js/ui_components.js?v=20260312"></script>
+<script src="../js/app.js?v=2.3"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../js/api.js?v=3"></script>
-<script src="../js/ui_components.js?v=3"></script>
-<script src="../js/auth.js?v=3"></script>
 <script>
 requireAuth();
-document.getElementById('sidebar').innerHTML = renderSidebar('payment');
+const sidebarElement = document.getElementById('sidebar');
+if (sidebarElement) {
+    sidebarElement.innerHTML = renderSidebar('payment');
+}
 injectTopHeader('Billing & Invoices');
 
 // ── State ───────────────────────────────────────────────────────────────────
@@ -499,6 +503,8 @@ function renderTable() {
         }
         return true;
     });
+
+    document.getElementById('billing-filter-summary').textContent = list.length + ' invoice' + (list.length === 1 ? '' : 's');
 
     if (!list.length) {
         tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted"><i class="bi bi-receipt" style="font-size:2rem;display:block;margin-bottom:8px;color:#cbd5e1;"></i>No invoices found.</td></tr>`;
