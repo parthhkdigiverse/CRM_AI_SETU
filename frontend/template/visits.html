@@ -25,7 +25,7 @@
                         </p>
                     </div>
                     <button id="add-visit-btn" class="btn btn-primary" onclick="openVisitModal()">
-                        <i class="bi bi-plus-lg me-2"></i>Log New Visit
+                        <i class="bi bi-plus-lg me-2"></i>Add New Visit
                     </button>
                 </div>
 
@@ -67,7 +67,7 @@
                         <h2 class="accordion-header" id="headingOne">
                             <button class="accordion-button fw-bold" type="button" data-bs-toggle="collapse"
                                 data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                                <i class="bi bi-person-check-fill text-success me-2"></i> Accepted Lead History
+                                <i class="bi bi-person-check-fill text-success me-2"></i> Pending Visits
                             </button>
                         </h2>
                         <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
@@ -147,7 +147,7 @@
             <div class="modal-content">
                 <div class="modal-header border-bottom pb-3">
                     <h5 class="modal-title fw-bold" id="visitModalLabel">
-                        <i class="bi bi-geo-alt-fill text-primary me-2"></i>Log Shop Visit
+                        <i class="bi bi-geo-alt-fill text-primary me-2"></i>Add Shop Visit
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -250,7 +250,7 @@
                     <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary px-4 fw-semibold" id="save-visit-btn"
                         onclick="saveVisit()">
-                        Save Visit Log
+                        Save Visit Record
                     </button>
                 </div>
             </div>
@@ -454,6 +454,26 @@
                         ? `<a href="${v.photo_url}" target="_blank" class="btn btn-sm btn-outline-secondary" style="border-radius:8px;"><i class="bi bi-image me-1"></i>View</a>`
                         : `<span class="text-muted" style="font-size:0.8rem;">—</span>`;
 
+                    let remarksHtml = '<span class="text-muted" style="font-size:0.8rem;">—</span>';
+                    if (v.remarks) {
+                        const safeRemarks = v.remarks.replace(/"/g, '&quot;');
+                        remarksHtml = `
+                            <div class="d-flex align-items-center justify-content-between gap-2">
+                                <span class="text-truncate text-muted" style="max-width: 150px;" title="${safeRemarks}">${v.remarks}</span>
+                                <a tabindex="0" class="btn btn-sm btn-light rounded-circle p-1 d-flex align-items-center justify-content-center" 
+                                   role="button" 
+                                   data-bs-toggle="popover" 
+                                   data-bs-trigger="focus" 
+                                   data-bs-placement="left" 
+                                   data-bs-custom-class="custom-popover"
+                                   data-bs-title="Visit Remarks"
+                                   data-bs-content="${safeRemarks}">
+                                    <i class="bi bi-chat-text-fill text-primary" style="font-size: 0.85rem;"></i>
+                                </a>
+                            </div>
+                        `;
+                    }
+
                     return `
                 <tr>
                     <td class="fw-semibold text-dark">${v.shop_name || ('Shop #' + v.shop_id)}</td>
@@ -475,12 +495,14 @@
                             <i class="bi ${ui.icon} me-1"></i>${ui.label}
                         </span>
                     </td>
-                    <td class="text-muted text-truncate" style="max-width:200px;" title="${v.remarks || ''}">
-                        ${v.remarks || '—'}
-                    </td>
+                    <td>${remarksHtml}</td>
                     <td>${photoCell}</td>
                 </tr>`;
                 }).join('');
+
+                // Initialize Bootstrap Popovers for the newly rendered rows
+                const popoverTriggerList = document.querySelectorAll('#visits-table [data-bs-toggle="popover"]');
+                [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
 
             } catch (err) {
                 tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Failed to load: ${err.message}</td></tr>`;
@@ -623,7 +645,7 @@
                 showToast(e.message, 'error');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = 'Save Visit Log';
+                btn.innerHTML = 'Save Visit Record';
             }
         }
 

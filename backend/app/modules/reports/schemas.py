@@ -14,7 +14,8 @@ class DashboardStats(BaseModel):
     revenue_mom_pct: float
     
     open_issues: int
-    visits_by_month: dict
+    visits_chart_title: str
+    visits_chart_data: dict
     revenue_by_month: dict
     visit_status_breakdown: dict
     issue_severity_breakdown: dict
