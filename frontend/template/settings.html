@@ -250,6 +250,8 @@
                             <a href="#account" onclick="scrollTo('account',this)"><i class="bi bi-person-gear"></i>
                                 Account</a>
                             <a href="#incentives-config" onclick="scrollTo('incentives-config',this)" id="incentives-nav-link" style="display:none;"><i class="bi bi-trophy"></i> Incentives</a>
+                            <a href="#payslip-contact" onclick="scrollTo('payslip-contact',this)" id="payslip-nav-link" style="display:none;"><i class="bi bi-building"></i> Company / Payslip</a>
+                            <a href="#invoice-settings" onclick="scrollTo('invoice-settings',this)" id="invoice-nav-link" style="display:none;"><i class="bi bi-receipt-cutoff"></i> Invoice &amp; Payment</a>
                             <a href="#system" onclick="scrollTo('system',this)" id="system-nav-link"><i
                                     class="bi bi-cpu"></i> System</a>
                         </nav>
@@ -475,6 +477,114 @@
                             </div>
                         </div>
 
+                        <!-- ── Company / Payslip Contact ───── -->
+                        <div class="settings-section" id="payslip-contact" style="display:none;">
+                            <div class="settings-section-title"><i class="bi bi-building text-primary"></i> Company / Payslip Contact</div>
+                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:16px;">These details appear on employee salary slips in the banner header.</p>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">HR Email</div>
+                                    <div class="setting-desc">Shown on salary slip header</div>
+                                </div>
+                                <input type="email" id="payslip-email" class="form-control form-control-sm" style="max-width:280px;" placeholder="e.g. hr@company.com">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Contact Phone</div>
+                                    <div class="setting-desc">Shown on salary slip header</div>
+                                </div>
+                                <input type="tel" id="payslip-phone" class="form-control form-control-sm" style="max-width:200px;" placeholder="e.g. 9876543210">
+                            </div>
+
+                            <div class="mt-3">
+                                <button class="btn-save-sm" onclick="savePayslipContact()"><i class="bi bi-save me-1"></i> Save Contact Info</button>
+                                <span id="payslip-save-msg" class="ms-3 small text-success d-none">Saved!</span>
+                            </div>
+                        </div>
+
+                        <!-- ── Invoice & Payment Settings (admin-only) ───── -->
+                        <div class="settings-section" id="invoice-settings" style="display:none;">
+                            <div class="settings-section-title"><i class="bi bi-receipt-cutoff text-primary"></i> Invoice &amp; Payment Settings</div>
+                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:16px;">These settings control invoice defaults and the payment QR shown on all invoices.</p>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Default Invoice Amount (₹)</div>
+                                    <div class="setting-desc">Pre-filled amount when creating a new invoice</div>
+                                </div>
+                                <input type="number" id="inv-default-amount" class="form-control form-control-sm" style="max-width:160px;" placeholder="12000" min="1">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Company Name</div>
+                                    <div class="setting-desc">Shown on invoice header</div>
+                                </div>
+                                <input type="text" id="inv-company-name" class="form-control form-control-sm" style="max-width:240px;" placeholder="CRM AI SETU">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Company Address</div>
+                                    <div class="setting-desc">Printed on invoice</div>
+                                </div>
+                                <input type="text" id="inv-company-address" class="form-control form-control-sm" style="max-width:300px;" placeholder="City, State, PIN">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Company Phone</div>
+                                    <div class="setting-desc">Support contact on invoice footer</div>
+                                </div>
+                                <input type="tel" id="inv-company-phone" class="form-control form-control-sm" style="max-width:200px;" placeholder="9876543210">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">GSTIN</div>
+                                    <div class="setting-desc">Optional GST number on invoice</div>
+                                </div>
+                                <input type="text" id="inv-company-gstin" class="form-control form-control-sm" style="max-width:220px;" placeholder="e.g. 29ABCDE1234F1Z5">
+                            </div>
+
+                            <div class="settings-section-title mt-4" style="border-top:1px solid #f1f5f9;padding-top:16px;"><i class="bi bi-qr-code text-primary"></i> Payment QR / UPI</div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">UPI ID</div>
+                                    <div class="setting-desc">e.g. company@upi — shown on invoice QR section</div>
+                                </div>
+                                <input type="text" id="inv-upi-id" class="form-control form-control-sm" style="max-width:240px;" placeholder="yourname@upi">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">UPI Account Name</div>
+                                    <div class="setting-desc">Displayed below the QR code</div>
+                                </div>
+                                <input type="text" id="inv-upi-name" class="form-control form-control-sm" style="max-width:240px;" placeholder="CRM AI SETU">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">QR Code Image URL</div>
+                                    <div class="setting-desc">Direct link to your payment QR PNG/JPG image</div>
+                                </div>
+                                <input type="url" id="inv-qr-url" class="form-control form-control-sm" style="max-width:300px;" placeholder="https://...">
+                            </div>
+
+                            <div class="mt-1" id="inv-qr-preview-wrap" style="display:none;padding:10px 0;">
+                                <img id="inv-qr-preview" src="" alt="QR Preview" style="width:100px;height:100px;object-fit:contain;border:1px solid #e2e8f0;border-radius:8px;">
+                            </div>
+
+                            <div class="mt-3">
+                                <button class="btn-save-sm" onclick="saveInvoiceSettings()"><i class="bi bi-save me-1"></i> Save Invoice Settings</button>
+                                <span id="inv-save-msg" class="ms-3 small text-success d-none">Saved!</span>
+                            </div>
+                        </div>
+
                         <!-- ── System ───── -->
                         <div class="settings-section" id="system" style="display:none;">
                             <div class="settings-section-title"><i class="bi bi-cpu text-secondary"></i> System
@@ -669,7 +779,13 @@
                 document.getElementById('system-nav-link').style.display = 'flex';
                 document.getElementById('incentives-nav-link').style.display = 'flex';
                 document.getElementById('incentives-config').style.display = 'block';
+                document.getElementById('payslip-nav-link').style.display = 'flex';
+                document.getElementById('payslip-contact').style.display = 'block';
+                document.getElementById('invoice-nav-link').style.display = 'flex';
+                document.getElementById('invoice-settings').style.display = 'block';
                 loadSlabsSettings();
+                loadPayslipContact();
+                loadInvoiceSettings();
 
                 const apiUrl = window.API_BASE || 'http://localhost:8000';
                 document.getElementById('api-url-display').textContent = apiUrl;
@@ -845,6 +961,98 @@
                 msg.textContent = e.message || 'Failed to update slab.';
                 msg.className = 'ms-3 small text-danger';
                 msg.classList.remove('d-none');
+            }
+        }
+
+        // ── Payslip Contact (admin-only)
+        async function loadPayslipContact() {
+            try {
+                const data = await ApiClient.getPayslipSettings();
+                document.getElementById('payslip-email').value = data.email || '';
+                document.getElementById('payslip-phone').value = data.phone || '';
+            } catch (e) {
+                console.warn('Could not load payslip contact settings:', e);
+            }
+        }
+
+        async function savePayslipContact() {
+            const email = document.getElementById('payslip-email').value.trim();
+            const phone = document.getElementById('payslip-phone').value.trim();
+            const msg = document.getElementById('payslip-save-msg');
+            if (!email || !phone) {
+                showToast('Email and phone are required', true);
+                return;
+            }
+            try {
+                await ApiClient.updatePayslipSettings({ email, phone });
+                msg.textContent = 'Saved!';
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 2500);
+                showToast('Payslip contact info saved');
+            } catch (e) {
+                showToast(e.message || 'Failed to save', true);
+            }
+        }
+
+        // ── Invoice & Payment Settings ────────────────────────────────────────
+        async function loadInvoiceSettings() {
+            try {
+                const data = await ApiClient.getInvoiceSettings();
+                document.getElementById('inv-default-amount').value = data.invoice_default_amount || 12000;
+                document.getElementById('inv-company-name').value = data.company_name || '';
+                document.getElementById('inv-company-address').value = data.company_address || '';
+                document.getElementById('inv-company-phone').value = data.company_phone || '';
+                document.getElementById('inv-company-gstin').value = data.company_gstin || '';
+                document.getElementById('inv-upi-id').value = data.payment_upi_id || '';
+                document.getElementById('inv-upi-name').value = data.payment_account_name || '';
+                const qrUrl = data.payment_qr_image_url || '';
+                document.getElementById('inv-qr-url').value = qrUrl;
+                if (qrUrl) {
+                    document.getElementById('inv-qr-preview').src = qrUrl;
+                    document.getElementById('inv-qr-preview-wrap').style.display = 'block';
+                }
+            } catch (e) {
+                console.warn('Could not load invoice settings:', e);
+            }
+        }
+
+        // Live QR preview
+        document.addEventListener('DOMContentLoaded', () => {
+            const qrInput = document.getElementById('inv-qr-url');
+            if (qrInput) {
+                qrInput.addEventListener('input', function() {
+                    const val = this.value.trim();
+                    const wrap = document.getElementById('inv-qr-preview-wrap');
+                    if (val) {
+                        document.getElementById('inv-qr-preview').src = val;
+                        wrap.style.display = 'block';
+                    } else {
+                        wrap.style.display = 'none';
+                    }
+                });
+            }
+        });
+
+        async function saveInvoiceSettings() {
+            const msg = document.getElementById('inv-save-msg');
+            const payload = {
+                invoice_default_amount: parseFloat(document.getElementById('inv-default-amount').value) || 12000,
+                company_name: document.getElementById('inv-company-name').value.trim(),
+                company_address: document.getElementById('inv-company-address').value.trim(),
+                company_phone: document.getElementById('inv-company-phone').value.trim(),
+                company_gstin: document.getElementById('inv-company-gstin').value.trim(),
+                payment_upi_id: document.getElementById('inv-upi-id').value.trim(),
+                payment_account_name: document.getElementById('inv-upi-name').value.trim(),
+                payment_qr_image_url: document.getElementById('inv-qr-url').value.trim(),
+            };
+            try {
+                await ApiClient.updateInvoiceSettings(payload);
+                msg.textContent = 'Saved!';
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 2500);
+                showToast('Invoice settings saved');
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to save', true);
             }
         }
     </script>

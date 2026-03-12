@@ -8,7 +8,14 @@ Safe to run multiple times (skips already-existing records by email).
 """
 
 import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Support running from any working directory
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+_backend_dir = os.path.dirname(_script_dir)
+_root_dir = os.path.dirname(_backend_dir)
+# Insert root first, then backend — so backend/app/ takes priority over root app.py
+for _p in [_root_dir, _backend_dir]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from datetime import datetime, timedelta, UTC
 from app.core.database import SessionLocal
@@ -125,25 +132,24 @@ print("\nSeeding visits...")
 
 now = datetime.now(UTC)
 visits_data = [
-    dict(shop_id=created_shops[0].id, user_id=sales1.id, status="SCHEDULED",  notes="Scheduled demo call",               visit_date=now - timedelta(days=5)),
-    dict(shop_id=created_shops[1].id, user_id=sales1.id, status="COMPLETED",  notes="Very happy with the product",       visit_date=now - timedelta(days=4)),
-    dict(shop_id=created_shops[2].id, user_id=sales2.id, status="MISSED",     notes="Client not available",              visit_date=now - timedelta(days=3)),
-    dict(shop_id=created_shops[3].id, user_id=sales2.id, status="SCHEDULED",  notes="Needs internal approval first",     visit_date=now - timedelta(days=2)),
-    dict(shop_id=created_shops[4].id, user_id=sales1.id, status="COMPLETED",  notes="Ready to sign contract",            visit_date=now - timedelta(days=1)),
-    dict(shop_id=created_shops[5].id, user_id=sales2.id, status="CANCELLED",  notes="Client cancelled",  decline_remarks="Will reschedule next month", visit_date=now),
+    dict(shop_id=created_shops[0].id, user_id=sales1.id, status="SCHEDULED",  remarks="Scheduled demo call",               visit_date=now - timedelta(days=5)),
+    dict(shop_id=created_shops[1].id, user_id=sales1.id, status="COMPLETED",  remarks="Very happy with the product",       visit_date=now - timedelta(days=4)),
+    dict(shop_id=created_shops[2].id, user_id=sales2.id, status="MISSED",     remarks="Client not available",              visit_date=now - timedelta(days=3)),
+    dict(shop_id=created_shops[3].id, user_id=sales2.id, status="SCHEDULED",  remarks="Needs internal approval first",     visit_date=now - timedelta(days=2)),
+    dict(shop_id=created_shops[4].id, user_id=sales1.id, status="COMPLETED",  remarks="Ready to sign contract",            visit_date=now - timedelta(days=1)),
+    dict(shop_id=created_shops[5].id, user_id=sales2.id, status="CANCELLED",  remarks="Client cancelled",  decline_remarks="Will reschedule next month", visit_date=now),
 ]
 
-# Use raw SQL since Visit model column names differ from actual DB columns
 from sqlalchemy import text
 for v in visits_data:
     db.execute(text("""
-        INSERT INTO visits (shop_id, user_id, status, notes, decline_remarks, visit_date, created_at, updated_at)
-        VALUES (:shop_id, :user_id, :status, :notes, :decline_remarks, :visit_date, :created_at, :updated_at)
+        INSERT INTO visits (shop_id, user_id, status, remarks, decline_remarks, visit_date, created_at, updated_at)
+        VALUES (:shop_id, :user_id, :status, :remarks, :decline_remarks, :visit_date, :created_at, :updated_at)
     """), {
         "shop_id": v["shop_id"],
         "user_id": v["user_id"],
         "status": v["status"],
-        "notes": v.get("notes"),
+        "remarks": v.get("remarks"),
         "decline_remarks": v.get("decline_remarks"),
         "visit_date": v["visit_date"],
         "created_at": now,
@@ -156,11 +162,11 @@ print(f"  + {len(visits_data)} visits added")
 print("\nSeeding projects...")
 
 projects_data = [
-    dict(name="CRM Portal Rollout",    description="Full CRM deployment for TechNova",      client_id=created_clients[0].id, pm_id=pm1.id, status="ONGOING",    budget=250000.0, start_date=now - timedelta(days=30), end_date=now + timedelta(days=60)),
-    dict(name="Infra Monitoring Setup",description="Setup monitoring dashboard for Infra",  client_id=created_clients[1].id, pm_id=pm2.id, status="PLANNED",    budget=150000.0, start_date=now + timedelta(days=5),  end_date=now + timedelta(days=90)),
+    dict(name="CRM Portal Rollout",    description="Full CRM deployment for TechNova",      client_id=created_clients[0].id, pm_id=pm1.id, status="IN_PROGRESS", budget=250000.0, start_date=now - timedelta(days=30), end_date=now + timedelta(days=60)),
+    dict(name="Infra Monitoring Setup",description="Setup monitoring dashboard for Infra",  client_id=created_clients[1].id, pm_id=pm2.id, status="PLANNING",    budget=150000.0, start_date=now + timedelta(days=5),  end_date=now + timedelta(days=90)),
     dict(name="Retail ERP Integration",description="Integrate ERP with retail POS system",  client_id=created_clients[2].id, pm_id=pm1.id, status="ON_HOLD",    budget=320000.0, start_date=now - timedelta(days=10), end_date=now + timedelta(days=45)),
     dict(name="Finance App Revamp",    description="UI/UX overhaul for finance web app",    client_id=created_clients[3].id, pm_id=pm2.id, status="COMPLETED",  budget=180000.0, start_date=now - timedelta(days=90), end_date=now - timedelta(days=5)),
-    dict(name="Logistics Dashboard",   description="Real-time shipment tracking dashboard", client_id=created_clients[4].id, pm_id=pm1.id, status="ONGOING",    budget=210000.0, start_date=now - timedelta(days=15), end_date=now + timedelta(days=30)),
+    dict(name="Logistics Dashboard",   description="Real-time shipment tracking dashboard", client_id=created_clients[4].id, pm_id=pm1.id, status="IN_PROGRESS", budget=210000.0, start_date=now - timedelta(days=15), end_date=now + timedelta(days=30)),
 ]
 
 from sqlalchemy import text
@@ -173,9 +179,9 @@ for p in projects_data:
     else:
         result = db.execute(text("""
             INSERT INTO projects (name, description, client_id, pm_id, status, budget, start_date, end_date, created_at, updated_at)
-            VALUES (:name, :description, :client_id, :pm_id, :status::projectstatus, :budget, :start_date, :end_date, :now, :now)
+            VALUES (:name, :description, :client_id, :pm_id, :status, :budget, :start_date, :end_date, :now, :now2)
             RETURNING id
-        """), {**p, "now": now})
+        """), {**p, "now": now, "now2": now})
         proj_id = result.fetchone()[0]
         project_ids.append(proj_id)
         print(f"  + Project: {p['name']} [{p['status']}]")

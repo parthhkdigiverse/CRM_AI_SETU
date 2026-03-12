@@ -1,12 +1,23 @@
 # backend/app/core/database.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.engine import make_url
+from urllib.parse import urlparse, unquote
+import psycopg2
 from app.core.config import settings
 
-# Use make_url to properly handle encoded characters (like %20 for spaces)
-url = make_url(settings.DATABASE_URL)
-engine = create_engine(url)
+# Parse the DATABASE_URL manually so URL-encoded characters (e.g. %20 for space)
+# are properly decoded before being passed to psycopg2.
+def _make_psycopg2_connection():
+    parsed = urlparse(settings.DATABASE_URL)
+    return psycopg2.connect(
+        host=parsed.hostname,
+        port=parsed.port or 5432,
+        dbname=unquote(parsed.path.lstrip("/")),
+        user=parsed.username,
+        password=unquote(parsed.password) if parsed.password else "",
+    )
+
+engine = create_engine("postgresql+psycopg2://", creator=_make_psycopg2_connection)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

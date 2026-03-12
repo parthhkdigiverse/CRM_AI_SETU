@@ -174,7 +174,8 @@
         async function loadIssues() {
             const issues = await apiGet('/issues/?limit=200');
             const open = issues.filter(i => i.status === 'PENDING').length;
-            document.getElementById('issue-count').textContent = `Track and resolve project issues across all deliveries.`;
+            document.getElementById('issue-count').textContent = `${open} unresolved · ${issues.length} total issues`;
+            if (window.checkHighPriorityIssues) window.checkHighPriorityIssues();
             document.getElementById('issues-table').innerHTML = issues.length
                 ? issues.map(i => {
                     const icon = sevIcons[i.severity] || sevIcons['LOW'];
