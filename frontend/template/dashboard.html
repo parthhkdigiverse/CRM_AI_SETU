@@ -1003,13 +1003,13 @@
                     </div>
                     <div class="col-md-4">
                         <div class="chart-card d-flex flex-column">
-                            <div class="chart-card-title">Shop Sources</div>
-                            <div class="chart-card-sub">Distribution by acquisition channel</div>
+                            <div class="chart-card-title">Visit Outcomes</div>
+                            <div class="chart-card-sub">Distribution of interaction results</div>
                             <div class="d-flex justify-content-center flex-grow-1"
                                 style="position:relative;height:180px;">
-                                <canvas id="sourcesChart"></canvas>
+                                <canvas id="outcomesChart"></canvas>
                             </div>
-                            <div id="sources-legend" class="d-flex flex-wrap justify-content-center gap-3 mt-3"
+                            <div id="outcomes-legend" class="d-flex flex-wrap justify-content-center gap-3 mt-3"
                                 style="font-size:0.72rem;"></div>
                         </div>
                     </div>
@@ -1219,7 +1219,7 @@
         }
 
         // ── Charts (now using backend-aggregated data) ──────────────────
-        let leadsChartObj, revenueChartObj, sourcesChartObj;
+        let leadsChartObj, revenueChartObj, outcomesChartObj;
 
         function initCharts(stats) {
             Chart.defaults.font.family = "'Inter', 'Segoe UI', sans-serif";
@@ -1286,23 +1286,38 @@
                 });
             } catch (e) { console.error("Revenue Chart Error:", e); }
 
-            // 3. Shop Sources (Donut)
+            // 3. Visit Outcomes (Donut)
             try {
-                let sData = stats.shop_sources_breakdown || {};
+                let sData = stats.visit_outcomes_breakdown || {};
                 if (Object.keys(sData).length === 0) { sData = { 'No Data': 1 }; }
 
                 const sLabels = Object.keys(sData);
                 const sValues = Object.values(sData);
-                const sColors = ['#6366f1', '#06b6d4', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6'];
+                
+                // Map statuses to specific semantic colors
+                const colorMap = {
+                    'COMPLETED': '#10b981',          // Emerald Green
+                    'ACCEPTED': '#10b981',           // Emerald Green
+                    'SATISFIED': '#38bdf8',          // Light Blue
+                    'SCHEDULED': '#8b5cf6',          // Purple
+                    'TAKE_TIME_TO_THINK': '#f59e0b', // Amber/Orange
+                    'THINKING': '#f59e0b',           // Amber/Orange
+                    'CANCELLED': '#ef4444',          // Red
+                    'DECLINED': '#ef4444',           // Red
+                    'MISSED': '#64748b'              // Slate Gray
+                };
 
-                if (sourcesChartObj) sourcesChartObj.destroy();
-                sourcesChartObj = new Chart(document.getElementById('sourcesChart'), {
+                // Generate the colors array by looking up each label
+                const dynamicColors = sLabels.map(label => colorMap[label.toUpperCase()] || '#cbd5e1');
+
+                if (outcomesChartObj) outcomesChartObj.destroy();
+                outcomesChartObj = new Chart(document.getElementById('outcomesChart'), {
                     type: 'doughnut',
                     data: {
                         labels: sLabels,
                         datasets: [{
                             data: sValues,
-                            backgroundColor: sColors.slice(0, sLabels.length),
+                            backgroundColor: dynamicColors,
                             borderWidth: 0,
                             hoverOffset: 10
                         }]
@@ -1314,13 +1329,13 @@
                     }
                 });
 
-                document.getElementById('sources-legend').innerHTML = sLabels.map((s, i) =>
+                document.getElementById('outcomes-legend').innerHTML = sLabels.map((s, i) =>
                     `<div class="d-flex align-items-center gap-2 fw-medium text-secondary" style="font-size: 0.7rem;">
-                        <span style="width:8px;height:8px;background:${sColors[i % sColors.length]};border-radius:2px;display:inline-block;"></span> 
-                        <span>${s}</span>
+                        <span style="width:8px;height:8px;background:${dynamicColors[i]};border-radius:2px;display:inline-block;"></span> 
+                        <span>${s.replace(/_/g, ' ')}</span>
                     </div>`
                 ).join('');
-            } catch (e) { console.error("Sources Chart Error:", e); }
+            } catch (e) { console.error("Outcomes Chart Error:", e); }
         }
 
         // ── Activity Feed ─────────────────────────────────────────────────

@@ -188,11 +188,10 @@ class ReportService:
             severity_data = is_query.all()
             issue_severity_breakdown = {str(s.value if hasattr(s, 'value') else s): c for s, c in severity_data if s is not None}
 
-            ss_query = db.query(Shop.source, func.count(Shop.id))
-            if user_id: ss_query = ss_query.filter(Shop.owner_id == user_id)
-            if area_id: ss_query = ss_query.filter(Shop.area_id == area_id)
-            source_data = ss_query.group_by(Shop.source).all()
-            shop_sources_breakdown = {str(s or 'Other'): c for s, c in source_data}
+            vo_query = db.query(Visit.status, func.count(Visit.id))
+            vo_query = apply_filters(vo_query, Visit, 'visit_date', 'user_id').group_by(Visit.status)
+            outcome_data = vo_query.all()
+            visit_outcomes_breakdown = {str(s.value if hasattr(s, 'value') else s): c for s, c in outcome_data if s is not None}
 
             return {
                 "total_visits": total_visits,
@@ -209,7 +208,7 @@ class ReportService:
                 "revenue_by_month": revenue_by_month,
                 "visit_status_breakdown": visit_status_breakdown,
                 "issue_severity_breakdown": issue_severity_breakdown,
-                "shop_sources_breakdown": shop_sources_breakdown
+                "visit_outcomes_breakdown": visit_outcomes_breakdown
             }
 
         except Exception as e:
@@ -219,7 +218,7 @@ class ReportService:
                 "total_visits": 0, "active_clients": 0, "ongoing_projects": 0, "revenue_mtd": 0.0,
                 "visits_mom_pct": 0.0, "clients_mom_pct": 0.0, "projects_mom_pct": 0.0, "revenue_mom_pct": 0.0,
                 "open_issues": 0, "visits_chart_title": "Visits by Month", "visits_chart_data": {}, "revenue_by_month": {}, 
-                "visit_status_breakdown": {}, "issue_severity_breakdown": {}, "shop_sources_breakdown": {}
+                "visit_status_breakdown": {}, "issue_severity_breakdown": {}, "visit_outcomes_breakdown": {}
             }
 
         except Exception as e:
@@ -230,7 +229,7 @@ class ReportService:
                 "total_leads": 0, "active_clients": 0, "ongoing_projects": 0, "revenue_mtd": 0.0,
                 "leads_mom_pct": 0.0, "clients_mom_pct": 0.0, "projects_mom_pct": 0.0, "revenue_mom_pct": 0.0,
                 "open_issues": 0, "visits_chart_title": "Visits by Month", "visits_chart_data": {}, "revenue_by_month": {}, 
-                "visit_status_breakdown": {}, "issue_severity_breakdown": {}, "lead_sources_breakdown": {}
+                "visit_status_breakdown": {}, "issue_severity_breakdown": {}, "visit_outcomes_breakdown": {}
             }
 
     @staticmethod
