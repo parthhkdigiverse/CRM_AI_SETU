@@ -354,19 +354,7 @@
 
                 <!-- List View -->
                 <div id="list-view" class="d-none">
-                    <div class="list-view-container">
-                        <table class="table leads-table mb-0">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40px;"><input type="checkbox" class="form-check-input"
-                                            id="lead-select-all" onclick="toggleAllLeads(this)"></th>
-                                    <th>Source</th>
-                                    <th>Status</th>
-                                    <th>Assignee</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leads-list-body"></tbody>
-                        </table>
+                    <div id="list-view-container">
                     </div>
                 </div>
             </div>
@@ -401,15 +389,7 @@
                         <input id="s-name" class="form-control" placeholder="e.g. Krishna Electronics">
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label">Status</label>
-                        <select id="s-status" class="form-select">
-                            <option value="NEW">New</option>
-                            <option value="CONTACTED">Contacted</option>
-                            <option value="MEETING_SET">Meeting Set</option>
-                            <option value="CONVERTED">Converted</option>
-                        </select>
-                    </div>
+
 
                     <div class="row g-3">
                         <div class="col-6">
@@ -469,12 +449,29 @@
         document.getElementById('sidebar').innerHTML = renderSidebar('leads');
         injectTopHeader('Project Overview');
 
+        const getNextActionText = (status) => {
+            switch(status) {
+                case 'NEW': return 'Visit Shop';
+                case 'CONTACTED': return 'Schedule Demo';
+                case 'MEETING_SET': return 'Close Deal';
+                default: return 'View Details';
+            }
+        };
+
+        const getInitials = (name) => {
+            if (!name) return 'U';
+            return name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().substring(0, 2);
+        };
+
         let leadStore = {};
 
         async function loadLeads() {
             try {
                 // Reset bulk selection UI
-                document.getElementById('lead-select-all').checked = false;
+                const selectAllBox = document.getElementById('lead-select-all');
+                if (selectAllBox) {
+                    selectAllBox.checked = false;
+                }
                 updateSelectedCount();
 
                 const kanbanData = await window.ApiClient.request('/shops/kanban');
@@ -531,27 +528,127 @@
 
                 // List View implementation
                 const allLeads = Object.values(kanbanData).flat();
-                const listBody = document.getElementById('leads-list-body');
-                listBody.innerHTML = allLeads.map(l => `
-                    <tr class="align-middle">
-                        <td><input type="checkbox" class="form-check-input lead-checkbox" value="${l.id}" onclick="updateSelectedCount()"></td>
-                        <td class="fw-bold">${l.contact_person || '—'}</td>
-                        <td class="text-muted">${l.name}</td>
-                        <td>${l.phone || '—'}</td>
-                        <td><span class="badge bg-light text-dark border">${l.source || 'Other'}</span></td>
-                        <td><span class="status-badge bg-primary-subtle text-primary">${l.status}</span></td>
-                        <td>${l.owner_name || 'Unassigned'}</td>
-                    </tr>
-                `).join('');
+                renderListView(allLeads);
 
             } catch (err) {
                 console.error('Failed to load leads:', err);
             }
         }
 
+        function renderListView(leads) {
+            const container = document.getElementById('list-view-container');
+            if (!leads || leads.length === 0) {
+                container.innerHTML = `<div class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>No leads found.</div>`;
+                return;
+            }
+            let html = `
+            <div class="table-responsive bg-white rounded-3 shadow-sm border">
+                <table class="table table-hover table-borderless align-middle mb-0">
+                    <thead class="bg-light border-bottom">
+                        <tr>
+                            <th class="py-3 px-4 text-uppercase text-muted" style="font-size: 0.7rem; letter-spacing: 0.05em;">Contact</th>
+                            <th class="py-3 px-3 text-uppercase text-muted" style="font-size: 0.7rem; letter-spacing: 0.05em;">Shop / Company</th>
+                            <th class="py-3 px-3 text-uppercase text-muted" style="font-size: 0.7rem; letter-spacing: 0.05em;">Mobile</th>
+                            <th class="py-3 px-3 text-uppercase text-muted" style="font-size: 0.7rem; letter-spacing: 0.05em;">Assigned To</th>
+                            <th class="py-3 px-3 text-uppercase text-muted" style="font-size: 0.7rem; letter-spacing: 0.05em;">Status</th>
+                            <th class="py-3 px-4 text-end text-uppercase text-muted" style="font-size: 0.7rem; letter-spacing: 0.05em;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            leads.forEach(l => {
+                const contactName = l.contact_person || '—';
+                const shopName = l.name || '—';
+                const phone = l.phone || '—';
+                const assigneeName = (l.assigned_to_user && l.assigned_to_user.name) || (l.assigned_to_name) || l.owner_name || 'Unassigned';
+                
+                let badgeClass = 'bg-secondary';
+                if (l.status === 'NEW') badgeClass = 'bg-primary';
+                else if (l.status === 'CONTACTED') badgeClass = 'bg-warning text-dark';
+                else if (l.status === 'MEETING_SET') badgeClass = 'bg-info text-dark';
+                else if (l.status === 'CONVERTED') badgeClass = 'bg-success';
+
+                html += `
+                    <tr style="cursor: pointer;" onclick="openDetail(${l.id})">
+                        <td class="px-4 py-3">
+                            <div class="fw-bold text-dark" style="font-size: 0.85rem;">${contactName}</div>
+                        </td>
+                        <td class="px-3 py-3">
+                            <div class="text-secondary fw-medium" style="font-size: 0.85rem;">${shopName}</div>
+                        </td>
+                        <td class="px-3 py-3">
+                            <div class="text-secondary" style="font-size: 0.85rem;">
+                                <i class="bi bi-telephone text-muted me-1"></i>${phone}
+                            </div>
+                        </td>
+                        <td class="px-3 py-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="background: #eef2ff; color: #4f46e5; width: 28px; height: 28px; font-size: 0.7rem; font-weight: bold;">
+                                    ${getInitials(assigneeName)}
+                                </div>
+                                <div class="text-dark fw-medium" style="font-size: 0.8rem;">${assigneeName}</div>
+                            </div>
+                        </td>
+                        <td class="px-3 py-3">
+                            <span class="badge rounded-pill ${badgeClass}" style="font-size: 0.7rem; padding: 4px 10px;">
+                                ${(l.status || 'NEW').replace(/_/g, ' ')}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-end">
+                            <button class="btn btn-sm btn-light border border-2 text-primary fw-bold rounded-pill px-3 shadow-sm" 
+                                    onclick="event.stopPropagation(); window.openDetail(${l.id});"
+                                    style="font-size: 0.75rem; transition: all 0.2s;">
+                                ${getNextActionText(l.status)} <i class="bi bi-arrow-right-short ms-1" style="font-size: 0.9rem;"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            html += `</tbody></table></div>`;
+            container.innerHTML = html;
+        }
+
         window.openDetail = (id) => {
             const l = leadStore[id];
             if (!l) return;
+
+            // Define pipeline logic based on shop status
+            const pipelineStatuses = ['NEW', 'CONTACTED', 'MEETING_SET', 'CONVERTED'];
+            const currentStatusIndex = pipelineStatuses.indexOf(l.status || 'NEW');
+            const steps = [
+                { label: 'Assign the Shop', index: 0 },
+                { label: 'Visit & Explain the Product', index: 1 },
+                { label: 'Schedule the Demo', index: 2 },
+                { label: 'Project Started', index: 3 }
+            ];
+
+            let timelineHtml = `<div class="mt-4 pt-3 border-top"><h6 class="fw-bold mb-3" style="font-size:0.85rem;color:#64748b;">PIPELINE PROGRESS</h6><div class="px-2">`;
+
+            steps.forEach((step, i) => {
+                const isCompleted = currentStatusIndex >= step.index;
+                const isLast = i === steps.length - 1;
+
+                // Colors: Green if done, Gray if pending
+                const dotColor = isCompleted ? '#10b981' : '#e2e8f0';
+                const iconHtml = isCompleted ? `<i class="bi bi-check text-white" style="font-size: 0.75rem;"></i>` : ``;
+                const textColor = isCompleted ? '#0f172a' : '#94a3b8';
+                const weightClass = isCompleted ? 'fw-bold' : 'fw-medium';
+                timelineHtml += `
+                    <div class="d-flex position-relative z-1" style="margin-bottom: ${isLast ? '0' : '1.5rem'};">
+                        ${isCompleted && !isLast ? `<div class="position-absolute" style="left: 7px; top: 16px; bottom: -24px; width: 2px; background: #10b981; z-index: -1;"></div>` : ''}
+                        
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
+                             style="width: 16px; height: 16px; margin-top: 2px; background: ${dotColor}; transition: background 0.3s;">
+                            ${iconHtml}
+                        </div>
+                        <div class="ms-3">
+                            <div class="${weightClass}" style="font-size: 0.8rem; color: ${textColor};">${step.label}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            timelineHtml += `</div></div>`;
 
             const content = `
                 <div class="mb-4">
@@ -570,8 +667,8 @@
                 <div class="mt-4 pt-4 border-top">
                     <!-- Changed redirect to open Edit modal -->
                     <button class="btn btn-outline-primary w-100 mb-2" onclick="openEditShopModal(${l.id})">Edit Details</button>
-                    ${l.status !== 'CONVERTED' ? `<button class="btn btn-success w-100" id="approve-btn-${l.id}" onclick="approvePipelineEntry(${l.id})">Approve & Start Project</button>` : ''}
                 </div>
+                ${timelineHtml}
             `;
             document.getElementById('detail-content').innerHTML = content;
             document.getElementById('detail-overlay').style.display = 'block';
@@ -587,7 +684,6 @@
                 // Pre-fill form fields
                 document.getElementById('s-id').value = shop.id;
                 document.getElementById('s-name').value = shop.name || '';
-                document.getElementById('s-status').value = shop.status || 'NEW';
                 document.getElementById('s-contact').value = shop.contact_person || '';
                 document.getElementById('s-phone').value = shop.phone || '';
                 document.getElementById('s-addr').value = shop.address || '';
@@ -615,7 +711,6 @@
 
             const payload = {
                 name: name,
-                status: document.getElementById('s-status').value,
                 contact_person: document.getElementById('s-contact').value,
                 phone: document.getElementById('s-phone').value,
                 address: document.getElementById('s-addr').value,
