@@ -89,42 +89,44 @@
                     </div>
                 </div>
 
-                <!-- Filter Toolbar (admin only, hidden by default) -->
                 <div id="admin-filter-toolbar" style="display:none;" class="mb-2">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2" id="leave-filter-toggle-btn" onclick="toggleLeaveFilters()" style="border-radius:8px;">
-                                <i class="bi bi-funnel"></i>
-                                <span>Filters</span>
-                                <i class="bi bi-chevron-down" id="leave-filter-chevron" style="font-size:0.75rem; transition:transform 0.2s;"></i>
-                            </button>
-                            <span class="text-muted small" id="leave-active-filter-badge" style="display:none;"></span>
+                    <div class="filter-panel">
+                        <div class="filter-panel-head" id="leave-filter-panel-toggle">
+                            <div class="filter-panel-head-main">
+                                <div class="filter-panel-head-left">
+                                    <i class="bi bi-sliders2"></i>
+                                    Filters
+                                </div>
+                                <div class="filter-active-pills" id="leave-filter-pills"></div>
+                            </div>
+                            <div class="filter-panel-head-meta">
+                                <div class="text-muted small" id="leave-count"></div>
+                                <button class="filter-toggle-btn" id="leave-filter-toggle-btn" type="button" onclick="toggleLeaveFilters(); event.stopPropagation();">
+                                    <span id="leave-filter-toggle-label">Show</span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                            </div>
                         </div>
-                        <div class="text-muted small" id="leave-count"></div>
-                    </div>
-
-                    <!-- Collapsible filter panel -->
-                    <div id="admin-filter" style="display:none;">
-                        <div class="grid-card p-3 mb-3" style="border:1.5px solid #e0e7ff; background:#f8f9ff;">
-                            <div class="row g-3 align-items-end">
-                                <div class="col-sm-auto col-12">
-                                    <label class="form-label fw-semibold small mb-1 text-muted"><i class="bi bi-person me-1"></i>Employee</label>
-                                    <select id="leave-user-filter" class="form-select form-select-sm" style="min-width:200px;" onchange="loadLeaves(); updateLeaveFilterBadge();">
+                        <div class="filter-panel-body" id="admin-filter">
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label>Employee</label>
+                                    <select id="leave-user-filter" class="form-select">
                                         <option value="">All Employees</option>
                                     </select>
                                 </div>
-                                <div class="col-sm-auto col-12">
-                                    <label class="form-label fw-semibold small mb-1 text-muted"><i class="bi bi-circle-half me-1"></i>Status</label>
-                                    <select id="leave-status-filter" class="form-select form-select-sm" style="min-width:150px;" onchange="loadLeaves(); updateLeaveFilterBadge();">
+                                <div class="filter-field">
+                                    <label>Status</label>
+                                    <select id="leave-status-filter" class="form-select">
                                         <option value="">All Statuses</option>
                                         <option value="PENDING">Pending</option>
                                         <option value="APPROVED">Approved</option>
                                         <option value="REJECTED">Rejected</option>
                                     </select>
                                 </div>
-                                <div class="col-sm-auto col-12">
-                                    <label class="form-label fw-semibold small mb-1 text-muted"><i class="bi bi-tag me-1"></i>Leave Type</label>
-                                    <select id="leave-type-filter" class="form-select form-select-sm" style="min-width:150px;" onchange="loadLeaves(); updateLeaveFilterBadge();">
+                                <div class="filter-field">
+                                    <label>Leave Type</label>
+                                    <select id="leave-type-filter" class="form-select">
                                         <option value="">All Types</option>
                                         <option value="ANNUAL">Annual</option>
                                         <option value="SICK">Sick</option>
@@ -133,19 +135,22 @@
                                         <option value="OTHER">Other</option>
                                     </select>
                                 </div>
-                                <div class="col-sm-auto col-12">
-                                    <label class="form-label fw-semibold small mb-1 text-muted"><i class="bi bi-calendar-range me-1"></i>From Date</label>
-                                    <input type="date" id="leave-from-filter" class="form-control form-control-sm" style="min-width:150px;" onchange="loadLeaves(); updateLeaveFilterBadge();">
+                                <div class="filter-field">
+                                    <label>From Date</label>
+                                    <input type="date" id="leave-from-filter" class="form-control">
                                 </div>
-                                <div class="col-sm-auto col-12">
-                                    <label class="form-label fw-semibold small mb-1 text-muted"><i class="bi bi-calendar2-check me-1"></i>To Date</label>
-                                    <input type="date" id="leave-to-filter" class="form-control form-control-sm" style="min-width:150px;" onchange="loadLeaves(); updateLeaveFilterBadge();">
+                                <div class="filter-field">
+                                    <label>To Date</label>
+                                    <input type="date" id="leave-to-filter" class="form-control">
                                 </div>
-                                <div class="col-sm-auto col-12">
-                                    <button class="btn btn-sm btn-light border d-flex align-items-center gap-1" onclick="clearLeaveFilters()" style="border-radius:8px;">
-                                        <i class="bi bi-x-circle"></i>Clear All
-                                    </button>
-                                </div>
+                            </div>
+                            <div class="filter-actions">
+                                <button class="btn-filter-reset" type="button" onclick="clearLeaveFilters()">
+                                    <i class="bi bi-x-circle"></i>Clear
+                                </button>
+                                <button class="btn-filter-apply" type="button" onclick="loadLeaves()">
+                                    <i class="bi bi-check2"></i>Apply Filters
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -267,13 +272,18 @@
         </div>
     </div>
 
+    <script src="../js/utils.js?v=2.3"></script>
+    <script src="../js/api.js?v=2.3"></script>
+    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/app.js?v=2.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/api.js?v=2.7"></script>
-    <script src="../js/ui_components.js?v=1772780187"></script>
-    <script src="../js/auth.js?v=2.6"></script>
     <script>
         requireAuth();
-        document.getElementById('sidebar').innerHTML = renderSidebar('leaves');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) {
+            sidebarElement.innerHTML = renderSidebar('leaves');
+        }
         injectTopHeader('Leaves');
 
         const user = getUser();
@@ -286,35 +296,52 @@
             ApiClient.getEmployees().then(emps => {
                 const opts = emps.map(e => `<option value="${e.id}">${e.name || e.email}</option>`).join('');
                 document.getElementById('leave-user-filter').innerHTML = '<option value="">All Employees</option>' + opts;
+                updateLeaveFilterBadge();
             }).catch(() => {});
         }
 
+        const leaveFilterPanel = document.getElementById('admin-filter');
+        const leaveFilterToggleBtn = document.getElementById('leave-filter-toggle-btn');
+        const leaveFilterToggleLabel = document.getElementById('leave-filter-toggle-label');
+
+        document.getElementById('leave-filter-panel-toggle').addEventListener('click', toggleLeaveFilters);
+        ['leave-user-filter', 'leave-status-filter', 'leave-type-filter', 'leave-from-filter', 'leave-to-filter'].forEach(id => {
+            document.getElementById(id).addEventListener('change', updateLeaveFilterBadge);
+        });
+
         function toggleLeaveFilters() {
-            const panel = document.getElementById('admin-filter');
-            const chevron = document.getElementById('leave-filter-chevron');
-            const btn = document.getElementById('leave-filter-toggle-btn');
-            const isOpen = panel.style.display !== 'none';
-            panel.style.display = isOpen ? 'none' : 'block';
-            chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
-            btn.classList.toggle('btn-outline-secondary', isOpen);
-            btn.classList.toggle('btn-secondary', !isOpen);
+            const isOpen = leaveFilterPanel.classList.toggle('open');
+            leaveFilterToggleBtn.classList.toggle('open', isOpen);
+            leaveFilterToggleLabel.textContent = isOpen ? 'Hide' : 'Show';
         }
 
         function updateLeaveFilterBadge() {
-            const badge = document.getElementById('leave-active-filter-badge');
-            if (!badge) return;
-            const user = document.getElementById('leave-user-filter')?.value;
-            const status = document.getElementById('leave-status-filter')?.value;
-            const type = document.getElementById('leave-type-filter')?.value;
+            const pills = document.getElementById('leave-filter-pills');
+            if (!pills) return;
+            const user = document.getElementById('leave-user-filter');
+            const status = document.getElementById('leave-status-filter');
+            const type = document.getElementById('leave-type-filter');
             const from = document.getElementById('leave-from-filter')?.value;
             const to = document.getElementById('leave-to-filter')?.value;
-            const count = [user, status, type, from, to].filter(Boolean).length;
-            if (count > 0) {
-                badge.textContent = count + ' filter' + (count > 1 ? 's' : '') + ' active';
-                badge.style.display = 'inline';
-            } else {
-                badge.style.display = 'none';
-            }
+            const items = [];
+            if (user?.value) items.push({ label: user.options[user.selectedIndex].text, inputId: 'leave-user-filter' });
+            if (status?.value) items.push({ label: status.options[status.selectedIndex].text, inputId: 'leave-status-filter' });
+            if (type?.value) items.push({ label: type.options[type.selectedIndex].text, inputId: 'leave-type-filter' });
+            if (from) items.push({ label: 'From: ' + from, inputId: 'leave-from-filter' });
+            if (to) items.push({ label: 'To: ' + to, inputId: 'leave-to-filter' });
+
+            pills.innerHTML = items.map(item => '<span class="filter-pill">' + item.label +
+                '<button class="filter-pill-remove" type="button" data-input="' + item.inputId + '" title="Remove">&times;</button></span>'
+            ).join('');
+
+            pills.querySelectorAll('.filter-pill-remove').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    document.getElementById(btn.dataset.input).value = '';
+                    updateLeaveFilterBadge();
+                    loadLeaves();
+                });
+            });
         }
 
         function clearLeaveFilters() {

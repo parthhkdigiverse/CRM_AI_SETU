@@ -11,7 +11,7 @@ from app.modules.incentives.models import (
 )
 from app.modules.incentives.schemas import (
     IncentiveSlabCreate, IncentiveSlabRead, IncentiveSlabUpdate,
-    IncentiveCalculationRequest, IncentiveSlipRead
+    IncentiveCalculationRequest, IncentiveSlipRead, IncentivePreviewResponse
 )
 
 router = APIRouter()
@@ -96,6 +96,18 @@ def batch_delete_slabs(
 
 # ─── CALCULATION ─────────────────────────────────────────────────────────────
 
+@router.post("/calculate/preview", response_model=IncentivePreviewResponse)
+def preview_incentive(
+    calc_in: IncentiveCalculationRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+) -> Any:
+    """Preview incentive calculation (10-day lock + refund logic). Does not save."""
+    from app.modules.incentives.service import IncentiveService
+    service = IncentiveService(db)
+    return service.preview_incentive(calc_in.user_id, calc_in.period, calc_in.closed_units)
+
+
 @router.post("/calculate", response_model=IncentiveSlipRead)
 def calculate_incentive(
     calc_in: IncentiveCalculationRequest,
@@ -112,9 +124,9 @@ def calculate_incentive(
 @router.get("/slips", response_model=List[IncentiveSlipRead])
 def read_all_incentive_slips(
     db: Session = Depends(get_db),
-    current_user: User = Depends(staff_checker)
+    current_user: User = Depends(admin_checker)
 ) -> Any:
-    """All incentive slips across all employees (any authenticated staff can view)."""
+    """All incentive slips across all employees (admin only)."""
     from app.modules.incentives.service import IncentiveService
     service = IncentiveService(db)
     return service.get_all_incentive_slips()
@@ -137,7 +149,9 @@ def read_incentive_slips(
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
 ) -> Any:
-    """Slips for a specific user. Any staff can view any employee's slips."""
+    """Slips for a specific user. Non-admin users can access only their own slips."""
+    if current_user.role != UserRole.ADMIN and user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
     from app.modules.incentives.service import IncentiveService
     service = IncentiveService(db)
     return service.get_user_incentive_slips(user_id)

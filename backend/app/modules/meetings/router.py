@@ -1,4 +1,5 @@
-from typing import List, Any
+from datetime import date as dt_date, datetime, time, timedelta
+from typing import List, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -29,8 +30,16 @@ pm_checker = RoleChecker([
 
 global_router = APIRouter()
 
+
+PM_SCOPED_ROLES = {UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES}
+
 @global_router.get("/", response_model=List[MeetingSummaryRead])
 def read_all_meetings(
+    client_id: Optional[int] = None,
+    meeting_type: Optional[str] = None,
+    status: Optional[str] = None,
+    start_date: Optional[dt_date] = None,
+    end_date: Optional[dt_date] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
 ) -> Any:
@@ -39,10 +48,21 @@ def read_all_meetings(
     """
     query = db.query(MeetingSummary).join(Client)
     
-    if current_user.role == UserRole.PROJECT_MANAGER:
+    if current_user.role in PM_SCOPED_ROLES:
         query = query.filter(Client.pm_id == current_user.id)
+
+    if client_id:
+        query = query.filter(MeetingSummary.client_id == client_id)
+    if meeting_type and meeting_type not in {"ALL", "all"}:
+        query = query.filter(MeetingSummary.meeting_type == meeting_type)
+    if status and status not in {"ALL", "all"}:
+        query = query.filter(MeetingSummary.status == status)
+    if start_date:
+        query = query.filter(MeetingSummary.date >= datetime.combine(start_date, time.min))
+    if end_date:
+        query = query.filter(MeetingSummary.date < datetime.combine(end_date + timedelta(days=1), time.min))
     
-    return query.all()
+    return query.order_by(MeetingSummary.date.desc()).all()
 
 @router.post("/{client_id}/meetings", response_model=MeetingSummaryRead)
 async def create_meeting(
@@ -59,7 +79,7 @@ async def create_meeting(
     if not db_client:
         raise HTTPException(status_code=404, detail="Client not found")
     
-    if current_user and current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+    if current_user and current_user.role in PM_SCOPED_ROLES and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied to this client")
 
     # Use the service to handle business logic (like Meet link generation)
@@ -87,7 +107,7 @@ def read_client_meetings(
     if not db_client:
         raise HTTPException(status_code=404, detail="Client not found")
         
-    if current_user and current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+    if current_user and current_user.role in PM_SCOPED_ROLES and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     return db.query(MeetingSummary).filter(MeetingSummary.client_id == client_id).all()
@@ -104,7 +124,7 @@ def update_meeting(
         raise HTTPException(status_code=404, detail="Meeting not found")
     
     db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
-    if current_user and current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+    if current_user and current_user.role in PM_SCOPED_ROLES and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     update_data = meeting_in.model_dump(exclude_unset=True)
@@ -141,6 +161,8 @@ def delete_meeting(
 
     if current_user and current_user.role != UserRole.ADMIN:
         db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
+        if db_client and db_client.pm_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
     db.delete(db_meeting)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -171,7 +193,7 @@ def cancel_meeting(
         raise HTTPException(status_code=404, detail="Meeting not found")
     
     db_client = db.query(Client).filter(Client.id == db_meeting.client_id).first()
-    if current_user and current_user.role == UserRole.PROJECT_MANAGER and db_client.pm_id != current_user.id:
+    if current_user and current_user.role in PM_SCOPED_ROLES and db_client.pm_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     # Business Logic: Cannot cancel a finished meeting

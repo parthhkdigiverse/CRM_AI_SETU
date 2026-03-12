@@ -401,6 +401,9 @@ class ApiClient {
     static async deleteIncentiveSlab(id) {
         return this.request(`/incentives/slabs/${id}`, { method: 'DELETE' });
     }
+    static async previewIncentive(data) {
+        return this.request('/incentives/calculate/preview', { method: 'POST', body: data });
+    }
     static async calculateIncentive(data) {
         return this.request('/incentives/calculate', { method: 'POST', body: data });
     }

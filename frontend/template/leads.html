@@ -309,6 +309,8 @@
                         </button>
                     </div>
                 </div>
+                <!-- Filter Panel Wrapper -->
+                <div id="filter-wrapper"></div>
 
                 <!-- Kanban View -->
                 <div id="kanban-view">
@@ -384,25 +386,37 @@
         </div>
     </div>
 
-    <script src="../js/api.js?v=1772780187"></script>
-    <script src="../js/ui_components.js?v=1772780187"></script>
-    <script src="../js/auth.js?v=1772780187"></script>
+    <script src="../js/utils.js?v=20260312"></script>
+    <script src="../js/api.js?v=2.3"></script>
+    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/app.js?v=2.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         requireAuth();
-        document.getElementById('sidebar').innerHTML = renderSidebar('leads');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) {
+            sidebarElement.innerHTML = renderSidebar('leads');
+        }
         injectTopHeader('Project Overview');
 
         let leadStore = {};
 
-        async function loadLeads() {
+        async function loadLeads(filters = {}) {
             try {
                 // Reset bulk selection UI
-                document.getElementById('lead-select-all').checked = false;
-                updateSelectedCount();
+                const selectAll = document.getElementById('lead-select-all');
+                if (selectAll) {
+                    selectAll.checked = false;
+                    updateSelectedCount();
+                }
 
-                const kanbanData = await window.ApiClient.request('/shops/kanban');
+                const params = new URLSearchParams();
+                if (filters.source) params.append('source', filters.source);
+                if (filters.owner) params.append('owner_id', filters.owner);
+
+                const kanbanData = await window.ApiClient.request(`/shops/kanban?${params.toString()}`);
                 let totalCount = 0;
 
                 ['NEW', 'CONTACTED', 'MEETING_SET', 'CONVERTED'].forEach(status => {
@@ -411,8 +425,9 @@
                     const leads = kanbanData[status] || [];
 
                     totalCount += leads.length;
-                    countEl.textContent = leads.length;
-
+                    if (countEl) countEl.textContent = leads.length;
+                    
+                    if (!container) return;
                     container.innerHTML = leads.map(l => {
                         leadStore[l.id] = l;
                         const sourceClass = (l.source || 'Other').toLowerCase().replace(' ', '-');
@@ -446,11 +461,13 @@
                     }
                 });
 
-                document.getElementById('total-leads-count').textContent = `${totalCount} total entries in pipeline`;
+                const totalEl = document.getElementById('total-leads-count');
+                if (totalEl) totalEl.textContent = `${totalCount} total entries in pipeline`;
 
                 // List View implementation
                 const allLeads = Object.values(kanbanData).flat();
                 const listBody = document.getElementById('leads-list-body');
+                if (!listBody) return;
                 listBody.innerHTML = allLeads.map(l => `
                     <tr class="align-middle">
                         <td><input type="checkbox" class="form-check-input lead-checkbox" value="${l.id}" onclick="updateSelectedCount()"></td>
@@ -491,9 +508,12 @@
                     ${l.status !== 'CONVERTED' ? `<button class="btn btn-success w-100" id="approve-btn-${l.id}" onclick="approvePipelineEntry(${l.id})">Approve & Start Project</button>` : ''}
                 </div>
             `;
-            document.getElementById('detail-content').innerHTML = content;
-            document.getElementById('detail-overlay').style.display = 'block';
-            document.getElementById('detail-panel').classList.add('show');
+            const detailContent = document.getElementById('detail-content');
+            const detailOverlay = document.getElementById('detail-overlay');
+            const detailPanel = document.getElementById('detail-panel');
+            if (detailContent) detailContent.innerHTML = content;
+            if (detailOverlay) detailOverlay.style.display = 'block';
+            if (detailPanel) detailPanel.classList.add('show');
         };
 
         window.approvePipelineEntry = async (id) => {
@@ -513,7 +533,8 @@
                 await loadLeads();
 
                 // Close detail panel
-                document.getElementById('detail-overlay').click();
+                const overlay = document.getElementById('detail-overlay');
+                if (overlay) overlay.click();
             } catch (err) {
                 console.error('Failed to approve entry:', err);
                 showToast(err.data?.detail || 'Failed to approve entry', 'error');
@@ -525,24 +546,40 @@
             }
         };
 
-        document.getElementById('detail-close').onclick = document.getElementById('detail-overlay').onclick = () => {
-            document.getElementById('detail-overlay').style.display = 'none';
-            document.getElementById('detail-panel').classList.remove('show');
-        };
+        const detailClose = document.getElementById('detail-close');
+        const detailOverlay = document.getElementById('detail-overlay');
+        
+        if (detailClose && detailOverlay) {
+            detailClose.onclick = detailOverlay.onclick = () => {
+                detailOverlay.style.display = 'none';
+                const detailPanel = document.getElementById('detail-panel');
+                if (detailPanel) detailPanel.classList.remove('show');
+            };
+        }
 
         // View Toggling
-        document.getElementById('toggle-kanban').onclick = function () {
-            this.classList.add('active');
-            document.getElementById('toggle-list').classList.remove('active');
-            document.getElementById('kanban-view').classList.remove('d-none');
-            document.getElementById('list-view').classList.add('d-none');
-        };
-        document.getElementById('toggle-list').onclick = function () {
-            this.classList.add('active');
-            document.getElementById('toggle-kanban').classList.remove('active');
-            document.getElementById('list-view').classList.remove('d-none');
-            document.getElementById('kanban-view').classList.add('d-none');
-        };
+        const toggleKanban = document.getElementById('toggle-kanban');
+        const toggleList = document.getElementById('toggle-list');
+        const kanbanView = document.getElementById('kanban-view');
+        const listView = document.getElementById('list-view');
+        
+        if (toggleKanban) {
+            toggleKanban.onclick = function () {
+                this.classList.add('active');
+                if (toggleList) toggleList.classList.remove('active');
+                if (kanbanView) kanbanView.classList.remove('d-none');
+                if (listView) listView.classList.add('d-none');
+            };
+        }
+        
+        if (toggleList) {
+            toggleList.onclick = function () {
+                this.classList.add('active');
+                if (toggleKanban) toggleKanban.classList.remove('active');
+                if (listView) listView.classList.remove('d-none');
+                if (kanbanView) kanbanView.classList.add('d-none');
+            };
+        }
 
         function toggleAllLeads(master) {
             document.querySelectorAll('.lead-checkbox').forEach(cb => cb.checked = master.checked);
@@ -557,7 +594,10 @@
                 onDelete: () => batchDeleteLeads(),
                 onCancel: () => {
                     document.querySelectorAll('.lead-checkbox').forEach(cb => cb.checked = false);
-                    document.getElementById('lead-select-all').checked = false;
+                    const selectAllEl = document.getElementById('lead-select-all');
+                    if (selectAllEl) {
+                        selectAllEl.checked = false;
+                    }
                     updateSelectedCount();
                 }
             });
@@ -576,6 +616,7 @@
             if (!confirm(`Permanently delete ${selectedIds.length} lead entries?`)) return;
 
             const btn = document.getElementById('batch-delete-btn');
+            if (!btn) return;
             const originalHtml = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
@@ -595,7 +636,41 @@
             }
         }
 
-        loadLeads();
+        // Initialize Filters
+        async function initFilters() {
+            try {
+                const usersRes = await apiGet('/users/');
+                const users = Array.isArray(usersRes) ? usersRes : (usersRes.items || []);
+
+                renderFilterPanel({
+                    containerId: 'filter-wrapper',
+                    filters: [
+                        { type: 'select', label: 'Source', id: 'filter-source', options: [
+                            { value: 'ALL', label: 'All Sources' },
+                            { value: 'Website', label: 'Website' },
+                            { value: 'Cold Call', label: 'Cold Call' },
+                            { value: 'Social', label: 'Social' },
+                            { value: 'Referral', label: 'Referral' },
+                            { value: 'Other', label: 'Other' }
+                        ]},
+                        { type: 'select', label: 'Owner', id: 'filter-owner', options: [{ value: 'ALL', label: 'All Owners' }, ...users.map(u => ({ value: u.id, label: u.name || u.email }))] }
+                    ],
+                    onApply: (data) => loadLeads({
+                        source: data['source'],
+                        owner: data['owner']
+                    }),
+                    onReset: () => loadLeads()
+                });
+            } catch (err) {
+                console.error("Filter Init Failed", err);
+            }
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            initFilters();
+            loadLeads();
+        });
     </script>
 </body>
 

@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, UploadFile, Request
-from datetime import datetime, UTC
+from datetime import date as dt_date, datetime, UTC, time, timedelta
 
 from app.modules.visits.models import Visit, VisitStatus
 from app.modules.visits.schemas import VisitCreate, VisitUpdate
@@ -24,13 +24,21 @@ class VisitService:
     def get_visit(self, visit_id: int):
         return self.db.query(Visit).filter(Visit.id == visit_id).first()
 
-    def get_visits(self, skip: int = 0, limit: int = 100, user_id: int = None, shop_id: int = None):
+    def get_visits(self, skip: int = 0, limit: int = 100, user_id: int = None, shop_id: int = None, area_id: int = None, status: str = None, start_date: dt_date = None, end_date: dt_date = None):
         try:
-            query = self.db.query(Visit)
+            query = self.db.query(Visit).join(Shop)
             if user_id:
                 query = query.filter(Visit.user_id == user_id)
             if shop_id:
                 query = query.filter(Visit.shop_id == shop_id)
+            if area_id:
+                query = query.filter(Shop.area_id == area_id)
+            if status and status not in {"ALL", "all"}:
+                query = query.filter(Visit.status == status)
+            if start_date:
+                query = query.filter(Visit.visit_date >= datetime.combine(start_date, time.min))
+            if end_date:
+                query = query.filter(Visit.visit_date < datetime.combine(end_date + timedelta(days=1), time.min))
             return query.order_by(Visit.visit_date.desc()).offset(skip).limit(limit).all()
         except Exception as e:
             print(f"Error fetching visits: {e}")

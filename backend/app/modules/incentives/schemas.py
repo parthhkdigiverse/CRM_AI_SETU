@@ -38,10 +38,29 @@ class IncentiveSlipRead(BaseModel):
     percentage: float
     applied_slab: Optional[float]
     amount_per_unit: Optional[float]
+    slab_bonus_amount: Optional[float] = 0.0
     total_incentive: float
     generated_at: datetime
     user_name: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class IncentivePreviewResponse(BaseModel):
+    user_id: int
+    user_name: str
+    period: str
+    target: int
+    confirmed_tasks: int
+    pending_tasks: int
+    refunded_tasks: int
+    total_tasks_in_period: int
+    slab_range: Optional[str]
+    incentive_per_task: float
+    base_incentive: float
+    slab_bonus: float
+    total_incentive: float
+    percentage: float
+    slip_exists: bool
 

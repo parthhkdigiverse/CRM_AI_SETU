@@ -28,6 +28,8 @@
                         <i class="bi bi-plus-lg me-1"></i>Report Issue
                     </button>
                 </div>
+                <!-- Filter Panel Wrapper -->
+                <div id="filter-wrapper"></div>
                 <div class="card shadow-sm">
                     <div class="card-body p-0">
                         <table class="table align-middle mb-0">
@@ -140,13 +142,18 @@
         </div>
     </div>
 
-    <script src="../js/api.js?v=1772780187"></script>
-    <script src="../js/ui_components.js?v=1772780187"></script>
+    <script src="../js/utils.js?v=2.3"></script>
+    <script src="../js/api.js?v=2.3"></script>
     <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/app.js?v=2.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
-        document.getElementById('sidebar').innerHTML = renderSidebar('issues');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) {
+            sidebarElement.innerHTML = renderSidebar('issues');
+        }
         injectTopHeader('Issues');
 
         // Custom soft styling logic
@@ -168,8 +175,15 @@
             LOW: `<i class="bi bi-exclamation-triangle text-secondary me-2"></i>`
         };
 
-        async function loadIssues() {
-            const issues = await apiGet('/issues/?limit=200');
+        async function loadIssues(filters = {}) {
+            const params = new URLSearchParams();
+            params.append('limit', '200');
+            if (filters.severity) params.append('severity', filters.severity);
+            if (filters.status) params.append('status', filters.status);
+            if (filters.client) params.append('client_id', filters.client);
+            if (filters.pm) params.append('pm_id', filters.pm);
+
+            const issues = await apiGet(`/issues/?${params.toString()}`);
             const open = issues.filter(i => i.status === 'PENDING').length;
             document.getElementById('issue-count').textContent = `${open} unresolved · ${issues.length} total issues`;
             if (window.checkHighPriorityIssues) window.checkHighPriorityIssues();
@@ -375,7 +389,50 @@
             }
         }
 
+        // Initialize Filters
+        async function initFilters() {
+            try {
+                const [clients, usersRes] = await Promise.all([
+                    apiGet('/clients/'),
+                    apiGet('/users/')
+                ]);
+                const users = Array.isArray(usersRes) ? usersRes : (usersRes.items || []);
+                const pms = users.filter(u => u.role === 'PROJECT_MANAGER' || u.role === 'PROJECT_MANAGER_AND_SALES' || u.role === 'ADMIN');
+
+                renderFilterPanel({
+                    containerId: 'filter-wrapper',
+                    filters: [
+                        { type: 'select', label: 'Severity', id: 'filter-sev', options: [
+                            { value: 'ALL', label: 'All Severities' },
+                            { value: 'HIGH', label: 'High' },
+                            { value: 'MEDIUM', label: 'Medium' },
+                            { value: 'LOW', label: 'Low' }
+                        ]},
+                        { type: 'select', label: 'Status', id: 'filter-status', options: [
+                            { value: 'ALL', label: 'All Status' },
+                            { value: 'PENDING', label: 'Pending' },
+                            { value: 'SOLVED', label: 'Solved' },
+                            { value: 'COMPLETED', label: 'Completed' },
+                            { value: 'CANCEL', label: 'Cancelled' }
+                        ]},
+                        { type: 'select', label: 'Client', id: 'filter-client', options: [{ value: 'ALL', label: 'All Clients' }, ...clients.map(c => ({ value: c.id, label: c.name }))] },
+                        { type: 'select', label: 'PM', id: 'filter-pm', options: [{ value: 'ALL', label: 'All PMs' }, ...pms.map(u => ({ value: u.id, label: u.name || u.email }))] }
+                    ],
+                    onApply: (data) => loadIssues({
+                        severity: data['sev'],
+                        status: data['status'],
+                        client: data['client'],
+                        pm: data['pm']
+                    }),
+                    onReset: () => loadIssues()
+                });
+            } catch (err) {
+                console.error("Filter Init Failed", err);
+            }
+        }
+
         loadIssues().then(() => {
+            initFilters();
             const urlParams = new URLSearchParams(window.location.search);
             const highlightId = urlParams.get('id');
             if (highlightId) {

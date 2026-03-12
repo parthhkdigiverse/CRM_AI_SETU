@@ -1,3 +1,4 @@
+from datetime import date as dt_date
 from typing import List, Any, Optional
 from fastapi import APIRouter, Depends, status, Request, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
@@ -12,7 +13,7 @@ router = APIRouter()
 
 # Role Access
 create_access = RoleChecker([UserRole.SALES, UserRole.TELESALES, UserRole.ADMIN])
-read_access = RoleChecker([UserRole.SALES, UserRole.TELESALES, UserRole.ADMIN, UserRole.PROJECT_MANAGER])
+read_access = RoleChecker([UserRole.SALES, UserRole.TELESALES, UserRole.ADMIN, UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES])
 
 @router.post("/", response_model=VisitRead, status_code=status.HTTP_201_CREATED)
 async def create_visit(
@@ -60,16 +61,44 @@ def read_visits(
     skip: int = 0,
     limit: int = 100,
     shop_id: Optional[int] = None,
-    user_id: Optional[int] = None,
+    user_id: Optional[str] = None,
+    area_id: Optional[str] = None,
+    status: Optional[str] = None,
+    start_date: Optional[dt_date] = None,
+    end_date: Optional[dt_date] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(read_access) 
 ) -> Any:
     # If the user is Sales or Telesales, they can only view their own visits.
     if current_user and current_user.role in [UserRole.SALES, UserRole.TELESALES]:
-        user_id = current_user.id
+        resolved_user_id = current_user.id
+    elif user_id and user_id not in {"ALL", "all"}:
+        try:
+            resolved_user_id = int(user_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid user_id")
+    else:
+        resolved_user_id = None
+
+    if area_id and area_id not in {"ALL", "all"}:
+        try:
+            resolved_area_id = int(area_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid area_id")
+    else:
+        resolved_area_id = None
         
     service = VisitService(db)
-    return service.get_visits(skip, limit, user_id=user_id, shop_id=shop_id)
+    return service.get_visits(
+        skip,
+        limit,
+        user_id=resolved_user_id,
+        shop_id=shop_id,
+        area_id=resolved_area_id,
+        status=status,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
 @router.patch("/{visit_id}", response_model=VisitRead)
 async def update_visit(

@@ -33,44 +33,51 @@
                     </div>
                 </div>
 
-                <!-- Filter Toggle Toolbar -->
-                <div class="d-flex align-items-center justify-content-between mb-2" id="filter-toolbar">
-                    <div class="d-flex align-items-center gap-2">
-                        <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-2" id="filter-toggle-btn" onclick="toggleFilters()" style="border-radius:8px;">
-                            <i class="bi bi-funnel"></i>
-                            <span>Filters</span>
-                            <i class="bi bi-chevron-down" id="filter-chevron" style="font-size:0.75rem; transition:transform 0.2s;"></i>
-                        </button>
-                        <span class="text-muted small" id="active-filter-badge" style="display:none;"></span>
-                    </div>
-                    <div class="text-muted small" id="slip-count"></div>
-                </div>
-
-                <!-- Collapsible Filter Panel (hidden by default) -->
-                <div id="filter-bar" style="display:none;">
-                    <div class="grid-card p-3 mb-3" style="border:1.5px solid #e0e7ff; background:#f8f9ff;">
-                        <div class="row g-3 align-items-end">
-                            <div class="col-sm-auto col-12">
-                                <label class="form-label fw-semibold small mb-1 text-muted"><i class="bi bi-person me-1"></i>Employee</label>
-                                <select id="slip-user-filter" class="form-select form-select-sm" style="min-width:200px;" onchange="loadSlips(); updateFilterBadge();">
-                                    <option value="">All Employees</option>
-                                </select>
+                <div id="filter-panel-wrapper">
+                    <div class="filter-panel">
+                        <div class="filter-panel-head" id="salary-filter-panel-toggle">
+                            <div class="filter-panel-head-main">
+                                <div class="filter-panel-head-left">
+                                    <i class="bi bi-sliders2"></i>
+                                    Filters
+                                </div>
+                                <div class="filter-active-pills" id="salary-filter-pills"></div>
                             </div>
-                            <div class="col-sm-auto col-12">
-                                <label class="form-label fw-semibold small mb-1 text-muted"><i class="bi bi-circle-half me-1"></i>Status</label>
-                                <select id="slip-status-filter" class="form-select form-select-sm" style="min-width:150px;" onchange="loadSlips(); updateFilterBadge();">
-                                    <option value="">All Statuses</option>
-                                    <option value="DRAFT">Draft</option>
-                                    <option value="CONFIRMED">Paid</option>
-                                </select>
+                            <div class="filter-panel-head-meta">
+                                <div class="text-muted small" id="slip-count"></div>
+                                <button class="filter-toggle-btn" id="salary-filter-toggle-btn" type="button" onclick="toggleFilters(); event.stopPropagation();">
+                                    <span id="salary-filter-toggle-label">Show</span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
                             </div>
-                            <div class="col-sm-auto col-12">
-                                <label class="form-label fw-semibold small mb-1 text-muted"><i class="bi bi-calendar3 me-1"></i>Month</label>
-                                <input type="month" id="slip-month-filter" class="form-control form-control-sm" style="min-width:160px;" onchange="loadSlips(); updateFilterBadge();">
+                        </div>
+                        <div class="filter-panel-body" id="salary-filter-panel-body">
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label>Employee</label>
+                                    <select id="slip-user-filter" class="form-select">
+                                        <option value="">All Employees</option>
+                                    </select>
+                                </div>
+                                <div class="filter-field">
+                                    <label>Status</label>
+                                    <select id="slip-status-filter" class="form-select">
+                                        <option value="">All Statuses</option>
+                                        <option value="DRAFT">Draft</option>
+                                        <option value="CONFIRMED">Paid</option>
+                                    </select>
+                                </div>
+                                <div class="filter-field">
+                                    <label>Month</label>
+                                    <input type="month" id="slip-month-filter" class="form-control">
+                                </div>
                             </div>
-                            <div class="col-sm-auto col-12">
-                                <button class="btn btn-sm btn-light border d-flex align-items-center gap-1" onclick="clearFilters()" style="border-radius:8px;">
-                                    <i class="bi bi-x-circle"></i>Clear All
+                            <div class="filter-actions">
+                                <button class="btn-filter-reset" type="button" onclick="clearFilters()">
+                                    <i class="bi bi-x-circle"></i>Clear
+                                </button>
+                                <button class="btn-filter-apply" type="button" onclick="loadSlips()">
+                                    <i class="bi bi-check2"></i>Apply Filters
                                 </button>
                             </div>
                         </div>
@@ -220,13 +227,18 @@
         </div>
     </div>
 
+    <script src="../js/utils.js?v=2.3"></script>
+    <script src="../js/api.js?v=2.3"></script>
+    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/app.js?v=2.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/api.js?v=2.9"></script>
-    <script src="../js/ui_components.js?v=1772780187"></script>
-    <script src="../js/auth.js?v=2.6"></script>
     <script>
         requireAuth();
-        document.getElementById('sidebar').innerHTML = renderSidebar('salary');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) {
+            sidebarElement.innerHTML = renderSidebar('salary');
+        }
         injectTopHeader('Salary');
 
         const user = getUser();
@@ -238,34 +250,51 @@
             aa.classList.add('d-flex');
         } else {
             // Non-admin: hide filter toolbar entirely
-            const ft = document.getElementById('filter-toolbar');
+            const ft = document.getElementById('filter-panel-wrapper');
             if (ft) ft.style.display = 'none';
         }
 
+        const salaryFilterPanelBody = document.getElementById('salary-filter-panel-body');
+        const salaryFilterToggleBtn = document.getElementById('salary-filter-toggle-btn');
+        const salaryFilterToggleLabel = document.getElementById('salary-filter-toggle-label');
+
+        document.getElementById('salary-filter-panel-toggle').addEventListener('click', toggleFilters);
+        ['slip-user-filter', 'slip-status-filter', 'slip-month-filter'].forEach(id => {
+            document.getElementById(id).addEventListener('change', updateFilterBadge);
+        });
+
         function toggleFilters() {
-            const panel = document.getElementById('filter-bar');
-            const chevron = document.getElementById('filter-chevron');
-            const btn = document.getElementById('filter-toggle-btn');
-            const isOpen = panel.style.display !== 'none';
-            panel.style.display = isOpen ? 'none' : 'block';
-            chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
-            btn.classList.toggle('btn-outline-secondary', isOpen);
-            btn.classList.toggle('btn-secondary', !isOpen);
+            const isOpen = salaryFilterPanelBody.classList.toggle('open');
+            salaryFilterToggleBtn.classList.toggle('open', isOpen);
+            salaryFilterToggleLabel.textContent = isOpen ? 'Hide' : 'Show';
         }
 
         function updateFilterBadge() {
-            const badge = document.getElementById('active-filter-badge');
-            if (!badge) return;
-            const u = document.getElementById('slip-user-filter')?.value;
-            const s = document.getElementById('slip-status-filter')?.value;
-            const m = document.getElementById('slip-month-filter')?.value;
-            const count = [u, s, m].filter(Boolean).length;
-            if (count > 0) {
-                badge.textContent = count + ' filter' + (count > 1 ? 's' : '') + ' active';
-                badge.style.display = 'inline';
-            } else {
-                badge.style.display = 'none';
-            }
+            const pills = document.getElementById('salary-filter-pills');
+            if (!pills) return;
+            const user = document.getElementById('slip-user-filter');
+            const status = document.getElementById('slip-status-filter');
+            const userValue = user?.value;
+            const statusValue = status?.value;
+            const monthValue = document.getElementById('slip-month-filter')?.value;
+            const items = [];
+
+            if (userValue) items.push({ label: user.options[user.selectedIndex].text, inputId: 'slip-user-filter' });
+            if (statusValue) items.push({ label: status.options[status.selectedIndex].text, inputId: 'slip-status-filter' });
+            if (monthValue) items.push({ label: monthValue, inputId: 'slip-month-filter' });
+
+            pills.innerHTML = items.map(item => '<span class="filter-pill">' + item.label +
+                '<button class="filter-pill-remove" type="button" data-input="' + item.inputId + '" title="Remove">&times;</button></span>'
+            ).join('');
+
+            pills.querySelectorAll('.filter-pill-remove').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    document.getElementById(btn.dataset.input).value = '';
+                    updateFilterBadge();
+                    loadSlips();
+                });
+            });
         }
 
         const INR = v => 'Rs. ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -540,6 +569,7 @@
             loadSlips();
         }
 
+        updateFilterBadge();
         loadSlips();
     </script>
 </body>

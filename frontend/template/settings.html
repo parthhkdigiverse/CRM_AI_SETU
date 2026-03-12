@@ -445,6 +445,52 @@
                         <div class="settings-section" id="incentives-config" style="display:none;">
                             <div class="settings-section-title"><i class="bi bi-trophy text-warning"></i> Incentive Strategy <span class="ms-auto"><a href="incentives.html" class="text-muted" style="font-size:0.75rem; text-decoration:none;"><i class="bi bi-arrow-up-right-square"></i> View Incentives</a></span></div>
 
+                            <div class="settings-section-title"><i class="bi bi-shield-check text-primary"></i> Incentive Eligibility</div>
+                            <p class="text-muted mb-3" style="font-size:0.8rem;">Role action applies to all current users in the selected role. Use user selection only when you want an individual override.</p>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-5">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">By Role</label>
+                                    <select id="elig-role" class="form-select form-select-sm">
+                                        <option value="SALES">Sales</option>
+                                        <option value="TELESALES">Telesales</option>
+                                        <option value="PROJECT_MANAGER">Project Manager</option>
+                                        <option value="PROJECT_MANAGER_AND_SALES">PM + Sales</option>
+                                        <option value="ADMIN">Admin</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">Action</label>
+                                    <select id="elig-role-enabled" class="form-select form-select-sm">
+                                        <option value="true">Enable Incentive</option>
+                                        <option value="false">Disable Incentive</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <button class="btn-save-sm w-100" onclick="applyRoleEligibility()"><i class="bi bi-gear me-1"></i> Apply to All</button>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-2">
+                                <div class="col-md-6">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">By User</label>
+                                    <select id="elig-user" class="form-select form-select-sm">
+                                        <option value="">Loading users...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">Eligibility</label>
+                                    <select id="elig-user-enabled" class="form-select form-select-sm">
+                                        <option value="true">Eligible</option>
+                                        <option value="false">Not Eligible</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <button class="btn-save-sm w-100" onclick="saveUserEligibility()"><i class="bi bi-check2 me-1"></i> Save User</button>
+                                </div>
+                            </div>
+
+                            <div id="eligibility-msg" class="small text-muted mb-3"></div>
+
                             <div id="slabs-settings-list">
                                 <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-muted"></div></div>
                             </div>
@@ -649,14 +695,18 @@
         <span id="toast-text">Saved!</span>
     </div>
 
-    <script src="../js/utils.js"></script>
-    <script src="../js/api.js"></script>
-    <script src="../js/ui_components.js"></script>
-    <script src="../js/auth.js"></script>
+    <script src="../js/utils.js?v=2.3"></script>
+    <script src="../js/api.js?v=2.3"></script>
+    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/app.js?v=2.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
-        document.getElementById('sidebar').innerHTML = renderSidebar('settings');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) {
+            sidebarElement.innerHTML = renderSidebar('settings');
+        }
         injectTopHeader('Settings');
 
         // ── Load saved settings
@@ -772,6 +822,7 @@
                 document.getElementById('invoice-nav-link').style.display = 'flex';
                 document.getElementById('invoice-settings').style.display = 'block';
                 loadSlabsSettings();
+                loadIncentiveEligibilityUsers();
                 loadPayslipContact();
                 loadInvoiceSettings();
 
@@ -826,6 +877,67 @@
                 </div>`;
             } catch (e) {
                 list.innerHTML = `<p class="text-danger small mb-0">Failed to load slabs: ${e.message || 'Error'}</p>`;
+            }
+        }
+
+        let _eligUsers = [];
+        async function loadIncentiveEligibilityUsers() {
+            const sel = document.getElementById('elig-user');
+            const msg = document.getElementById('eligibility-msg');
+            if (!sel) return;
+            try {
+                const users = await apiGet('/users/');
+                _eligUsers = (users || []).filter(u => u.role !== 'CLIENT');
+                sel.innerHTML = '<option value="">Select user</option>' + _eligUsers.map(u => {
+                    const label = `${u.name || u.email} (${u.role})`;
+                    return `<option value="${u.id}" data-enabled="${u.incentive_enabled !== false}">${label}</option>`;
+                }).join('');
+                sel.addEventListener('change', function() {
+                    const opt = sel.options[sel.selectedIndex];
+                    if (!opt || !opt.value) return;
+                    document.getElementById('elig-user-enabled').value = String(opt.dataset.enabled) === 'true' ? 'true' : 'false';
+                });
+                msg.textContent = `${_eligUsers.length} users loaded for incentive eligibility control.`;
+            } catch (e) {
+                msg.textContent = 'Failed to load users for eligibility setup.';
+                msg.className = 'small text-danger mb-3';
+            }
+        }
+
+        async function applyRoleEligibility() {
+            const role = document.getElementById('elig-role')?.value;
+            const enabled = document.getElementById('elig-role-enabled')?.value === 'true';
+            if (!role) {
+                showToast('Select a role', true);
+                return;
+            }
+            try {
+                const res = await apiPatch('/users/incentive-eligibility/by-role', { role, enabled });
+                const count = res?.updated ?? 0;
+                document.getElementById('eligibility-msg').textContent = `Updated ${count} users in role ${role}.`;
+                document.getElementById('eligibility-msg').className = 'small text-success mb-3';
+                await loadIncentiveEligibilityUsers();
+                showToast('Role eligibility updated');
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to update role eligibility', true);
+            }
+        }
+
+        async function saveUserEligibility() {
+            const userId = document.getElementById('elig-user')?.value;
+            const enabled = document.getElementById('elig-user-enabled')?.value === 'true';
+            if (!userId) {
+                showToast('Select a user', true);
+                return;
+            }
+            try {
+                await apiPatch(`/users/${userId}/incentive-eligibility`, { enabled });
+                document.getElementById('eligibility-msg').textContent = 'User incentive eligibility saved.';
+                document.getElementById('eligibility-msg').className = 'small text-success mb-3';
+                await loadIncentiveEligibilityUsers();
+                showToast('User eligibility updated');
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to update user eligibility', true);
             }
         }
 
