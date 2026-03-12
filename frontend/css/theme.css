@@ -256,6 +256,21 @@ h6 {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     margin-bottom: 24px;
     width: 100%;
+.btn-danger {
+    background: var(--danger);
+    border-color: var(--danger);
+}
+
+.btn-warning {
+    background: var(--warning);
+    border-color: var(--warning);
+    color: #fff;
+}
+
+.btn-sm {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8rem;
+    border-radius: 7px;
 }
 
 .page-content {
@@ -274,6 +289,10 @@ h6 {
     justify-content: center;
     width: 100%;
     max-width: 480px;
+.btn-lg {
+    padding: 0.65rem 1.4rem;
+    font-size: 0.95rem;
+    border-radius: 11px;
 }
 
 .search-bar {
