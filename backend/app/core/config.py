@@ -16,6 +16,18 @@ class Settings(BaseSettings):
     encryption_key: str = "default_placeholder_if_missing"
     google_api_key: str = "default_placeholder_if_missing"
 
+    # WhatsApp Cloud API (Meta) — uncomment gateway code in billing/service.py to activate
+    WHATSAPP_TOKEN: str = ""
+    WHATSAPP_PHONE_NUMBER_ID: str = ""
+
+    # PhonePe Payment Gateway — uncomment gateway code in billing/service.py to activate
+    # Test credentials (switch to production keys before go-live)
+    PHONEPE_MERCHANT_ID: str = "M22QDSISBR7LX_2511271619"
+    PHONEPE_SALT_KEY: str = "MTQyYmNmZGItZDFiNC00NzFjLWEzYzgtMWM0YjkxMTNjNmVm"
+    PHONEPE_SALT_INDEX: str = "1"
+    PHONEPE_ENV: str = "sandbox"          # change to "production" for live
+    PHONEPE_CALLBACK_BASE_URL: str = ""   # e.g. https://yourdomain.com (must be public)
+
     # SMTP Settings
     SMTP_SERVER: str = "smtp.gmail.com"
     SMTP_PORT: int = 587

@@ -12,7 +12,8 @@ from app.modules.incentives.models import (
 )
 from app.modules.incentives.schemas import (
     IncentiveSlabCreate, IncentiveSlabRead, IncentiveSlabUpdate,
-    IncentiveCalculationRequest, IncentiveSlipRead, IncentivePreviewResponse
+    IncentiveCalculationRequest, IncentiveSlipRead, IncentivePreviewResponse,
+    IncentiveBulkCalculationRequest, IncentiveBulkCalculationResponse
 )
 
 router = APIRouter()
@@ -118,6 +119,17 @@ def calculate_incentive(
     from app.modules.incentives.service import IncentiveService
     service = IncentiveService(db)
     return service.calculate_incentive(calc_in)
+
+
+@router.post("/calculate/bulk", response_model=IncentiveBulkCalculationResponse)
+def calculate_incentive_bulk(
+    calc_in: IncentiveBulkCalculationRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+) -> Any:
+    from app.modules.incentives.service import IncentiveService
+    service = IncentiveService(db)
+    return service.calculate_incentive_bulk(calc_in.period)
 
 
 # ─── SLIPS ───────────────────────────────────────────────────────────────────

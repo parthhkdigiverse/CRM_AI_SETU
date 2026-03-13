@@ -305,15 +305,23 @@
         const leaveFilterToggleBtn = document.getElementById('leave-filter-toggle-btn');
         const leaveFilterToggleLabel = document.getElementById('leave-filter-toggle-label');
 
+        function setLeaveFilterPanelState(isOpen) {
+            leaveFilterPanel.classList.toggle('open', isOpen);
+            leaveFilterToggleBtn.classList.toggle('open', isOpen);
+            leaveFilterToggleLabel.textContent = isOpen ? 'Hide' : 'Show';
+        }
+
+        // Keep filters collapsed by default for better first-load UX.
+        setLeaveFilterPanelState(false);
+
         document.getElementById('leave-filter-panel-toggle').addEventListener('click', toggleLeaveFilters);
         ['leave-user-filter', 'leave-status-filter', 'leave-type-filter', 'leave-from-filter', 'leave-to-filter'].forEach(id => {
             document.getElementById(id).addEventListener('change', updateLeaveFilterBadge);
         });
 
         function toggleLeaveFilters() {
-            const isOpen = leaveFilterPanel.classList.toggle('open');
-            leaveFilterToggleBtn.classList.toggle('open', isOpen);
-            leaveFilterToggleLabel.textContent = isOpen ? 'Hide' : 'Show';
+            const isOpen = !leaveFilterPanel.classList.contains('open');
+            setLeaveFilterPanelState(isOpen);
         }
 
         function updateLeaveFilterBadge() {

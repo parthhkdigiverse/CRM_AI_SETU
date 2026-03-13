@@ -29,6 +29,21 @@ class IncentiveCalculationRequest(BaseModel):
     user_id: int
     period: str  # YYYY-MM
     closed_units: Optional[int] = None
+    force_recalculate: bool = False
+
+
+class IncentiveBulkCalculationRequest(BaseModel):
+    period: str  # YYYY-MM
+
+
+class IncentiveBulkCalculationResponse(BaseModel):
+    period: str
+    processed_users: int
+    created_slips: int
+    skipped_existing: int
+    skipped_disabled: int
+    failed_users: int
+    failures: list[dict]
 
 class IncentiveSlipRead(BaseModel):
     id: int

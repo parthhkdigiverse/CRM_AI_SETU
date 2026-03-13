@@ -381,7 +381,14 @@
                 loadEmployees();
             } catch (err) {
                 console.error("Edit failed", err);
-                showToast(err.data?.detail || err.message || 'Failed to update employee', 'error');
+                // Handle specific duplicate employee code error
+                let errMsg = 'Failed to update employee';
+                if (err.data && err.data.detail) {
+                    errMsg = err.data.detail;
+                } else if (err.message) {
+                    errMsg = err.message;
+                }
+                showToast(errMsg, 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = 'Save Changes';

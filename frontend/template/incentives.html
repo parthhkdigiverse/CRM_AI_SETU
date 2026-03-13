@@ -254,6 +254,9 @@
                         <p class="text-muted mb-0 small">Manage slabs and employee incentive slips.</p>
                     </div>
                     <div id="admin-header-actions" style="display:none;">
+                        <button class="btn btn-outline-primary shadow-sm me-2" data-calc-all-btn onclick="calcAllIncentives()">
+                            <i class="bi bi-people-fill me-1"></i>Calculate All Users
+                        </button>
                         <button class="btn btn-primary shadow-sm" onclick="openCalcModal()">
                             <i class="bi bi-lightning-charge-fill me-1"></i>Calculate Incentive
                         </button>
@@ -621,11 +624,55 @@
             ApiClient.getEmployees().then(emps => {
                 const filterEl = document.getElementById('slip-user-filter');
                 const calcEl = document.getElementById('calc-user');
-                const filterOpts = '<option value="">All Employees</option>' + emps.map(e => `<option value="${e.id}">${e.name || ('Employee #' + e.id)}</option>`).join('');
-                const calcOpts = '<option value="">-- Select Employee --</option>' + emps.map(e => `<option value="${e.id}">${e.name || ('Employee #' + e.id)}</option>`).join('');
+                const incentiveUsers = (emps || []).filter(e => {
+                    const role = String(e.role || '').toUpperCase();
+                    if (role === 'ADMIN' || role === 'CLIENT') return false;
+                    if (e.incentive_enabled === false) return false;
+                    return true;
+                });
+                const filterOpts = '<option value="">All Employees</option>' + incentiveUsers.map(e => `<option value="${e.id}">${e.name || ('Employee #' + e.id)}</option>`).join('');
+                const calcOpts = '<option value="">-- Select Employee --</option>' + incentiveUsers.map(e => `<option value="${e.id}">${e.name || ('Employee #' + e.id)}</option>`).join('');
                 if (filterEl) filterEl.innerHTML = filterOpts;
                 if (calcEl) calcEl.innerHTML = calcOpts;
             }).catch(() => {});
+        }
+
+        function getDefaultBulkPeriod() {
+            const monthFilter = document.getElementById('slip-period-filter');
+            if (monthFilter && monthFilter.value) return monthFilter.value;
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        async function calcAllIncentives() {
+            if (!isAdmin) return;
+
+            const period = prompt('Enter period (YYYY-MM) for bulk incentive generation:', getDefaultBulkPeriod());
+            if (!period) return;
+
+            if (!/^\d{4}-\d{2}$/.test(period)) {
+                showToast('Enter a valid period in YYYY-MM format', 'error');
+                return;
+            }
+
+            const buttons = document.querySelectorAll('[data-calc-all-btn]');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Calculating...';
+            });
+
+            try {
+                const res = await ApiClient.calculateIncentiveBulk({ period });
+                await loadSlips();
+                showToast(`Bulk done: ${res.created_slips} created, ${res.skipped_existing} existing, ${res.failed_users} failed`, 'success');
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Bulk calculation failed', 'error');
+            } finally {
+                buttons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-people-fill me-1"></i>Calculate All Users';
+                });
+            }
         }
 
         // Toggle add slab form
@@ -796,7 +843,9 @@
                     const name = s.user_name || ('Employee #' + s.user_id);
                     const perTask = Number(s.amount_per_unit || 0);
                     const slabBonus = Number(s.slab_bonus_amount || 0);
-                    const slabLabel = s.applied_slab || (Number(s.achieved || 0) > 0 ? `${s.achieved} tasks` : 'No slab');
+                    const rawAppliedSlab = s.applied_slab == null ? '' : String(s.applied_slab).trim();
+                    const hasValidSlab = rawAppliedSlab !== '' && rawAppliedSlab !== '0' && rawAppliedSlab !== '0.0' && rawAppliedSlab.toLowerCase() !== 'none';
+                    const slabLabel = hasValidSlab ? rawAppliedSlab : 'No slab matched';
                     return `<tr>
                         <td class="ps-3 slip-employee-cell">
                             <div class="d-flex align-items-center gap-2">
@@ -884,9 +933,7 @@
                 await ApiClient.calculateIncentive({ user_id: parseInt(userId), period });
                 closeCalcModal();
                 showToast('Incentive slip saved!', 'success');
-                const userFilterEl = document.getElementById('slip-user-filter');
-                if (userFilterEl) userFilterEl.value = userId;
-                loadSlips();
+                await loadSlips();
             } catch (e) {
                 showToast(e.data?.detail || e.message || 'Failed to save slip', 'error');
             } finally {

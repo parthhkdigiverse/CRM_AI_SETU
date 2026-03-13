@@ -46,6 +46,20 @@ def init_db():
             cols = [c['name'] for c in inspector.get_columns('incentive_slips')]
             if 'amount_per_unit' not in cols:
                 conn.execute(text("ALTER TABLE incentive_slips ADD COLUMN amount_per_unit FLOAT DEFAULT 0.0"))
+
+        # 3. bills (invoice workflow extensions)
+        if inspector.has_table("bills"):
+            cols = [c['name'] for c in inspector.get_columns('bills')]
+            if 'payment_type' not in cols:
+                conn.execute(text("ALTER TABLE bills ADD COLUMN payment_type VARCHAR DEFAULT 'PERSONAL_ACCOUNT'"))
+            if 'gst_type' not in cols:
+                conn.execute(text("ALTER TABLE bills ADD COLUMN gst_type VARCHAR DEFAULT 'WITH_GST'"))
+            if 'invoice_series' not in cols:
+                conn.execute(text("ALTER TABLE bills ADD COLUMN invoice_series VARCHAR DEFAULT 'INV'"))
+            if 'invoice_sequence' not in cols:
+                conn.execute(text("ALTER TABLE bills ADD COLUMN invoice_sequence INTEGER DEFAULT 1"))
+            if 'requires_qr' not in cols:
+                conn.execute(text("ALTER TABLE bills ADD COLUMN requires_qr BOOLEAN DEFAULT TRUE"))
         
         conn.commit()
 

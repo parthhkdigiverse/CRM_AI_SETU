@@ -125,7 +125,7 @@
             <div class="page-header d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="page-section-title">Billing &amp; Invoices</h2>
-                    <p class="text-muted mb-0 small">Create professional invoices, verify &amp; send via WhatsApp to clients.</p>
+                    <p class="text-muted mb-0 small">Create client payment invoices with payment mode, GST type, verification and WhatsApp dispatch workflow.</p>
                 </div>
                 <button class="btn btn-primary d-flex align-items-center gap-2" onclick="openCreateModal()">
                     <i class="bi bi-plus-lg"></i> New Invoice
@@ -186,11 +186,23 @@
                         <span class="filter-tab" data-filter="SENT">Sent</span>
                         <span class="filter-tab" data-filter="DRAFT">Draft</span>
                     </div>
-                    <div class="position-relative" style="min-width:200px;max-width:260px;">
-                        <i class="bi bi-search position-absolute" style="left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;"></i>
-                        <input type="text" id="inv-search" placeholder="Search invoice..." class="field-input"
-                            style="padding-left:30px;width:100%;height:36px;"
-                            oninput="renderTable()">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <select id="payment-type-filter" class="field-input" style="width:180px;height:36px;padding:6px 10px;">
+                            <option value="ALL">All Payment Types</option>
+                            <option value="BUSINESS_ACCOUNT">Business Bank Account</option>
+                            <option value="PERSONAL_ACCOUNT">Personal Bank Account</option>
+                            <option value="CASH">Cash</option>
+                        </select>
+                        <select id="gst-type-filter" class="field-input" style="width:150px;height:36px;padding:6px 10px;">
+                            <option value="ALL">All GST</option>
+                            <option value="WITH_GST">With GST (18%)</option>
+                            <option value="WITHOUT_GST">Without GST (0%)</option>
+                        </select>
+                        <div class="position-relative" style="min-width:200px;max-width:260px;">
+                            <i class="bi bi-search position-absolute" style="left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;"></i>
+                            <input type="text" id="inv-search" placeholder="Search invoice..." class="field-input"
+                                style="padding-left:30px;width:100%;height:36px;">
+                        </div>
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -199,6 +211,8 @@
                             <tr>
                                 <th>Invoice #</th>
                                 <th>Client</th>
+                                <th>Payment</th>
+                                <th>GST</th>
                                 <th>Amount</th>
                                 <th>Status</th>
                                 <th>WhatsApp</th>
@@ -207,7 +221,7 @@
                             </tr>
                         </thead>
                         <tbody id="inv-tbody">
-                            <tr><td colspan="7" class="text-center py-5 text-muted">
+                            <tr><td colspan="9" class="text-center py-5 text-muted">
                                 <span class="spinner-border spinner-border-sm me-2"></span>Loading...
                             </td></tr>
                         </tbody>
@@ -263,6 +277,25 @@
                     <input type="text" id="c-org" class="field-input" placeholder="Company / Shop name">
                 </div>
             </div>
+            <div class="field-row2 mb-3">
+                <div>
+                    <div class="field-label">Payment Type <span class="required-star">*</span></div>
+                    <select id="c-payment-type" class="field-input" onchange="onPaymentModeChanged()">
+                        <option value="">Select payment type</option>
+                        <option value="BUSINESS_ACCOUNT">Bank: Admin Business Account</option>
+                        <option value="PERSONAL_ACCOUNT">Bank: Admin Personal Account</option>
+                        <option value="CASH">Cash</option>
+                    </select>
+                </div>
+                <div>
+                    <div class="field-label">GST Type <span class="required-star">*</span></div>
+                    <select id="c-gst-type" class="field-input" onchange="onPaymentModeChanged()">
+                        <option value="">Select GST type</option>
+                        <option value="WITH_GST">With GST (18%: CGST 9% + SGST 9%)</option>
+                        <option value="WITHOUT_GST">Without GST (0%)</option>
+                    </select>
+                </div>
+            </div>
             <div class="mb-2">
                 <div class="field-label">Address</div>
                 <input type="text" id="c-address" class="field-input" placeholder="Full address (optional)">
@@ -293,15 +326,23 @@
                 <div class="ms-auto text-end">
                     <div style="font-size:11px;opacity:0.6;margin-bottom:2px;">DEFAULT</div>
                     <div id="default-amount-chip" style="font-size:12px;opacity:0.8;">₹12,000</div>
-                    <button onclick="resetToDefault()" style="margin-top:4px;background:rgba(255,255,255,0.15);border:none;border-radius:6px;padding:3px 10px;color:#fff;font-size:11px;cursor:pointer;">Reset</button>
+                    <button id="inv-reset-btn" onclick="resetToDefault()" style="margin-top:4px;background:rgba(255,255,255,0.15);border:none;border-radius:6px;padding:3px 10px;color:#fff;font-size:11px;cursor:pointer;">Reset</button>
                 </div>
             </div>
+        </div>
+
+        <div class="mb-4 d-none" id="qr-preview-step" style="border:1px solid #e2e8f0;border-radius:12px;padding:14px;background:#f8fafc;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="fw-bold" style="color:#0f172a;font-size:0.88rem;">Payment QR Preview</div>
+                <span class="small text-muted" id="qr-preview-note">Required for non-cash invoices</span>
+            </div>
+            <div id="qr-preview-body" class="small text-muted">Configure QR/UPI in settings to continue.</div>
         </div>
 
         <div class="d-flex justify-content-end gap-2 pt-2 border-top">
             <button class="btn btn-light px-4" onclick="closeCreateModal()">Cancel</button>
             <button class="btn btn-primary px-5 fw-bold" id="create-inv-btn" onclick="submitCreateInvoice()">
-                <i class="bi bi-receipt me-2"></i>Create Invoice
+                <i class="bi bi-receipt me-2"></i>Show QR &amp; Create Invoice
             </button>
         </div>
     </div>
@@ -419,10 +460,34 @@ injectTopHeader('Billing & Invoices');
 let allBills = [];
 let currentFilter = 'ALL';
 let defaultAmount = 12000;
+let personalWithoutGstDefaultAmount = 12000;
 let currentUser = null;
 let autofillSourceData = [];
 let activeAutofillSource = 'visit';
 let pendingActionBillId = null;
+let invoiceSettings = {};
+let workflowOptions = null;
+let qrConfirmedForCreate = false;
+let searchDebounceTimer = null;
+let invoiceActionsById = {};
+
+function fmtMoney(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n.toLocaleString('en-IN') : '0';
+}
+
+function setAmountChipFromResolved(resolved) {
+    const amount = Number.isFinite(Number(resolved?.total_amount)) ? Number(resolved.total_amount) : Number(resolved?.amount);
+    const base = Number.isFinite(Number(resolved?.base_amount)) ? Number(resolved.base_amount) : amount;
+    const gst = Number.isFinite(Number(resolved?.gst_amount)) ? Number(resolved.gst_amount) : Math.max(0, Number(amount || 0) - Number(base || 0));
+    const chip = document.getElementById('default-amount-chip');
+    if (!chip) return;
+    if ((resolved?.gst_type || '') === 'WITH_GST') {
+        chip.textContent = `Payable ₹${fmtMoney(amount)} (Base ₹${fmtMoney(base)} + GST ₹${fmtMoney(gst)})`;
+    } else {
+        chip.textContent = `Payable ₹${fmtMoney(amount)} (No GST)`;
+    }
+}
 
 // ── Status config ────────────────────────────────────────────────────────────
 const STATUS_MAP = {
@@ -454,13 +519,26 @@ function showToast(msg, type = 'info') {
 async function init() {
     try {
         currentUser = ApiClient.getCurrentUser();
+        const isAdmin = currentUser?.role === 'ADMIN';
+        const resetBtn = document.getElementById('inv-reset-btn');
+        if (resetBtn) {
+            resetBtn.style.display = isAdmin ? 'inline-block' : 'none';
+        }
         // load invoice defaults
         try {
             const settings = await ApiClient.getInvoiceSettings();
+            invoiceSettings = settings || {};
             defaultAmount = settings.invoice_default_amount || 12000;
+            personalWithoutGstDefaultAmount = settings.personal_without_gst_default_amount || 12000;
             document.getElementById('c-amount').value = defaultAmount;
             document.getElementById('default-amount-chip').textContent = '₹' + Number(defaultAmount).toLocaleString('en-IN');
         } catch(e) {}
+
+        try {
+            workflowOptions = await ApiClient.getInvoiceWorkflowOptions();
+        } catch(e) {
+            workflowOptions = null;
+        }
 
         await loadBills();
     } catch(e) {
@@ -469,13 +547,33 @@ async function init() {
 }
 
 async function loadBills() {
-    document.getElementById('inv-tbody').innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading invoices...</td></tr>`;
+    document.getElementById('inv-tbody').innerHTML = `<tr><td colspan="9" class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading invoices...</td></tr>`;
     try {
-        allBills = await ApiClient.getBills();
+        allBills = await ApiClient.getBills({
+            status_filter: currentFilter,
+            payment_type: document.getElementById('payment-type-filter').value || 'ALL',
+            gst_type: document.getElementById('gst-type-filter').value || 'ALL',
+            search: document.getElementById('inv-search').value || '',
+            skip: 0,
+            limit: 200,
+        });
+
+        invoiceActionsById = {};
+        if (Array.isArray(allBills) && allBills.length) {
+            await Promise.all(allBills.map(async (b) => {
+                try {
+                    const actions = await ApiClient.getInvoiceActions(b.id);
+                    invoiceActionsById[b.id] = actions || {};
+                } catch {
+                    invoiceActionsById[b.id] = {};
+                }
+            }));
+        }
+
         updateStats();
         renderTable();
     } catch(e) {
-        document.getElementById('inv-tbody').innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>${e.message || 'Failed to load'}</td></tr>`;
+        document.getElementById('inv-tbody').innerHTML = `<tr><td colspan="9" class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>${e.message || 'Failed to load'}</td></tr>`;
     }
 }
 
@@ -491,48 +589,46 @@ function updateStats() {
 }
 
 function renderTable() {
-    const search = (document.getElementById('inv-search').value || '').toLowerCase();
     const tbody = document.getElementById('inv-tbody');
 
-    let list = allBills.filter(b => {
-        const matchFilter = currentFilter === 'ALL' || (b.invoice_status || b.status) === currentFilter;
-        if (!matchFilter) return false;
-        if (search) {
-            const hay = [b.invoice_number, b.invoice_client_name, b.invoice_client_phone, b.invoice_client_org].join(' ').toLowerCase();
-            return hay.includes(search);
-        }
-        return true;
-    });
+    const list = allBills;
 
     document.getElementById('billing-filter-summary').textContent = list.length + ' invoice' + (list.length === 1 ? '' : 's');
 
     if (!list.length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted"><i class="bi bi-receipt" style="font-size:2rem;display:block;margin-bottom:8px;color:#cbd5e1;"></i>No invoices found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-muted"><i class="bi bi-receipt" style="font-size:2rem;display:block;margin-bottom:8px;color:#cbd5e1;"></i>No invoices found.</td></tr>`;
         return;
     }
-
-    const isAdmin = currentUser && currentUser.role === 'ADMIN';
 
     tbody.innerHTML = list.map(b => {
         const st = b.invoice_status || b.status || 'DRAFT';
         const dt = b.created_at ? new Date(b.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : '—';
         const clientDisplay = b.invoice_client_name || b.client_name || '—';
         const phone = b.invoice_client_phone || '';
+        const paymentTypeLabel = {
+            BUSINESS_ACCOUNT: 'Business Bank',
+            PERSONAL_ACCOUNT: 'Personal Bank',
+            CASH: 'Cash'
+        }[b.payment_type] || '—';
+        const gstTypeLabel = b.gst_type === 'WITHOUT_GST' ? 'GST 0%' : 'GST 18%';
         const waSent = b.whatsapp_sent
             ? `<span class="inv-pill pill-sent"><i class="bi bi-whatsapp"></i>Sent</span>`
             : `<span class="inv-pill pill-draft">Not sent</span>`;
 
         // Action buttons
         let actions = `<button class="action-menu-btn me-1" title="Preview Invoice" onclick="previewInvoice(${b.id})"><i class="bi bi-eye"></i></button>`;
+        const rowActions = invoiceActionsById[b.id] || {};
+        const canVerifyRow = Boolean(rowActions.can_verify);
+        const canSendRow = Boolean(rowActions.can_send_whatsapp);
 
-        if (isAdmin && (st === 'PENDING_VERIFICATION' || st === 'DRAFT')) {
+        if (canVerifyRow && (st === 'PENDING_VERIFICATION' || st === 'DRAFT')) {
             actions += `<button class="action-menu-btn me-1" title="Verify Invoice" onclick="openVerifyModal(${b.id},'${b.invoice_number}')" style="color:#15803D;border-color:#bbf7d0;background:#F0FDF4;">
                 <i class="bi bi-patch-check"></i> Verify
             </button>`;
         }
-        if (isAdmin && st === 'VERIFIED') {
-            actions += `<button class="action-menu-btn" title="Send WhatsApp" onclick="openWAModal(${b.id},\`${clientDisplay}\`,\`${b.invoice_number}\`)" style="color:#1565C0;border-color:#bfdbfe;background:#EFF6FF;">
-                <i class="bi bi-whatsapp"></i> Send
+        if (canSendRow && st === 'VERIFIED') {
+            actions += `<button class="action-menu-btn" title="Approve Payment & Send" onclick="openWAModal(${b.id},\`${clientDisplay}\`,\`${b.invoice_number}\`)" style="color:#1565C0;border-color:#bfdbfe;background:#EFF6FF;">
+                <i class="bi bi-whatsapp"></i> Approve Payment
             </button>`;
         }
 
@@ -543,6 +639,8 @@ function renderTable() {
                 ${phone ? `<div class="tbl-phone"><i class="bi bi-telephone me-1"></i>${phone}</div>` : ''}
                 ${b.invoice_client_org ? `<div class="tbl-phone"><i class="bi bi-building me-1"></i>${b.invoice_client_org}</div>` : ''}
             </td>
+            <td><span class="inv-pill pill-draft">${paymentTypeLabel}</span></td>
+            <td><span class="inv-pill ${b.gst_type === 'WITHOUT_GST' ? 'pill-draft' : 'pill-verified'}">${gstTypeLabel}</span></td>
             <td class="amt-cell">₹${Number(b.amount||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</td>
             <td>${statusPill(st)}</td>
             <td>${waSent}</td>
@@ -559,11 +657,21 @@ document.getElementById('filter-tabs').addEventListener('click', e => {
     document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     currentFilter = tab.dataset.filter;
-    renderTable();
+    loadBills();
+});
+
+document.getElementById('payment-type-filter').addEventListener('change', loadBills);
+document.getElementById('gst-type-filter').addEventListener('change', loadBills);
+document.getElementById('inv-search').addEventListener('input', () => {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => loadBills(), 280);
 });
 
 // ── Create Modal ──────────────────────────────────────────────────────────────
 function openCreateModal() {
+    qrConfirmedForCreate = false;
+    document.getElementById('qr-preview-step').classList.add('d-none');
+    document.getElementById('create-inv-btn').innerHTML = '<i class="bi bi-receipt me-2"></i>Show QR &amp; Create Invoice';
     document.getElementById('createModal').classList.remove('d-none');
 }
 function closeCreateModal() {
@@ -576,6 +684,81 @@ function updateAmountPreview(val) {
 
 function resetToDefault() {
     document.getElementById('c-amount').value = defaultAmount;
+    onPaymentModeChanged();
+}
+
+function setGstTypeOptions(paymentType) {
+    const gstSelect = document.getElementById('c-gst-type');
+    const prev = gstSelect.value;
+
+    let options = ['<option value="">Select GST type</option>'];
+    if (paymentType === 'BUSINESS_ACCOUNT') {
+        options.push('<option value="WITH_GST">With GST (18%: CGST 9% + SGST 9%)</option>');
+    } else {
+        options.push('<option value="WITH_GST">With GST (18%: CGST 9% + SGST 9%)</option>');
+        options.push('<option value="WITHOUT_GST">Without GST (0%)</option>');
+    }
+    gstSelect.innerHTML = options.join('');
+
+    if (paymentType === 'BUSINESS_ACCOUNT') {
+        gstSelect.value = 'WITH_GST';
+    } else if (prev && (prev === 'WITH_GST' || prev === 'WITHOUT_GST')) {
+        gstSelect.value = prev;
+    }
+}
+
+async function onPaymentModeChanged() {
+    const paymentType = document.getElementById('c-payment-type').value;
+    setGstTypeOptions(paymentType);
+    const selectedGstType = document.getElementById('c-gst-type').value;
+    const amountInput = document.getElementById('c-amount');
+    const qrStep = document.getElementById('qr-preview-step');
+    const qrBody = document.getElementById('qr-preview-body');
+    const createBtn = document.getElementById('create-inv-btn');
+
+    if (!paymentType || !selectedGstType) return;
+
+    const currentAmount = Number(amountInput.value);
+
+    let resolved;
+    try {
+        resolved = await ApiClient.resolveInvoiceWorkflow({
+            payment_type: paymentType,
+            gst_type: selectedGstType,
+            amount: currentAmount > 0 ? currentAmount : null,
+        });
+    } catch (e) {
+        showToast(e.data?.detail || e.message || 'Invalid payment/GST selection', 'error');
+        return;
+    }
+
+    if (resolved.amount_source !== 'client_input') {
+        amountInput.value = resolved.base_amount;
+        amountInput.disabled = true;
+    } else {
+        amountInput.disabled = false;
+        if (!currentAmount || currentAmount <= 0) {
+            amountInput.value = resolved.base_amount;
+        }
+    }
+    setAmountChipFromResolved(resolved);
+
+    qrConfirmedForCreate = false;
+    if (!resolved.requires_qr) {
+        qrStep.classList.add('d-none');
+        createBtn.innerHTML = '<i class="bi bi-receipt me-2"></i>Create Cash Invoice';
+        return;
+    }
+
+    qrStep.classList.remove('d-none');
+    if (resolved.qr_image_url) {
+        qrBody.innerHTML = `<div class="d-flex align-items-center gap-3"><img src="${resolved.qr_image_url}" alt="Payment QR" style="width:96px;height:96px;object-fit:contain;border:1px solid #e2e8f0;border-radius:8px;background:#fff;"><div><div class="fw-semibold">${resolved.payment_account_name || 'Account'}</div><div class="small text-muted">UPI: ${resolved.payment_upi_id || '-'}</div><div class="small text-muted mt-1">Show this QR to client before creating invoice.</div></div></div>`;
+    } else if (resolved.payment_upi_id) {
+        qrBody.innerHTML = `<div><div class="fw-semibold">UPI ID: ${resolved.payment_upi_id}</div><div class="small text-muted">${resolved.payment_account_name || ''}</div></div>`;
+    } else {
+        qrBody.innerHTML = '<span class="text-danger">QR/UPI is not configured in settings. Non-cash invoice cannot be created.</span>';
+    }
+    createBtn.innerHTML = '<i class="bi bi-qr-code me-2"></i>Confirm QR &amp; Create Invoice';
 }
 
 async function submitCreateInvoice() {
@@ -585,11 +768,34 @@ async function submitCreateInvoice() {
     const org = document.getElementById('c-org').value.trim();
     const address = document.getElementById('c-address').value.trim();
     const desc = document.getElementById('c-desc').value.trim();
+    const paymentType = document.getElementById('c-payment-type').value;
+    const gstType = document.getElementById('c-gst-type').value;
     const amount = parseFloat(document.getElementById('c-amount').value);
 
     if (!name) { showToast('Client name is required', 'error'); return; }
     if (!phone) { showToast('Client phone is required', 'error'); return; }
+    if (!paymentType) { showToast('Payment type is required', 'error'); return; }
+    if (!gstType) { showToast('GST type is required', 'error'); return; }
     if (!amount || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
+
+    let resolved;
+    try {
+        resolved = await ApiClient.resolveInvoiceWorkflow({
+            payment_type: paymentType,
+            gst_type: gstType,
+            amount,
+        });
+    } catch (e) {
+        showToast(e.data?.detail || e.message || 'Invalid invoice workflow', 'error');
+        return;
+    }
+
+    if (resolved.requires_qr && !qrConfirmedForCreate) {
+        qrConfirmedForCreate = true;
+        document.getElementById('create-inv-btn').innerHTML = '<i class="bi bi-receipt me-2"></i>Create Invoice';
+        showToast('QR shown. Click Create Invoice to continue.', 'info');
+        return;
+    }
 
     const btn = document.getElementById('create-inv-btn');
     btn.disabled = true;
@@ -603,19 +809,26 @@ async function submitCreateInvoice() {
             invoice_client_org: org || null,
             invoice_client_address: address || null,
             service_description: desc || null,
-            amount: amount,
+            payment_type: paymentType,
+            gst_type: gstType,
+            amount: resolved.amount,
         });
         closeCreateModal();
-        showToast('Invoice created! Awaiting admin verification.', 'success');
+        showToast('Invoice created! Awaiting verification approval.', 'success');
         // Reset form
         ['c-name','c-phone','c-email','c-org','c-address'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('c-payment-type').value = '';
+        document.getElementById('c-gst-type').value = '';
         document.getElementById('c-amount').value = defaultAmount;
+        document.getElementById('c-amount').disabled = false;
+        qrConfirmedForCreate = false;
+        document.getElementById('qr-preview-step').classList.add('d-none');
         await loadBills();
     } catch(e) {
         showToast(e.data?.detail || e.message || 'Failed to create invoice', 'error');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-receipt me-2"></i>Create Invoice';
+        onPaymentModeChanged();
     }
 }
 
@@ -648,7 +861,7 @@ async function openAutofillPicker(source) {
                 _label: a.name + (a.city ? ' · ' + a.city : ''),
             }));
         } else if (source === 'feedback') {
-            const fbs = await ApiClient.request('/clients/feedbacks/all') || [];
+            const fbs = await ApiClient.getAllClientFeedbacks() || [];
             autofillSourceData = fbs.map(f => ({
                 id: f.id,
                 name: f.client_name || '',
@@ -759,12 +972,11 @@ async function submitSendWhatsApp() {
     try {
         const result = await ApiClient.sendInvoiceWhatsApp(pendingActionBillId);
         closeWAModal();
-        showToast('Invoice sent! Client auto-added to Clients page.', 'success');
+        showToast('Invoice sent! Opening WhatsApp...', 'success');
         await loadBills();
-        // Open WA link dialog
+        // Auto-open WhatsApp chat with the invoice link pre-filled
         if (result.wa_url) {
-            document.getElementById('wa-open-link').href = result.wa_url;
-            document.getElementById('waLinkModal').classList.remove('d-none');
+            window.open(result.wa_url, '_blank');
         }
     } catch(e) {
         showToast(e.data?.detail || e.message || 'Failed to send', 'error');

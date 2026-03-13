@@ -594,9 +594,11 @@
 
             const validationError = validateLoginInputs(emailVal, passwordVal);
             if (validationError) {
-                showError(validationError.msg);
                 if (validationError.field === 'email') {
+                    // Keep email format errors in the field hint only (single source of truth)
                     setEmailInvalid(validationError.msg);
+                } else {
+                    showError(validationError.msg);
                 }
                 document.getElementById(validationError.field).focus();
                 return;
