@@ -1,6 +1,8 @@
 # backend/app/modules/shops/router.py
 from typing import List, Any, Dict
+from datetime import datetime
 from fastapi import APIRouter, Depends, status, Query, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
@@ -8,6 +10,9 @@ from app.modules.users.models import User, UserRole
 from app.modules.shops.schemas import ShopCreate, ShopRead, ShopUpdate, ShopStatus, AssignPMRequest
 from app.modules.shops.service import ShopService
 from app.modules.clients.schemas import ClientRead
+
+class ScheduleDemoRequest(BaseModel):
+    scheduled_at: datetime
 
 router = APIRouter()
 
@@ -128,6 +133,18 @@ def assign_pm(
     """
     return ShopService.assign_pm(db, shop_id, body.pm_id, current_user)
 
+@router.post("/{shop_id}/schedule-demo", response_model=ShopRead)
+def schedule_demo(
+    shop_id: int,
+    body: ScheduleDemoRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(pm_checker)
+) -> Any:
+    """
+    Schedule the next demo for a shop. Sets demo_scheduled_at.
+    """
+    return ShopService.schedule_demo(db, shop_id, body.scheduled_at, current_user)
+
 @router.post("/{shop_id}/complete-demo", response_model=ShopRead)
 def complete_demo(
     shop_id: int,
@@ -135,8 +152,8 @@ def complete_demo(
     current_user: User = Depends(pm_checker)
 ) -> Any:
     """
-    Mark the current demo as completed. Increments demo_stage.
-    When demo_stage reaches 3, status is auto-set to MEETING_SET.
+    Mark the current demo as completed. Increments demo_stage, clears demo_scheduled_at.
+    First completion (demo_stage == 1) auto-advances status to MEETING_SET.
     """
     return ShopService.complete_demo(db, shop_id, current_user)
 

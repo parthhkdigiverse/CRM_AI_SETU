@@ -40,6 +40,7 @@ class ShopUpdate(BaseModel):
     owner_id: Optional[int] = None
     project_manager_id: Optional[int] = None
     demo_stage: Optional[int] = None
+    demo_scheduled_at: Optional[datetime] = None
 
 class AssignPMRequest(BaseModel):
     pm_id: int
@@ -66,6 +67,7 @@ class ShopRead(ShopBase):
     project_manager_id: Optional[int] = None
     project_manager_name: Optional[str] = None
     demo_stage: Optional[int] = 0
+    demo_scheduled_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

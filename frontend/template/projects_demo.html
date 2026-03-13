@@ -137,7 +137,7 @@
                             </span>
                         </div>
                         <h1 class="fw-bold mb-1" style="font-size:1.8rem;">PM Demo Dashboard</h1>
-                        <p class="mb-0 opacity-75" style="font-size:0.95rem;">Manage your assigned leads · Schedule 3 demos per lead · Auto-advance to Meeting Set</p>
+                        <p class="mb-0 opacity-75" style="font-size:0.95rem;">Manage your assigned leads · Schedule demos · First demo advances to Meeting Set</p>
                     </div>
                     <div style="position:absolute;top:1.5rem;right:2rem;z-index:1;">
                         <button class="btn btn-light btn-sm fw-semibold rounded-pill px-3" onclick="loadDemoQueue()">
@@ -208,28 +208,11 @@
         if (sidebarElement) sidebarElement.innerHTML = renderSidebar('demo');
         injectTopHeader('Demo Pipeline');
 
-        // Track created clients and demo schedules per shop
-        const shopClientMap = {}; // shopId -> clientId
-
-        // ── Build 3-step demo tracker HTML ──
-        function renderDemoTracker(demoStage) {
-            const stages = [1, 2, 3];
-            let html = '<div class="demo-step-tracker">';
-            stages.forEach((s, i) => {
-                const isDone = demoStage >= s;
-                const isActive = demoStage === s - 1; // Next step to complete
-                const cls = isDone ? 'done' : (isActive ? 'active' : '');
-                const icon = isDone ? '<i class="bi bi-check-lg"></i>' : s;
-                html += `<div class="demo-step">
-                    <div class="demo-step-dot ${cls}">${icon}</div>
-                    <div class="demo-step-label ${cls}">Demo ${s}</div>
-                </div>`;
-                if (i < stages.length - 1) {
-                    html += `<div class="demo-step-connector ${isDone ? 'done' : ''}"></div>`;
-                }
-            });
-            html += '</div>';
-            return html;
+        // ── Format datetime for display ──
+        function fmtDt(iso) {
+            if (!iso) return null;
+            const d = new Date(iso);
+            return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
         }
 
         // ── Render the full table ──
@@ -263,26 +246,31 @@
 
             shops.forEach(shop => {
                 const demoStage = shop.demo_stage || 0;
-                const allDone = demoStage >= 3;
-                const clientId = shopClientMap[shop.id] || null;
+                const hasDemoScheduled = !!shop.demo_scheduled_at;
+                const shopStatus = shop.status || '';
+                const isMeetingSet = shopStatus === 'MEETING_SET' || shopStatus === 'CONVERTED';
 
-                const statusBadge = allDone
+                // Status badge
+                const statusBadge = isMeetingSet
                     ? `<span class="status-badge-ms"><i class="bi bi-check-circle-fill me-1"></i>Meeting Set</span>`
-                    : `<span class="badge bg-warning-subtle text-warning rounded-pill" style="font-size:0.68rem;">${demoStage}/3 Done</span>`;
+                    : `<span class="badge bg-warning-subtle text-warning rounded-pill" style="font-size:0.68rem;">In Demo</span>`;
 
-                const createClientBtn = clientId
-                    ? `<button class="btn btn-sm btn-success btn-create-client disabled" disabled><i class="bi bi-check-lg me-1"></i>Client Created</button>`
-                    : `<button class="btn btn-sm btn-outline-success btn-create-client" onclick="createClient(${shop.id})"><i class="bi bi-person-plus me-1"></i>Create Client</button>`;
+                // Demo Progress column: completed count + scheduled date or (+) button
+                const nextDemoLabel = hasDemoScheduled
+                    ? `<div class="mt-1"><span class="badge" style="background:#e0e7ff;color:#4f46e5;font-size:0.68rem;"><i class="bi bi-calendar-event me-1"></i>Next: ${fmtDt(shop.demo_scheduled_at)}</span></div>`
+                    : `<button class="btn btn-sm btn-outline-primary px-2 py-0 ms-2" style="font-size:0.72rem;" onclick="openScheduleDemo(${shop.id})" title="Schedule next demo"><i class="bi bi-plus-lg"></i></button>`;
 
-                const scheduleBtn = (!allDone && clientId)
-                    ? `<button class="btn btn-sm btn-outline-primary btn-demo-action" onclick="openScheduleDemo(${shop.id}, ${clientId}, ${demoStage + 1})"><i class="bi bi-calendar-plus me-1"></i>Schedule Demo ${demoStage + 1}</button>`
-                    : (!allDone && !clientId)
-                    ? `<button class="btn btn-sm btn-outline-secondary btn-demo-action" disabled title="Create client first"><i class="bi bi-calendar-plus me-1"></i>Schedule Demo</button>`
-                    : '';
+                const demoProgressCell = `
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="fw-semibold" style="font-size:0.82rem;">Demos: ${demoStage}</span>
+                        ${!isMeetingSet ? nextDemoLabel : ''}
+                    </div>`;
 
-                const markDoneBtn = (!allDone && demoStage < 3)
-                    ? `<button class="btn btn-sm btn-outline-dark btn-demo-action" onclick="markDemoComplete(${shop.id})"><i class="bi bi-check-circle me-1"></i>Mark Demo ${demoStage + 1} Done</button>`
-                    : '';
+                // Actions column
+                const scheduleBtn = `<button class="btn btn-sm btn-outline-primary btn-demo-action" onclick="openScheduleDemo(${shop.id})"><i class="bi bi-calendar-plus me-1"></i>${hasDemoScheduled ? 'Reschedule' : 'Schedule Demo'}</button>`;
+                const markDoneBtn = hasDemoScheduled
+                    ? `<button class="btn btn-sm btn-primary btn-demo-action" onclick="markDemoComplete(${shop.id})"><i class="bi bi-check-circle me-1"></i>Mark Demo Done</button>`
+                    : `<button class="btn btn-sm btn-outline-secondary btn-demo-action" disabled title="Schedule a demo first"><i class="bi bi-check-circle me-1"></i>Mark Demo Done</button>`;
 
                 html += `<tr id="shop-row-${shop.id}">
                     <td class="px-4 py-3">
@@ -293,9 +281,7 @@
                         <div class="fw-semibold">${shop.contact_person || '—'}</div>
                         <div class="small text-muted"><i class="bi bi-telephone me-1"></i>${shop.phone || '—'}</div>
                     </td>
-                    <td class="px-3 py-3">
-                        ${renderDemoTracker(demoStage)}
-                    </td>
+                    <td class="px-3 py-3">${demoProgressCell}</td>
                     <td class="px-3 py-3">
                         <div class="fw-semibold" style="font-size:0.82rem;">${shop.owner_name || '—'}</div>
                         <div class="small text-muted" style="font-size:0.72rem;">Sales Agent</div>
@@ -303,7 +289,6 @@
                     <td class="px-3 py-3 text-center">${statusBadge}</td>
                     <td class="px-4 py-3">
                         <div class="d-flex flex-wrap gap-1 justify-content-end">
-                            ${createClientBtn}
                             ${scheduleBtn}
                             ${markDoneBtn}
                         </div>
@@ -328,38 +313,9 @@
             }
         }
 
-        // ── Create Client from shop ──
-        async function createClient(shopId) {
-            const btn = document.querySelector(`#shop-row-${shopId} .btn-create-client`);
-            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
-
-            try {
-                const shop = await window.ApiClient.request(`/shops/${shopId}`);
-                const payload = {
-                    name: shop.contact_person || shop.name,
-                    phone: shop.phone || null,
-                    email: shop.email || null,
-                    organization: shop.name
-                };
-                const client = await window.ApiClient.request('/clients/', { method: 'POST', body: payload });
-                shopClientMap[shopId] = client.id;
-                showToast(`Client "${client.name}" created!`, 'success');
-                // Re-render the row
-                await loadDemoQueue();
-                // Restore client map after reload
-                shopClientMap[shopId] = client.id;
-            } catch (e) {
-                console.error('Create client failed', e);
-                showToast(e?.data?.detail || 'Failed to create client', 'error');
-                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Create Client'; }
-            }
-        }
-
         // ── Open Schedule Demo Modal ──
-        window.openScheduleDemo = (shopId, clientId, demoNumber) => {
+        window.openScheduleDemo = (shopId) => {
             document.getElementById('sched-shop-id').value = shopId;
-            document.getElementById('sched-client-id').value = clientId;
-            document.getElementById('sched-title').value = `Demo Session ${demoNumber}`;
             document.getElementById('sched-notes').value = '';
             // Default to tomorrow 10am
             const tomorrow = new Date();
@@ -370,35 +326,27 @@
             bootstrap.Modal.getOrCreateInstance(document.getElementById('scheduleDemoModal')).show();
         };
 
-        // ── Save Demo Meeting ──
+        // ── Save Demo (hits POST /shops/{id}/schedule-demo) ──
         window.saveDemoMeeting = async () => {
             const shopId = document.getElementById('sched-shop-id').value;
-            const clientId = document.getElementById('sched-client-id').value;
-            const title = document.getElementById('sched-title').value.trim();
             const dt = document.getElementById('sched-datetime').value;
-            const notes = document.getElementById('sched-notes').value.trim();
             const btn = document.getElementById('save-demo-btn');
 
-            if (!title || !dt) { showToast('Title and date/time are required', 'error'); return; }
+            if (!dt) { showToast('Please pick a date and time', 'error'); return; }
 
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
             try {
-                await window.ApiClient.request(`/clients/${clientId}/meetings`, {
+                await window.ApiClient.request(`/shops/${shopId}/schedule-demo`, {
                     method: 'POST',
-                    body: {
-                        title: title,
-                        content: notes || `Demo session for lead #${shopId}`,
-                        date: new Date(dt).toISOString(),
-                        meeting_type: 'In-Person',
-                        status: 'SCHEDULED'
-                    }
+                    body: { scheduled_at: new Date(dt).toISOString() }
                 });
-                showToast('Demo meeting scheduled!', 'success');
+                showToast('Demo scheduled!', 'success');
                 bootstrap.Modal.getInstance(document.getElementById('scheduleDemoModal')).hide();
+                await loadDemoQueue();
             } catch (e) {
-                console.error('Save demo failed', e);
-                showToast(e?.data?.detail || 'Failed to save meeting', 'error');
+                console.error('Schedule demo failed', e);
+                showToast(e?.data?.detail || 'Failed to schedule demo', 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-calendar-check me-1"></i> Save Demo';
@@ -407,14 +355,14 @@
 
         // ── Mark Demo Complete ──
         window.markDemoComplete = async (shopId) => {
-            const btn = document.querySelector(`#shop-row-${shopId} .btn-demo-action[onclick*="markDemoComplete"]`);
+            const btn = document.querySelector(`#shop-row-${shopId} .btn-primary.btn-demo-action`);
             const originalHtml = btn ? btn.innerHTML : '';
             if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
 
             try {
                 const result = await window.ApiClient.request(`/shops/${shopId}/complete-demo`, { method: 'POST' });
-                const msg = result.demo_stage >= 3
-                    ? '🎉 All 3 demos done! Status updated to MEETING SET!'
+                const msg = result.demo_stage === 1
+                    ? '🎉 First demo done! Lead advanced to Meeting Set!'
                     : `Demo ${result.demo_stage} marked complete.`;
                 showToast(msg, 'success');
                 await loadDemoQueue();

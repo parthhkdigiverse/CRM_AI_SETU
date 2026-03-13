@@ -249,4 +249,47 @@ def get_timetable(
             description=None
         ))
 
+    # 5. Fetch Scheduled Shop Demos (from SM demo pipeline)
+    demo_query = db.query(Shop).filter(Shop.demo_scheduled_at.isnot(None))
+    if not is_admin:
+        # PMs see only their own assigned demos
+        demo_query = demo_query.filter(Shop.project_manager_id == user_id)
+
+    demo_shops = demo_query.all()
+    from datetime import timedelta
+    for shop in demo_shops:
+        start_dt = shop.demo_scheduled_at
+        if not start_dt:
+            continue
+
+        # Strip tzinfo if present - value is already in display timezone
+        if start_dt.tzinfo:
+            start_dt = start_dt.replace(tzinfo=None)
+        local_start = start_dt  # No offset needed — stored as naive local time
+        local_end = local_start + timedelta(minutes=45)
+
+        pm_name = username
+        try:
+            if shop.project_manager:
+                pm_name = shop.project_manager.name or shop.project_manager.email
+        except:
+            pass
+
+        events.append(TimelineEvent(
+            id=f"demo_shop_{shop.id}",
+            title=f"Demo: {shop.name}",
+            date=date_str(local_start),
+            user=pm_name,
+            sh=local_start.hour,
+            sm=local_start.minute,
+            eh=local_end.hour,
+            em=local_end.minute,
+            loc=shop.area.name if getattr(shop, 'area', None) else "Shop",
+            description=f"{getattr(shop, 'contact_person', 'No Contact')} | {getattr(shop, 'phone', 'No Phone')}",
+            event_type="DEMO",
+            status="SCHEDULED",
+            reference_id=shop.id,
+            backgroundColor="#4f46e5"
+        ))
+
     return {"events": events}

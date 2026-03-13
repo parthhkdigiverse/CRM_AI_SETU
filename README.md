@@ -98,8 +98,17 @@ The app will be available at:
 | `password authentication failed` | Wrong password in `DATABASE_URL` inside `.env` |
 | `database "crm_ai_setu" does not exist` | Run `CREATE DATABASE crm_ai_setu;` in psql/pgAdmin |
 | `ModuleNotFoundError` | Run `pip install -r backend/requirements.txt` in your venv |
-
+| `multiple head revisions are present` | Run `alembic merge heads` to fix divergent git branches (see below) |
 ---
+
+### Resolving Database Conflicts ("Multiple Heads")
+
+If you pull new code from `master` and Alembic throws a "multiple heads" error, it means your local database changes collided with your teammates' changes. 
+
+**1. Merge the divergent branches**
+```bash
+cd backend
+alembic merge heads -m "merge master branch updates"
 
 ## Project Structure
 

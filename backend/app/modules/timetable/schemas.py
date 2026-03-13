@@ -1,13 +1,13 @@
 # backend/app/modules/timetable/schemas.py
-from typing import Optional, List
+from typing import Optional, List, Union
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime, date, time
 
 class TimelineEvent(BaseModel):
-    id: int
+    id: Union[int, str]
     title: str
-    date: str # YYYY-MM-DD
-    user: str # Assignee/User name
+    date: Optional[str] = None # YYYY-MM-DD or full ISO
+    user: Optional[str] = None # Assignee/User name
     sh: Optional[int] = None
     sm: Optional[int] = None
     eh: Optional[int] = None
@@ -15,10 +15,18 @@ class TimelineEvent(BaseModel):
     loc: Optional[str] = None
     
     # Original fields for reference
-    event_type: str # VISIT, MEETING, TODO, TIMETABLE
-    status: str
-    reference_id: int
+    event_type: str # VISIT, MEETING, TODO, TIMETABLE, DEMO
+    status: Optional[str] = None
+    reference_id: Optional[int] = None
     description: Optional[str] = None
+
+    # New fields for generic calendar events
+    start: Optional[str] = None
+    end: Optional[str] = None
+    backgroundColor: Optional[str] = None
+    borderColor: Optional[str] = None
+    textColor: Optional[str] = None
+    allDay: Optional[bool] = None
 
 class TimetableResponse(BaseModel):
     events: List[TimelineEvent]

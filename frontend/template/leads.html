@@ -780,8 +780,10 @@
                 <div class="mb-4">
                     <label class="text-muted small text-uppercase fw-bold mb-1">Assigned PM</label>
                     <div class="fw-bold text-success"><i class="bi bi-person-check me-1"></i>${l.project_manager_name}</div>
-                    <div class="small text-muted mt-1">Demo stage: ${l.demo_stage || 0} / 3</div>
+                    <div class="small text-muted mt-1">Demos completed: ${l.demo_stage || 0}</div>
+                    ${l.demo_scheduled_at ? `<div class="mt-1"><span class="badge" style="background:#e0e7ff;color:#4f46e5;font-size:0.68rem;"><i class="bi bi-calendar-event me-1"></i>Next Demo: ${new Date(l.demo_scheduled_at).toLocaleString('en-IN', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>` : ''}
                 </div>` : ''}
+
                 <div class="mt-4 pt-4 border-top">
                     <!-- Changed redirect to open Edit modal -->
                     <button class="btn btn-outline-primary w-100 mb-2" onclick="openEditShopModal(${l.id})">Edit Details</button>

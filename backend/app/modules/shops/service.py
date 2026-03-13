@@ -398,19 +398,18 @@ class ShopService:
         ]
         return shop_data
 
-    # ── Mark a demo as completed, auto-advance to MEETING_SET at stage 3 ──
+    # ── Mark a demo as completed, auto-advance to MEETING_SET on first completion ──
     @staticmethod
     def complete_demo(db: Session, shop_id: int, current_user: User):
         shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
 
-        if shop.demo_stage >= 3:
-            raise HTTPException(status_code=400, detail="All 3 demos have already been completed")
-
         shop.demo_stage = (shop.demo_stage or 0) + 1
+        shop.demo_scheduled_at = None  # Reset after completion
 
-        if shop.demo_stage >= 3:
+        # First completed demo → advance status to MEETING_SET
+        if shop.demo_stage == 1:
             shop.status = ShopStatus.MEETING_SET
 
         db.commit()
@@ -423,6 +422,33 @@ class ShopService:
         shop_data["archived_by_name"] = None
         shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
         shop_data["last_visitor_name"] = None
+        shop_data["last_visit_status"] = None
+        shop_data.pop("_sa_instance_state", None)
+        shop_data["assigned_users"] = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None}
+            for u in getattr(shop, 'assigned_owners_list', [])
+        ]
+        return shop_data
+
+    # ── Schedule a demo on the shop ──
+    @staticmethod
+    def schedule_demo(db: Session, shop_id: int, scheduled_at, current_user: User):
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        if not shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
+
+        shop.demo_scheduled_at = scheduled_at
+        db.commit()
+        db.refresh(shop)
+
+        shop_data = shop.__dict__.copy()
+        shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+        shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+        shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
+        shop_data["archived_by_name"] = None
+        shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+        shop_data["last_visitor_name"] = None
+        shop_data["last_visit_status"] = None
         shop_data.pop("_sa_instance_state", None)
         shop_data["assigned_users"] = [
             {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None}

@@ -52,6 +52,8 @@ class Shop(SoftDeleteMixin, Base):
     # PM Demo Pipeline
     project_manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     demo_stage = Column(Integer, default=0, nullable=False, server_default="0")
+    demo_scheduled_at = Column(DateTime(timezone=True), nullable=True)
+
     
     # Relationships — from both branches
     owner = relationship("app.modules.users.models.User", foreign_keys=[owner_id], backref="assigned_shops")
