@@ -38,6 +38,11 @@ class ShopUpdate(BaseModel):
     area_id: Optional[int] = None
     status: Optional[ShopStatus] = None
     owner_id: Optional[int] = None
+    project_manager_id: Optional[int] = None
+    demo_stage: Optional[int] = None
+
+class AssignPMRequest(BaseModel):
+    pm_id: int
 
 class AssignedUser(BaseModel):
     id: int
@@ -57,6 +62,10 @@ class ShopRead(ShopBase):
     assignment_status: Optional[str] = "UNASSIGNED"
     assigned_users: list[AssignedUser] = []
     last_visitor_name: Optional[str] = None
+    last_visit_status: Optional[str] = None
+    project_manager_id: Optional[int] = None
+    project_manager_name: Optional[str] = None
+    demo_stage: Optional[int] = 0
 
     class Config:
         from_attributes = True

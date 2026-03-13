@@ -50,3 +50,11 @@ class Visit(Base):
     def area_name(self) -> str:
         return self.shop.area.name if self.shop and self.shop.area else None
 
+    @property
+    def project_manager_name(self) -> str:
+        return self.shop.project_manager.name if self.shop and getattr(self.shop, 'project_manager', None) else None
+
+    @property
+    def shop_status(self) -> str:
+        return self.shop.status.value if self.shop and self.shop.status else None
+

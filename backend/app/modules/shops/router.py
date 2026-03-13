@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
 from app.modules.users.models import User, UserRole
-from app.modules.shops.schemas import ShopCreate, ShopRead, ShopUpdate, ShopStatus
+from app.modules.shops.schemas import ShopCreate, ShopRead, ShopUpdate, ShopStatus, AssignPMRequest
 from app.modules.shops.service import ShopService
 from app.modules.clients.schemas import ClientRead
 
@@ -21,6 +21,12 @@ staff_checker = RoleChecker([
 ])
 
 admin_checker = RoleChecker([UserRole.ADMIN])
+
+pm_checker = RoleChecker([
+    UserRole.ADMIN,
+    UserRole.PROJECT_MANAGER,
+    UserRole.PROJECT_MANAGER_AND_SALES
+])
 
 @router.post("/", response_model=ShopRead, status_code=status.HTTP_201_CREATED)
 def create_shop(
@@ -55,6 +61,16 @@ def read_archived_shops(
     Get all archived shops. Staff scope limited by permissions.
     """
     return ShopService.get_archived_shops(db, current_user)
+
+@router.get("/demo-queue", response_model=List[ShopRead])
+def read_demo_queue(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """
+    Get all shops in the PM demo queue. PMs see only their own; Admins see all.
+    """
+    return ShopService.get_demo_queue(db, current_user)
 
 @router.get("/", response_model=List[ShopRead])
 def read_shops(
@@ -99,6 +115,30 @@ def accept_shop(
     Accept a shop assignment.
     """
     return ShopService.accept_shop(db, shop_id, current_user)
+
+@router.post("/{shop_id}/assign-pm", response_model=ShopRead)
+def assign_pm(
+    shop_id: int,
+    body: AssignPMRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """
+    Assign a Project Manager to a CONTACTED lead.
+    """
+    return ShopService.assign_pm(db, shop_id, body.pm_id, current_user)
+
+@router.post("/{shop_id}/complete-demo", response_model=ShopRead)
+def complete_demo(
+    shop_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(pm_checker)
+) -> Any:
+    """
+    Mark the current demo as completed. Increments demo_stage.
+    When demo_stage reaches 3, status is auto-set to MEETING_SET.
+    """
+    return ShopService.complete_demo(db, shop_id, current_user)
 
 @router.post("/{shop_id}/approve", response_model=ClientRead)
 def approve_pipeline(

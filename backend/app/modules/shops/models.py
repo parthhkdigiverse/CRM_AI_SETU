@@ -48,6 +48,10 @@ class Shop(SoftDeleteMixin, Base):
     assigned_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     accepted_at = Column(DateTime(timezone=True), nullable=True)
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    # PM Demo Pipeline
+    project_manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    demo_stage = Column(Integer, default=0, nullable=False, server_default="0")
     
     # Relationships — from both branches
     owner = relationship("app.modules.users.models.User", foreign_keys=[owner_id], backref="assigned_shops")
@@ -55,6 +59,7 @@ class Shop(SoftDeleteMixin, Base):
     creator = relationship("app.modules.users.models.User", foreign_keys=[created_by_id], backref="shops_created")
     area = relationship("app.modules.areas.models.Area", backref="shops")
     assigned_owners_list = relationship("app.modules.users.models.User", secondary=shop_assignments, backref="assigned_shops_list")
+    project_manager = relationship("app.modules.users.models.User", foreign_keys=[project_manager_id], backref="pm_shops")
 
     @property
     def last_visitor_name(self):

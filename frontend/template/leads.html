@@ -441,6 +441,34 @@
         </div>
     </div>
 
+    <!-- Assign PM Modal -->
+    <div class="modal fade" id="assignPmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-badge me-2 text-warning"></i>Assign PM &amp; Schedule Demo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="assign-pm-shop-id">
+                    <p class="text-muted small mb-3">Select a Project Manager to take ownership of this lead and schedule the demo sessions.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Project Manager</label>
+                        <select id="pm-select" class="form-select">
+                            <option value="">— Loading PMs... —</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-warning fw-bold" id="submit-assign-pm-btn" onclick="submitAssignPm()">
+                        <i class="bi bi-send me-1"></i> Send to Demo Queue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="../js/api.js"></script>
     <script src="../js/ui_components.js?v=1772780187"></script>
     <script src="../js/auth.js?v=1772780187"></script>
@@ -457,7 +485,7 @@
         const getNextActionText = (status) => {
             switch(status) {
                 case 'NEW': return 'Visit Shop';
-                case 'CONTACTED': return 'Schedule Demo';
+                case 'CONTACTED': return 'Assign PM & Schedule Demo';
                 case 'MEETING_SET': return 'Close Deal';
                 default: return 'View Details';
             }
@@ -529,6 +557,32 @@
                                     <span class="badge bg-light text-dark border" style="font-size:0.7rem;">
                                         <i class="bi bi-person-walking me-1"></i>Visited by: ${l.last_visitor_name}
                                     </span>
+                                    ${(() => {
+                                        if (!l.last_visit_status) return '';
+                                        const vsColors = {
+                                            'SATISFIED':          'background:#dbeafe;color:#1d4ed8;',
+                                            'ACCEPT':             'background:#dcfce7;color:#16a34a;',
+                                            'DECLINE':            'background:#fee2e2;color:#dc2626;',
+                                            'TAKE_TIME_TO_THINK': 'background:#fef9c3;color:#b45309;',
+                                            'OTHER':              'background:#f1f5f9;color:#475569;',
+                                        };
+                                        const vsLabels = {
+                                            'SATISFIED':          'Satisfied',
+                                            'ACCEPT':             'Accepted',
+                                            'DECLINE':            'Declined',
+                                            'TAKE_TIME_TO_THINK': 'Thinking',
+                                            'OTHER':              'Other',
+                                        };
+                                        const vstyle = vsColors[l.last_visit_status] || 'background:#f1f5f9;color:#475569;';
+                                        const vlabel = vsLabels[l.last_visit_status] || l.last_visit_status.replace(/_/g, ' ');
+                                        return `<span class="badge ms-1" style="${vstyle}font-size:0.65rem;">${vlabel}</span>`;
+                                    })()}
+                                </div>` : ''}
+                                ${l.project_manager_name ? `
+                                <div class="mt-1">
+                                    <span class="badge" style="background:#ede9fe;color:#6d28d9;font-size:0.65rem;">
+                                        <i class="bi bi-person-gear me-1"></i>PM: ${l.project_manager_name}
+                                    </span>
                                 </div>` : ''}
                             </div>
                         `;
@@ -591,6 +645,29 @@
                         </td>
                         <td class="px-3 py-3">
                             <div class="text-secondary fw-medium" style="font-size: 0.85rem;">${shopName}</div>
+                            ${(() => {
+                                let bits = '';
+                                if (l.last_visit_status) {
+                                    const vsColors = {
+                                        'SATISFIED':          'background:#dbeafe;color:#1d4ed8;',
+                                        'ACCEPT':             'background:#dcfce7;color:#16a34a;',
+                                        'DECLINE':            'background:#fee2e2;color:#dc2626;',
+                                        'TAKE_TIME_TO_THINK': 'background:#fef9c3;color:#b45309;',
+                                        'OTHER':              'background:#f1f5f9;color:#475569;',
+                                    };
+                                    const vsLabels = {
+                                        'SATISFIED': 'Satisfied', 'ACCEPT': 'Accepted',
+                                        'DECLINE': 'Declined', 'TAKE_TIME_TO_THINK': 'Thinking', 'OTHER': 'Other',
+                                    };
+                                    const vstyle = vsColors[l.last_visit_status] || 'background:#f1f5f9;color:#475569;';
+                                    const vlabel = vsLabels[l.last_visit_status] || l.last_visit_status.replace(/_/g,' ');
+                                    bits += `<span class="badge mt-1 me-1" style="${vstyle}font-size:0.62rem;">${vlabel}</span>`;
+                                }
+                                if (l.project_manager_name) {
+                                    bits += `<span class="badge mt-1" style="background:#ede9fe;color:#6d28d9;font-size:0.62rem;"><i class="bi bi-person-gear me-1"></i>PM: ${l.project_manager_name}</span>`;
+                                }
+                                return bits ? `<div class="mt-1">${bits}</div>` : '';
+                            })()}
                         </td>
                         <td class="px-3 py-3">
                             <div class="text-secondary" style="font-size: 0.85rem;">
@@ -614,7 +691,9 @@
                             <button class="btn btn-sm btn-light border border-2 text-primary fw-bold rounded-pill px-3 shadow-sm" 
                                     onclick="event.stopPropagation(); window.openDetail(${l.id});"
                                     style="font-size: 0.75rem; transition: all 0.2s;">
-                                ${getNextActionText(l.status)} <i class="bi bi-arrow-right-short ms-1" style="font-size: 0.9rem;"></i>
+                                ${l.status === 'CONTACTED' && l.project_manager_id
+                                    ? 'Re-assign PM'
+                                    : getNextActionText(l.status)} <i class="bi bi-arrow-right-short ms-1" style="font-size: 0.9rem;"></i>
                             </button>
                         </td>
                     </tr>
@@ -644,11 +723,20 @@
                 const isCompleted = currentStatusIndex >= step.index;
                 const isLast = i === steps.length - 1;
 
-                // Colors: Green if done, Gray if pending
-                const dotColor = isCompleted ? '#10b981' : '#e2e8f0';
-                const iconHtml = isCompleted ? `<i class="bi bi-check text-white" style="font-size: 0.75rem;"></i>` : ``;
-                const textColor = isCompleted ? '#0f172a' : '#94a3b8';
-                const weightClass = isCompleted ? 'fw-bold' : 'fw-medium';
+                // Step 2 (index 2 = "Schedule the Demo") gets special "In Progress" treatment
+                // when a PM is assigned but demo_stage < 3
+                const isStep3InProgress = (step.index === 2) && !isCompleted && l.project_manager_id && (l.demo_stage || 0) < 3;
+
+                // Colors: Green if done, Blue spinner if in-progress, Gray if pending
+                const dotColor = isCompleted ? '#10b981' : (isStep3InProgress ? '#4f46e5' : '#e2e8f0');
+                const iconHtml = isCompleted
+                    ? `<i class="bi bi-check text-white" style="font-size: 0.75rem;"></i>`
+                    : (isStep3InProgress ? `<i class="bi bi-arrow-repeat text-white" style="font-size: 0.6rem;"></i>` : '');
+                const textColor = isCompleted ? '#0f172a' : (isStep3InProgress ? '#4f46e5' : '#94a3b8');
+                const weightClass = (isCompleted || isStep3InProgress) ? 'fw-bold' : 'fw-medium';
+                const subText = isStep3InProgress
+                    ? `<div class="mt-1" style="font-size:0.72rem;color:#4f46e5;"><i class="bi bi-person-gear me-1"></i>Assigned to PM: ${l.project_manager_name}</div>`
+                    : '';
                 timelineHtml += `
                     <div class="d-flex position-relative z-1" style="margin-bottom: ${isLast ? '0' : '1.5rem'};">
                         ${isCompleted && !isLast ? `<div class="position-absolute" style="left: 7px; top: 16px; bottom: -24px; width: 2px; background: #10b981; z-index: -1;"></div>` : ''}
@@ -659,12 +747,20 @@
                         </div>
                         <div class="ms-3">
                             <div class="${weightClass}" style="font-size: 0.8rem; color: ${textColor};">${step.label}</div>
+                            ${subText}
                         </div>
                     </div>
                 `;
             });
 
             timelineHtml += `</div></div>`;
+
+            const pmBtnLabel = l.project_manager_id ? 'Re-assign PM' : 'Assign PM &amp; Schedule Demo';
+            const pmAssignBtnHtml = (l.status === 'CONTACTED') ? `
+                <button class="btn btn-warning w-100 mb-2 d-flex align-items-center gap-2 justify-content-center"
+                    onclick="openAssignPmModal(${l.id})">
+                    <i class="bi bi-person-badge"></i> ${pmBtnLabel}
+                </button>` : '';
 
             const content = `
                 <div class="mb-4">
@@ -680,9 +776,16 @@
                     <label class="text-muted small text-uppercase fw-bold mb-1">Area</label>
                     <div class="fw-bold"><i class="bi bi-geo-alt me-1"></i>${l.area_name || '—'}</div>
                 </div>
+                ${l.project_manager_name ? `
+                <div class="mb-4">
+                    <label class="text-muted small text-uppercase fw-bold mb-1">Assigned PM</label>
+                    <div class="fw-bold text-success"><i class="bi bi-person-check me-1"></i>${l.project_manager_name}</div>
+                    <div class="small text-muted mt-1">Demo stage: ${l.demo_stage || 0} / 3</div>
+                </div>` : ''}
                 <div class="mt-4 pt-4 border-top">
                     <!-- Changed redirect to open Edit modal -->
                     <button class="btn btn-outline-primary w-100 mb-2" onclick="openEditShopModal(${l.id})">Edit Details</button>
+                    ${pmAssignBtnHtml}
                 </div>
                 ${timelineHtml}
             `;
@@ -912,6 +1015,49 @@
             initFilters();
             loadLeads();
         });
+
+        // ── Assign PM Modal Functions ──
+        window.openAssignPmModal = async (shopId) => {
+            document.getElementById('assign-pm-shop-id').value = shopId;
+            const pmSelect = document.getElementById('pm-select');
+            pmSelect.innerHTML = '<option value="">— Loading... —</option>';
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('assignPmModal')).show();
+
+            try {
+                const usersRes = await apiGet('/users/project-managers');
+                const pms = Array.isArray(usersRes) ? usersRes : (usersRes.items || []);
+                pmSelect.innerHTML = '<option value="">— Select PM —</option>' +
+                    pms.map(u => `<option value="${u.id}">${u.name || u.email} (${u.role.replace(/_/g, ' ')})</option>`).join('');
+            } catch (e) {
+                pmSelect.innerHTML = '<option value="">— Failed to load —</option>';
+                console.error('Failed to load users', e);
+            }
+        };
+
+        window.submitAssignPm = async () => {
+            const shopId = document.getElementById('assign-pm-shop-id').value;
+            const pmId = document.getElementById('pm-select').value;
+            const btn = document.getElementById('submit-assign-pm-btn');
+            if (!pmId) { showToast('Please select a Project Manager', 'error'); return; }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Sending...';
+            try {
+                await window.ApiClient.request(`/shops/${shopId}/assign-pm`, {
+                    method: 'POST',
+                    body: { pm_id: parseInt(pmId) }
+                });
+                showToast('Lead sent to Demo Queue!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('assignPmModal')).hide();
+                await loadLeads();
+            } catch (e) {
+                console.error('Assign PM failed', e);
+                showToast(e?.data?.detail || 'Failed to assign PM', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-send me-1"></i> Send to Demo Queue';
+            }
+        };
     </script>
 </body>
 

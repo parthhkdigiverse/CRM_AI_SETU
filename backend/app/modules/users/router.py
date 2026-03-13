@@ -39,6 +39,17 @@ async def list_users(
         return [current_user]
     return db.query(User).filter(User.is_deleted != True).all()
 
+@router.get("/project-managers", response_model=List[UserRead])
+async def list_project_managers(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+) -> Any:
+    pm_roles = [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES, UserRole.ADMIN]
+    return db.query(User).filter(
+        User.is_deleted != True,
+        User.role.in_(pm_roles)
+    ).all()
+
 @router.patch("/incentive-eligibility/by-role")
 async def update_role_incentive_eligibility(
     payload: RoleIncentiveEligibilityUpdate,

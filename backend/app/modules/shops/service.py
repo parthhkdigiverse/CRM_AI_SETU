@@ -84,6 +84,7 @@ class ShopService:
             shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
             shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
             shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+            shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
             shop_data.pop("_sa_instance_state", None)
             
             # Map assigned owners for frontend UI
@@ -126,6 +127,15 @@ class ShopService:
             shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
             shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
             shop_data["last_visitor_name"] = shop.last_visitor_name  # @property — must be copied explicitly
+            shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
+
+            # Determine last visit status from pre-loaded visits (no extra query)
+            if shop.visits:
+                latest_visit = max(shop.visits, key=lambda v: v.visit_date or v.created_at)
+                raw_status = latest_visit.status
+                shop_data["last_visit_status"] = raw_status.value if hasattr(raw_status, "value") else str(raw_status)
+            else:
+                shop_data["last_visit_status"] = None
             shop_data.pop("_sa_instance_state", None)
             
             shop_data["assigned_users"] = [
@@ -355,3 +365,106 @@ class ShopService:
                 "accepted_at": shop.accepted_at
             })
         return history
+
+    # ── Assign PM to a CONTACTED lead ──
+    @staticmethod
+    def assign_pm(db: Session, shop_id: int, pm_id: int, current_user: User):
+        from app.modules.users.models import UserRole
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        if not shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
+
+        pm = db.query(User).filter(User.id == pm_id).first()
+        if not pm:
+            raise HTTPException(status_code=404, detail="User not found")
+        if pm.role not in [UserRole.ADMIN, UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
+            raise HTTPException(status_code=400, detail="Selected user is not a Project Manager or Admin")
+
+        shop.project_manager_id = pm_id
+        db.commit()
+        db.refresh(shop)
+
+        shop_data = shop.__dict__.copy()
+        shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+        shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+        shop_data["project_manager_name"] = pm.name
+        shop_data["archived_by_name"] = None
+        shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+        shop_data["last_visitor_name"] = None
+        shop_data.pop("_sa_instance_state", None)
+        shop_data["assigned_users"] = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None}
+            for u in getattr(shop, 'assigned_owners_list', [])
+        ]
+        return shop_data
+
+    # ── Mark a demo as completed, auto-advance to MEETING_SET at stage 3 ──
+    @staticmethod
+    def complete_demo(db: Session, shop_id: int, current_user: User):
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        if not shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
+
+        if shop.demo_stage >= 3:
+            raise HTTPException(status_code=400, detail="All 3 demos have already been completed")
+
+        shop.demo_stage = (shop.demo_stage or 0) + 1
+
+        if shop.demo_stage >= 3:
+            shop.status = ShopStatus.MEETING_SET
+
+        db.commit()
+        db.refresh(shop)
+
+        shop_data = shop.__dict__.copy()
+        shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+        shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+        shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
+        shop_data["archived_by_name"] = None
+        shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+        shop_data["last_visitor_name"] = None
+        shop_data.pop("_sa_instance_state", None)
+        shop_data["assigned_users"] = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None}
+            for u in getattr(shop, 'assigned_owners_list', [])
+        ]
+        return shop_data
+
+    # ── Get demo queue for PM dashboard ──
+    @staticmethod
+    def get_demo_queue(db: Session, current_user: User):
+        from sqlalchemy.orm import selectinload
+        from app.modules.users.models import UserRole
+
+        query = db.query(Shop).options(
+            selectinload(Shop.owner),
+            selectinload(Shop.area),
+            selectinload(Shop.assigned_owners_list),
+            selectinload(Shop.creator),
+            selectinload(Shop.project_manager)
+        ).filter(
+            Shop.is_archived == False,
+            Shop.project_manager_id != None
+        )
+
+        # Non-admin PMs only see their own queue
+        if current_user.role not in [UserRole.ADMIN]:
+            query = query.filter(Shop.project_manager_id == current_user.id)
+
+        results = query.order_by(Shop.id.desc()).all()
+        shops = []
+        for shop in results:
+            shop_data = shop.__dict__.copy()
+            shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+            shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+            shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
+            shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+            shop_data["archived_by_name"] = None
+            shop_data["last_visitor_name"] = None
+            shop_data.pop("_sa_instance_state", None)
+            shop_data["assigned_users"] = [
+                {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None}
+                for u in getattr(shop, 'assigned_owners_list', [])
+            ]
+            shops.append(shop_data)
+        return shops

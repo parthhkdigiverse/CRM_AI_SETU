@@ -33,6 +33,7 @@ class VisitService:
 
             query = self.db.query(Visit).options(
                 joinedload(Visit.shop).joinedload(ShopModel.area),
+                joinedload(Visit.shop).joinedload(ShopModel.project_manager),
                 joinedload(Visit.user)
             )
 
@@ -43,7 +44,7 @@ class VisitService:
                 query = query.filter(Visit.user_id == user_id)
 
             # Admins see everything; staff see visits they authored OR
-            # visits logged by anyone on shops assigned to them
+            # visits logged on any shop they own (directly or via assignment)
             if current_user and current_user.role not in [UserRole.ADMIN]:
                 query = (
                     query
@@ -51,6 +52,7 @@ class VisitService:
                     .filter(
                         or_(
                             Visit.user_id == current_user.id,
+                            ShopModel.owner_id == current_user.id,
                             ShopModel.assigned_owners_list.any(id=current_user.id)
                         )
                     )
