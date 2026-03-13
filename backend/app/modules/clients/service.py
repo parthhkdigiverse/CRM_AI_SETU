@@ -16,11 +16,12 @@ class ClientService:
         self.activity_logger = ActivityLogger(db)
 
     def get_client(self, client_id: int):
-        return self.db.query(Client).filter(Client.id == client_id).first()
+        query = self.db.query(Client).filter(Client.id == client_id, Client.is_deleted == False)
+        return query.first()
 
     def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc", include_inactive: bool = False, pm_id: int = None, is_active: bool | None = True):
         try:
-            query = self.db.query(Client)
+            query = self.db.query(Client).filter(Client.is_deleted == False)
             if is_active is True:
                 query = query.filter(Client.is_active == True)
             elif is_active is False:
@@ -226,19 +227,28 @@ class ClientService:
         return db_client
 
     async def delete_client(self, client_id: int, current_user: User, request: Request):
-        db_client = self.get_client(client_id)
+        db_client = self.db.query(Client).filter(Client.id == client_id).first()
         if not db_client:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+
+        from app.modules.salary.models import AppSetting
+        policy = self.db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        is_hard = policy and policy.value == "HARD"
 
         old_data = {
             "name": db_client.name,
             "email": db_client.email,
             "phone": db_client.phone,
-            "organization": db_client.organization
+            "organization": db_client.organization,
+            "policy": "HARD" if is_hard else "SOFT"
         }
 
-        db_client.is_active = False
-        self.db.add(db_client)
+        if is_hard:
+            self.db.delete(db_client)
+        else:
+            db_client.is_deleted = True
+            db_client.is_active = False
+
         self.db.commit()
 
         await self.activity_logger.log_activity(
@@ -248,11 +258,11 @@ class ClientService:
             entity_type=EntityType.CLIENT,
             entity_id=client_id,
             old_data=old_data,
-            new_data=None, # Deleted
+            new_data=None,
             request=request
         )
 
-        return {"detail": "Client deleted"}
+        return {"detail": f"Client {'permanently ' if is_hard else ''}deleted"}
 
     async def assign_pm(self, client_id: int, pm_id: int, current_user: User, request: Request):
         db_client = self.get_client(client_id)

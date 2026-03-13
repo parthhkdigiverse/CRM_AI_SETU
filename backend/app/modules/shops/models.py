@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 from app.core.database import Base
@@ -27,6 +27,7 @@ class Shop(Base):
     project_type = Column(String, nullable=True)   # e.g., "AI Integration", "CRM Setup"
     requirements = Column(Text, nullable=True)
     status = Column(Enum(ShopStatus), default=ShopStatus.NEW, index=True)
+    is_deleted = Column(Boolean, default=False, index=True)
 
     # Foreign keys — from both branches
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)

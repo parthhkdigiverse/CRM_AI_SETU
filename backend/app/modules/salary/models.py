@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime, UTC
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Enum, Text, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Enum, Text, Float, Boolean
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -43,6 +43,7 @@ class LeaveRecord(Base):
     status = Column(Enum(LeaveStatus), default=LeaveStatus.PENDING, nullable=False)
     approved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     remarks = Column(Text, nullable=True)  # Admin remarks on rejection/approval
+    is_deleted = Column(Boolean, default=False, index=True)
 
     user = relationship("User", foreign_keys=[user_id], backref="leave_records")
     approver = relationship("User", foreign_keys=[approved_by])
@@ -71,6 +72,7 @@ class SalarySlip(Base):
     confirmed_at = Column(Date, nullable=True)
 
     file_url = Column(String, nullable=True)
+    is_deleted = Column(Boolean, default=False, index=True)
 
     user = relationship("User", foreign_keys=[user_id], backref="salary_slips")
     confirmer = relationship("User", foreign_keys=[confirmed_by])

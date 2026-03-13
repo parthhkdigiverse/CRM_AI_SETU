@@ -19,7 +19,9 @@ class ShopService:
 
     @staticmethod
     def get_shop(db: Session, shop_id: int):
-        shop = db.query(Shop).filter(Shop.id == shop_id).first()
+        query = db.query(Shop).filter(Shop.id == shop_id, Shop.is_deleted == False)
+        
+        shop = query.first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
         if getattr(shop, 'area', None):
@@ -29,11 +31,17 @@ class ShopService:
     @staticmethod
     def list_shops(db: Session, skip: int = 0, limit: int = 100, status: ShopStatus = None, owner_id: int = None):
         from app.modules.areas.models import Area
+        from app.modules.salary.models import AppSetting
+        policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        
         query = db.query(
             Shop, 
             User.name.label("owner_name"),
             Area.name.label("area_name")
         ).outerjoin(User, Shop.owner_id == User.id).outerjoin(Area, Shop.area_id == Area.id)
+        
+        if not policy or policy.value == "SOFT":
+            query = query.filter(Shop.is_deleted == False)
         
         if status:
             query = query.filter(Shop.status == status)
@@ -52,11 +60,17 @@ class ShopService:
     @staticmethod
     def list_kanban_shops(db: Session, owner_id: int = None, source: str = None):
         from app.modules.areas.models import Area
+        from app.modules.salary.models import AppSetting
+        policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        
         query = db.query(
             Shop, 
             User.name.label("owner_name"),
             Area.name.label("area_name")
         ).outerjoin(User, Shop.owner_id == User.id).outerjoin(Area, Shop.area_id == Area.id)
+        
+        if not policy or policy.value == "SOFT":
+            query = query.filter(Shop.is_deleted == False)
         
         if owner_id:
             query = query.filter(Shop.owner_id == owner_id)
@@ -135,7 +149,9 @@ class ShopService:
     def delete_shop(db: Session, shop_id: int):
         from sqlalchemy import or_
 
-        db_shop = ShopService.get_shop(db, shop_id)
+        db_shop = db.query(Shop).filter(Shop.id == shop_id).first()
+        if not db_shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
         
         conditions = []
         if db_shop.email:
@@ -148,6 +164,14 @@ class ShopService:
             if client_exists:
                 raise HTTPException(status_code=400, detail="Cannot delete shop that has been converted to a client")
 
-        db.delete(db_shop)
+        from app.modules.salary.models import AppSetting
+        policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        is_hard = policy and policy.value == "HARD"
+
+        if is_hard:
+            db.delete(db_shop)
+        else:
+            db_shop.is_deleted = True
+
         db.commit()
-        return {"detail": "Shop deleted successfully"}
+        return {"detail": f"Shop {'permanently ' if is_hard else ''}deleted"}

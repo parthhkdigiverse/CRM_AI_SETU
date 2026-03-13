@@ -24,6 +24,7 @@ class SalaryService:
         approved_leaves = self.db.query(LeaveRecord).filter(
             LeaveRecord.user_id == user_id,
             LeaveRecord.status == LeaveStatus.APPROVED,
+            LeaveRecord.is_deleted == False,
             extract('year', LeaveRecord.start_date) == year,
             extract('month', LeaveRecord.start_date) == month_num
         ).all()
@@ -135,7 +136,8 @@ class SalaryService:
 
         existing = self.db.query(SalarySlip).filter(
             SalarySlip.user_id == user_id,
-            SalarySlip.month == month
+            SalarySlip.month == month,
+            SalarySlip.is_deleted == False
         ).first()
 
         return {
@@ -275,7 +277,7 @@ class SalaryService:
 
     def get_user_salary_slips(self, user_id: int, show_drafts: bool = True) -> List[dict]:
         """Get salary slips for a specific user."""
-        query = self.db.query(SalarySlip).filter(SalarySlip.user_id == user_id)
+        query = self.db.query(SalarySlip).filter(SalarySlip.user_id == user_id, SalarySlip.is_deleted == False)
         if not show_drafts:
             query = query.filter(SalarySlip.status == "CONFIRMED")
         slips = query.order_by(SalarySlip.month.desc()).all()
@@ -283,7 +285,7 @@ class SalaryService:
 
     def get_all_salary_slips(self) -> List[dict]:
         """Get all salary slips (admin use)."""
-        slips = self.db.query(SalarySlip).order_by(SalarySlip.month.desc()).all()
+        slips = self.db.query(SalarySlip).filter(SalarySlip.is_deleted == False).order_by(SalarySlip.month.desc()).all()
         return [self._format_slip(s) for s in slips]
 
     def generate_invoice_html(self, slip_id: int) -> str:

@@ -22,11 +22,11 @@ class VisitService:
         self.activity_logger = ActivityLogger(db)
 
     def get_visit(self, visit_id: int):
-        return self.db.query(Visit).filter(Visit.id == visit_id).first()
+        return self.db.query(Visit).filter(Visit.id == visit_id, Visit.is_deleted == False).first()
 
     def get_visits(self, skip: int = 0, limit: int = 100, user_id: int = None, shop_id: int = None, area_id: int = None, status: str = None, start_date: dt_date = None, end_date: dt_date = None):
         try:
-            query = self.db.query(Visit).join(Shop)
+            query = self.db.query(Visit).join(Shop).filter(Visit.is_deleted == False, Shop.is_deleted == False)
             if user_id:
                 query = query.filter(Visit.user_id == user_id)
             if shop_id:

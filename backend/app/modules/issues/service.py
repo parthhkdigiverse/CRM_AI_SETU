@@ -16,14 +16,16 @@ class IssueService:
         self.activity_logger = ActivityLogger(db)
 
     def get_issue(self, issue_id: int):
-        return self.db.query(Issue).filter(Issue.id == issue_id).first()
+        query = self.db.query(Issue).filter(Issue.id == issue_id, Issue.is_deleted == False)
+        return query.first()
 
     def get_issues(self, skip: int = 0, limit: int = 100):
-        return self.db.query(Issue).offset(skip).limit(limit).all()
+        query = self.db.query(Issue).filter(Issue.is_deleted == False)
+        return query.offset(skip).limit(limit).all()
 
     def get_all_issues(self, skip: int = 0, limit: int = 100, status: Optional[str] = None, severity: Optional[str] = None, client_id: Optional[int] = None, assigned_to_id: Optional[int] = None, pm_id: Optional[int] = None):
         try:
-            query = self.db.query(Issue)
+            query = self.db.query(Issue).filter(Issue.is_deleted == False)
             if pm_id: 
                 query = query.join(Client).filter(Client.pm_id == pm_id)
             if status:
@@ -159,16 +161,25 @@ class IssueService:
         return db_issue
 
     async def delete_issue(self, issue_id: int, current_user: User, request: Request):
-        db_issue = self.get_issue(issue_id)
+        db_issue = self.db.query(Issue).filter(Issue.id == issue_id).first()
         if not db_issue:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Issue not found")
 
+        from app.modules.salary.models import AppSetting
+        policy = self.db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        is_hard = policy and policy.value == "HARD"
+
         old_data = {
             "title": db_issue.title,
-            "description": db_issue.description
+            "description": db_issue.description,
+            "policy": "HARD" if is_hard else "SOFT"
         }
 
-        self.db.delete(db_issue)
+        if is_hard:
+            self.db.delete(db_issue)
+        else:
+            db_issue.is_deleted = True
+            
         self.db.commit()
 
         await self.activity_logger.log_activity(
@@ -182,4 +193,4 @@ class IssueService:
             request=request
         )
 
-        return {"detail": "Issue deleted"}
+        return {"detail": f"Issue {'permanently ' if is_hard else ''}deleted"}

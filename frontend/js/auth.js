@@ -38,8 +38,44 @@ function getUser() {
     try { return JSON.parse(localStorage.getItem('crm_user')); } catch { return null; }
 }
 
+function showAccessDeniedState(role, path) {
+    const target = document.getElementById('main-content') || document.querySelector('.page-content');
+    if (!target || document.getElementById('access-denied-state')) return;
+
+    const roleLabel = (role || 'USER').replace(/_/g, ' ');
+    const pageLabel = (path || 'this page').replace('.html', '').replace(/[-_]/g, ' ');
+    const card = document.createElement('div');
+    card.id = 'access-denied-state';
+    card.style.cssText = 'position:relative;z-index:20;margin:0 auto 24px auto;max-width:720px;background:#fff7ed;border:1px solid #fed7aa;border-radius:20px;padding:32px;box-shadow:0 20px 40px rgba(15,23,42,.08);';
+    card.innerHTML = `
+        <div style="display:flex;align-items:flex-start;gap:16px;">
+            <div style="width:56px;height:56px;border-radius:16px;background:#ffedd5;color:#ea580c;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">
+                <i class="bi bi-shield-lock"></i>
+            </div>
+            <div>
+                <div style="font-size:1.35rem;font-weight:700;color:#9a3412;line-height:1.2;">You don't have enough access</div>
+                <p style="margin:10px 0 0 0;color:#7c2d12;font-size:.95rem;line-height:1.6;">Your current role, ${roleLabel}, cannot open ${pageLabel}. The sidebar stays visible so you can move to pages that are available to you.</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+                    <a href="dashboard.html" style="text-decoration:none;background:#ea580c;color:#fff;padding:10px 14px;border-radius:12px;font-weight:600;">Go to Dashboard</a>
+                    <a href="profile.html" style="text-decoration:none;background:#fff;color:#9a3412;padding:10px 14px;border-radius:12px;border:1px solid #fdba74;font-weight:600;">Open Profile</a>
+                </div>
+            </div>
+        </div>`;
+
+    target.style.position = target.style.position || 'relative';
+    target.insertBefore(card, target.firstChild);
+    Array.from(target.children).forEach(child => {
+        if (child.id === 'access-denied-state') return;
+        child.style.opacity = '0.18';
+        child.style.pointerEvents = 'none';
+        child.setAttribute('aria-hidden', 'true');
+    });
+    window.__accessDenied = true;
+}
+
 // Guard: call on every protected page
 function requireAuth() {
+    window.__accessDenied = false;
     const params = new URLSearchParams(window.location.search);
     const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
     const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
@@ -71,15 +107,16 @@ function requireAuth() {
     };
 
     function enforceRoleAccess(role) {
-        if (!role || role === 'ADMIN') return;
+        if (!role || role === 'ADMIN') return true;
         const path = window.location.pathname.split('/').pop();
-        if (!path || path === 'index.html') return;
+        if (!path || path === 'index.html') return true;
 
         const allowed = ROLE_PERMISSIONS[role] || [];
         if (!allowed.includes(path) && !allowed.includes('*')) {
-            alert(`Access Denied: Your role (${role.replace(/_/g, ' ')}) is not authorized to view this page.`);
-            window.location.replace('dashboard.html');
+            showAccessDeniedState(role, path);
+            return false;
         }
+        return true;
     }
 
     // --- OPTIMISTIC UI ---

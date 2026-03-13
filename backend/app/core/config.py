@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     # WhatsApp Cloud API (Meta) — uncomment gateway code in billing/service.py to activate
     WHATSAPP_TOKEN: str = ""
+    WHATSAPP_TOKEN_FALLBACK: str = ""
     WHATSAPP_PHONE_NUMBER_ID: str = ""
 
     # PhonePe Payment Gateway — uncomment gateway code in billing/service.py to activate

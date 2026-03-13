@@ -156,6 +156,53 @@
                     </div>
                 </div>
 
+                <div class="grid-card mb-4" id="my-attendance-card" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                        <div>
+                            <h6 class="fw-bold mb-0" style="color:#334155;"><i class="bi bi-clock-history me-2 text-primary"></i>My Attendance</h6>
+                            <div class="text-muted small">Daily punch in/out and total hours</div>
+                        </div>
+                    </div>
+                    <div class="p-3">
+                        <div class="row g-3 align-items-end mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small">From</label>
+                                <input type="date" id="my-att-start" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small">To</label>
+                                <input type="date" id="my-att-end" class="form-control">
+                            </div>
+                            <div class="col-md-4 d-grid">
+                                <button class="btn btn-primary" id="my-att-apply">Apply</button>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="text-muted small" id="my-att-count">0 record(s)</div>
+                            <div class="fw-semibold" id="my-att-total">Total: 0.00 hrs</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead style="background:#f8fafc;">
+                                    <tr>
+                                        <th style="white-space:nowrap;">Date</th>
+                                        <th style="white-space:nowrap;">Punch In</th>
+                                        <th style="white-space:nowrap;">Punch Out</th>
+                                        <th style="white-space:nowrap;">Hours</th>
+                                        <th style="white-space:nowrap;">Status</th>
+                                        <th style="white-space:nowrap;">Leave</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="my-attendance-tbody">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">No data loaded.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Leaves Table -->
                 <div class="grid-card">
                     <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
@@ -427,6 +474,74 @@
             OTHER: 'Other',
         };
 
+        function formatTimeCell(value) {
+            if (!value) return '--';
+            const dt = new Date(value);
+            if (Number.isNaN(dt.getTime())) return '--';
+            return dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function attendanceStatusBadge(status) {
+            const map = {
+                PRESENT: 'bg-success-subtle text-success border',
+                HALF: 'bg-warning-subtle text-warning border',
+                ABSENT: 'bg-danger-subtle text-danger border',
+                OFF: 'bg-light text-muted border'
+            };
+            const cls = map[status] || 'bg-light text-muted border';
+            return `<span class="badge ${cls}" style="font-weight:500;">${status}</span>`;
+        }
+
+        function leaveBadge(status) {
+            if (!status) return '--';
+            const map = {
+                PENDING: 'badge-yellow-light',
+                APPROVED: 'badge-green-light',
+                REJECTED: 'badge-red-light'
+            };
+            const cls = map[status] || 'bg-secondary text-white border';
+            return `<span class="status-pill ${cls}">${status}</span>`;
+        }
+
+        async function loadMyAttendanceSummary() {
+            if (isAdmin) return;
+
+            const tbody = document.getElementById('my-attendance-tbody');
+            const start = document.getElementById('my-att-start').value;
+            const end = document.getElementById('my-att-end').value;
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+
+            try {
+                const data = await ApiClient.getAttendanceSummary({
+                    start_date: start,
+                    end_date: end,
+                    reconcile: true
+                });
+                const records = data.records || [];
+                document.getElementById('my-att-count').textContent = `${records.length} record(s)`;
+                document.getElementById('my-att-total').textContent = `Total: ${(data.total_hours || 0).toFixed(2)} hrs`;
+
+                if (!records.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No attendance records found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = records.map(r => {
+                    const day = new Date(r.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                    return `<tr>
+                        <td style="white-space:nowrap;">${day}</td>
+                        <td>${formatTimeCell(r.first_punch_in)}</td>
+                        <td>${formatTimeCell(r.last_punch_out)}</td>
+                        <td>${(r.total_hours || 0).toFixed(2)}</td>
+                        <td>${attendanceStatusBadge(r.day_status)}</td>
+                        <td>${leaveBadge(r.leave_status)}</td>
+                    </tr>`;
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Failed to load attendance.</td></tr>';
+            }
+        }
+
         // Load leaves
         async function loadLeaves() {
             const tbody = document.getElementById('leaves-tbody');
@@ -605,7 +720,28 @@
             approveLeaveWithRemarks(id, status);
         }
 
-        loadLeaves();
+        const end = new Date();
+        const start = new Date();
+        start.setDate(end.getDate() - 6);
+
+        if (!isAdmin) {
+            document.getElementById('my-attendance-card').style.display = 'block';
+            document.getElementById('my-att-start').value = start.toISOString().slice(0, 10);
+            document.getElementById('my-att-end').value = end.toISOString().slice(0, 10);
+            document.getElementById('my-att-apply').addEventListener('click', async () => {
+                await loadMyAttendanceSummary();
+                loadLeaves();
+            });
+            loadMyAttendanceSummary().then(() => loadLeaves());
+        } else {
+            const reconStart = new Date();
+            reconStart.setDate(end.getDate() - 30);
+            ApiClient.getAttendanceSummary({
+                start_date: reconStart.toISOString().slice(0, 10),
+                end_date: end.toISOString().slice(0, 10),
+                reconcile: true
+            }).finally(loadLeaves);
+        }
     </script>
 </body>
 

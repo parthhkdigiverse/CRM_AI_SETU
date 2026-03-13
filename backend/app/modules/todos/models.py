@@ -32,6 +32,7 @@ class Todo(Base):
     assigned_to = Column(String, nullable=True)
     related_entity = Column(String, nullable=True)
     evidence_url = Column(String, nullable=True)
+    is_deleted = Column(Boolean, default=False, index=True)
     
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))

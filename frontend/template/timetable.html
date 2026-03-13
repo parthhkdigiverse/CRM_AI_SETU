@@ -1012,6 +1012,31 @@
         let selectedCalendars = new Set();
         let currentUser = null;
 
+        function isTimetableAdmin() {
+            return currentUser && currentUser.role === 'ADMIN';
+        }
+
+        function getCurrentUserLabel() {
+            return currentUser ? (currentUser.name || currentUser.email || '') : '';
+        }
+
+        function configureTimetableAssigneeSelect() {
+            const sel = document.getElementById('ev-user');
+            if (!sel) return;
+
+            if (isTimetableAdmin()) {
+                sel.disabled = false;
+                return;
+            }
+
+            const currentLabel = getCurrentUserLabel();
+            sel.innerHTML = currentLabel
+                ? `<option value="${currentLabel}">${currentLabel}</option>`
+                : '<option value="">My Schedule</option>';
+            sel.value = currentLabel;
+            sel.disabled = true;
+        }
+
         const PALETTE = [
             { color: '#4f46e5', bg: 'rgba(79,70,229,.13)' },
             { color: '#0891b2', bg: 'rgba(8,145,178,.13)' },
@@ -1150,7 +1175,7 @@
         // ── Event actions ───────────────────────────────────────
         async function saveEvent() {
             const title = document.getElementById('ev-title').value.trim();
-            const user = document.getElementById('ev-user').value;
+            const user = isTimetableAdmin() ? document.getElementById('ev-user').value : getCurrentUserLabel();
             const date = document.getElementById('ev-date').value;
             const start = document.getElementById('ev-start').value;
             const end = document.getElementById('ev-end').value;
@@ -1183,6 +1208,7 @@
                     const el = document.getElementById(id); if (el) el.value = '';
                 });
                 document.getElementById('ev-user').value = '';
+                configureTimetableAssigneeSelect();
 
                 bsModal.hide();
                 await renderCalendar();
@@ -1296,7 +1322,7 @@
                 }
             });
 
-            const otherCals = `
+            const otherCals = !isTimetableAdmin() ? '' : `
             <div class="sidebar-section">
                 <div class="sidebar-title" data-bs-toggle="collapse" data-bs-target="#otherCalendarsCollapse" aria-expanded="${isOtherCalsOpen ? 'true' : 'false'}" style="cursor:pointer;" onclick="isOtherCalsOpen=!isOtherCalsOpen">
                     <span>Other calendars</span>
@@ -1536,7 +1562,7 @@
                             <button class="${taskFilter === 'pending' ? 'active' : ''}" onclick="setTaskFilter('pending')">Pending</button>
                             <button class="${taskFilter === 'done' ? 'active' : ''}" onclick="setTaskFilter('done')">Completed</button>
                             <button class="${taskFilter === 'my' ? 'active' : ''}" onclick="setTaskFilter('my')">My Tasks</button>
-                            <button class="${taskFilter === 'employees' ? 'active' : ''}" onclick="setTaskFilter('employees')">Employee Tasks</button>
+                            ${isTimetableAdmin() ? `<button class="${taskFilter === 'employees' ? 'active' : ''}" onclick="setTaskFilter('employees')">Employee Tasks</button>` : ''}
                         </div>
                         <button class="task-toggle-btn active" onclick="toggleTaskView()" style="background:#e8eafd;color:#4f46e5;border-color:#c7d2fe;">
                             <i class="bi bi-calendar3"></i>
@@ -2026,7 +2052,7 @@
         async function updateActivity(id, type) {
             const isEvent = document.getElementById('typeEvent').checked;
             const title = document.getElementById('ev-title').value.trim();
-            const user = document.getElementById('ev-user').value;
+            const user = isTimetableAdmin() ? document.getElementById('ev-user').value : getCurrentUserLabel();
             const date = document.getElementById('ev-date').value;
             const start = document.getElementById('ev-start').value;
             const end = document.getElementById('ev-end').value;
@@ -2109,7 +2135,7 @@
             if (isEvent) {
                 // Event Creation
                 const title = document.getElementById('ev-title').value.trim();
-                const user = document.getElementById('ev-user').value;
+                const user = isTimetableAdmin() ? document.getElementById('ev-user').value : getCurrentUserLabel();
                 const date = document.getElementById('ev-date').value;
                 const start = document.getElementById('ev-start').value;
                 const end = document.getElementById('ev-end').value;
@@ -2161,7 +2187,7 @@
             } else {
                 // Task Creation
                 const title = document.getElementById('ev-title').value.trim();
-                const user = document.getElementById('ev-user').value;
+                const user = isTimetableAdmin() ? document.getElementById('ev-user').value : getCurrentUserLabel();
                 const priority = document.getElementById('td-priority').value;
                 let due = document.getElementById('td-due').value;
                 const startStr = document.getElementById('td-start').value;
@@ -2206,6 +2232,7 @@
                         const el = document.getElementById(id); if (el) el.value = '';
                     });
                     document.getElementById('ev-user').value = '';
+                    configureTimetableAssigneeSelect();
 
                     bsModal.hide();
                     await renderCalendar();
@@ -2304,16 +2331,19 @@
             try {
                 currentUser = ApiClient.getCurrentUser();
                 const emps = await ApiClient.getEmployees();
-                ALL_USERS_LIST = emps;
+                ALL_USERS_LIST = isTimetableAdmin()
+                    ? emps
+                    : emps.filter(e => e.id === currentUser?.id || (e.name || e.email) === getCurrentUserLabel());
 
                 // Populate Assignee dropdown
                 const sel = document.getElementById('ev-user');
                 sel.innerHTML = '<option value="">— Unassigned —</option>' +
-                    emps.map(e => {
-                        const uniqueVal = e.email || e.name;
+                    ALL_USERS_LIST.map(e => {
+                        const uniqueVal = e.name || e.email;
                         const role = (e.role || '').replace(/_/g, ' ');
                         return `<option value="${uniqueVal}">${e.name || e.email} (${role})</option>`;
                     }).join('');
+                configureTimetableAssigneeSelect();
 
                 const clients = await ApiClient.getClients();
                 const clientSel = document.getElementById('ev-client');
@@ -2352,6 +2382,14 @@
 
                 // If nothing was parsed in localStorage, apply defaults
                 if (selectedCalendars.size === 0) {
+                    if (currUserName) selectedCalendars.add(currUserName);
+                    selectedCalendars.add('Tasks');
+                    selectedCalendars.add('Birthdays');
+                    saveSelectedCalendars();
+                }
+
+                if (!isTimetableAdmin()) {
+                    selectedCalendars.clear();
                     if (currUserName) selectedCalendars.add(currUserName);
                     selectedCalendars.add('Tasks');
                     selectedCalendars.add('Birthdays');

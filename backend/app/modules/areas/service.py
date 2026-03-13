@@ -11,10 +11,13 @@ class AreaService:
         self.db = db
 
     def get_areas(self, skip: int = 0, limit: int = 100):
-        areas = self.db.query(Area).offset(skip).limit(limit).all()
+        query = self.db.query(Area).filter(Area.is_deleted == False)
+        
+        areas = query.offset(skip).limit(limit).all()
         for area in areas:
-            # We add shops_count dynamically to the model 
-            setattr(area, 'shops_count', len(area.shops) if area.shops else 0)
+            # Only count non-deleted shops
+            active_shops = [s for s in (area.shops or []) if not getattr(s, 'is_deleted', False)]
+            setattr(area, 'shops_count', len(active_shops))
         return areas
 
     def create_area(self, area_in: AreaCreate):
@@ -68,10 +71,20 @@ class AreaService:
         if not area:
             raise HTTPException(status_code=404, detail="Area not found")
         
-        # Cascading delete: Remove all shops associated with this area
-        from app.modules.shops.models import Shop
-        self.db.query(Shop).filter(Shop.area_id == area_id).delete()
-        
-        self.db.delete(area)
+        from app.modules.salary.models import AppSetting
+        policy = self.db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        is_hard = policy and policy.value == "HARD"
+
+        if is_hard:
+            # Cascading delete: Remove all shops associated with this area
+            from app.modules.shops.models import Shop
+            self.db.query(Shop).filter(Shop.area_id == area_id).delete()
+            self.db.delete(area)
+        else:
+            area.is_deleted = True
+            # Soft delete associated shops too
+            from app.modules.shops.models import Shop
+            self.db.query(Shop).filter(Shop.area_id == area_id).update({"is_deleted": True}, synchronize_session=False)
+
         self.db.commit()
-        return {"detail": "Area and associated shops deleted"}
+        return {"detail": f"Area and associated shops {'permanently ' if is_hard else ''}deleted"}

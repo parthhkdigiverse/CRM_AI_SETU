@@ -17,12 +17,30 @@ from app.utils.scheduler import start_scheduler, stop_scheduler
 async def lifespan(app: FastAPI):
     """Startup & shutdown hooks."""
     # ── Startup ──────────────────────────────────────────────────
-    from app.core.database import init_db
-    init_db()
-    start_scheduler()
+    try:
+        from app.core.database import init_db
+        print("[Lifespan] Initializing database...")
+        init_db()
+        print("[Lifespan] Database initialized successfully.")
+        
+        print("[Lifespan] Starting scheduler...")
+        start_scheduler()
+        print("[Lifespan] Scheduler started successfully.")
+    except Exception as startup_error:
+        print(f"[Lifespan] STARTUP ERROR: {startup_error}")
+        traceback.print_exc()
+        raise startup_error
+    
     yield
+    
     # ── Shutdown ─────────────────────────────────────────────────
-    stop_scheduler()
+    try:
+        print("[Lifespan] Stopping scheduler...")
+        stop_scheduler()
+        print("[Lifespan] Scheduler stopped successfully.")
+    except Exception as shutdown_error:
+        print(f"[Lifespan] SHUTDOWN ERROR: {shutdown_error}")
+        traceback.print_exc()
 
 
 app = FastAPI(title="SRM AI SETU API", lifespan=lifespan)

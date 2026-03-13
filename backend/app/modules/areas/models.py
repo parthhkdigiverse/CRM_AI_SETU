@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -14,4 +14,5 @@ class Area(Base):
     # Add Google Maps coordinates
     lat = Column(Float, nullable=True)
     lng = Column(Float, nullable=True)
+    is_deleted = Column(Boolean, default=False, index=True)
     assigned_user = relationship("app.modules.users.models.User", backref="assigned_areas")

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, Time, ForeignKey
+from sqlalchemy import Column, Integer, String, Date, Time, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -14,6 +14,7 @@ class TimetableEvent(Base):
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
     location = Column(String, nullable=True)
+    is_deleted = Column(Boolean, default=False, index=True)
 
     # Relationship to user
     user = relationship("app.modules.users.models.User", backref="timetable_events")

@@ -441,6 +441,11 @@
             let name = u?.name || u?.email || 'User';
             const role = (u?.role || 'USER').replace(/_/g, ' ');
             let phone = u?.phone || '';
+            let employeeCode = u?.employee_code || '';
+            let joiningDateRaw = u?.joining_date || null;
+            let department = u?.department || '';
+            let baseSalary = u?.base_salary ?? null;
+            let target = u?.target ?? null;
 
             // Fetch fresh data from backend to get latest name/phone
             try {
@@ -448,10 +453,20 @@
                 if (profile) {
                     name = profile.name || name;
                     phone = profile.phone || '';
+                    employeeCode = profile.employee_code || '';
+                    joiningDateRaw = profile.joining_date || null;
+                    department = profile.department || '';
+                    baseSalary = profile.base_salary ?? null;
+                    target = profile.target ?? null;
                     // Update localStorage with fresh data
                     const stored = JSON.parse(localStorage.getItem('crm_user') || '{}');
                     stored.name = name;
                     stored.phone = phone;
+                    stored.employee_code = employeeCode;
+                    stored.joining_date = joiningDateRaw;
+                    stored.department = department;
+                    stored.base_salary = baseSalary;
+                    stored.target = target;
                     localStorage.setItem('crm_user', JSON.stringify(stored));
                 }
             } catch (e) { /* use local data */ }
@@ -468,15 +483,15 @@
             document.getElementById('edit-name').value = name;
             document.getElementById('edit-email').value = u?.email || '';
             document.getElementById('edit-phone').value = phone;
-            document.getElementById('edit-dept').value = role;
+            document.getElementById('edit-dept').value = department || role;
 
             // Account info rows
-            const joinedDate = u?.created_at
-                ? new Date(u.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+            const joinedDate = joiningDateRaw
+                ? new Date(joiningDateRaw).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
                 : '—';
-            const lastLogin = u?.last_login
-                ? new Date(u.last_login).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                : 'Today';
+            const salaryText = baseSalary !== null && baseSalary !== undefined
+                ? 'Rs ' + Number(baseSalary || 0).toLocaleString('en-IN')
+                : '—';
 
             document.getElementById('account-info-rows').innerHTML = `
                 <div class="info-row">
@@ -492,8 +507,28 @@
                     <span class="info-value"><span class="role-badge" style="font-size:0.7rem;">${role}</span></span>
                 </div>
                 <div class="info-row">
+                    <span class="info-label"><i class="bi bi-building me-2 text-muted"></i>Department</span>
+                    <span class="info-value">${department || '—'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="bi bi-upc-scan me-2 text-muted"></i>Employee Code</span>
+                    <span class="info-value">${employeeCode || '—'}</span>
+                </div>
+                <div class="info-row">
                     <span class="info-label"><i class="bi bi-calendar3 me-2 text-muted"></i>Joined</span>
                     <span class="info-value">${joinedDate}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="bi bi-bullseye me-2 text-muted"></i>Target</span>
+                    <span class="info-value">${target ?? '—'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="bi bi-cash-stack me-2 text-muted"></i>Base Salary</span>
+                    <span class="info-value">${salaryText}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="bi bi-telephone me-2 text-muted"></i>Phone</span>
+                    <span class="info-value">${phone || '—'}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label"><i class="bi bi-clock me-2 text-muted"></i>User ID</span>
@@ -501,22 +536,65 @@
                 </div>
             `;
 
-            // Load real stats from API
+            // Load role-aware stats from API
             try {
-                const stats = await apiGet('/reports/dashboard');
+                const normalizedRole = (u?.role || '').toUpperCase();
+                const isAdmin = normalizedRole === 'ADMIN';
+                const isSales = ['SALES', 'TELESALES', 'PROJECT_MANAGER_AND_SALES'].includes(normalizedRole);
+                const isPM = ['PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'].includes(normalizedRole);
+
+                const [tasksRes, visitsRes, scheduleRes, projectsRes] = await Promise.allSettled([
+                    ApiClient.getTodos(),
+                    ApiClient.getVisits('?limit=200'),
+                    apiGet(`/timetable/?start_date=${new Date().toISOString()}&end_date=${new Date(Date.now() + 7 * 86400000).toISOString()}`),
+                    ApiClient.getProjects('?limit=200')
+                ]);
+
+                const tasks = tasksRes.status === 'fulfilled' ? (tasksRes.value || []) : [];
+                const visits = visitsRes.status === 'fulfilled' ? (visitsRes.value || []) : [];
+                const schedule = scheduleRes.status === 'fulfilled' ? (scheduleRes.value?.events || []) : [];
+                const projects = projectsRes.status === 'fulfilled' ? (projectsRes.value || []) : [];
+
+                let statCards = [];
+                if (isAdmin) {
+                    const stats = await apiGet('/reports/dashboard');
+                    statCards = [
+                        { value: stats.total_leads || 0, label: 'Total Leads' },
+                        { value: stats.active_clients || 0, label: 'Active Clients' },
+                        { value: stats.ongoing_projects || 0, label: 'Projects' }
+                    ];
+                } else if (isPM && isSales) {
+                    statCards = [
+                        { value: tasks.filter(t => t.status !== 'COMPLETED').length, label: 'Open Tasks' },
+                        { value: visits.length, label: 'Visits / Calls' },
+                        { value: projects.length, label: 'Projects' }
+                    ];
+                } else if (isPM) {
+                    statCards = [
+                        { value: tasks.filter(t => t.status !== 'COMPLETED').length, label: 'Open Tasks' },
+                        { value: projects.length, label: 'Projects' },
+                        { value: schedule.filter(item => item.event_type === 'MEETING').length, label: 'Meetings' }
+                    ];
+                } else if (isSales) {
+                    statCards = [
+                        { value: visits.length, label: normalizedRole === 'TELESALES' ? 'Calls Logged' : 'Visits Logged' },
+                        { value: tasks.filter(t => t.status !== 'COMPLETED').length, label: 'Open Tasks' },
+                        { value: schedule.length, label: 'This Week' }
+                    ];
+                } else {
+                    statCards = [
+                        { value: tasks.length, label: 'Tasks' },
+                        { value: schedule.length, label: 'Schedule' },
+                        { value: visits.length, label: 'Activity' }
+                    ];
+                }
+
                 document.getElementById('stats-row').innerHTML = `
+                    ${statCards.map(card => `
                     <div class="stat-pill">
-                        <div class="sp-val">${stats.total_leads || 0}</div>
-                        <div class="sp-lbl">Total Leads</div>
-                    </div>
-                    <div class="stat-pill">
-                        <div class="sp-val">${stats.active_clients || 0}</div>
-                        <div class="sp-lbl">Active Clients</div>
-                    </div>
-                    <div class="stat-pill">
-                        <div class="sp-val">${stats.ongoing_projects || 0}</div>
-                        <div class="sp-lbl">Projects</div>
-                    </div>
+                        <div class="sp-val">${card.value}</div>
+                        <div class="sp-lbl">${card.label}</div>
+                    </div>`).join('')}
                 `;
             } catch (e) {
                 document.getElementById('stats-row').innerHTML = '';

@@ -309,6 +309,9 @@
             sidebarElement.innerHTML = renderSidebar('todo');
         }
         injectTopHeader('To-Do List');
+        const todoUser = getUser();
+        const isAdmin = todoUser?.role === 'ADMIN';
+        const selfAssigneeValue = todoUser?.name || todoUser?.email || '';
         let tasks = [];
         let filteredTasks = [];
         let currentMode = 'TASK';
@@ -359,7 +362,7 @@
                     (t.assigned_to && t.assigned_to.toLowerCase().includes(filters.search.toLowerCase()));
                 const matchesStatus = filters.status === 'ALL' || t.status === filters.status;
                 const matchesPriority = filters.priority === 'ALL' || t.priority === filters.priority;
-                const matchesAssignee = filters.assignee === 'ALL' || t.assigned_to === filters.assignee;
+                const matchesAssignee = !isAdmin || filters.assignee === 'ALL' || t.assigned_to === filters.assignee;
 
                 return matchesSearch && matchesStatus && matchesPriority && matchesAssignee;
             });
@@ -445,10 +448,25 @@
         function filterMyTasks() {
             const u = getUser();
             if (!u) return;
-            const myId = u.email || u.name;
+            const myId = u.name || u.email;
             handleFilterChange('assignee', myId);
             const sel = document.getElementById('filter-assignee');
             if (sel) sel.value = myId;
+        }
+
+        function configureTodoAssignmentUi() {
+            const assigneeSelect = document.getElementById('ev-user');
+            if (!assigneeSelect) return;
+
+            if (!isAdmin) {
+                assigneeSelect.innerHTML = selfAssigneeValue
+                    ? `<option value="${selfAssigneeValue}">${selfAssigneeValue}</option>`
+                    : '<option value="">My Task</option>';
+                assigneeSelect.value = selfAssigneeValue;
+                assigneeSelect.disabled = true;
+            } else {
+                assigneeSelect.disabled = false;
+            }
         }
 
         function renderTableBody() {
@@ -514,15 +532,15 @@
                 <div class="container-fluid py-4 px-lg-5">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
-                            <h2 class="page-section-title">TO-DO List</h2>
-                            <p class="text-muted mb-0">Track and manage SRM workspace objectives with precision</p>
+                            <h2 class="page-section-title">${isAdmin ? 'TO-DO List' : 'My To-Do List'}</h2>
+                            <p class="text-muted mb-0">${isAdmin ? 'Track and manage SRM workspace objectives with precision' : 'Track tasks, meetings, and follow-ups assigned to you.'}</p>
                         </div>
                         <div class="d-flex gap-3">
-                            <button class="btn-premium-action btn-my-tasks-new" onclick="filterMyTasks()">
+                            ${isAdmin ? `<button class="btn-premium-action btn-my-tasks-new" onclick="filterMyTasks()">
                                 <i class="bi bi-person-circle"></i> View My Tasks
-                            </button>
+                            </button>` : ''}
                             <button class="btn-premium-action btn-primary text-white" onclick="openModal()" style="background: var(--primary);">
-                                <i class="bi bi-plus-circle-fill"></i> New Activity
+                                <i class="bi bi-plus-circle-fill"></i> ${isAdmin ? 'New Activity' : 'New Personal Task'}
                             </button>
                         </div>
                     </div>
@@ -574,12 +592,12 @@
                                         <option value="LOW">Low</option>
                                     </select>
                                 </div>
-                                <div class="filter-field">
+                                ${isAdmin ? `<div class="filter-field">
                                     <label>Operator</label>
                                     <select id="filter-assignee" class="form-select filter-select shadow-none border-light-subtle" onchange="handleFilterChange('assignee', this.value)">
                                         <option value="ALL">All Operators</option>
                                     </select>
-                                </div>
+                                </div>` : ''}
                             </div>
                             <div class="filter-actions">
                                 <button class="btn-filter-reset" type="button" onclick="clearTodoFilters()">
@@ -608,21 +626,25 @@
                     </div>
                 </div>`;
 
-                ApiClient.getEmployees().then(emps => {
-                    const sel = document.getElementById('filter-assignee');
-                    if (sel) {
-                        emps.forEach(e => {
-                            const opt = document.createElement('option');
-                            const uniqueVal = e.email || e.name;
-                            const role = (e.role || '').replace(/_/g, ' ');
-                            opt.value = uniqueVal;
-                            opt.textContent = `${e.name || e.email} (${role})`;
-                            sel.appendChild(opt);
-                        });
-                        syncTodoFilterInputs();
-                        updateTodoFilterPills();
-                    }
-                });
+                configureTodoAssignmentUi();
+
+                if (isAdmin) {
+                    ApiClient.getEmployees().then(emps => {
+                        const sel = document.getElementById('filter-assignee');
+                        if (sel) {
+                            emps.forEach(e => {
+                                const opt = document.createElement('option');
+                                const uniqueVal = e.name || e.email;
+                                const role = (e.role || '').replace(/_/g, ' ');
+                                opt.value = uniqueVal;
+                                opt.textContent = `${e.name || e.email} (${role})`;
+                                sel.appendChild(opt);
+                            });
+                            syncTodoFilterInputs();
+                            updateTodoFilterPills();
+                        }
+                    });
+                }
             }
 
             const statsRow = document.getElementById('stats-row');
@@ -688,6 +710,7 @@
             document.getElementById('save-task-btn').innerText = 'Create Task';
             document.getElementById('mode-switcher-container').style.display = 'flex';
             switchModalMode('TASK');
+            configureTodoAssignmentUi();
             bsModal.show();
         }
 
@@ -717,6 +740,7 @@
             document.getElementById('mode-switcher-container').style.display = 'none';
 
             switchModalMode('TASK');
+            configureTodoAssignmentUi();
             bsModal.show();
         }
 
@@ -739,7 +763,7 @@
 
             const commonData = {
                 title: title,
-                assigned_to: document.getElementById('ev-user').value || null,
+                assigned_to: isAdmin ? (document.getElementById('ev-user').value || null) : (selfAssigneeValue || null),
                 due_date: document.getElementById('td-due').value ? new Date(document.getElementById('td-due').value).toISOString() : null,
                 start_time: document.getElementById('ev-start').value || null,
                 end_time: document.getElementById('ev-end').value || null,
@@ -825,14 +849,15 @@
         // Init
         ApiClient.getEmployees().then(emps => {
             const sel = document.getElementById('ev-user');
-            if (sel) {
+            if (sel && isAdmin) {
                 sel.innerHTML = '<option value="">— Unassigned —</option>' +
                     emps.map(e => {
-                        const uniqueVal = e.email || e.name;
+                        const uniqueVal = e.name || e.email;
                         const role = (e.role || '').replace(/_/g, ' ');
                         return `<option value="${uniqueVal}">${e.name || e.email} (${role})</option>`;
                     }).join('');
             }
+            configureTodoAssignmentUi();
         });
 
         ApiClient.getClients().then(clients => {

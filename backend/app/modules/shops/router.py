@@ -1,4 +1,4 @@
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Optional
 from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -34,8 +34,8 @@ def create_shop(
 def read_kanban_shops(
     db: Session = Depends(get_db),
     my_view: bool = Query(False, description="If true, only return leads assigned to the current user"),
-    owner_id: int | None = Query(None),
-    source: str | None = Query(None),
+    owner_id: Optional[int] = Query(None),
+    source: Optional[str] = Query(None),
     current_user: User = Depends(staff_checker)
 ) -> Any:
     # Automatically scope to current user if they are a sales/telesales employee (not admin/PM)
@@ -50,8 +50,8 @@ def read_shops(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    status: ShopStatus = None,
-    owner_id: int = None,
+    status: Optional[ShopStatus] = None,
+    owner_id: Optional[int] = None,
     current_user: User = Depends(staff_checker)
 ) -> Any:
     return ShopService.list_shops(db, skip, limit, status, owner_id)

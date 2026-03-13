@@ -251,6 +251,7 @@
                             <a href="#incentives-config" onclick="scrollTo('incentives-config',this)" id="incentives-nav-link" style="display:none;"><i class="bi bi-trophy"></i> Incentives</a>
                             <a href="#payslip-contact" onclick="scrollTo('payslip-contact',this)" id="payslip-nav-link" style="display:none;"><i class="bi bi-building"></i> Company / Payslip</a>
                             <a href="#invoice-settings" onclick="scrollTo('invoice-settings',this)" id="invoice-nav-link" style="display:none;"><i class="bi bi-receipt-cutoff"></i> Invoice &amp; Payment</a>
+                            <a href="#attendance-settings" onclick="scrollTo('attendance-settings',this)" id="attendance-nav-link" style="display:none;"><i class="bi bi-clock-history"></i> Attendance</a>
                             <a href="#system" onclick="scrollTo('system',this)" id="system-nav-link"><i
                                     class="bi bi-cpu"></i> System</a>
                         </nav>
@@ -560,6 +561,65 @@
                             </div>
                         </div>
 
+                        <!-- ── Attendance Rules (admin-only) ───── -->
+                        <div class="settings-section" id="attendance-settings" style="display:none;">
+                            <div class="settings-section-title"><i class="bi bi-clock-history text-primary"></i> Attendance Rules</div>
+                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:16px;">Configure auto leave rules and weekly off days.</p>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Absent Hours Threshold</div>
+                                    <div class="setting-desc">Hours at or below this value count as full-day absence</div>
+                                </div>
+                                <input type="number" id="att-absent-threshold" class="form-control form-control-sm" style="max-width:140px;" step="0.1" min="0">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Half Day Hours Threshold</div>
+                                    <div class="setting-desc">Below this hours value counts as half-day leave</div>
+                                </div>
+                                <input type="number" id="att-halfday-threshold" class="form-control form-control-sm" style="max-width:140px;" step="0.1" min="0">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Saturday Policy</div>
+                                    <div class="setting-desc">Mark Saturday as full/half off or working day</div>
+                                </div>
+                                <select id="att-saturday" class="select-clean">
+                                    <option value="FULL">Full Day Off</option>
+                                    <option value="HALF">Half Day Off</option>
+                                    <option value="NONE">Working Day</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Sunday Policy</div>
+                                    <div class="setting-desc">Mark Sunday as full/half off or working day</div>
+                                </div>
+                                <select id="att-sunday" class="select-clean">
+                                    <option value="FULL">Full Day Off</option>
+                                    <option value="HALF">Half Day Off</option>
+                                    <option value="NONE">Working Day</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-row" style="align-items:flex-start;">
+                                <div>
+                                    <div class="setting-label">Official Holidays (YYYY-MM-DD)</div>
+                                    <div class="setting-desc">Comma-separated dates that should not trigger auto leave</div>
+                                </div>
+                                <textarea id="att-holidays" class="form-control form-control-sm" style="max-width:320px;" rows="3" placeholder="2026-03-15, 2026-03-25"></textarea>
+                            </div>
+
+                            <div class="mt-3">
+                                <button class="btn-save-sm" onclick="saveAttendanceSettings()"><i class="bi bi-save me-1"></i> Save Attendance Rules</button>
+                                <span id="att-save-msg" class="ms-3 small text-success d-none">Saved!</span>
+                            </div>
+                        </div>
+
                         <!-- ── Company / Payslip Contact ───── -->
                         <div class="settings-section" id="payslip-contact" style="display:none;">
                             <div class="settings-section-title"><i class="bi bi-building text-primary"></i> Company / Payslip Contact</div>
@@ -584,6 +644,30 @@
                             <div class="mt-3">
                                 <button class="btn-save-sm" onclick="savePayslipContact()"><i class="bi bi-save me-1"></i> Save Contact Info</button>
                                 <span id="payslip-save-msg" class="ms-3 small text-success d-none">Saved!</span>
+                            </div>
+                        </div>
+
+                        <!-- ── Data Management (admin-only) ───── -->
+                        <div class="settings-section" id="data-management-settings" style="display:none;">
+                            <div class="settings-section-title"><i class="bi bi-database-check text-danger"></i> Data Retention & Deletion Policy</div>
+                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:16px;">Configure how records are handled when deleted. <strong>Soft Delete</strong> marks them as hidden, while <strong>Hard Delete</strong> permanently removes them.</p>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Global Delete Policy</div>
+                                    <div class="setting-desc">Soft: Recursive hiding (Recommended) | Hard: Permanent destruction</div>
+                                </div>
+                                <select id="global-delete-policy" class="select-clean" style="border-color: #fca5a5; font-weight: 700; color: #b91c1c;">
+                                    <option value="SOFT">SOFT DELETE (Hidden)</option>
+                                    <option value="HARD">HARD DELETE (Permanent)</option>
+                                </select>
+                            </div>
+
+                            <div class="mt-3">
+                                <button class="btn btn-sm btn-danger" style="border-radius:8px; font-weight:600;" onclick="saveDeletePolicy()">
+                                    <i class="bi bi-shield-lock me-1"></i> Update Policy
+                                </button>
+                                <span id="delete-policy-save-msg" class="ms-3 small text-success d-none">Policy Updated!</span>
                             </div>
                         </div>
 
@@ -640,6 +724,14 @@
                                 <input type="text" id="inv-company-address" class="form-control form-control-sm" style="max-width:300px;" placeholder="City, State, PIN">
                             </div>
 
+                            <div class="setting-row" style="align-items:flex-start;">
+                                <div>
+                                    <div class="setting-label">Header Image Details</div>
+                                    <div class="setting-desc">Printed just after company address in invoice header (exact text)</div>
+                                </div>
+                                <textarea id="inv-header-image-details" class="form-control form-control-sm" style="max-width:360px;min-height:64px;" placeholder="e.g. Gujarat-395004\nGSTIN: XXXXX\nPAN: XXXXX"></textarea>
+                            </div>
+
                             <div class="setting-row">
                                 <div>
                                     <div class="setting-label">Company Phone</div>
@@ -674,8 +766,8 @@
 
                             <div class="setting-row">
                                 <div>
-                                    <div class="setting-label">CIN</div>
-                                    <div class="setting-desc">Company Identification Number</div>
+                                    <div class="setting-label">CIN / LLPIN</div>
+                                    <div class="setting-desc">Company Identification Number or LLPIN</div>
                                 </div>
                                 <input type="text" id="inv-company-cin" class="form-control form-control-sm" style="max-width:260px;" placeholder="e.g. U12345GJ2024PTC123456">
                             </div>
@@ -763,6 +855,15 @@
                                     <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
                                     <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
                                 </div>
+                            </div>
+
+                            <div class="settings-section-title mt-4" style="border-top:1px solid #f1f5f9;padding-top:16px;"><i class="bi bi-card-text text-primary"></i> Invoice Terms</div>
+                            <div class="setting-row" style="align-items:flex-start;">
+                                <div>
+                                    <div class="setting-label">Terms &amp; Conditions</div>
+                                    <div class="setting-desc">Admin can edit terms printed in invoice footer. Use new line for multiple terms.</div>
+                                </div>
+                                <textarea id="inv-terms-conditions" class="form-control form-control-sm" style="max-width:420px;min-height:88px;" placeholder="• Subject to Surat Jurisdiction"></textarea>
                             </div>
 
                             <div class="mt-3">
@@ -962,12 +1063,16 @@
                 document.getElementById('payslip-contact').style.display = 'block';
                 document.getElementById('invoice-nav-link').style.display = 'flex';
                 document.getElementById('invoice-settings').style.display = 'block';
+                document.getElementById('attendance-nav-link').style.display = 'flex';
+                document.getElementById('attendance-settings').style.display = 'block';
                 loadSlabsSettings();
                 loadIncentiveEligibilityUsers();
                 loadPayslipContact();
-                loadEmployeeCodeSettings();
                 loadInvoiceSettings();
+                loadAttendanceSettings();
+                loadDeletePolicy();
                 document.getElementById('employee-code-settings').style.display = 'block';
+                document.getElementById('data-management-settings').style.display = 'block';
 
                 const apiUrl = window.API_BASE || 'http://localhost:8000';
                 document.getElementById('api-url-display').textContent = apiUrl;
@@ -989,6 +1094,49 @@
 
         loadSettings();
         initSystem();
+
+        async function loadAttendanceSettings() {
+            try {
+                const settings = await ApiClient.getAttendanceSettings();
+                document.getElementById('att-absent-threshold').value = settings.absent_hours_threshold ?? 0;
+                document.getElementById('att-halfday-threshold').value = settings.half_day_hours_threshold ?? 4;
+                document.getElementById('att-saturday').value = (settings.weekly_off_saturday || 'FULL').toUpperCase();
+                document.getElementById('att-sunday').value = (settings.weekly_off_sunday || 'FULL').toUpperCase();
+
+                const holidays = (settings.official_holidays || []).map(d => {
+                    if (typeof d === 'string') return d;
+                    try { return new Date(d).toISOString().slice(0, 10); } catch { return ''; }
+                }).filter(Boolean);
+                document.getElementById('att-holidays').value = holidays.join(', ');
+            } catch (err) {
+                console.error('Failed to load attendance settings', err);
+            }
+        }
+
+        async function saveAttendanceSettings() {
+            const btnMsg = document.getElementById('att-save-msg');
+            const absent = parseFloat(document.getElementById('att-absent-threshold').value || '0');
+            const half = parseFloat(document.getElementById('att-halfday-threshold').value || '4');
+            const saturday = document.getElementById('att-saturday').value;
+            const sunday = document.getElementById('att-sunday').value;
+            const holidayRaw = document.getElementById('att-holidays').value || '';
+            const holidays = holidayRaw.split(',').map(h => h.trim()).filter(Boolean);
+
+            try {
+                await ApiClient.updateAttendanceSettings({
+                    absent_hours_threshold: absent,
+                    half_day_hours_threshold: half,
+                    weekly_off_saturday: saturday,
+                    weekly_off_sunday: sunday,
+                    official_holidays: holidays
+                });
+                btnMsg.classList.remove('d-none');
+                setTimeout(() => btnMsg.classList.add('d-none'), 2000);
+            } catch (err) {
+                console.error('Attendance settings save failed', err);
+                showToast('Failed to save attendance settings', true);
+            }
+        }
 
         // ── Incentives config (admin-only)
         async function loadSlabsSettings() {
@@ -1245,12 +1393,14 @@
                 document.getElementById('inv-seq-without-gst').value = data.invoice_seq_without_gst || 1;
                 document.getElementById('inv-company-name').value = data.company_name || '';
                 document.getElementById('inv-company-address').value = data.company_address || '';
+                document.getElementById('inv-header-image-details').value = data.company_header_image_details || '';
                 document.getElementById('inv-company-phone').value = data.company_phone || '';
                 document.getElementById('inv-company-email').value = data.company_email || '';
                 document.getElementById('inv-company-gstin').value = data.company_gstin || '';
                 document.getElementById('inv-company-pan').value = data.company_pan || '';
                 document.getElementById('inv-company-cin').value = data.company_cin || '';
                 document.getElementById('inv-company-cst-code').value = data.company_cst_code || '';
+                document.getElementById('inv-terms-conditions').value = data.invoice_terms_conditions || '';
                 document.getElementById('inv-upi-id').value = data.payment_upi_id || '';
                 document.getElementById('inv-upi-name').value = data.payment_account_name || '';
                 document.getElementById('inv-bank-name').value = data.payment_bank_name || '';
@@ -1304,12 +1454,14 @@
                 invoice_seq_without_gst: parseInt(document.getElementById('inv-seq-without-gst').value, 10) || 1,
                 company_name: document.getElementById('inv-company-name').value.trim(),
                 company_address: document.getElementById('inv-company-address').value.trim(),
+                company_header_image_details: document.getElementById('inv-header-image-details').value.trim(),
                 company_phone: document.getElementById('inv-company-phone').value.trim(),
                 company_email: document.getElementById('inv-company-email').value.trim(),
                 company_gstin: document.getElementById('inv-company-gstin').value.trim(),
                 company_pan: document.getElementById('inv-company-pan').value.trim(),
                 company_cin: document.getElementById('inv-company-cin').value.trim(),
                 company_cst_code: document.getElementById('inv-company-cst-code').value.trim(),
+                invoice_terms_conditions: document.getElementById('inv-terms-conditions').value.trim(),
                 payment_upi_id: document.getElementById('inv-upi-id').value.trim(),
                 payment_account_name: document.getElementById('inv-upi-name').value.trim(),
                 payment_bank_name: document.getElementById('inv-bank-name').value.trim(),
@@ -1327,6 +1479,37 @@
                 showToast('Invoice settings saved');
             } catch (e) {
                 showToast(e.data?.detail || e.message || 'Failed to save', true);
+            }
+        }
+
+        async function loadDeletePolicy() {
+            try {
+                // We'll use the payslip setting endpoint conceptually or a generic app setting one
+                // Since we implemented it in AppSetting model, let's look for a generic getter or use payslip context
+                // Backend: router.get("/payslip-settings") returns {email, phone}
+                // Let's assume there's a policy endpoint or we add one. 
+                // Wait, I didn't add a specific GET for delete_policy yet in the router.
+                // I should add a specific GET/PUT for this in a generic settings router or specific one.
+                // For now, I'll assume a new endpoint /settings/delete-policy or similar.
+                // RE-READING: I added it to AppSetting. I'll add the endpoint to salary router.
+                const res = await apiGet('/salary/delete-policy');
+                document.getElementById('global-delete-policy').value = res.policy || 'SOFT';
+            } catch (e) {
+                console.warn('Failed to load delete policy');
+            }
+        }
+
+        async function saveDeletePolicy() {
+            const policy = document.getElementById('global-delete-policy').value;
+            const msg = document.getElementById('delete-policy-save-msg');
+            if (!confirm(`Are you sure you want to switch to ${policy} delete? This affects all future deletions.`)) return;
+            try {
+                await apiPut('/salary/delete-policy', { policy });
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 2500);
+                showToast('Global delete policy updated');
+            } catch (e) {
+                showToast('Failed to update policy', true);
             }
         }
     </script>

@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum, Float, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
@@ -20,6 +20,7 @@ class Payment(Base):
     generated_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     verified_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    is_deleted = Column(Boolean, default=False, index=True)
     verified_at = Column(DateTime, nullable=True)
 
     client = relationship("app.modules.clients.models.Client", backref="payments")

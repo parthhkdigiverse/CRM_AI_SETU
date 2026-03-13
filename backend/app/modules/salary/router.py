@@ -1,5 +1,5 @@
 from typing import List, Any
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from datetime import datetime, UTC
 
@@ -60,7 +60,7 @@ def approve_leave(
     db: Session = Depends(get_db),
     current_user: User = Depends(hr_checker)
 ) -> Any:
-    db_leave = db.query(LeaveRecord).filter(LeaveRecord.id == leave_id).first()
+    db_leave = db.query(LeaveRecord).filter(LeaveRecord.id == leave_id, LeaveRecord.is_deleted == False).first()
     if not db_leave:
         raise HTTPException(status_code=404, detail="Leave record not found")
 
@@ -81,7 +81,8 @@ def get_my_leaves(
     current_user: User = Depends(staff_checker)
 ) -> Any:
     leaves = db.query(LeaveRecord).filter(
-        LeaveRecord.user_id == current_user.id
+        LeaveRecord.user_id == current_user.id,
+        LeaveRecord.is_deleted == False
     ).order_by(LeaveRecord.start_date.desc()).all()
     return [_leave_to_dict(l) for l in leaves]
 
@@ -91,7 +92,7 @@ def get_all_leaves(
     db: Session = Depends(get_db),
     current_user: User = Depends(hr_checker)
 ) -> Any:
-    leaves = db.query(LeaveRecord).order_by(LeaveRecord.start_date.desc()).all()
+    leaves = db.query(LeaveRecord).filter(LeaveRecord.is_deleted == False).order_by(LeaveRecord.start_date.desc()).all()
     return [_leave_to_dict(l) for l in leaves]
 
 
@@ -110,6 +111,7 @@ def get_leave_summary(
     year, month_num = map(int, month.split('-'))
     leaves = db.query(LeaveRecord).filter(
         LeaveRecord.user_id == user_id,
+        LeaveRecord.is_deleted == False,
         extract('year', LeaveRecord.start_date) == year,
         extract('month', LeaveRecord.start_date) == month_num
     ).all()
@@ -140,6 +142,26 @@ def get_leave_summary(
         "paid_leaves": paid,
         "unpaid_leaves": unpaid,
     }
+
+@router.delete("/leave/{leave_id}", status_code=204, response_class=Response)
+def delete_leave(
+    leave_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(hr_checker)
+) -> Response:
+    leave = db.query(LeaveRecord).filter(LeaveRecord.id == leave_id, LeaveRecord.is_deleted == False).first()
+    if not leave:
+        raise HTTPException(status_code=404, detail="Leave not found")
+        
+    policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+    is_hard = policy and policy.value == "HARD"
+
+    if is_hard:
+        db.delete(leave)
+    else:
+        leave.is_deleted = True
+    db.commit()
+    return Response(status_code=204)
 
 
 # ═══════════════════════════════════════════════════════
@@ -238,7 +260,7 @@ def get_salary_invoice(
     from app.modules.salary.service import SalaryService
     from fastapi.responses import HTMLResponse
 
-    slip = db.query(SalarySlip).filter(SalarySlip.id == slip_id).first()
+    slip = db.query(SalarySlip).filter(SalarySlip.id == slip_id, SalarySlip.is_deleted == False).first()
     if not slip:
         raise HTTPException(status_code=404, detail="Slip not found")
 
@@ -295,6 +317,34 @@ def update_payslip_settings(
     return {"email": email, "phone": phone}
 
 
+@router.get("/delete-policy")
+def get_delete_policy(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(hr_checker)
+) -> dict:
+    row = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+    return {"policy": row.value if row else "SOFT"}
+
+
+@router.put("/delete-policy")
+def update_delete_policy(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(hr_checker)
+) -> dict:
+    policy = payload.get("policy")
+    if policy not in ["SOFT", "HARD"]:
+        raise HTTPException(status_code=400, detail="Invalid policy type. Must be SOFT or HARD.")
+    
+    row = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+    if row:
+        row.value = policy
+    else:
+        db.add(AppSetting(key="delete_policy", value=policy))
+    db.commit()
+    return {"policy": policy}
+
+
 # ═══════════════════════════════════════════════════════
 # HELPERS
 # ═══════════════════════════════════════════════════════
@@ -315,4 +365,24 @@ def _leave_to_dict(l: LeaveRecord, override_user: User = None) -> dict:
         "user_name": (user.name or user.email) if user else None,
         "approver_name": (l.approver.name or l.approver.email) if l.approver else None,
     }
+
+@router.delete("/salary/slip/{slip_id}", status_code=204, response_class=Response)
+def delete_salary_slip(
+    slip_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(hr_checker)
+) -> Response:
+    slip = db.query(SalarySlip).filter(SalarySlip.id == slip_id, SalarySlip.is_deleted == False).first()
+    if not slip:
+        raise HTTPException(status_code=404, detail="Slip not found")
+        
+    policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+    is_hard = policy and policy.value == "HARD"
+
+    if is_hard:
+        db.delete(slip)
+    else:
+        slip.is_deleted = True
+    db.commit()
+    return Response(status_code=204)
 
