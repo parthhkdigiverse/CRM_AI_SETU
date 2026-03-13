@@ -18,13 +18,20 @@ class ClientService:
     def get_client(self, client_id: int):
         return self.db.query(Client).filter(Client.id == client_id).first()
 
-    def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc", include_inactive: bool = False, pm_id: int = None):
+    def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc", include_inactive: bool = False, pm_id: int = None, owner_id: int = None):
         try:
             query = self.db.query(Client)
             if not include_inactive:
                 query = query.filter(Client.is_active == True)
-            if pm_id:
+            
+            # RBAC: Filter by PM or Owner assignment
+            if pm_id and owner_id:
+                from sqlalchemy import or_
+                query = query.filter(or_(Client.pm_id == pm_id, Client.owner_id == owner_id))
+            elif pm_id:
                 query = query.filter(Client.pm_id == pm_id)
+            elif owner_id:
+                query = query.filter(Client.owner_id == owner_id)
             if search:
                 search_pattern = f"%{search}%"
                 query = query.filter(

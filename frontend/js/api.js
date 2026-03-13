@@ -114,6 +114,35 @@ class ApiClient {
         }
     }
 
+    static async download(path, filename) {
+        const url = `${this.API_BASE_URL}${path}`;
+        const headers = {};
+        const token = this.getAccessToken();
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        try {
+            const response = await fetch(url, { headers });
+            if (!response.ok) throw new Error(`Download failed: ${response.status}`);
+            
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = downloadUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+            }, 100);
+        } catch (error) {
+            console.error("Download error:", error);
+            throw error;
+        }
+    }
+
 
     static async refreshTokens() {
         const refresh_token = this.getRefreshToken();

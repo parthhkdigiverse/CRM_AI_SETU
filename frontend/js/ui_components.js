@@ -141,9 +141,10 @@ function renderSidebar(active) {
     }
 
     // REPORTS
-    if (isAdmin || isPM) {
+    if (isAdmin || isPM || isSales || isTelesales) {
         nav += sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
-            { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
+            { id: 'employee_report', href: 'employee_report.html', icon: 'bi-person-badge', label: 'Employee Report' },
+            { id: 'client_report', href: 'client_report.html', icon: 'bi-people', label: 'Client Report' }
         ]);
     }
 

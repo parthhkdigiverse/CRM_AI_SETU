@@ -1,11 +1,11 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, extract
 from datetime import datetime, timedelta
 import calendar
 from app.modules.clients.models import Client
 from app.modules.issues.models import Issue, IssueStatus, IssueSeverity
 from app.modules.visits.models import Visit, VisitStatus
-from app.modules.users.models import User
+from app.modules.users.models import User, UserRole
 from app.modules.projects.models import Project, ProjectStatus
 from app.modules.shops.models import Shop
 from app.modules.payments.models import Payment, PaymentStatus
@@ -13,17 +13,22 @@ from app.modules.salary.models import SalarySlip
 from app.modules.incentives.models import IncentiveSlip
 import io
 import csv
-from typing import List
+from typing import List, Optional, Union, Any
 
 class ReportService:
     @staticmethod
     def get_dashboard_stats(
         db: Session, 
-        area_id: int = None, 
-        user_id: int = None, 
-        start_date: str = None, 
-        end_date: str = None
+        requesting_user: User,
+        area_id: Optional[int] = None, 
+        user_id: Optional[int] = None, 
+        start_date: Optional[str] = None, 
+        end_date: Optional[str] = None
     ):
+        # RBAC: Non-admins can only see their own stats
+        if requesting_user.role != UserRole.ADMIN:
+            user_id = requesting_user.id
+
         try:
             now = datetime.utcnow()
             curr_month = now.month
@@ -95,40 +100,83 @@ class ReportService:
             ongoing_projects = project_query.scalar() or 0
             
             p_curr = db.query(func.count(Project.id)).filter(extract('month', Project.created_at) == curr_month, extract('year', Project.created_at) == curr_year)
-            if area_id or user_id: p_curr = p_curr.join(Client, Project.client_id == Client.id)
-            p_curr = apply_filters(p_curr, Client if (area_id or user_id) else Project, 'created_at', 'owner_id' if (area_id or user_id) else 'pm_id').scalar() or 0
-            
-            p_prev = db.query(func.count(Project.id)).filter(extract('month', Project.created_at) == prev_month, extract('year', Project.created_at) == prev_year)
-            if area_id or user_id: p_prev = p_prev.join(Client, Project.client_id == Client.id)
-            p_prev = apply_filters(p_prev, Client if (area_id or user_id) else Project, 'created_at', 'owner_id' if (area_id or user_id) else 'pm_id').scalar() or 0
+
+            # Project MoM (re-implementing based on new RBAC logic)
+            def get_project_count_for_month(db_session, month, year, user, area_id, user_id_filter):
+                q = db_session.query(func.count(Project.id)).filter(
+                    extract('month', Project.created_at) == month,
+                    extract('year', Project.created_at) == year
+                )
+                if user.role == UserRole.ADMIN:
+                    if area_id:
+                        q = q.join(Client).filter(Client.area_id == area_id)
+                    if user_id_filter:
+                        q = q.filter(Project.pm_id == user_id_filter)
+                elif user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
+                    q = q.filter(Project.pm_id == user.id)
+                else:
+                    q = q.join(Client).filter(Client.owner_id == user.id)
+                return q.scalar() or 0
+
+            p_curr = get_project_count_for_month(db, curr_month, curr_year, requesting_user, area_id, user_id)
+            p_prev = get_project_count_for_month(db, prev_month, prev_year, requesting_user, area_id, user_id)
             projects_mom_pct = get_mom_pct(p_curr, p_prev)
 
             # Revenue MTD
-            rev_query = db.query(func.sum(Payment.amount)).filter(Payment.status == PaymentStatus.VERIFIED, extract('month', Payment.verified_at) == curr_month, extract('year', Payment.verified_at) == curr_year)
-            # Payments linked to clients or generated_by
-            rev_query = apply_filters(rev_query, Payment, 'verified_at', 'generated_by_id')
+            rev_query = db.query(func.sum(Payment.amount)).filter(
+                Payment.status == PaymentStatus.VERIFIED, 
+                extract('month', Payment.verified_at) == curr_month, 
+                extract('year', Payment.verified_at) == curr_year
+            )
+            
+            if requesting_user.role == UserRole.ADMIN:
+                if area_id:
+                    rev_query = rev_query.join(Client).filter(Client.area_id == area_id)
+                if user_id:
+                    rev_query = rev_query.filter(Payment.generated_by_id == user_id)
+            else:
+                # Non-admins see revenue from their owned clients
+                rev_query = rev_query.join(Client).filter(Client.owner_id == requesting_user.id)
+            
             revenue_mtd = rev_query.scalar() or 0.0
             
-            rev_prev_q = db.query(func.sum(Payment.amount)).filter(Payment.status == PaymentStatus.VERIFIED, extract('month', Payment.verified_at) == prev_month, extract('year', Payment.verified_at) == prev_year)
-            rev_prev_q = apply_filters(rev_prev_q, Payment, 'verified_at', 'generated_by_id')
+            # Revenue Prev Month (for trend)
+            rev_prev_q = db.query(func.sum(Payment.amount)).filter(
+                Payment.status == PaymentStatus.VERIFIED, 
+                extract('month', Payment.verified_at) == prev_month, 
+                extract('year', Payment.verified_at) == prev_year
+            )
+            if requesting_user.role == UserRole.ADMIN:
+                if area_id: rev_prev_q = rev_prev_q.join(Client).filter(Client.area_id == area_id)
+                if user_id: rev_prev_q = rev_prev_q.filter(Payment.generated_by_id == user_id)
+            else:
+                rev_prev_q = rev_prev_q.join(Client).filter(Client.owner_id == requesting_user.id)
+            
             revenue_prev = rev_prev_q.scalar() or 0.0
             revenue_mom_pct = get_mom_pct(revenue_mtd, revenue_prev)
 
+            # Open Issues
             open_issues_query = db.query(func.count(Issue.id)).filter(Issue.status.in_([IssueStatus.PENDING]))
             open_issues_query = apply_filters(open_issues_query, Issue, 'created_at', 'assigned_user_id')
             open_issues = open_issues_query.scalar() or 0
 
+            # Charts logic
             month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
             
             mv_query = db.query(extract('month', Visit.visit_date).label('month'), func.count(Visit.id).label('count'))
             mv_query = apply_filters(mv_query, Visit, 'visit_date', 'user_id').group_by('month').order_by('month')
             monthly_visits = mv_query.all()
-            visits_by_month = {month_names[int(m)-1]: c for m, c in monthly_visits if m is not None and 1 <= int(m) <= 12}
+            visits_by_month = {month_names[int(m)-1]: c for m, c in monthly_visits if m and 1 <= int(m) <= 12}
 
             mr_query = db.query(extract('month', Payment.verified_at).label('month'), func.sum(Payment.amount).label('total')).filter(Payment.status == PaymentStatus.VERIFIED)
-            mr_query = apply_filters(mr_query, Payment, 'verified_at', 'generated_by_id').group_by('month').order_by('month')
+            if requesting_user.role != UserRole.ADMIN:
+                mr_query = mr_query.join(Client).filter(Client.owner_id == requesting_user.id)
+            else:
+                mr_query = apply_filters(mr_query, Payment, 'verified_at', 'generated_by_id')
+            
+            mr_query = mr_query.group_by('month').order_by('month')
             monthly_revenue = mr_query.all()
-            revenue_by_month = {month_names[int(m)-1]: float(t) for m, t in monthly_revenue if m is not None and 1 <= int(m) <= 12}
+            revenue_by_month = {month_names[int(m)-1]: float(t) for m, t in monthly_revenue if m and 1 <= int(m) <= 12}
 
             vs_query = db.query(Visit.status, func.count(Visit.id))
             vs_query = apply_filters(vs_query, Visit, 'visit_date', 'user_id').group_by(Visit.status)
@@ -173,77 +221,94 @@ class ReportService:
                 "visit_status_breakdown": {}, "issue_severity_breakdown": {}, "shop_sources_breakdown": {}
             }
 
-        except Exception as e:
-            print(f"Dashboard Stats Error: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return {
-                "total_leads": 0, "active_clients": 0, "ongoing_projects": 0, "revenue_mtd": 0.0,
-                "leads_mom_pct": 0.0, "clients_mom_pct": 0.0, "projects_mom_pct": 0.0, "revenue_mom_pct": 0.0,
-                "open_issues": 0, "leads_by_month": {}, "revenue_by_month": {}, 
-                "visit_status_breakdown": {}, "issue_severity_breakdown": {}, "lead_sources_breakdown": {}
-            }
-
     @staticmethod
-    def get_employee_performance(db: Session, month: str = None):
-        # month format: YYYY-MM
-        if not month:
-            month = datetime.utcnow().strftime('%Y-%m')
+    def get_employee_performance(
+        db: Session, 
+        requesting_user: User,
+        month: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        user_id: Optional[Union[int, str]] = None
+    ):
+        # RBAC: Non-admins can only see their own performance metrics
+        if requesting_user.role != UserRole.ADMIN:
+            user_id = requesting_user.id
+        elif user_id and str(user_id).lower() == 'all':
+            user_id = None
+        elif user_id:
+            try:
+                user_id = int(user_id)
+            except ValueError:
+                user_id = None
+
+        if not start_date and not end_date:
+            if not month:
+                month = datetime.utcnow().strftime('%Y-%m')
+            
+            try:
+                year, m = map(int, month.split('-'))
+                start_date = datetime(year, m, 1).strftime('%Y-%m-%d')
+                last_day = calendar.monthrange(year, m)[1]
+                end_date = datetime(year, m, last_day).strftime('%Y-%m-%d')
+            except:
+                start_date = None
+                end_date = None
         
-        year, m = map(int, month.split('-'))
-        
-        users = db.query(User).filter(User.role != 'CLIENT', User.is_deleted == False).all()
+        v_sub = db.query(
+            Visit.user_id,
+            func.count(Visit.id).label('total_visits'),
+            func.count(Visit.id).filter(Visit.status == VisitStatus.COMPLETED).label('total_leads')
+        )
+        if start_date: v_sub = v_sub.filter(Visit.visit_date >= start_date)
+        if end_date: v_sub = v_sub.filter(Visit.visit_date <= end_date)
+        v_sub = v_sub.group_by(Visit.user_id).subquery()
+
+        p_sub = db.query(
+            Payment.generated_by_id,
+            func.sum(Payment.amount).label('total_revenue')
+        ).filter(Payment.status == PaymentStatus.VERIFIED)
+        if start_date: p_sub = p_sub.filter(Payment.verified_at >= start_date)
+        if end_date: p_sub = p_sub.filter(Payment.verified_at <= end_date)
+        p_sub = p_sub.group_by(Payment.generated_by_id).subquery()
+
+        query = db.query(
+            User,
+            func.coalesce(v_sub.c.total_visits, 0).label('v_count'),
+            func.coalesce(v_sub.c.total_leads, 0).label('l_count'),
+            func.coalesce(p_sub.c.total_revenue, 0.0).label('revenue')
+        ).filter(User.role != 'CLIENT', User.is_deleted == False)
+
+        if user_id:
+            query = query.filter(User.id == user_id)
+
+        query = query.outerjoin(v_sub, User.id == v_sub.c.user_id)
+        query = query.outerjoin(p_sub, User.id == p_sub.c.generated_by_id)
+
+        results = query.all()
         performance = []
         
-        for u in users:
-            visits = db.query(func.count(Visit.id)).filter(
-                Visit.user_id == u.id,
-                extract('year', Visit.visit_date) == year,
-                extract('month', Visit.visit_date) == m
-            ).scalar() or 0
-            
-            leads = db.query(func.count(Visit.id)).filter(
-                Visit.user_id == u.id,
-                Visit.status.in_(['ACCEPT', 'SATISFIED']),
-                extract('year', Visit.visit_date) == year,
-                extract('month', Visit.visit_date) == m
-            ).scalar() or 0
-            
-            payments = db.query(func.count(Payment.id)).filter(
-                Payment.generated_by_id == u.id,
-                Payment.status == PaymentStatus.VERIFIED,
-                extract('year', Payment.verified_at) == year,
-                extract('month', Payment.verified_at) == m
-            ).scalar() or 0
-            
-            revenue = db.query(func.sum(Payment.amount)).filter(
-                Payment.generated_by_id == u.id,
-                Payment.status == PaymentStatus.VERIFIED,
-                extract('year', Payment.verified_at) == year,
-                extract('month', Payment.verified_at) == m
-            ).scalar() or 0.0
-            
-            incentive = db.query(IncentiveSlip.total_incentive).filter(
-                IncentiveSlip.user_id == u.id,
-                IncentiveSlip.period == month
-            ).scalar() or 0.0
+        for row in results:
+            u, visits, leads, revenue = row
+            # Calculate 5% incentive as requested
+            incentive_val = float(revenue) * 0.05
             
             performance.append({
                 "user_id": u.id,
+                "id": u.id,
                 "name": u.name or u.email.split('@')[0],
                 "email": u.email,
                 "role": str(u.role),
-                "total_visits": visits,
-                "total_leads": leads,
-                "total_sales": payments,
+                "total_visits": int(visits),
+                "total_leads": int(leads),
+                "total_sales": float(revenue),
                 "total_revenue": float(revenue),
-                "total_incentive": float(incentive)
+                "total_incentive": float(incentive_val)
             })
-            
+        
         return performance
 
     @staticmethod
-    def get_business_summary(db: Session, month: str = None):
+    def get_business_summary(db: Session, month: Optional[str] = None):
         if not month:
             month = datetime.utcnow().strftime('%Y-%m')
         
@@ -291,6 +356,120 @@ class ReportService:
             "total_visits": visits,
             "total_issues_raised": issues
         }
+
+    @staticmethod
+    def get_project_portfolio(
+        db: Session,
+        requesting_user: User,
+        client_id: Optional[Union[int, str]] = None,
+        status: Optional[str] = None,
+        duration: Optional[str] = None
+    ):
+        query = db.query(Project).options(joinedload(Project.client))
+
+        # RBAC: Non-admins only see assigned clients/projects
+        if requesting_user.role != UserRole.ADMIN:
+            query = query.join(Client, Project.client_id == Client.id).filter(
+                (Project.pm_id == requesting_user.id) | 
+                (Client.owner_id == requesting_user.id)
+            )
+        
+        if client_id and str(client_id).lower() != 'all':
+            try:
+                cid = int(client_id)
+                query = query.filter(Project.client_id == cid)
+            except ValueError:
+                pass # Ignore invalid numeric filter values
+        if status and str(status).lower() != 'all':
+            query = query.filter(Project.status == status)
+        
+        if duration and duration != 'all':
+            try:
+                days = int(duration)
+                cutoff = datetime.utcnow() - timedelta(days=days)
+                query = query.filter(Project.updated_at >= cutoff)
+            except ValueError:
+                pass
+            
+        projects = query.all()
+        portfolio = []
+        
+        for p in projects:
+            if not p.client:
+                continue
+
+            # Get total paid amount for this client/project
+            paid_sum = db.query(func.sum(Payment.amount)).filter(
+                Payment.client_id == p.client_id,
+                Payment.status == PaymentStatus.VERIFIED
+            ).scalar() or 0.0
+            
+            # Get last interaction (visit)
+            last_visit = None
+            if p.client.owner_id:
+                last_visit = db.query(Visit).filter(
+                    Visit.shop_id.in_(db.query(Shop.id).filter(Shop.owner_id == p.client.owner_id))
+                ).order_by(Visit.visit_date.desc()).first()
+
+            # Ensure naive datetimes to avoid mixing aware/naive
+            def ensure_naive(dt):
+                if not dt: return datetime.utcnow()
+                return dt.replace(tzinfo=None) if hasattr(dt, 'replace') else dt
+
+            iDate = ensure_naive(last_visit.visit_date if last_visit and last_visit.visit_date else p.created_at)
+
+            # Safer priority/status extraction
+            p_val = "MEDIUM"
+            if p.priority:
+                p_val = str(p.priority.value if hasattr(p.priority, 'value') else p.priority)
+            
+            s_val = "PLANNING"
+            if p.status:
+                s_val = str(p.status.value if hasattr(p.status, 'value') else p.status)
+
+            portfolio.append({
+                "id": p.id,
+                "fullName": p.client.name or "Unnamed Client", 
+                "name": p.client.name or "Unnamed Client",
+                "org": getattr(p.client, 'organization', 'Individual') or 'Individual',
+                "project": p.name or "Unnamed Project",
+                "priority": p_val,
+                "totalAmount": float(p.budget or 0),
+                "paidAmount": float(paid_sum),
+                "outstanding": float(max(0, (float(p.budget or 0) - float(paid_sum)))),
+                "lastMeeting": last_visit.remarks if last_visit and last_visit.remarks else "No recent interaction",
+                "interactionDate": iDate,
+                "status": s_val
+            })
+            
+        return portfolio
+
+    @staticmethod
+    def get_employee_activities(
+        db: Session,
+        user_id: int,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None
+    ):
+        query = db.query(Visit).filter(Visit.user_id == user_id)
+        
+        if start_date:
+            query = query.filter(Visit.visit_date >= start_date)
+        if end_date:
+            query = query.filter(Visit.visit_date <= end_date)
+            
+        visits = query.order_by(Visit.visit_date.desc()).all()
+        activities = []
+        
+        for v in visits:
+            activities.append({
+                "date": v.visit_date,
+                "client": v.shop.name if v.shop else "Unknown",
+                "type": v.remarks[:30] + "..." if v.remarks and len(v.remarks) > 30 else (v.remarks or "Site Visit"),
+                "status": str(v.status.value if hasattr(v.status, 'value') else v.status)
+            })
+            
+        return activities
 
     @staticmethod
     def generate_csv_response(data: List[dict]):

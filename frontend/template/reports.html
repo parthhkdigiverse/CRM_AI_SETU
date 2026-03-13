@@ -31,11 +31,7 @@
                 <!-- Tabs -->
                 <ul class="nav nav-pills mb-4" id="reportTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="dashboard-tab" data-bs-toggle="pill"
-                            data-bs-target="#tab-dashboard" type="button" role="tab">Dashboard</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="employee-tab" data-bs-toggle="pill" data-bs-target="#tab-employee"
+                        <button class="nav-link active" id="employee-tab" data-bs-toggle="pill" data-bs-target="#tab-employee"
                             type="button" role="tab" onclick="loadEmployeeReport()">Employee Report</button>
                     </li>
                     <li class="nav-item" role="presentation">
@@ -45,87 +41,8 @@
                 </ul>
 
                 <div class="tab-content">
-                    <!-- Dashboard Tab -->
-                    <div class="tab-pane fade show active" id="tab-dashboard" role="tabpanel">
-                        <!-- Summary Cards -->
-                        <div class="row g-3 mb-4">
-                            <div class="col-6 col-md-3">
-                                <div class="card border-0 shadow-sm text-center p-3">
-                                    <div class="fs-1 fw-bold text-primary" id="r-clients">—</div>
-                                    <div class="text-muted small">Total Clients</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <div class="card border-0 shadow-sm text-center p-3">
-                                    <div class="fs-1 fw-bold text-danger" id="r-open-issues">—</div>
-                                    <div class="text-muted small">Open Issues</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <div class="card border-0 shadow-sm text-center p-3">
-                                    <div class="fs-1 fw-bold text-success" id="r-visits">—</div>
-                                    <div class="text-muted small">Total Visits</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <div class="card border-0 shadow-sm text-center p-3">
-                                    <div class="fs-1 fw-bold text-warning" id="r-meetings">—</div>
-                                    <div class="text-muted small">Total Meetings</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Breakdown Tables -->
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="card shadow-sm border-0 h-100">
-                                    <div class="card-header bg-white fw-semibold border-0 pt-3">
-                                        <i class="bi bi-people me-2 text-primary"></i>Issues by Severity
-                                    </div>
-                                    <div class="card-body p-0">
-                                        <table class="table mb-0">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th>Severity</th>
-                                                    <th>Count</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="sev-table">
-                                                <tr>
-                                                    <td colspan="2" class="text-center py-3 text-muted">Loading...</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card shadow-sm border-0 h-100">
-                                    <div class="card-header bg-white fw-semibold border-0 pt-3">
-                                        <i class="bi bi-geo-alt me-2 text-success"></i>Visits by Status
-                                    </div>
-                                    <div class="card-body p-0">
-                                        <table class="table mb-0">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th>Status</th>
-                                                    <th>Count</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="visit-status-table">
-                                                <tr>
-                                                    <td colspan="2" class="text-center py-3 text-muted">Loading...</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Employee Report Tab -->
-                    <div class="tab-pane fade" id="tab-employee" role="tabpanel">
+                    <div class="tab-pane fade show active" id="tab-employee" role="tabpanel">
                         <div class="card shadow-sm border-0">
                             <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
                                 <h5 class="mb-0">Employee Performance</h5>
@@ -217,7 +134,7 @@
     </div>
 
     <script src="../js/ui_components.js?v=1772780187"></script>
-    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/auth.js?v=2.7"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
@@ -244,10 +161,9 @@
         async function loadAllReports() {
             // Refresh whichever tab is active
             const activeTabEl = document.querySelector('#reportTabs .nav-link.active');
-            const activeTab = activeTabEl ? activeTabEl.id : 'dashboard-tab';
+            const activeTab = activeTabEl ? activeTabEl.id : 'employee-tab';
 
-            if (activeTab === 'dashboard-tab') loadReports();
-            else if (activeTab === 'employee-tab') loadEmployeeReport();
+            if (activeTab === 'employee-tab') loadEmployeeReport();
             else if (activeTab === 'final-tab') loadFinalReport();
         }
 

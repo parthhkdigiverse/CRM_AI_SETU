@@ -12,6 +12,12 @@ class ProjectStatus(str, enum.Enum):
     COMPLETED   = "COMPLETED"
     ON_HOLD     = "ON_HOLD"
     CANCELLED   = "CANCELLED"
+    NEGOTIATION = "NEGOTIATION"
+
+class ProjectPriority(str, enum.Enum):
+    LOW    = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH   = "HIGH"
 
 class Project(Base):
     __tablename__ = "projects"
@@ -24,6 +30,7 @@ class Project(Base):
     pm_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     
     status = Column(Enum(ProjectStatus), default=ProjectStatus.PLANNING)
+    priority = Column(Enum(ProjectPriority), default=ProjectPriority.MEDIUM)
     
     start_date = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)

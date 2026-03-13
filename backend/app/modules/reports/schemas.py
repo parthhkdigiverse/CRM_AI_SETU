@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
@@ -24,12 +25,13 @@ class DashboardStats(BaseModel):
 
 class EmployeePerformance(BaseModel):
     user_id: int
+    id: int # For alignment with frontend usage
     name: Optional[str]
     email: str
     role: str
     total_visits: int
     total_leads: int
-    total_sales: int
+    total_sales: float
     total_revenue: float
     total_incentive: float
 
@@ -43,3 +45,29 @@ class BusinessSummary(BaseModel):
     new_clients: int
     total_visits: int
     total_issues_raised: int
+
+class ProjectPortfolio(BaseModel):
+    id: int
+    fullName: Optional[str]
+    name: str # Client name
+    org: Optional[str] # Organization
+    project: str # Project name
+    priority: str
+    totalAmount: float
+    paidAmount: float
+    outstanding: float
+    lastMeeting: Optional[str]
+    interactionDate: datetime
+    status: str
+
+    class Config:
+        from_attributes = True
+
+class EmployeeActivity(BaseModel):
+    date: datetime
+    client: str
+    type: str # Map from visit status or remarks
+    status: str
+
+    class Config:
+        from_attributes = True

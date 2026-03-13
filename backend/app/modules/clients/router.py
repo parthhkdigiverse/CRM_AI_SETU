@@ -58,8 +58,13 @@ def read_clients(
     """
     service = ClientService(db)
     pm_id = None
-    if current_user and current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
-        pm_id = current_user.id
+    owner_id = None
+    
+    if current_user and current_user.role != UserRole.ADMIN:
+        if current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
+            pm_id = current_user.id
+        if current_user.role in [UserRole.SALES, UserRole.TELESALES, UserRole.PROJECT_MANAGER_AND_SALES]:
+            owner_id = current_user.id
 
     return service.get_clients(
         skip=skip,
@@ -67,7 +72,8 @@ def read_clients(
         search=search,
         sort_by=sort_by,
         sort_order=sort_order,
-        pm_id=pm_id
+        pm_id=pm_id,
+        owner_id=owner_id
     )
 
 
