@@ -50,7 +50,7 @@ class ShopService:
         return shops
         
     @staticmethod
-    def list_kanban_shops(db: Session, owner_id: int = None):
+    def list_kanban_shops(db: Session, owner_id: int = None, source: str = None):
         from app.modules.areas.models import Area
         query = db.query(
             Shop, 
@@ -60,6 +60,8 @@ class ShopService:
         
         if owner_id:
             query = query.filter(Shop.owner_id == owner_id)
+        if source and source not in {"ALL", "all"}:
+            query = query.filter(Shop.source == source)
             
         results = query.all()
         

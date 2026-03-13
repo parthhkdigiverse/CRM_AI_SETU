@@ -9,8 +9,15 @@ from app.modules.areas.service import AreaService
 
 router = APIRouter()
 
-# Role Checker
+# Role Checkers
 admin_access = RoleChecker([UserRole.ADMIN])
+read_access = RoleChecker([
+    UserRole.ADMIN,
+    UserRole.SALES,
+    UserRole.TELESALES,
+    UserRole.PROJECT_MANAGER,
+    UserRole.PROJECT_MANAGER_AND_SALES
+])
 
 @router.post("/", response_model=AreaRead, status_code=status.HTTP_201_CREATED)
 def create_area(
@@ -42,7 +49,7 @@ def read_areas(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: User = Depends(admin_access) # Admin usually manages areas
+    current_user: User = Depends(read_access) # Admin usually manages areas, others can read
 ) -> Any:
     service = AreaService(db)
     return service.get_areas(skip, limit)

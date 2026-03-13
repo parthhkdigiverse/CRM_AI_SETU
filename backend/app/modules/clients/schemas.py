@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional
 from pydantic import BaseModel, EmailStr, field_validator
 from datetime import datetime
 import re
@@ -6,7 +6,7 @@ import re
 # Client Schemas
 class ClientBase(BaseModel):
     name: str
-    phone: str
+    phone: Optional[str] = None
     email: Optional[EmailStr] = None
     organization: Optional[str] = None
     address: Optional[str] = None
@@ -31,15 +31,24 @@ class ClientCreate(ClientBase):
 
 class ClientUpdate(ClientBase):
     name: Optional[str] = None
+    phone: Optional[str] = None
     email: Optional[EmailStr] = None
+    organization: Optional[str] = None
+    address: Optional[str] = None
+    project_type: Optional[str] = None
+    requirements: Optional[str] = None
     owner_id: Optional[int] = None
 
 
 class ClientPMAssign(BaseModel):
     pm_id: int
 
-class ClientRead(ClientBase):
+class ClientRead(BaseModel):
     id: int
+    name: str
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    organization: Optional[str] = None
     pm_id: Optional[int] = None
     pm_name: Optional[str] = None
     owner_id: Optional[int] = None

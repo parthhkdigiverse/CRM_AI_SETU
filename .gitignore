@@ -42,3 +42,8 @@ backend/static/uploads/
 credentials.json
 *.db
 crm.db
+check_schema.py
+backend/scripts/client_owner_check.txt
+backend/scripts/verify_clients_output.txt
+backend/scripts/verify_permissions_output.txt
+backend/scripts/verify_permissions_result.json

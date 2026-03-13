@@ -59,8 +59,18 @@ class IssueService:
 
     async def create_issue(self, issue: IssueCreate, client_id: int, current_user: User, request: Request, background_tasks: BackgroundTasks = None):
         client = self.db.query(Client).filter(Client.id == client_id).first()
-        pm_id = client.pm_id if client else None
-        db_issue = Issue(**issue.model_dump(), client_id=client_id, reporter_id=current_user.id, assigned_to_id=pm_id)
+        
+        # Priority for assignment: 
+        # 1. Explicitly requested handler
+        # 2. Client's PM
+        # 3. None
+        issue_data = issue.model_dump(exclude_none=True)
+        # Ensure assigned_to_id is not in issue_data even if for some reason pop failed previously
+        issue_data_clean = {k: v for k, v in issue_data.items() if k != "assigned_to_id"}
+        
+        pm_id = issue_data.pop("assigned_to_id", None) or (client.pm_id if client else None)
+
+        db_issue = Issue(**issue_data_clean, client_id=client_id, reporter_id=current_user.id, assigned_to_id=pm_id)
 
         self.db.add(db_issue)
         self.db.commit()

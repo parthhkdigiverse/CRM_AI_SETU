@@ -7,7 +7,14 @@ Safe to run multiple times (skips already-existing records by email).
 """
 
 import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Support running from any working directory
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+_backend_dir = os.path.dirname(_script_dir)
+_root_dir = os.path.dirname(_backend_dir)
+# Insert root first, then backend — so backend/app/ takes priority over root app.py
+for _p in [_root_dir, _backend_dir]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from datetime import datetime, timedelta, UTC
 from app.core.database import SessionLocal
@@ -24,6 +31,7 @@ from app.modules.todos.models      import Todo
 from app.modules.notifications.models import Notification
 
 db = SessionLocal()
+now = datetime.now(UTC)
 
 def already_exists(model, **kwargs):
     return db.query(model).filter_by(**kwargs).first()
@@ -35,6 +43,7 @@ users_data = [
     dict(email="admin@crmsetu.com",     name="Arjun Mehta",    role=UserRole.ADMIN,                    phone="9800000001"),
     dict(email="sales1@crmsetu.com",    name="Priya Sharma",   role=UserRole.SALES,                    phone="9800000002"),
     dict(email="sales2@crmsetu.com",    name="Rahul Verma",    role=UserRole.SALES,                    phone="9800000003"),
+    dict(email="incentive.test@crmsetu.com", name="Incentive Test User", role=UserRole.SALES,          phone="9800000008"),
     dict(email="tele1@crmsetu.com",     name="Sneha Joshi",    role=UserRole.TELESALES,                phone="9800000004"),
     dict(email="pm1@crmsetu.com",       name="Vikram Nair",    role=UserRole.PROJECT_MANAGER,          phone="9800000005"),
     dict(email="pm2@crmsetu.com",       name="Neha Gupta",     role=UserRole.PROJECT_MANAGER_AND_SALES, phone="9800000006"),
@@ -51,6 +60,7 @@ for u in users_data:
             phone=u["phone"],
             hashed_password=get_password_hash("Test@1234"),
             is_active=True,
+            incentive_enabled=True,
         )
         db.add(user)
         db.flush()
@@ -65,6 +75,7 @@ db.commit()
 admin = created_users["admin@crmsetu.com"]
 sales1 = created_users["sales1@crmsetu.com"]
 sales2 = created_users["sales2@crmsetu.com"]
+incentive_test_user = created_users["incentive.test@crmsetu.com"]
 pm1   = created_users["pm1@crmsetu.com"]
 pm2   = created_users["pm2@crmsetu.com"]
 
@@ -79,6 +90,32 @@ clients_data = [
     dict(name="BlueSky Logistics",    email="bluesky@logistics.com",phone="9855555555", organization="BlueSky Pvt Ltd",  owner_id=sales1.id, pm_id=pm1.id),
 ]
 
+incentive_test_clients = [
+    dict(
+        name=f"Incentive Confirmed {index}",
+        email=f"incentive.confirmed{index}@crmsetu.test",
+        phone=f"98777000{index:02d}",
+        organization="Incentive QA Accounts",
+        owner_id=incentive_test_user.id,
+        pm_id=pm1.id,
+        is_active=True,
+        created_at=now - timedelta(days=12 + index),
+    )
+    for index in range(1, 11)
+] + [
+    dict(
+        name=f"Incentive Pending {index}",
+        email=f"incentive.pending{index}@crmsetu.test",
+        phone=f"98777100{index:02d}",
+        organization="Incentive QA Accounts",
+        owner_id=incentive_test_user.id,
+        pm_id=pm1.id,
+        is_active=True,
+        created_at=now - timedelta(days=index),
+    )
+    for index in range(1, 3)
+]
+
 created_clients = []
 for c in clients_data:
     if not already_exists(Client, email=c["email"]):
@@ -91,7 +128,25 @@ for c in clients_data:
         created_clients.append(already_exists(Client, email=c["email"]))
         print(f"  ~ Exists: {c['email']}")
 
+confirmed_added = 0
+pending_added = 0
+for client_data in incentive_test_clients:
+    existing_client = already_exists(Client, email=client_data["email"])
+    if existing_client:
+        print(f"  ~ Exists: {client_data['email']}")
+        continue
+
+    client = Client(**client_data)
+    db.add(client)
+    db.flush()
+    if (now - client.created_at).days >= 10:
+        confirmed_added += 1
+    else:
+        pending_added += 1
+    print(f"  + Incentive Client: {client.name}")
+
 db.commit()
+print(f"  + Incentive test clients: {confirmed_added} confirmed, {pending_added} pending")
 
 # ── 3. SHOPS ──────────────────────────────────────────────────────────────────
 print("\nSeeding shops...")
@@ -122,27 +177,25 @@ db.commit()
 # ── 4. VISITS ─────────────────────────────────────────────────────────────────
 print("\nSeeding visits...")
 
-now = datetime.now(UTC)
 visits_data = [
-    dict(shop_id=created_shops[0].id, user_id=sales1.id, status="SCHEDULED",  notes="Scheduled demo call",               visit_date=now - timedelta(days=5)),
-    dict(shop_id=created_shops[1].id, user_id=sales1.id, status="COMPLETED",  notes="Very happy with the product",       visit_date=now - timedelta(days=4)),
-    dict(shop_id=created_shops[2].id, user_id=sales2.id, status="MISSED",     notes="Client not available",              visit_date=now - timedelta(days=3)),
-    dict(shop_id=created_shops[3].id, user_id=sales2.id, status="SCHEDULED",  notes="Needs internal approval first",     visit_date=now - timedelta(days=2)),
-    dict(shop_id=created_shops[4].id, user_id=sales1.id, status="COMPLETED",  notes="Ready to sign contract",            visit_date=now - timedelta(days=1)),
-    dict(shop_id=created_shops[5].id, user_id=sales2.id, status="CANCELLED",  notes="Client cancelled",  decline_remarks="Will reschedule next month", visit_date=now),
+    dict(shop_id=created_shops[0].id, user_id=sales1.id, status="SCHEDULED",  remarks="Scheduled demo call",               visit_date=now - timedelta(days=5)),
+    dict(shop_id=created_shops[1].id, user_id=sales1.id, status="COMPLETED",  remarks="Very happy with the product",       visit_date=now - timedelta(days=4)),
+    dict(shop_id=created_shops[2].id, user_id=sales2.id, status="MISSED",     remarks="Client not available",              visit_date=now - timedelta(days=3)),
+    dict(shop_id=created_shops[3].id, user_id=sales2.id, status="SCHEDULED",  remarks="Needs internal approval first",     visit_date=now - timedelta(days=2)),
+    dict(shop_id=created_shops[4].id, user_id=sales1.id, status="COMPLETED",  remarks="Ready to sign contract",            visit_date=now - timedelta(days=1)),
+    dict(shop_id=created_shops[5].id, user_id=sales2.id, status="CANCELLED",  remarks="Client cancelled",  decline_remarks="Will reschedule next month", visit_date=now),
 ]
 
-# Use raw SQL since Visit model column names differ from actual DB columns
 from sqlalchemy import text
 for v in visits_data:
     db.execute(text("""
-        INSERT INTO visits (shop_id, user_id, status, notes, decline_remarks, visit_date, created_at, updated_at)
-        VALUES (:shop_id, :user_id, :status, :notes, :decline_remarks, :visit_date, :created_at, :updated_at)
+        INSERT INTO visits (shop_id, user_id, status, remarks, decline_remarks, visit_date, created_at, updated_at)
+        VALUES (:shop_id, :user_id, :status, :remarks, :decline_remarks, :visit_date, :created_at, :updated_at)
     """), {
         "shop_id": v["shop_id"],
         "user_id": v["user_id"],
         "status": v["status"],
-        "notes": v.get("notes"),
+        "remarks": v.get("remarks"),
         "decline_remarks": v.get("decline_remarks"),
         "visit_date": v["visit_date"],
         "created_at": now,
@@ -155,11 +208,11 @@ print(f"  + {len(visits_data)} visits added")
 print("\nSeeding projects...")
 
 projects_data = [
-    dict(name="CRM Portal Rollout",    description="Full CRM deployment for TechNova",      client_id=created_clients[0].id, pm_id=pm1.id, status="ONGOING",    budget=250000.0, start_date=now - timedelta(days=30), end_date=now + timedelta(days=60)),
-    dict(name="Infra Monitoring Setup",description="Setup monitoring dashboard for Infra",  client_id=created_clients[1].id, pm_id=pm2.id, status="PLANNED",    budget=150000.0, start_date=now + timedelta(days=5),  end_date=now + timedelta(days=90)),
+    dict(name="CRM Portal Rollout",    description="Full CRM deployment for TechNova",      client_id=created_clients[0].id, pm_id=pm1.id, status="IN_PROGRESS", budget=250000.0, start_date=now - timedelta(days=30), end_date=now + timedelta(days=60)),
+    dict(name="Infra Monitoring Setup",description="Setup monitoring dashboard for Infra",  client_id=created_clients[1].id, pm_id=pm2.id, status="PLANNING",    budget=150000.0, start_date=now + timedelta(days=5),  end_date=now + timedelta(days=90)),
     dict(name="Retail ERP Integration",description="Integrate ERP with retail POS system",  client_id=created_clients[2].id, pm_id=pm1.id, status="ON_HOLD",    budget=320000.0, start_date=now - timedelta(days=10), end_date=now + timedelta(days=45)),
     dict(name="Finance App Revamp",    description="UI/UX overhaul for finance web app",    client_id=created_clients[3].id, pm_id=pm2.id, status="COMPLETED",  budget=180000.0, start_date=now - timedelta(days=90), end_date=now - timedelta(days=5)),
-    dict(name="Logistics Dashboard",   description="Real-time shipment tracking dashboard", client_id=created_clients[4].id, pm_id=pm1.id, status="ONGOING",    budget=210000.0, start_date=now - timedelta(days=15), end_date=now + timedelta(days=30)),
+    dict(name="Logistics Dashboard",   description="Real-time shipment tracking dashboard", client_id=created_clients[4].id, pm_id=pm1.id, status="IN_PROGRESS", budget=210000.0, start_date=now - timedelta(days=15), end_date=now + timedelta(days=30)),
 ]
 
 from sqlalchemy import text
@@ -172,9 +225,9 @@ for p in projects_data:
     else:
         result = db.execute(text("""
             INSERT INTO projects (name, description, client_id, pm_id, status, budget, start_date, end_date, created_at, updated_at)
-            VALUES (:name, :description, :client_id, :pm_id, :status::projectstatus, :budget, :start_date, :end_date, :now, :now)
+            VALUES (:name, :description, :client_id, :pm_id, :status, :budget, :start_date, :end_date, :now, :now2)
             RETURNING id
-        """), {**p, "now": now})
+        """), {**p, "now": now, "now2": now})
         proj_id = result.fetchone()[0]
         project_ids.append(proj_id)
         print(f"  + Project: {p['name']} [{p['status']}]")
@@ -251,5 +304,6 @@ print("\n[DONE] Seed complete! Login credentials:")
 print("   All users password: Test@1234")
 print("   Admin   -> admin@crmsetu.com")
 print("   Sales   -> sales1@crmsetu.com / sales2@crmsetu.com")
+print("   Incentive Test -> incentive.test@crmsetu.com")
 print("   Tele    -> tele1@crmsetu.com")
 print("   PM      -> pm1@crmsetu.com / pm2@crmsetu.com")

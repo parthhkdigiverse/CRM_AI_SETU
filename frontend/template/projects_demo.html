@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+<!-- frontend/template/projects_demo.html -->
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Demo — SRM AI SETU</title>
+    <title>Demo - SRM AI SETU</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -71,20 +72,6 @@
             margin-bottom: 1.5rem;
         }
 
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 16px;
-            padding: 1.5rem;
-        }
-
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #1e293b;
-        }
-
         .badge-premium {
             background: rgba(255, 255, 255, 0.2);
             color: white;
@@ -100,7 +87,7 @@
     </style>
 </head>
 
-<body>
+<body class="bg-app">
     <div class="d-flex">
         <div id="sidebar"></div>
         <div class="flex-grow-1">
@@ -110,15 +97,10 @@
                     <div class="demo-hero-content">
                         <span class="badge-premium">Intelligent Management</span>
                         <h1 class="display-5 fw-bold mb-3">Next-Gen Project Ecosystem</h1>
-                        <p class="lead opacity-75 mb-4" style="max-width: 600px;">Elevate your workflow with our
-                            advanced project management suite. Real-time collaboration, predictive analytics, and
-                            seamless resource allocation.</p>
+                        <p class="lead opacity-75 mb-4" style="max-width: 600px;">Elevate your workflow with our advanced project management suite. Real-time collaboration, predictive analytics, and seamless resource allocation.</p>
                         <div class="d-flex gap-3">
-                            <button class="btn btn-white px-4 py-2 fw-semibold"
-                                style="background: white; color: #4f46e5; border-radius: 10px;">Launch
-                                Experience</button>
-                            <button class="btn btn-outline-light px-4 py-2 fw-semibold"
-                                style="border-radius: 10px;">Watch Overview</button>
+                            <button class="btn btn-white px-4 py-2 fw-semibold" style="background: white; color: #4f46e5; border-radius: 10px;">Launch Experience</button>
+                            <button class="btn btn-outline-light px-4 py-2 fw-semibold" style="border-radius: 10px;">Watch Overview</button>
                         </div>
                     </div>
                 </div>
@@ -130,11 +112,9 @@
                                 <i class="bi bi-kanban"></i>
                             </div>
                             <h4 class="fw-bold">Visual Kanban</h4>
-                            <p class="text-muted">Dynamic board systems that adapt to your team's velocity. Drag, drop,
-                                and deliver with zero friction.</p>
+                            <p class="text-muted">Dynamic board systems that adapt to your team's velocity. Drag, drop, and deliver with zero friction.</p>
                             <div class="mt-4 pt-3 border-top">
-                                <a href="#" class="text-primary text-decoration-none fw-semibold">Learn more <i
-                                        class="bi bi-arrow-right ms-1"></i></a>
+                                <a href="#" class="text-primary text-decoration-none fw-semibold">Learn more <i class="bi bi-arrow-right ms-1"></i></a>
                             </div>
                         </div>
                     </div>
@@ -144,11 +124,9 @@
                                 <i class="bi bi-graph-up-arrow"></i>
                             </div>
                             <h4 class="fw-bold">Predictive Analytics</h4>
-                            <p class="text-muted">Anticipate bottlenecks before they happen. Our AI models analyze past
-                                performance to forecast future outcomes.</p>
+                            <p class="text-muted">Anticipate bottlenecks before they happen. Our AI models analyze past performance to forecast future outcomes.</p>
                             <div class="mt-4 pt-3 border-top">
-                                <a href="#" class="text-success text-decoration-none fw-semibold">View Insights <i
-                                        class="bi bi-arrow-right ms-1"></i></a>
+                                <a href="#" class="text-success text-decoration-none fw-semibold">View Insights <i class="bi bi-arrow-right ms-1"></i></a>
                             </div>
                         </div>
                     </div>
@@ -158,11 +136,9 @@
                                 <i class="bi bi-people"></i>
                             </div>
                             <h4 class="fw-bold">Seamless Sync</h4>
-                            <p class="text-muted">Connect your team, clients, and assets in one unified space.
-                                Effortless communication across all departments.</p>
+                            <p class="text-muted">Connect your team, clients, and assets in one unified space. Effortless communication across all departments.</p>
                             <div class="mt-4 pt-3 border-top">
-                                <a href="#" class="text-warning text-decoration-none fw-semibold">Connect Teams <i
-                                        class="bi bi-arrow-right ms-1"></i></a>
+                                <a href="#" class="text-warning text-decoration-none fw-semibold">Connect Teams <i class="bi bi-arrow-right ms-1"></i></a>
                             </div>
                         </div>
                     </div>
@@ -174,12 +150,10 @@
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h5 class="fw-bold mb-0">Operational Efficiency</h5>
                                 <div class="dropdown">
-                                    <button class="btn btn-light btn-sm dropdown-toggle" data-bs-toggle="dropdown">Last
-                                        30 Days</button>
+                                    <button class="btn btn-light btn-sm dropdown-toggle" data-bs-toggle="dropdown">Last 30 Days</button>
                                 </div>
                             </div>
-                            <div class="p-5 text-center bg-light rounded-4 border-dashed"
-                                style="border: 2px dashed #e2e8f0;">
+                            <div class="p-5 text-center bg-light rounded-4 border-dashed" style="border: 2px dashed #e2e8f0;">
                                 <i class="bi bi-card-image text-muted opacity-25" style="font-size: 4rem;"></i>
                                 <p class="text-muted mt-3">Interactive Workspace Visualization coming soon</p>
                             </div>
@@ -217,8 +191,7 @@
                             </div>
                             <div class="mt-5 p-3 rounded-4" style="background: #f1f5f9;">
                                 <div class="d-flex align-items-center gap-3">
-                                    <div class="rounded-circle bg-white d-flex align-items-center justify-content-center shadow-sm"
-                                        style="width: 40px; height: 40px;">
+                                    <div class="rounded-circle bg-white d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px;">
                                         <i class="bi bi-shield-check text-primary"></i>
                                     </div>
                                     <div>
@@ -235,13 +208,18 @@
         </div>
     </div>
 
+    <script src="../js/utils.js?v=2.3"></script>
+    <script src="../js/api.js?v=2.3"></script>
+    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/app.js?v=2.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/api.js?v=2.6"></script>
-    <script src="../js/ui_components.js?v=2.6"></script>
-    <script src="../js/auth.js?v=2.6"></script>
     <script>
         requireAuth();
-        document.getElementById('sidebar').innerHTML = renderSidebar('projects_demo');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) {
+            sidebarElement.innerHTML = renderSidebar('demo');
+        }
         injectTopHeader('Demo');
     </script>
 </body>

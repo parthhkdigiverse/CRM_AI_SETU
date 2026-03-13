@@ -39,10 +39,27 @@ def run_migrations_online() -> None:
     # Sometimes Pydantic DSN objects need to be explicitly cast to string
     configuration["sqlalchemy.url"] = str(settings.DATABASE_URL)
     
+    """Run migrations in 'online' mode.
+
+    In this scenario we need to create an Engine
+    and associate a connection with the context.
+
+    """
+    from urllib.parse import urlparse, unquote
+    import psycopg2
+
+    parsed = urlparse(settings.DATABASE_URL)
     connectable = engine_from_config(
-        configuration,
+        {"sqlalchemy.url": "postgresql+psycopg2://"},
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        creator=lambda: psycopg2.connect(
+            host=parsed.hostname,
+            port=parsed.port or 5432,
+            dbname=unquote(parsed.path.lstrip("/")),
+            user=parsed.username,
+            password=unquote(parsed.password) if parsed.password else "",
+        ),
     )
 
     with connectable.connect() as connection:

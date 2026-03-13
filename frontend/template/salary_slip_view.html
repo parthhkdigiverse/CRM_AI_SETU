@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salary Slip — SRM AI SETU</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #dde3ec; min-height: 100vh; font-family: 'Segoe UI', Arial, sans-serif; }
+        #loading {
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; font-size: 1rem; color: #555; gap: 12px;
+        }
+        .spinner {
+            width: 28px; height: 28px;
+            border: 3px solid #cbd5e1; border-top-color: #4f46e5;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #error-box {
+            display: none; text-align: center;
+            padding: 80px 20px; color: #dc2626;
+        }
+        #error-box h3 { font-size: 1.2rem; margin-bottom: 8px; }
+        #error-box p { color: #555; font-size: 0.9rem; }
+        #retry-btn {
+            margin-top: 20px; padding: 9px 24px;
+            background: #4f46e5; color: #fff;
+            border: none; border-radius: 8px;
+            cursor: pointer; font-size: 0.9rem;
+        }
+        #retry-btn:hover { background: #4338ca; }
+        iframe {
+            display: block; width: 100%;
+            height: 100vh; border: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="spinner"></div>
+        Loading salary slip&hellip;
+    </div>
+    <div id="error-box">
+        <h3>Could not load salary slip</h3>
+        <p id="error-msg"></p>
+        <button id="retry-btn" onclick="location.reload()">Retry</button>
+    </div>
+
+    <script src="../js/api.js?v=2.9"></script>
+    <script>
+        (async () => {
+            const params = new URLSearchParams(window.location.search);
+            const slipId = params.get('id');
+            const loadingEl = document.getElementById('loading');
+            const errorBox  = document.getElementById('error-box');
+
+            function showError(msg) {
+                loadingEl.style.display = 'none';
+                errorBox.style.display = 'block';
+                document.getElementById('error-msg').textContent = msg || '';
+            }
+
+            if (!slipId) { showError('No salary slip ID provided in the URL.'); return; }
+
+            const token = localStorage.getItem('access_token');
+            if (!token || token === 'null' || token === 'undefined' || token === '') {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Allow api.js config fetch to resolve before reading API_BASE_URL
+            await new Promise(r => setTimeout(r, 200));
+
+            try {
+                const base = (typeof ApiClient !== 'undefined' && ApiClient.API_BASE_URL)
+                    ? ApiClient.API_BASE_URL
+                    : (typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://127.0.0.1:8000/api');
+
+                const response = await fetch(
+                    `${base}/hrm/salary/slip/${slipId}/invoice`,
+                    { headers: { 'Authorization': `Bearer ${token}` } }
+                );
+
+                if (!response.ok) {
+                    const txt = await response.text().catch(() => '');
+                    let detail = `HTTP ${response.status}`;
+                    try { detail += ': ' + (JSON.parse(txt).detail || txt); } catch { if (txt) detail += ': ' + txt; }
+                    throw new Error(detail);
+                }
+
+                const html = await response.text();
+
+                // Use page title from the slip HTML
+                const titleMatch = html.match(/<title>(.*?)<\/title>/i);
+                if (titleMatch) document.title = titleMatch[1];
+
+                // Render inside a sandboxed iframe so the slip's own CSS/JS is isolated
+                loadingEl.style.display = 'none';
+                const frame = document.createElement('iframe');
+                frame.style.cssText = 'display:block;width:100%;height:100vh;border:none;';
+                frame.srcdoc = html;
+                document.body.appendChild(frame);
+            } catch (err) {
+                showError(err.message || 'An unexpected error occurred.');
+            }
+        })();
+    </script>
+</body>
+</html>

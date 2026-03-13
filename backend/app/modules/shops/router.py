@@ -34,14 +34,16 @@ def create_shop(
 def read_kanban_shops(
     db: Session = Depends(get_db),
     my_view: bool = Query(False, description="If true, only return leads assigned to the current user"),
+    owner_id: int | None = Query(None),
+    source: str | None = Query(None),
     current_user: User = Depends(staff_checker)
 ) -> Any:
     # Automatically scope to current user if they are a sales/telesales employee (not admin/PM)
     employee_roles = {UserRole.SALES, UserRole.TELESALES}
-    owner_id = None
+    effective_owner_id = owner_id
     if (current_user and current_user.role in employee_roles) or my_view:
-        owner_id = current_user.id if current_user else 0
-    return ShopService.list_kanban_shops(db, owner_id=owner_id)
+        effective_owner_id = current_user.id if current_user else 0
+    return ShopService.list_kanban_shops(db, owner_id=effective_owner_id, source=source)
 
 @router.get("/", response_model=List[ShopRead])
 def read_shops(

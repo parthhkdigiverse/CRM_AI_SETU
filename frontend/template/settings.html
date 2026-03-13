@@ -6,7 +6,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Settings — SRM AI SETU</title>
+    <title>Settings — CRM AI SETU</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/theme.css">
@@ -248,9 +248,9 @@
                                 Notifications</a>
                             <a href="#account" onclick="scrollTo('account',this)"><i class="bi bi-person-gear"></i>
                                 Account</a>
-                            <a href="#incentives-config" onclick="scrollTo('incentives-config',this)"
-                                id="incentives-nav-link" style="display:none;"><i class="bi bi-layers"></i>
-                                Incentives</a>
+                            <a href="#incentives-config" onclick="scrollTo('incentives-config',this)" id="incentives-nav-link" style="display:none;"><i class="bi bi-trophy"></i> Incentives</a>
+                            <a href="#payslip-contact" onclick="scrollTo('payslip-contact',this)" id="payslip-nav-link" style="display:none;"><i class="bi bi-building"></i> Company / Payslip</a>
+                            <a href="#invoice-settings" onclick="scrollTo('invoice-settings',this)" id="invoice-nav-link" style="display:none;"><i class="bi bi-receipt-cutoff"></i> Invoice &amp; Payment</a>
                             <a href="#system" onclick="scrollTo('system',this)" id="system-nav-link"><i
                                     class="bi bi-cpu"></i> System</a>
                         </nav>
@@ -441,157 +441,333 @@
                             </div>
                         </div>
 
-                        <!-- ── Incentive & Target Strategy ───── -->
-                        <div class="settings-section border-0 shadow-sm" id="incentives-config"
-                            style="display:none; background: linear-gradient(to bottom right, #ffffff, #f8fafc);">
-                            <div class="settings-section-title"><i class="bi bi-layers text-primary"></i> Incentive &
-                                Target Strategy</div>
-                            <p class="setting-desc mb-4">Centralized configuration for performance-based rewards and
-                                role-specific targets.</p>
+                        <!-- ── Incentives Configuration ───── -->
+                        <div class="settings-section" id="incentives-config" style="display:none;">
+                            <div class="settings-section-title"><i class="bi bi-trophy text-warning"></i> Incentive Strategy <span class="ms-auto"><a href="incentives.html" class="text-muted" style="font-size:0.75rem; text-decoration:none;"><i class="bi bi-arrow-up-right-square"></i> View Incentives</a></span></div>
 
-                            <!-- Slabs Sub-section -->
-                            <div class="mb-5">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="small fw-bold mb-0 text-dark"><i
-                                            class="bi bi-reward-fill me-2 text-warning"></i>Reward Slabs</h6>
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-primary btn-sm rounded-pill px-3"
-                                            onclick="openSlabModal()">
-                                            <i class="bi bi-plus-lg me-1"></i> New Slab
-                                        </button>
-                                    </div>
+                            <div class="settings-section-title"><i class="bi bi-shield-check text-primary"></i> Incentive Eligibility</div>
+                            <p class="text-muted mb-3" style="font-size:0.8rem;">Role action applies to all current users in the selected role. Use user selection only when you want an individual override.</p>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-5">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">By Role</label>
+                                    <select id="elig-role" class="form-select form-select-sm">
+                                        <option value="SALES">Sales</option>
+                                        <option value="TELESALES">Telesales</option>
+                                        <option value="PROJECT_MANAGER">Project Manager</option>
+                                        <option value="PROJECT_MANAGER_AND_SALES">PM + Sales</option>
+                                        <option value="ADMIN">Admin</option>
+                                    </select>
                                 </div>
-                                <div class="table-responsive rounded-4 border bg-white">
-                                    <table class="table table-hover align-middle mb-0">
-                                        <thead class="bg-light">
-                                            <tr class="x-small text-uppercase text-muted fw-bold">
-                                                <th class="ps-4" style="width: 40px;">
-                                                    <input type="checkbox" class="form-check-input" id="slab-select-all"
-                                                        onclick="toggleAllSlabs(this)">
-                                                </th>
-                                                <th>Range (Tasks)</th>
-                                                <th>Per Task</th>
-                                                <th>Bonus</th>
-                                                <th class="pe-4 text-end">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="admin-slabs-body" class="small">
-                                            <tr>
-                                                <td colspan="5" class="text-center py-4 text-muted">Syncing
-                                                    configuration...</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                <div class="col-md-4">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">Action</label>
+                                    <select id="elig-role-enabled" class="form-select form-select-sm">
+                                        <option value="true">Enable Incentive</option>
+                                        <option value="false">Disable Incentive</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <button class="btn-save-sm w-100" onclick="applyRoleEligibility()"><i class="bi bi-gear me-1"></i> Apply to All</button>
                                 </div>
                             </div>
 
-                            <!-- Role Targets Sub-section -->
-                            <div class="mb-2">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="small fw-bold mb-0 text-dark"><i
-                                            class="bi bi-bullseye me-2 text-danger"></i>Role Targets</h6>
-                                    <button class="btn btn-primary btn-sm rounded-pill px-3"
-                                        onclick="openTargetModal()">
-                                        <i class="bi bi-plus-lg me-1"></i> Set Target
-                                    </button>
+                            <div class="row g-3 mb-2">
+                                <div class="col-md-6">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">By User</label>
+                                    <select id="elig-user" class="form-select form-select-sm">
+                                        <option value="">Loading users...</option>
+                                    </select>
                                 </div>
-                                <div class="table-responsive rounded-4 border bg-white">
-                                    <table class="table table-hover align-middle mb-0">
-                                        <thead class="bg-light">
-                                            <tr class="x-small text-uppercase text-muted fw-bold">
-                                                <th class="ps-4">Employee Role</th>
-                                                <th>Monthly Target</th>
-                                                <th class="pe-4 text-end">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="admin-targets-body" class="small">
-                                            <tr>
-                                                <td colspan="3" class="text-center py-4 text-muted">Syncing targets...
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                <div class="col-md-3">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">Eligibility</label>
+                                    <select id="elig-user-enabled" class="form-select form-select-sm">
+                                        <option value="true">Eligible</option>
+                                        <option value="false">Not Eligible</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <button class="btn-save-sm w-100" onclick="saveUserEligibility()"><i class="bi bi-check2 me-1"></i> Save User</button>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Slab Modal -->
-                        <div class="modal fade" id="slabEditModal" tabindex="-1">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-                                    <div class="modal-header border-0 pb-0">
-                                        <h5 class="modal-title fw-bold" id="slabModalTitle">Add Incentive Slab</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body p-4">
-                                        <input type="hidden" id="slab-id">
-                                        <div class="row g-3 mb-3">
-                                            <div class="col-6">
-                                                <label class="form-label x-small fw-bold text-muted text-uppercase">Min
-                                                    Tasks</label>
-                                                <input type="number" id="slab-min" class="form-control rounded-3"
-                                                    placeholder="1">
-                                            </div>
-                                            <div class="col-6">
-                                                <label class="form-label x-small fw-bold text-muted text-uppercase">Max
-                                                    Tasks</label>
-                                                <input type="number" id="slab-max" class="form-control rounded-3"
-                                                    placeholder="10">
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label
-                                                class="form-label x-small fw-bold text-muted text-uppercase">Incentive
-                                                per Task (₹)</label>
-                                            <input type="number" id="slab-punit" class="form-control rounded-3"
-                                                placeholder="1200">
-                                        </div>
-                                        <div class="mb-4">
-                                            <label class="form-label x-small fw-bold text-muted text-uppercase">Fixed
-                                                Slab Bonus (₹)</label>
-                                            <input type="number" id="slab-bonus" class="form-control rounded-3"
-                                                placeholder="5000">
-                                        </div>
-                                        <button class="btn btn-primary w-100 fw-bold py-2 rounded-3"
-                                            onclick="saveSlab()">
-                                            <i class="bi bi-check2-circle me-2"></i> Confirm Slab Configuration
-                                        </button>
-                                    </div>
+                            <div id="eligibility-msg" class="small text-muted mb-3"></div>
+
+                            <div id="slabs-settings-list">
+                                <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-muted"></div></div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="settings-section-title"><i class="bi bi-plus-circle text-success"></i> Add New Slab</div>
+                            <div class="row g-2 mt-1">
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">Min Units</label>
+                                    <input type="number" id="slab-min" class="form-control form-control-sm" placeholder="e.g. 0" min="0">
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">Max Units</label>
+                                    <input type="number" id="slab-max" class="form-control form-control-sm" placeholder="e.g. 10" min="1">
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">Per Unit (₹)</label>
+                                    <input type="number" id="slab-per-unit" class="form-control form-control-sm" placeholder="e.g. 500" min="0">
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">Slab Bonus (₹)</label>
+                                    <input type="number" id="slab-bonus" class="form-control form-control-sm" placeholder="e.g. 1000" min="0">
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <button class="btn-save-sm" onclick="addSlabSetting()"><i class="bi bi-plus me-1"></i> Add Slab</button>
+                                    <span id="slab-save-msg" class="ms-3 small text-success d-none"></span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Target Modal -->
-                        <div class="modal fade" id="targetEditModal" tabindex="-1">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-                                    <div class="modal-header border-0 pb-0">
-                                        <h5 class="modal-title fw-bold">Set Role Target</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body p-4">
-                                        <div class="mb-3">
-                                            <label class="form-label x-small fw-bold text-muted text-uppercase">Select
-                                                Role</label>
-                                            <select id="target-role" class="form-select rounded-3">
-                                                <option value="TELESALES">TELESALES</option>
-                                                <option value="SALES">SALES</option>
-                                                <option value="PROJECT_MANAGER">PROJECT MANAGER</option>
-                                                <option value="PROJECT_MANAGER_AND_SALES">PM & SALES</option>
-                                            </select>
-                                        </div>
-                                        <div class="mb-4">
-                                            <label class="form-label x-small fw-bold text-muted text-uppercase">Monthly
-                                                Units Target</label>
-                                            <input type="number" id="target-count" class="form-control rounded-3"
-                                                placeholder="20">
-                                        </div>
-                                        <button class="btn btn-secondary w-100 fw-bold py-2 rounded-3 text-white"
-                                            onclick="saveTarget()">
-                                            <i class="bi bi-bullseye me-2"></i> Save Target Configuration
-                                        </button>
-                                    </div>
+                        <!-- ── Employee Code Configuration (admin-only) ───── -->
+                        <div class="settings-section" id="employee-code-settings" style="display:none;">
+                            <div class="settings-section-title"><i class="bi bi-hash text-primary"></i> Employee Code Configuration</div>
+                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:16px;">Configure how automatic employee codes (e.g., EMP001) are generated for new staff.</p>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Auto-generate Employee Code</div>
+                                    <div class="setting-desc">Enable sequential employee code generation for new staff</div>
                                 </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="emp-code-enabled" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Code Prefix</div>
+                                    <div class="setting-desc">The start of every auto-generated employee code</div>
+                                </div>
+                                <input type="text" id="emp-code-prefix" class="form-control form-control-sm" style="max-width:120px;" placeholder="e.g. EMP" maxlength="10">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Next Sequence Number</div>
+                                    <div class="setting-desc">The number to be used for the next employee</div>
+                                </div>
+                                <input type="number" id="emp-code-next-seq" class="form-control form-control-sm" style="max-width:120px;" placeholder="e.g. 1" min="1">
+                            </div>
+
+                            <div class="mt-3">
+                                <button class="btn-save-sm" onclick="saveEmployeeCodeSettings()"><i class="bi bi-save me-1"></i> Save Configuration</button>
+                                <span id="emp-code-save-msg" class="ms-3 small text-success d-none">Saved!</span>
+                            </div>
+                        </div>
+
+                        <!-- ── Company / Payslip Contact ───── -->
+                        <div class="settings-section" id="payslip-contact" style="display:none;">
+                            <div class="settings-section-title"><i class="bi bi-building text-primary"></i> Company / Payslip Contact</div>
+                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:16px;">These details appear on employee salary slips in the banner header.</p>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">HR Email</div>
+                                    <div class="setting-desc">Shown on salary slip header</div>
+                                </div>
+                                <input type="email" id="payslip-email" class="form-control form-control-sm" style="max-width:280px;" placeholder="e.g. hr@company.com">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Contact Phone</div>
+                                    <div class="setting-desc">Shown on salary slip header</div>
+                                </div>
+                                <input type="tel" id="payslip-phone" class="form-control form-control-sm" style="max-width:200px;" placeholder="e.g. 9876543210">
+                            </div>
+
+                            <div class="mt-3">
+                                <button class="btn-save-sm" onclick="savePayslipContact()"><i class="bi bi-save me-1"></i> Save Contact Info</button>
+                                <span id="payslip-save-msg" class="ms-3 small text-success d-none">Saved!</span>
+                            </div>
+                        </div>
+
+                        <!-- ── Invoice & Payment Settings (admin-only) ───── -->
+                        <div class="settings-section" id="invoice-settings" style="display:none;">
+                            <div class="settings-section-title"><i class="bi bi-receipt-cutoff text-primary"></i> Invoice &amp; Payment Settings</div>
+                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:16px;">These settings control invoice defaults and the payment QR shown on all invoices.</p>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Default Invoice Amount (₹)</div>
+                                    <div class="setting-desc">Pre-filled amount when creating a new invoice</div>
+                                </div>
+                                <input type="number" id="inv-default-amount" class="form-control form-control-sm" style="max-width:160px;" placeholder="12000" min="1">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Personal Account (Without GST) Default Amount (₹)</div>
+                                    <div class="setting-desc">Used automatically for personal account invoices without GST</div>
+                                </div>
+                                <input type="number" id="inv-personal-no-gst-amount" class="form-control form-control-sm" style="max-width:190px;" placeholder="12000" min="1">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Next Invoice Sequence (With GST)</div>
+                                    <div class="setting-desc">Controls Inv/YYYY/### numbering. Set to 1 to reset.</div>
+                                </div>
+                                <input type="number" id="inv-seq-with-gst" class="form-control form-control-sm" style="max-width:160px;" placeholder="1" min="1">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Next Invoice Sequence (Without GST)</div>
+                                    <div class="setting-desc">Controls PInv/YYYY/### numbering. Set to 1 to reset.</div>
+                                </div>
+                                <input type="number" id="inv-seq-without-gst" class="form-control form-control-sm" style="max-width:160px;" placeholder="1" min="1">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Company Name</div>
+                                    <div class="setting-desc">Shown on invoice header</div>
+                                </div>
+                                <input type="text" id="inv-company-name" class="form-control form-control-sm" style="max-width:240px;" placeholder="CRM AI SETU">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Company Address</div>
+                                    <div class="setting-desc">Printed on invoice</div>
+                                </div>
+                                <input type="text" id="inv-company-address" class="form-control form-control-sm" style="max-width:300px;" placeholder="City, State, PIN">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Company Phone</div>
+                                    <div class="setting-desc">Support contact on invoice footer</div>
+                                </div>
+                                <input type="tel" id="inv-company-phone" class="form-control form-control-sm" style="max-width:200px;" placeholder="9876543210">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Company Email</div>
+                                    <div class="setting-desc">Shown in invoice header</div>
+                                </div>
+                                <input type="email" id="inv-company-email" class="form-control form-control-sm" style="max-width:260px;" placeholder="accounts@company.com">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">GSTIN</div>
+                                    <div class="setting-desc">Optional GST number on invoice</div>
+                                </div>
+                                <input type="text" id="inv-company-gstin" class="form-control form-control-sm" style="max-width:220px;" placeholder="e.g. 29ABCDE1234F1Z5">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">PAN</div>
+                                    <div class="setting-desc">Permanent Account Number for invoice header</div>
+                                </div>
+                                <input type="text" id="inv-company-pan" class="form-control form-control-sm" style="max-width:220px;" placeholder="e.g. ABCDE1234F">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">CIN</div>
+                                    <div class="setting-desc">Company Identification Number</div>
+                                </div>
+                                <input type="text" id="inv-company-cin" class="form-control form-control-sm" style="max-width:260px;" placeholder="e.g. U12345GJ2024PTC123456">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">CST Code</div>
+                                    <div class="setting-desc">Optional CST/TIN code for invoice header</div>
+                                </div>
+                                <input type="text" id="inv-company-cst-code" class="form-control form-control-sm" style="max-width:220px;" placeholder="Optional">
+                            </div>
+
+                            <div class="settings-section-title mt-4" style="border-top:1px solid #f1f5f9;padding-top:16px;"><i class="bi bi-qr-code text-primary"></i> Payment QR / UPI</div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">UPI ID</div>
+                                    <div class="setting-desc">e.g. company@upi — shown on invoice QR section</div>
+                                </div>
+                                <input type="text" id="inv-upi-id" class="form-control form-control-sm" style="max-width:240px;" placeholder="yourname@upi">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">UPI Account Name</div>
+                                    <div class="setting-desc">Displayed below the QR code</div>
+                                </div>
+                                <input type="text" id="inv-upi-name" class="form-control form-control-sm" style="max-width:240px;" placeholder="CRM AI SETU">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Bank Name</div>
+                                    <div class="setting-desc">Shown in payment details section</div>
+                                </div>
+                                <input type="text" id="inv-bank-name" class="form-control form-control-sm" style="max-width:240px;" placeholder="Bank Name">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Bank Account Number</div>
+                                    <div class="setting-desc">Shown in payment details section</div>
+                                </div>
+                                <input type="text" id="inv-bank-account-number" class="form-control form-control-sm" style="max-width:240px;" placeholder="Account Number">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">IFSC Code</div>
+                                    <div class="setting-desc">Shown in payment details section</div>
+                                </div>
+                                <input type="text" id="inv-bank-ifsc" class="form-control form-control-sm" style="max-width:180px;" placeholder="IFSC">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Bank Branch</div>
+                                    <div class="setting-desc">Optional branch name</div>
+                                </div>
+                                <input type="text" id="inv-bank-branch" class="form-control form-control-sm" style="max-width:220px;" placeholder="Branch">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">QR Code Image URL</div>
+                                    <div class="setting-desc">Direct link to your payment QR PNG/JPG image</div>
+                                </div>
+                                <input type="url" id="inv-qr-url" class="form-control form-control-sm" style="max-width:300px;" placeholder="https://...">
+                            </div>
+
+                            <div class="mt-1" id="inv-qr-preview-wrap" style="display:none;padding:10px 0;">
+                                <img id="inv-qr-preview" src="" alt="QR Preview" style="width:100px;height:100px;object-fit:contain;border:1px solid #e2e8f0;border-radius:8px;">
+                            </div>
+
+                            <div class="settings-section-title mt-4" style="border-top:1px solid #f1f5f9;padding-top:16px;"><i class="bi bi-shield-check text-primary"></i> Verification Permissions</div>
+                            <div class="setting-row" style="align-items:flex-start;">
+                                <div>
+                                    <div class="setting-label">Who can verify/send invoice</div>
+                                    <div class="setting-desc">Admin can allow additional roles to verify and send invoices.</div>
+                                </div>
+                                <div id="inv-verifier-roles" style="display:flex;gap:14px;flex-wrap:wrap;max-width:420px;">
+                                    <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
+                                    <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
+                                    <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
+                                    <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
+                                    <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <button class="btn-save-sm" onclick="saveInvoiceSettings()"><i class="bi bi-save me-1"></i> Save Invoice Settings</button>
+                                <span id="inv-save-msg" class="ms-3 small text-success d-none">Saved!</span>
                             </div>
                         </div>
 
@@ -660,14 +836,18 @@
         <span id="toast-text">Saved!</span>
     </div>
 
-    <script src="../js/api.js?v=2.6"></script>
-    <script src="../js/utils.js?v=1772780187"></script>
-    <script src="../js/ui_components.js?v=1772780187"></script>
-    <script src="../js/auth.js?v=2.6"></script>
+    <script src="../js/utils.js?v=2.3"></script>
+    <script src="../js/api.js?v=2.3"></script>
+    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/app.js?v=2.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
-        document.getElementById('sidebar').innerHTML = renderSidebar('settings');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) {
+            sidebarElement.innerHTML = renderSidebar('settings');
+        }
         injectTopHeader('Settings');
 
         // ── Load saved settings
@@ -701,11 +881,19 @@
                 }
             });
 
-            ['theme-select', 'poll-rate', 'session-timeout', 'default-view', 'date-format'].forEach(id => {
-                const el = document.getElementById(id);
+            // Map: element-id => preference key used when saving
+            const selectMap = {
+                'theme-select': 'theme',
+                'poll-rate': 'poll_rate',
+                'session-timeout': 'session_timeout',
+                'default-view': 'default_view',
+                'date-format': 'date_format'
+            };
+            Object.entries(selectMap).forEach(([elId, prefKey]) => {
+                const el = document.getElementById(elId);
                 if (el) {
-                    let val = backendPrefs[id];
-                    if (val === undefined) val = localStorage.getItem('crm_setting_' + id);
+                    let val = backendPrefs[prefKey];
+                    if (val === undefined) val = localStorage.getItem('crm_setting_' + prefKey);
                     if (val) el.value = val;
                 }
             });
@@ -759,10 +947,7 @@
             showToast('All settings reset to defaults');
         }
 
-        // ── Incentive & Target Logic
-        let currentSlabs = [];
-        let slabModal, targetModal;
-
+        // ── System section (admin-only)
         function initSystem() {
             const u = JSON.parse(localStorage.getItem('crm_user') || '{}');
             const isAdmin = u?.role === 'ADMIN';
@@ -771,210 +956,379 @@
                 document.getElementById('system').style.display = 'block';
                 document.getElementById('danger-zone').style.display = 'block';
                 document.getElementById('system-nav-link').style.display = 'flex';
-                document.getElementById('incentives-config').style.display = 'block';
                 document.getElementById('incentives-nav-link').style.display = 'flex';
+                document.getElementById('incentives-config').style.display = 'block';
+                document.getElementById('payslip-nav-link').style.display = 'flex';
+                document.getElementById('payslip-contact').style.display = 'block';
+                document.getElementById('invoice-nav-link').style.display = 'flex';
+                document.getElementById('invoice-settings').style.display = 'block';
+                loadSlabsSettings();
+                loadIncentiveEligibilityUsers();
+                loadPayslipContact();
+                loadEmployeeCodeSettings();
+                loadInvoiceSettings();
+                document.getElementById('employee-code-settings').style.display = 'block';
 
                 const apiUrl = window.API_BASE || 'http://localhost:8000';
                 document.getElementById('api-url-display').textContent = apiUrl;
                 document.getElementById('sys-user-id').textContent = `#${u?.id || '—'}`;
 
-                // Init Modals
-                slabModal = new bootstrap.Modal(document.getElementById('slabEditModal'));
-                targetModal = new bootstrap.Modal(document.getElementById('targetEditModal'));
-
+                // Ping API
                 apiGet('/health').then(() => {
                     document.getElementById('api-status-chip').innerHTML = '<i class="bi bi-check-circle-fill"></i> Online';
                 }).catch(() => {
                     document.getElementById('api-status-chip').innerHTML = '<i class="bi bi-x-circle-fill"></i> Offline';
+                    document.getElementById('api-status-chip').style.background = '#fef2f2';
+                    document.getElementById('api-status-chip').style.color = '#b91c1c';
+                    document.getElementById('api-status-chip').style.borderColor = '#fca5a5';
                 });
-
-                loadAdminSlabs();
-                loadAdminTargets();
             } else {
                 document.getElementById('system-nav-link').style.display = 'none';
             }
         }
 
-        async function loadAdminSlabs() {
-            const tbody = document.getElementById('admin-slabs-body');
-            document.getElementById('slab-select-all').checked = false;
-            updateSelectedCount();
+        loadSettings();
+        initSystem();
 
+        // ── Incentives config (admin-only)
+        async function loadSlabsSettings() {
+            const list = document.getElementById('slabs-settings-list');
             try {
                 const slabs = await ApiClient.getIncentiveSlabs();
-                currentSlabs = slabs;
                 if (!slabs || !slabs.length) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted small">No slabs defined</td></tr>';
+                    list.innerHTML = '<p class="text-muted small mb-0">No slabs configured yet. Add one below.</p>';
                     return;
                 }
-                tbody.innerHTML = slabs.map(s => `
-                    <tr class="align-middle">
-                        <td class="ps-4">
-                            <input type="checkbox" class="form-check-input slab-checkbox" value="${s.id}" onclick="updateSelectedCount()">
-                        </td>
-                        <td class="fw-bold text-dark">${s.min_units}-${s.max_units} <span class="text-muted fw-normal x-small">tasks</span></td>
-                        <td class="fw-semibold text-primary">₹${Number(s.incentive_per_unit).toLocaleString('en-IN')}</td>
-                        <td class="fw-semibold text-success">₹${Number(s.slab_bonus).toLocaleString('en-IN')}</td>
-                        <td class="pe-4 text-end">
-                            <button class="btn btn-link btn-sm text-primary p-0 me-2" onclick="editSlab(${s.id})"><i class="bi bi-pencil-square"></i></button>
-                            <button class="btn btn-link btn-sm text-danger p-0" onclick="deleteSlab(${s.id})"><i class="bi bi-trash"></i></button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (err) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading</td></tr>'; }
-        }
-
-        function toggleAllSlabs(master) {
-            document.querySelectorAll('.slab-checkbox').forEach(cb => cb.checked = master.checked);
-            updateSelectedCount();
-        }
-
-        function updateSelectedCount() {
-            const selected = document.querySelectorAll('.slab-checkbox:checked').length;
-
-            if (typeof window.updateBulkActionBar === 'function') {
-                window.updateBulkActionBar({
-                    count: selected,
-                    onDelete: () => batchDeleteSlabs(),
-                    onCancel: () => {
-                        document.querySelectorAll('.slab-checkbox').forEach(cb => cb.checked = false);
-                        document.getElementById('slab-select-all').checked = false;
-                        updateSelectedCount();
-                    }
-                });
-            } else {
-                // Retry in 100ms if not available yet (script loading race condition)
-                setTimeout(updateSelectedCount, 100);
+                list.innerHTML = `
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0" style="font-size:0.85rem;">
+                        <thead><tr class="text-uppercase text-muted" style="font-size:0.72rem; font-weight:700; letter-spacing:0.06em;">
+                            <th>Range (Units)</th><th>Per Unit</th><th>Slab Bonus</th><th>Actions</th>
+                        </tr></thead>
+                        <tbody>${slabs.map(s => `
+                        <tr id="slab-row-${s.id}">
+                            <td class="fw-semibold">${s.min_units} – ${s.max_units}</td>
+                            <td class="text-primary fw-bold">₹${Number(s.incentive_per_unit).toLocaleString('en-IN')}</td>
+                            <td class="text-success fw-bold">₹${Number(s.slab_bonus).toLocaleString('en-IN')}</td>
+                            <td class="d-flex gap-1">
+                                <button class="btn btn-sm" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:7px;font-size:0.75rem;padding:2px 8px;" onclick="openEditSlabSettings(${s.id},${s.min_units},${s.max_units},${s.incentive_per_unit},${s.slab_bonus})"><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-sm" style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;border-radius:7px;font-size:0.75rem;padding:2px 8px;" onclick="deleteSlabSetting(${s.id})"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+            } catch (e) {
+                list.innerHTML = `<p class="text-danger small mb-0">Failed to load slabs: ${e.message || 'Error'}</p>`;
             }
         }
 
-        async function batchDeleteSlabs() {
-            const selectedIds = Array.from(document.querySelectorAll('.slab-checkbox:checked')).map(cb => parseInt(cb.value));
-            if (!selectedIds.length) return;
+        let _eligUsers = [];
+        async function loadIncentiveEligibilityUsers() {
+            const sel = document.getElementById('elig-user');
+            const msg = document.getElementById('eligibility-msg');
+            if (!sel) return;
+            try {
+                const users = await apiGet('/users/');
+                _eligUsers = (users || []).filter(u => u.role !== 'CLIENT');
+                sel.innerHTML = '<option value="">Select user</option>' + _eligUsers.map(u => {
+                    const label = `${u.name || u.email} (${u.role})`;
+                    return `<option value="${u.id}" data-enabled="${u.incentive_enabled !== false}">${label}</option>`;
+                }).join('');
+                sel.addEventListener('change', function() {
+                    const opt = sel.options[sel.selectedIndex];
+                    if (!opt || !opt.value) return;
+                    document.getElementById('elig-user-enabled').value = String(opt.dataset.enabled) === 'true' ? 'true' : 'false';
+                });
+                msg.textContent = `${_eligUsers.length} users loaded for incentive eligibility control.`;
+            } catch (e) {
+                msg.textContent = 'Failed to load users for eligibility setup.';
+                msg.className = 'small text-danger mb-3';
+            }
+        }
 
-            if (getUser().role !== 'ADMIN') {
-                showToast('Only Admins can perform bulk delete', 'error');
+        async function applyRoleEligibility() {
+            const role = document.getElementById('elig-role')?.value;
+            const enabled = document.getElementById('elig-role-enabled')?.value === 'true';
+            if (!role) {
+                showToast('Select a role', true);
+                return;
+            }
+            try {
+                const res = await apiPatch('/users/incentive-eligibility/by-role', { role, enabled });
+                const count = res?.updated ?? 0;
+                document.getElementById('eligibility-msg').textContent = `Updated ${count} users in role ${role}.`;
+                document.getElementById('eligibility-msg').className = 'small text-success mb-3';
+                await loadIncentiveEligibilityUsers();
+                showToast('Role eligibility updated');
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to update role eligibility', true);
+            }
+        }
+
+        async function saveUserEligibility() {
+            const userId = document.getElementById('elig-user')?.value;
+            const enabled = document.getElementById('elig-user-enabled')?.value === 'true';
+            if (!userId) {
+                showToast('Select a user', true);
+                return;
+            }
+            try {
+                await apiPatch(`/users/${userId}/incentive-eligibility`, { enabled });
+                document.getElementById('eligibility-msg').textContent = 'User incentive eligibility saved.';
+                document.getElementById('eligibility-msg').className = 'small text-success mb-3';
+                await loadIncentiveEligibilityUsers();
+                showToast('User eligibility updated');
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to update user eligibility', true);
+            }
+        }
+
+        async function addSlabSetting() {
+            const min = parseInt(document.getElementById('slab-min').value);
+            const max = parseInt(document.getElementById('slab-max').value);
+            const perUnit = parseFloat(document.getElementById('slab-per-unit').value);
+            const bonus = parseFloat(document.getElementById('slab-bonus').value || '0');
+            const msg = document.getElementById('slab-save-msg');
+
+            if (isNaN(min) || isNaN(max) || isNaN(perUnit) || min > max) {
+                msg.textContent = 'Please fill all fields correctly.';
+                msg.className = 'ms-3 small text-danger';
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 3000);
                 return;
             }
 
-            if (!confirm(`Permanently delete ${selectedIds.length} incentive slabs?`)) return;
-
             try {
-                // Using the unified bulk action bar, so we don't need to update a local button
-                await ApiClient.request('/incentives/slabs/batch-delete', {
-                    method: 'POST',
-                    body: selectedIds
-                });
-                showToast(`Successfully deleted ${selectedIds.length} slabs`);
-                loadAdminSlabs();
-            } catch (err) {
-                showToast('Bulk delete failed: ' + (err.data?.detail || err.message), true);
+                await ApiClient.createIncentiveSlab({ min_units: min, max_units: max, incentive_per_unit: perUnit, slab_bonus: bonus });
+                ['slab-min', 'slab-max', 'slab-per-unit', 'slab-bonus'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+                msg.textContent = 'Slab added!';
+                msg.className = 'ms-3 small text-success';
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 2500);
+                loadSlabsSettings();
+            } catch (e) {
+                msg.textContent = e.message || 'Failed to add slab.';
+                msg.className = 'ms-3 small text-danger';
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 3000);
             }
         }
 
-        function openSlabModal() {
-            document.getElementById('slabModalTitle').innerText = 'Add Incentive Slab';
-            document.getElementById('slab-id').value = '';
-            document.getElementById('slab-min').value = '';
-            document.getElementById('slab-max').value = '';
-            document.getElementById('slab-punit').value = '';
-            document.getElementById('slab-bonus').value = '';
-            slabModal.show();
-        }
-
-        function editSlab(id) {
-            const s = currentSlabs.find(slab => slab.id === id);
-            if (!s) return;
-            document.getElementById('slabModalTitle').innerText = 'Edit Incentive Slab';
-            document.getElementById('slab-id').value = s.id;
-            document.getElementById('slab-min').value = s.min_units;
-            document.getElementById('slab-max').value = s.max_units;
-            document.getElementById('slab-punit').value = s.incentive_per_unit;
-            document.getElementById('slab-bonus').value = s.slab_bonus;
-            slabModal.show();
-        }
-
-        async function saveSlab() {
-            const id = document.getElementById('slab-id').value;
-            const data = {
-                min_units: parseInt(document.getElementById('slab-min').value),
-                max_units: parseInt(document.getElementById('slab-max').value),
-                incentive_per_unit: parseFloat(document.getElementById('slab-punit').value),
-                slab_bonus: parseFloat(document.getElementById('slab-bonus').value)
-            };
-
-            if (isNaN(data.min_units) || isNaN(data.max_units)) { showToast('Invalid values', true); return; }
-
+        async function deleteSlabSetting(id) {
+            if (!confirm('Delete this incentive slab?')) return;
             try {
-                if (id) {
-                    await ApiClient.request(`/incentives/slabs/${id}`, { method: 'PATCH', body: data });
-                    showToast('Slab updated');
+                await apiDelete('/incentives/slabs/' + id);
+                loadSlabsSettings();
+                showToast('Slab deleted');
+            } catch (e) {
+                showToast('Failed to delete slab', true);
+            }
+        }
+
+        let _editingSlabId = null;
+        function openEditSlabSettings(id, min, max, perUnit, bonus) {
+            _editingSlabId = id;
+            document.getElementById('slab-min').value = min;
+            document.getElementById('slab-max').value = max;
+            document.getElementById('slab-per-unit').value = perUnit;
+            document.getElementById('slab-bonus').value = bonus;
+            const btn = document.querySelector('[onclick="addSlabSetting()"]');
+            if (btn) { btn.innerHTML = '<i class="bi bi-check me-1"></i> Update Slab'; btn.setAttribute('onclick', 'saveEditSlabSettings()'); }
+            document.getElementById('slab-save-msg').textContent = `Editing slab ${min}–${max}`;
+            document.getElementById('slab-save-msg').className = 'ms-3 small text-info';
+            document.getElementById('slab-save-msg').classList.remove('d-none');
+            document.getElementById('slab-min').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function saveEditSlabSettings() {
+            const min = parseInt(document.getElementById('slab-min').value);
+            const max = parseInt(document.getElementById('slab-max').value);
+            const perUnit = parseFloat(document.getElementById('slab-per-unit').value);
+            const bonus = parseFloat(document.getElementById('slab-bonus').value || '0');
+            const msg = document.getElementById('slab-save-msg');
+
+            if (isNaN(min) || isNaN(max) || isNaN(perUnit) || min > max) {
+                msg.textContent = 'Please fill all fields correctly.';
+                msg.className = 'ms-3 small text-danger';
+                msg.classList.remove('d-none');
+                return;
+            }
+            try {
+                await ApiClient.updateIncentiveSlab(_editingSlabId, { min_units: min, max_units: max, incentive_per_unit: perUnit, slab_bonus: bonus });
+                ['slab-min', 'slab-max', 'slab-per-unit', 'slab-bonus'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+                _editingSlabId = null;
+                const btn = document.querySelector('[onclick="saveEditSlabSettings()"]');
+                if (btn) { btn.innerHTML = '<i class="bi bi-plus me-1"></i> Add Slab'; btn.setAttribute('onclick', 'addSlabSetting()'); }
+                msg.textContent = 'Slab updated!';
+                msg.className = 'ms-3 small text-success';
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 2500);
+                loadSlabsSettings();
+            } catch (e) {
+                msg.textContent = e.message || 'Failed to update slab.';
+                msg.className = 'ms-3 small text-danger';
+                msg.classList.remove('d-none');
+            }
+        }
+
+        // ── Employee Code Settings (admin-only)
+        async function loadEmployeeCodeSettings() {
+            try {
+                const data = await ApiClient.getEmployeeCodeSettings();
+                document.getElementById('emp-code-enabled').checked = data.enabled !== false;
+                document.getElementById('emp-code-prefix').value = data.prefix || 'EMP';
+                document.getElementById('emp-code-next-seq').value = data.next_seq || 1;
+            } catch (e) {
+                console.warn('Could not load employee code settings:', e);
+            }
+        }
+
+        async function saveEmployeeCodeSettings() {
+            const enabled = document.getElementById('emp-code-enabled').checked;
+            const prefix = document.getElementById('emp-code-prefix').value.trim();
+            const next_seq = parseInt(document.getElementById('emp-code-next-seq').value);
+            const msg = document.getElementById('emp-code-save-msg');
+
+            if (!prefix || isNaN(next_seq)) {
+                showToast('Prefix and next sequence are required', true);
+                return;
+            }
+            try {
+                await ApiClient.updateEmployeeCodeSettings({ enabled, prefix, next_seq });
+                msg.textContent = 'Saved!';
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 2500);
+                showToast('Employee code configuration saved');
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to save', true);
+            }
+        }
+
+        // ── Payslip Contact (admin-only)
+        async function loadPayslipContact() {
+            try {
+                const data = await ApiClient.getPayslipSettings();
+                document.getElementById('payslip-email').value = data.email || '';
+                document.getElementById('payslip-phone').value = data.phone || '';
+            } catch (e) {
+                console.warn('Could not load payslip contact settings:', e);
+            }
+        }
+
+        async function savePayslipContact() {
+            const email = document.getElementById('payslip-email').value.trim();
+            const phone = document.getElementById('payslip-phone').value.trim();
+            const msg = document.getElementById('payslip-save-msg');
+            if (!email || !phone) {
+                showToast('Email and phone are required', true);
+                return;
+            }
+            try {
+                await ApiClient.updatePayslipSettings({ email, phone });
+                msg.textContent = 'Saved!';
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 2500);
+                showToast('Payslip contact info saved');
+            } catch (e) {
+                showToast(e.message || 'Failed to save', true);
+            }
+        }
+
+        // ── Invoice & Payment Settings ────────────────────────────────────────
+        async function loadInvoiceSettings() {
+            try {
+                const data = await ApiClient.getInvoiceSettings();
+                document.getElementById('inv-default-amount').value = data.invoice_default_amount || 12000;
+                document.getElementById('inv-personal-no-gst-amount').value = data.personal_without_gst_default_amount || 12000;
+                document.getElementById('inv-seq-with-gst').value = data.invoice_seq_with_gst || 1;
+                document.getElementById('inv-seq-without-gst').value = data.invoice_seq_without_gst || 1;
+                document.getElementById('inv-company-name').value = data.company_name || '';
+                document.getElementById('inv-company-address').value = data.company_address || '';
+                document.getElementById('inv-company-phone').value = data.company_phone || '';
+                document.getElementById('inv-company-email').value = data.company_email || '';
+                document.getElementById('inv-company-gstin').value = data.company_gstin || '';
+                document.getElementById('inv-company-pan').value = data.company_pan || '';
+                document.getElementById('inv-company-cin').value = data.company_cin || '';
+                document.getElementById('inv-company-cst-code').value = data.company_cst_code || '';
+                document.getElementById('inv-upi-id').value = data.payment_upi_id || '';
+                document.getElementById('inv-upi-name').value = data.payment_account_name || '';
+                document.getElementById('inv-bank-name').value = data.payment_bank_name || '';
+                document.getElementById('inv-bank-account-number').value = data.payment_account_number || '';
+                document.getElementById('inv-bank-ifsc').value = data.payment_ifsc || '';
+                document.getElementById('inv-bank-branch').value = data.payment_branch || '';
+                const verifierRoles = String(data.invoice_verifier_roles || 'ADMIN').split(',').map(v => v.trim()).filter(Boolean);
+                document.querySelectorAll('#inv-verifier-roles input[type="checkbox"]').forEach(cb => {
+                    cb.checked = verifierRoles.includes(cb.value);
+                });
+                const qrUrl = data.payment_qr_image_url || '';
+                document.getElementById('inv-qr-url').value = qrUrl;
+                if (qrUrl) {
+                    document.getElementById('inv-qr-preview').src = qrUrl;
+                    document.getElementById('inv-qr-preview-wrap').style.display = 'block';
                 } else {
-                    await ApiClient.createIncentiveSlab(data);
-                    showToast('Slab created');
+                    document.getElementById('inv-qr-preview-wrap').style.display = 'none';
                 }
-                slabModal.hide();
-                loadAdminSlabs();
-            } catch (err) { showToast('Operation failed', true); }
+            } catch (e) {
+                console.warn('Could not load invoice settings:', e);
+            }
         }
 
-        async function deleteSlab(id) {
-            if (!confirm('Delete this slab?')) return;
-            try {
-                await ApiClient.request(`/incentives/slabs/${id}`, { method: 'DELETE' });
-                showToast('Removed');
-                loadAdminSlabs();
-            } catch (err) { showToast('Error', true); }
-        }
+        // Live QR preview
+        document.addEventListener('DOMContentLoaded', () => {
+            const qrInput = document.getElementById('inv-qr-url');
+            if (qrInput) {
+                qrInput.addEventListener('input', function() {
+                    const val = this.value.trim();
+                    const wrap = document.getElementById('inv-qr-preview-wrap');
+                    if (val) {
+                        document.getElementById('inv-qr-preview').src = val;
+                        wrap.style.display = 'block';
+                    } else {
+                        wrap.style.display = 'none';
+                    }
+                });
+            }
+        });
 
-        async function loadAdminTargets() {
-            const tbody = document.getElementById('admin-targets-body');
-            try {
-                const targets = await ApiClient.getIncentiveTargets();
-                if (!targets || !targets.length) {
-                    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted small">No specific targets set.</td></tr>';
-                    return;
-                }
-                tbody.innerHTML = targets.map(t => `
-                    <tr class="align-middle">
-                        <td class="ps-4 fw-semibold text-dark">${t.role.replace(/_/g, ' ')}</td>
-                        <td class="fw-bold text-info">${t.target_count} <span class="text-muted fw-normal small">Monthly</span></td>
-                        <td class="pe-4 text-end">
-                            <button class="btn btn-link btn-sm text-danger p-0" onclick="deleteTarget(${t.id})"><i class="bi bi-trash"></i></button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (err) { tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Error loading</td></tr>'; }
-        }
-
-        function openTargetModal() { targetModal.show(); }
-
-        async function saveTarget() {
-            const data = {
-                role: document.getElementById('target-role').value,
-                target_count: parseInt(document.getElementById('target-count').value),
-                period: 'Monthly'
+        async function saveInvoiceSettings() {
+            const msg = document.getElementById('inv-save-msg');
+            const selectedRoles = Array.from(document.querySelectorAll('#inv-verifier-roles input[type="checkbox"]:checked')).map(cb => cb.value);
+            if (!selectedRoles.includes('ADMIN')) {
+                selectedRoles.unshift('ADMIN');
+            }
+            const payload = {
+                invoice_default_amount: parseFloat(document.getElementById('inv-default-amount').value) || 12000,
+                personal_without_gst_default_amount: parseFloat(document.getElementById('inv-personal-no-gst-amount').value) || 12000,
+                invoice_seq_with_gst: parseInt(document.getElementById('inv-seq-with-gst').value, 10) || 1,
+                invoice_seq_without_gst: parseInt(document.getElementById('inv-seq-without-gst').value, 10) || 1,
+                company_name: document.getElementById('inv-company-name').value.trim(),
+                company_address: document.getElementById('inv-company-address').value.trim(),
+                company_phone: document.getElementById('inv-company-phone').value.trim(),
+                company_email: document.getElementById('inv-company-email').value.trim(),
+                company_gstin: document.getElementById('inv-company-gstin').value.trim(),
+                company_pan: document.getElementById('inv-company-pan').value.trim(),
+                company_cin: document.getElementById('inv-company-cin').value.trim(),
+                company_cst_code: document.getElementById('inv-company-cst-code').value.trim(),
+                payment_upi_id: document.getElementById('inv-upi-id').value.trim(),
+                payment_account_name: document.getElementById('inv-upi-name').value.trim(),
+                payment_bank_name: document.getElementById('inv-bank-name').value.trim(),
+                payment_account_number: document.getElementById('inv-bank-account-number').value.trim(),
+                payment_ifsc: document.getElementById('inv-bank-ifsc').value.trim(),
+                payment_branch: document.getElementById('inv-bank-branch').value.trim(),
+                payment_qr_image_url: document.getElementById('inv-qr-url').value.trim(),
+                invoice_verifier_roles: selectedRoles.join(','),
             };
-            if (!data.target_count) return;
             try {
-                await ApiClient.createIncentiveTarget(data);
-                showToast('Target updated');
-                targetModal.hide();
-                loadAdminTargets();
-            } catch (err) { showToast('Failed to save target', true); }
+                await ApiClient.updateInvoiceSettings(payload);
+                msg.textContent = 'Saved!';
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 2500);
+                showToast('Invoice settings saved');
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to save', true);
+            }
         }
-
-        async function deleteTarget(id) {
-            if (!confirm('Clear this target?')) return;
-            try {
-                await ApiClient.request(`/incentives/targets/${id}`, { method: 'DELETE' });
-                showToast('Target removed');
-                loadAdminTargets();
-            } catch (err) { showToast('Delete failed', true); }
-        }
-
-        loadSettings();
-        initSystem();
     </script>
 </body>
 

@@ -291,6 +291,47 @@ class ReportService:
             u, visits, leads, revenue = row
             # Calculate 5% incentive as requested
             incentive_val = float(revenue) * 0.05
+        for u in users:
+            visits = db.query(func.count(Visit.id)).filter(
+                Visit.user_id == u.id,
+                extract('year', Visit.visit_date) == year,
+                extract('month', Visit.visit_date) == m
+            ).scalar() or 0
+            
+            leads = db.query(func.count(Visit.id)).filter(
+                Visit.user_id == u.id,
+                Visit.status.in_(['ACCEPT', 'SATISFIED']),
+                extract('year', Visit.visit_date) == year,
+                extract('month', Visit.visit_date) == m
+            ).scalar() or 0
+            
+            payments = db.query(func.count(Payment.id)).filter(
+                Payment.generated_by_id == u.id,
+                Payment.status == PaymentStatus.VERIFIED,
+                extract('year', Payment.verified_at) == year,
+                extract('month', Payment.verified_at) == m
+            ).scalar() or 0
+            
+            revenue = db.query(func.sum(Payment.amount)).filter(
+                Payment.generated_by_id == u.id,
+                Payment.status == PaymentStatus.VERIFIED,
+                extract('year', Payment.verified_at) == year,
+                extract('month', Payment.verified_at) == m
+            ).scalar() or 0.0
+            
+            incentive = db.query(IncentiveSlip.total_incentive).filter(
+                IncentiveSlip.user_id == u.id,
+                IncentiveSlip.period == month
+            ).scalar() or 0.0
+
+            projects = db.query(func.count(Project.id)).filter(
+                Project.pm_id == u.id
+            ).scalar() or 0
+
+            open_issues = db.query(func.count(Issue.id)).filter(
+                Issue.assigned_to_id == u.id,
+                Issue.status.notin_([IssueStatus.SOLVED, IssueStatus.RESOLVED, IssueStatus.COMPLETED, IssueStatus.CANCELLED])
+            ).scalar() or 0
             
             performance.append({
                 "user_id": u.id,
@@ -303,6 +344,9 @@ class ReportService:
                 "total_sales": float(revenue),
                 "total_revenue": float(revenue),
                 "total_incentive": float(incentive_val)
+                "total_incentive": float(incentive),
+                "total_projects": projects,
+                "total_open_issues": open_issues
             })
         
         return performance

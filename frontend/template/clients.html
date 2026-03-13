@@ -29,7 +29,8 @@
                         <i class="bi bi-plus-lg me-1"></i>New Client
                     </button>
                 </div>
-
+                <!-- Filter Panel Wrapper -->
+                <div id="filter-wrapper"></div>
                 <div class="card shadow-sm">
                     <div class="card-body p-0">
                         <table class="table table-hover align-middle mb-0">
@@ -157,21 +158,30 @@
             </div>
         </div>
 
-        <script src="../js/api.js"></script>
-        <script src="../js/ui_components.js?v=1772780187"></script>
+        <script src="../js/utils.js?v=2.3"></script>
+        <script src="../js/api.js?v=2.3"></script>
         <script src="../js/auth.js?v=2.3"></script>
+        <script src="../js/ui_components.js?v=20260312"></script>
+        <script src="../js/app.js?v=2.3"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         <script>
             requireAuth();
-            document.getElementById('sidebar').innerHTML = renderSidebar('clients');
+            const sidebarElement = document.getElementById('sidebar');
+            if (sidebarElement) {
+                sidebarElement.innerHTML = renderSidebar('clients');
+            }
             injectTopHeader('Clients');
 
             let activeClientIdForPayment = null;
 
-            async function loadClients() {
+            async function loadClients(filters = {}) {
                 let clients = [];
                 try {
-                    clients = await apiGet('/clients/');
+                    const params = new URLSearchParams();
+                    if (filters.status) params.append('status', filters.status);
+                    if (filters.pm) params.append('pm_id', filters.pm);
+                    
+                    clients = await apiGet(`/clients/?${params.toString()}`);
                 } catch (err) {
                     throw new Error("Failed to load clients: " + err.message);
                 }
@@ -368,7 +378,36 @@
                 }
             };
 
+            // Initialize Filters
+            async function initFilters() {
+                try {
+                    const usersRes = await apiGet('/users/');
+                    const users = Array.isArray(usersRes) ? usersRes : (usersRes.items || []);
+                    const pms = users.filter(u => u.role === 'PROJECT_MANAGER' || u.role === 'PROJECT_MANAGER_AND_SALES' || u.role === 'ADMIN');
+
+                    renderFilterPanel({
+                        containerId: 'filter-wrapper',
+                        filters: [
+                            { type: 'select', label: 'Status', id: 'filter-status', options: [
+                                { value: 'ALL', label: 'All Status' },
+                                { value: 'active', label: 'Active' },
+                                { value: 'inactive', label: 'Inactive' }
+                            ]},
+                            { type: 'select', label: 'Project Manager', id: 'filter-pm', options: [{ value: 'ALL', label: 'All PMs' }, ...pms.map(u => ({ value: u.id, label: u.name || u.email }))] }
+                        ],
+                        onApply: (data) => loadClients({
+                            status: data['status'],
+                            pm: data['pm']
+                        }),
+                        onReset: () => loadClients()
+                    });
+                } catch (err) {
+                    console.error("Filter Init Failed", err);
+                }
+            }
+
             loadClients().then(() => {
+                initFilters();
                 const urlParams = new URLSearchParams(window.location.search);
                 const highlightId = urlParams.get('id');
                 if (highlightId) {

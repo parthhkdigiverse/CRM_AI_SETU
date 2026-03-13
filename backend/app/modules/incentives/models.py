@@ -1,16 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
-from app.modules.users.models import UserRole
-
-class IncentiveTarget(Base):
-    __tablename__ = "incentive_targets"
-
-    id = Column(Integer, primary_key=True, index=True)
-    role = Column(Enum(UserRole), nullable=False)
-    period = Column(String, nullable=False)  # Monthly/Quarterly
-    target_count = Column(Integer, nullable=False)
 
 class IncentiveSlab(Base):
     __tablename__ = "incentive_slabs"
@@ -41,10 +32,11 @@ class IncentiveSlip(Base):
     target = Column(Integer, nullable=False)
     achieved = Column(Integer, nullable=False)
     percentage = Column(Float, nullable=False)
-    applied_slab = Column(Float, nullable=True)
+    applied_slab = Column(String, nullable=True)
     amount_per_unit = Column(Float, default=0.0)
     total_incentive = Column(Float, nullable=False)
 
+    slab_bonus_amount = Column(Float, default=0.0)
     generated_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", backref="incentive_slips")

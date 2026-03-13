@@ -15,6 +15,7 @@ router = APIRouter()
 # Allow admins, PMs and Sales staff to view dashboard/reports
 dashboard_viewer = RoleChecker([
     UserRole.ADMIN,
+    UserRole.SALES,
     UserRole.PROJECT_MANAGER,
     UserRole.PROJECT_MANAGER_AND_SALES,
     UserRole.SALES,

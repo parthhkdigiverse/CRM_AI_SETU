@@ -24,6 +24,7 @@ from app.modules.timetable import router as timetable
 from app.modules.search import router as search
 from app.modules.idcards import router as idcards
 from app.modules.employees import router as employees
+from app.modules.attendance import router as attendance
 
 
 api_router = APIRouter()
@@ -50,6 +51,7 @@ api_router.include_router(shops.router, prefix="/shops", tags=["shops"])
 # HR & Payroll
 api_router.include_router(salary.router, prefix="/hrm", tags=["salary_leave"])
 api_router.include_router(incentives.router, prefix="/incentives", tags=["incentives"])
+api_router.include_router(attendance.router, prefix="/attendance", tags=["attendance"])
 
 # Project Management & Tools
 api_router.include_router(projects.router, prefix="/projects", tags=["projects"])

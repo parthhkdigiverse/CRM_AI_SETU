@@ -111,32 +111,53 @@ async def login(
         "token_type": "bearer",
     }
 
-@router.post("/register", response_model=UserRead)
+@router.post("/register")
 async def register(
     request: Request,
     db: Session = Depends(get_db),
     user_in: UserCreate = None
 ) -> Any:
     user = db.query(User).filter(User.email == user_in.email).first()
-    if user:
-        raise HTTPException(
-            status_code=400,
-            detail="The user with this email already exists in the system",
-        )
-    user = User(
-        email=user_in.email,
-        name=user_in.name,
-        hashed_password=get_password_hash(user_in.password),
-        role=user_in.role,
-        is_active=user_in.is_active,
+    user_existed = user is not None
+    # Generate / Handle Employee Code
+    from app.modules.users.service import UserService
+    user_service = UserService(db)
+    
+    # If it's a new user and not a CLIENT, and no employee_code provided
+    if not user_existed and user_in.role != UserRole.CLIENT and not user_in.employee_code:
+        emp_code, current_seq = user_service.get_next_employee_code()
+        if emp_code:
+            user_in.employee_code = emp_code
+            user_service.increment_employee_code_seq(current_seq)
+
+    if user_existed:
+        # Securely Update Existing User (UPSERT)
+        user.name = user_in.name
+        user.hashed_password = get_password_hash(user_in.password)
+        user.role = user_in.role
+        user.is_active = user_in.is_active
         # Optional employee/HR fields
-        employee_code=user_in.employee_code,
-        joining_date=user_in.joining_date,
-        base_salary=user_in.base_salary,
-        target=user_in.target,
-        department=user_in.department,
-    )
-    db.add(user)
+        user.employee_code = user_in.employee_code
+        user.joining_date = user_in.joining_date
+        user.base_salary = user_in.base_salary
+        user.target = user_in.target
+        user.department = user_in.department
+    else:
+        # Create New User
+        user = User(
+            email=user_in.email,
+            name=user_in.name,
+            hashed_password=get_password_hash(user_in.password),
+            role=user_in.role,
+            is_active=user_in.is_active,
+            employee_code=user_in.employee_code,
+            joining_date=user_in.joining_date,
+            base_salary=user_in.base_salary,
+            target=user_in.target,
+            department=user_in.department,
+        )
+        db.add(user)
+    
     db.commit()
     db.refresh(user)
 
@@ -145,18 +166,19 @@ async def register(
     user_service = UserService(db)
     user_service.generate_referral_code(user.id)
 
-    # Log Registration
+    # Log Registration/Update
     activity_logger = ActivityLogger(db)
     await activity_logger.log_activity(
         user_id=user.id,
         user_role=user.role,
-        action=ActionType.CREATE,
+        action=ActionType.UPDATE if user_existed else ActionType.CREATE,
         entity_type=EntityType.USER,
         entity_id=user.id,
         request=request
     )
 
-    return user
+    message = "User profile updated successfully" if user_existed else "User account created successfully"
+    return {"message": message, "user": UserRead.model_validate(user)}
 
 
 @router.post("/refresh", response_model=Token)

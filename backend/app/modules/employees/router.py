@@ -3,6 +3,7 @@ Employees router — thin alias over /users/ for backward-compatibility.
 The 'employees' concept was merged into 'users'; this router keeps the
 /employees/* endpoints alive so the frontend doesn't 404.
 """
+from datetime import date as dt_date
 from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -20,11 +21,28 @@ admin_checker = RoleChecker([UserRole.ADMIN])
 @router.get("/", response_model=List[UserRead])
 def list_employees(
     limit: Optional[int] = Query(None),
+    department: Optional[str] = Query(None),
+    role: Optional[UserRole] = Query(None),
+    is_active: Optional[bool] = Query(None),
+    start_date: Optional[dt_date] = Query(None),
+    end_date: Optional[dt_date] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
-    """List all non-deleted users (employees). Accessible to all authenticated users."""
+    """List all non-deleted users (employees) with optional filters."""
     q = db.query(User).filter(User.is_deleted == False)
+    
+    if department:
+        q = q.filter(User.department.ilike(f"%{department}%"))
+    if role:
+        q = q.filter(User.role == role)
+    if is_active is not None:
+        q = q.filter(User.is_active == is_active)
+    if start_date:
+        q = q.filter(User.joining_date >= start_date)
+    if end_date:
+        q = q.filter(User.joining_date <= end_date)
+        
     if limit:
         q = q.limit(limit)
     return q.all()

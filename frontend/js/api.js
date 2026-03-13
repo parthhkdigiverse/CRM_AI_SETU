@@ -97,7 +97,9 @@ class ApiClient {
             const data = isJson ? await response.json() : await response.text();
 
             if (!response.ok) {
-                console.error(`API Error [${response.status}] ${path}:`, data);
+                if (!options.quiet) {
+                    console.error(`API Error [${response.status}] ${path}:`, data);
+                }
                 throw { status: response.status, data };
             }
 
@@ -212,9 +214,32 @@ class ApiClient {
         return this.request(`/users/${userId}/status`, { method: 'PATCH', body: { is_active: isActive } });
     }
 
+    static async getEmployeeCodeSettings() {
+        return this.request('/users/config/employee-code');
+    }
+    static async updateEmployeeCodeSettings(data) {
+        return this.request('/users/config/employee-code', { method: 'PUT', body: data });
+    }
+
     // ─── Dashboard ───────────────────────────────────────────
     static async getDashboardStats() {
         return this.request('/reports/dashboard');
+    }
+
+    // ─── Attendance ──────────────────────────────────────────
+    static async getPunchStatus() {
+        return this.request('/attendance/status');
+    }
+    static async punch() {
+        return this.request('/attendance/punch', { method: 'POST' });
+    }
+
+    // ─── Attendance ──────────────────────────────────────────
+    static async getPunchStatus() {
+        return this.request('/attendance/status');
+    }
+    static async punch() {
+        return this.request('/attendance/punch', { method: 'POST' });
     }
 
     // ─── Clients ─────────────────────────────────────────────
@@ -332,6 +357,23 @@ class ApiClient {
     }
     static async deleteFeedback(feedbackId) {
         return this.request(`/feedback/${feedbackId}`, { method: 'DELETE' });
+    static async getAllClientFeedbacks() {
+        const candidates = [
+            '/clients/feedbacks/all',
+            '/feedbacks/all',
+            '/clients/feedback/all',
+        ];
+
+        let lastError = null;
+        for (const path of candidates) {
+            try {
+                return await this.request(path, { quiet: true });
+            } catch (err) {
+                lastError = err;
+                if (err?.status !== 404) break;
+            }
+        }
+        throw lastError || new Error('Failed to load feedback list');
     }
     static async createUserFeedback(data) {
         return this.request('/clients/user', { method: 'POST', body: data });
@@ -361,8 +403,53 @@ class ApiClient {
     static async getSalaryRecords(employeeId) {
         return this.request(`/hrm/salary/${employeeId}`);
     }
+    static async getAllSalarySlips() {
+        return this.request('/hrm/salary/all');
+    }
+    static async getMySalarySlips() {
+        return this.request('/hrm/salary/me');
+    }
+    static async previewSalary(userId, month, extraDeduction = 0, baseSalary = null) {
+        let url = `/hrm/salary/preview?user_id=${userId}&month=${encodeURIComponent(month)}&extra_deduction=${extraDeduction}`;
+        if (baseSalary !== null && !isNaN(baseSalary)) url += `&base_salary=${baseSalary}`;
+        return this.request(url);
+    }
     static async generateSalary(data) {
         return this.request('/hrm/salary/generate', { method: 'POST', body: data });
+    }
+    static async regenerateSalarySlip(data) {
+        return this.request('/hrm/salary/regenerate', { method: 'POST', body: data });
+    }
+    static async updateDraftSalarySlip(slipId, data) {
+        return this.request(`/hrm/salary/update-draft/${slipId}`, { method: 'PATCH', body: data });
+    }
+    static async confirmSalarySlip(slipId) {
+        return this.request(`/hrm/salary/confirm/${slipId}`, { method: 'PATCH' });
+    }
+    static async getPayslipSettings() {
+        return this.request('/hrm/payslip-settings');
+    }
+    static async updatePayslipSettings(data) {
+        return this.request('/hrm/payslip-settings', { method: 'PUT', body: data });
+    }
+
+    // ─── Leave ───────────────────────────────────────────────
+    static async getMyLeaves() {
+        return this.request('/hrm/leave');
+    }
+    static async getAllLeaves() {
+        return this.request('/hrm/leave/all');
+    }
+    static async applyLeave(data) {
+        return this.request('/hrm/leave', { method: 'POST', body: data });
+    }
+    static async approveRejectLeave(leaveId, status, remarks = null) {
+        const body = { status };
+        if (remarks) body.remarks = remarks;
+        return this.request(`/hrm/leave/${leaveId}/approve`, { method: 'PATCH', body });
+    }
+    static async getLeaveSummary(userId, month) {
+        return this.request(`/hrm/leave/summary/${userId}?month=${encodeURIComponent(month)}`);
     }
 
     // ─── Incentives ──────────────────────────────────────────
@@ -372,14 +459,46 @@ class ApiClient {
     static async createIncentiveSlab(data) {
         return this.request('/incentives/slabs', { method: 'POST', body: data });
     }
+    static async updateIncentiveSlab(id, data) {
+        return this.request(`/incentives/slabs/${id}`, { method: 'PUT', body: data });
+    }
+    static async deleteIncentiveSlab(id) {
+        return this.request(`/incentives/slabs/${id}`, { method: 'DELETE' });
+    }
+    static async previewIncentive(data) {
+        return this.request('/incentives/calculate/preview', { method: 'POST', body: data });
+    }
     static async calculateIncentive(data) {
         return this.request('/incentives/calculate', { method: 'POST', body: data });
     }
-    static async getIncentiveTargets() {
-        return this.request('/incentives/targets');
+    static async recalculateIncentive(data) {
+        return this.request('/incentives/calculate', { method: 'POST', body: { ...data, force_recalculate: true } });
     }
-    static async createIncentiveTarget(data) {
-        return this.request('/incentives/targets', { method: 'POST', body: data });
+    static async calculateIncentiveBulk(data) {
+        try {
+            return await this.request('/incentives/calculate/bulk', { method: 'POST', body: data });
+        } catch (err) {
+            if (err && err.status === 404) {
+                try {
+                    return await this.request('/incentives/calculate_bulk', { method: 'POST', body: data });
+                } catch (legacyErr) {
+                    if (legacyErr && legacyErr.status === 404) {
+                        return this.request('/incentives/bulk-calculate', { method: 'POST', body: data });
+                    }
+                    throw legacyErr;
+                }
+            }
+            throw err;
+        }
+    }
+    static async getAllIncentiveSlips() {
+        return this.request('/incentives/slips');
+    }
+    static async getMyIncentiveSlips() {
+        return this.request('/incentives/my-slips');
+    }
+    static async getUserIncentiveSlips(userId) {
+        return this.request(`/incentives/slips/${userId}`);
     }
 
     // ─── Payments ────────────────────────────────────────────
@@ -392,11 +511,46 @@ class ApiClient {
     static async verifyPayment(paymentId) {
         return this.request(`/payments/${paymentId}/verify`, { method: 'PATCH' });
     }
+    // ─── Billing / Invoices ──────────────────────────────────
+    /** @deprecated use createInvoice instead */
     static async generateBill(data) {
         return this.request('/billing/', { method: 'POST', body: data });
     }
-    static async getBills() {
-        return this.request('/billing/');
+    static async createInvoice(data) {
+        return this.request('/billing/', { method: 'POST', body: data });
+    }
+    static async getBills(params = {}) {
+        const query = new URLSearchParams();
+        Object.entries(params || {}).forEach(([k, v]) => {
+            if (v === undefined || v === null || v === '') return;
+            query.set(k, String(v));
+        });
+        const qs = query.toString();
+        return this.request(`/billing/${qs ? `?${qs}` : ''}`);
+    }
+    static async getInvoice(billId) {
+        return this.request(`/billing/${billId}`);
+    }
+    static async getInvoiceActions(billId) {
+        return this.request(`/billing/${billId}/actions`);
+    }
+    static async verifyInvoice(billId) {
+        return this.request(`/billing/${billId}/verify`, { method: 'PATCH' });
+    }
+    static async sendInvoiceWhatsApp(billId) {
+        return this.request(`/billing/${billId}/send-whatsapp`, { method: 'POST' });
+    }
+    static async getInvoiceSettings() {
+        return this.request('/billing/settings');
+    }
+    static async updateInvoiceSettings(data) {
+        return this.request('/billing/settings', { method: 'PUT', body: data });
+    }
+    static async getInvoiceWorkflowOptions() {
+        return this.request('/billing/workflow/options');
+    }
+    static async resolveInvoiceWorkflow(data) {
+        return this.request('/billing/workflow/resolve', { method: 'POST', body: data });
     }
 
     // ─── Projects ────────────────────────────────────────────
