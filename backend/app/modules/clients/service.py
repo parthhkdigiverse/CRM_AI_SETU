@@ -18,7 +18,7 @@ class ClientService:
     def get_client(self, client_id: int):
         return self.db.query(Client).filter(Client.id == client_id).first()
 
-    def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc", include_inactive: bool = False, pm_id: int = None, owner_id: int = None):
+    
     def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc", include_inactive: bool = False, pm_id: int = None, is_active: bool | None = True):
         try:
             query = self.db.query(Client)

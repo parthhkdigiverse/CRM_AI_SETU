@@ -115,21 +115,18 @@ function renderSidebar(active) {
     ]);
 
     // CLIENT RELATIONS
-    if (isAdmin || isSales || isTelesales || isPM) {
-        const crItems = [
-            { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
-            { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' },
-            { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
-        ];
-        nav += sbSection('cr', 'Client Relations', 'bi-people', crItems);
-    const crItems = [
+    let crItems = [
         { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
         { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' }
     ];
+
     if (isAdmin || isPM) {
         crItems.push({ id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' });
     }
-    nav += sbSection('cr', 'Client Relations', 'bi-people', crItems);
+
+    if (isAdmin || isSales || isPM) {
+        nav += sbSection('cr', 'Client Relations', 'bi-people', crItems);
+}
 
     // HR & PAYROLL
     const hrItems = [

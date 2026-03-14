@@ -343,7 +343,7 @@ class ReportService:
                 "total_leads": int(leads),
                 "total_sales": float(revenue),
                 "total_revenue": float(revenue),
-                "total_incentive": float(incentive_val)
+                "total_incentive": float(incentive_val),
                 "total_incentive": float(incentive),
                 "total_projects": projects,
                 "total_open_issues": open_issues

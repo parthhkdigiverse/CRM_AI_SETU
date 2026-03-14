@@ -90,9 +90,9 @@ def read_clients(
         sort_by=sort_by,
         sort_order=sort_order,
         pm_id=pm_id,
-        owner_id=owner_id
+        owner_id=owner_id,
         is_active=client_active_status,
-        pm_id=pm_filter_id
+        pm_filter_id=pm_filter_id
     )
 
 
