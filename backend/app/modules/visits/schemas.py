@@ -30,6 +30,7 @@ class VisitRead(VisitBase):
     photo_url: Optional[str] = None
     project_manager_name: Optional[str] = None
     shop_status: Optional[str] = None
+    shop_demo_stage: Optional[int] = 0
     created_at: datetime
     updated_at: datetime
 

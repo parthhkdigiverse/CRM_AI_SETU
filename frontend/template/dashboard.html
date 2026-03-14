@@ -1014,7 +1014,20 @@
                         </div>
                     </div>
                 </div>
-
+                <!-- PM Chart -->
+                <div class="row mt-4">
+                    <div class="col-12 col-lg-8">
+                        <div class="card border-0 shadow-sm rounded-4 mb-4">
+                            <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+                                <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>PM
+                                    Pipeline Health</h6>
+                            </div>
+                            <div class="card-body p-4">
+                                <canvas id="dashboardPmPipelineChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <!-- Activity + Issues Row -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-7">
@@ -1293,7 +1306,7 @@
 
                 const sLabels = Object.keys(sData);
                 const sValues = Object.values(sData);
-                
+
                 // Map statuses to specific semantic colors
                 const colorMap = {
                     'COMPLETED': '#10b981',          // Emerald Green
@@ -1504,6 +1517,73 @@
             return `<span class="${color} fw-bold me-1" style="font-size: 0.7rem;"><i class="bi ${icon}"></i> ${prefix}${pct}%</span><span class="text-secondary opacity-75" style="font-size: 0.65rem;">vs last month</span>`;
         }
 
+        async function loadDashboardPipelineChart() {
+            try {
+                const data = await apiGet('/shops/analytics/pm-pipeline');
+                if (!data || !data.length) return;
+
+                const labels = data.map(item => item.pm_name);
+                const inDemoData = data.map(item => item.in_demo);
+                const meetingSetData = data.map(item => item.meeting_set);
+                const convertedData = data.map(item => item.converted);
+
+                const ctx = document.getElementById('dashboardPmPipelineChart').getContext('2d');
+
+                if (window._dashPmChart) window._dashPmChart.destroy();
+
+                window._dashPmChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'In Demo',
+                                data: inDemoData,
+                                backgroundColor: '#4f46e5',
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Meeting Set',
+                                data: meetingSetData,
+                                backgroundColor: '#eab308',
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Converted',
+                                data: convertedData,
+                                backgroundColor: '#10b981',
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true,
+                                grid: { display: false }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 },
+                                grid: { borderDash: [5, 5] }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { usePointStyle: true, padding: 20 }
+                            }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Error loading dashboard pipeline chart:", e);
+            }
+        }
+
         async function loadDashboard() {
             const areaId = document.getElementById('filter-area').value;
             const userId = document.getElementById('filter-user').value;
@@ -1545,6 +1625,9 @@
 
                 // Charts
                 initCharts(stats);
+
+                // PM Pipeline
+                loadDashboardPipelineChart();
 
             } catch (e) {
                 console.error("Dashboard Stats Error:", e);
@@ -1591,7 +1674,7 @@
             }
         }
 
-        document.getElementById('apply-filters').onclick = function() {
+        document.getElementById('apply-filters').onclick = function () {
             updateFilterPills();
             loadDashboard();
         };
@@ -1651,13 +1734,13 @@
         // ── Period Picker ─────────────────────────────────────────────
         const PERIOD_LABELS = {
             today: { badge: 'Today Only', labels: ['Visits (Today)', 'Active Clients', 'Ongoing Projects', 'Revenue (Today)'] },
-            week:  { badge: 'This Week',  labels: ['Visits (This Week)', 'Active Clients', 'Ongoing Projects', 'Revenue (This Week)'] },
+            week: { badge: 'This Week', labels: ['Visits (This Week)', 'Active Clients', 'Ongoing Projects', 'Revenue (This Week)'] },
             month: { badge: 'This Month', labels: ['Visits (MTD)', 'Active Clients', 'Ongoing Projects', 'Revenue (MTD)'] },
             last_3_months: { badge: 'Last 3 Months', labels: ['Visits (3M)', 'Active Clients', 'Ongoing Projects', 'Revenue (3M)'] },
             last_6_months: { badge: 'Last 6 Months', labels: ['Visits (6M)', 'Active Clients', 'Ongoing Projects', 'Revenue (6M)'] },
-            this_year:     { badge: 'This Year', labels: ['Visits (YTD)', 'Active Clients', 'Ongoing Projects', 'Revenue (YTD)'] },
-            last_year:     { badge: 'Previous Year', labels: ['Visits (Last Yr)', 'Active Clients', 'Ongoing Projects', 'Revenue (Last Yr)'] },
-            all:   { badge: 'All Records', labels: ['Total Visits', 'Active Clients', 'Ongoing Projects', 'Total Revenue'] }
+            this_year: { badge: 'This Year', labels: ['Visits (YTD)', 'Active Clients', 'Ongoing Projects', 'Revenue (YTD)'] },
+            last_year: { badge: 'Previous Year', labels: ['Visits (Last Yr)', 'Active Clients', 'Ongoing Projects', 'Revenue (Last Yr)'] },
+            all: { badge: 'All Records', labels: ['Total Visits', 'Active Clients', 'Ongoing Projects', 'Total Revenue'] }
         };
 
         function applyPeriod(period, reload) {
@@ -1695,7 +1778,7 @@
             document.getElementById('filter-end').value = end;
 
             // Mark active button
-            document.querySelectorAll('.period-btn').forEach(function(btn) {
+            document.querySelectorAll('.period-btn').forEach(function (btn) {
                 btn.classList.toggle('active', btn.dataset.period === period);
             });
 
@@ -1705,7 +1788,7 @@
 
             // Update KPI labels
             var kpiIds = ['kpi-visits-label', 'kpi-clients-label', 'kpi-projects-label', 'kpi-revenue-label'];
-            kpiIds.forEach(function(id, i) {
+            kpiIds.forEach(function (id, i) {
                 var el = document.getElementById(id);
                 if (el) el.textContent = meta.labels[i];
             });
@@ -1714,8 +1797,8 @@
             if (reload !== false) loadDashboard();
         }
 
-        document.querySelectorAll('.period-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() { applyPeriod(btn.dataset.period); });
+        document.querySelectorAll('.period-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () { applyPeriod(btn.dataset.period); });
         });
 
 

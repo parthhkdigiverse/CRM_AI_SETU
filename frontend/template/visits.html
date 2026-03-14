@@ -468,8 +468,24 @@
                     let ui = statusMap[v.status] || { bg: '#f1f5f9', color: '#475569', label: v.status, icon: 'bi-dot' };
 
                     // Dynamic pipeline overrides: show the shop's current pipeline stage instead of raw visit outcome
-                    if (v.project_manager_name) {
-                        ui = { bg: '#e0e7ff', color: '#4f46e5', label: 'In Demo', icon: 'bi-easel' };
+                    let badgeHtml = null;
+                    if (v.shop_status === 'CONVERTED') {
+                        badgeHtml = `<span class="badge bg-success-subtle text-success rounded-pill"><i class="bi bi-trophy me-1"></i>Converted</span><div class="small text-muted mt-1"><i class="bi bi-person me-1"></i>PM: ${v.project_manager_name || 'Assigned'}</div>`;
+                    } else if (v.shop_status === 'MEETING_SET' || v.shop_demo_stage >= 1) {
+                        badgeHtml = `<span class="badge" style="background:#d1fae5; color:#065f46; border-radius:50rem; padding: 4px 10px;"><i class="bi bi-check-circle-fill me-1"></i>Demo Completed</span><div class="small text-muted mt-1"><i class="bi bi-person me-1"></i>PM: ${v.project_manager_name || 'Assigned'}</div>`;
+                    } else if (v.shop_status === 'IN_DEMO' || v.project_manager_name) {
+                        badgeHtml = `<span class="badge bg-primary-subtle text-primary rounded-pill"><i class="bi bi-easel me-1"></i>In Demo</span><div class="small text-muted mt-1"><i class="bi bi-person me-1"></i>PM: ${v.project_manager_name || 'Assigned'}</div>`;
+                    }
+
+                    if (!badgeHtml) {
+                        badgeHtml = `
+                        <span class="status-pill" style="background:${ui.bg}; color:${ui.color};">
+                            <i class="bi ${ui.icon} me-1"></i>${ui.label}
+                        </span>
+                        ${v.project_manager_name
+                            ? \`<div class="mt-1" style="font-size:0.75rem;color:#64748b;"><i class="bi bi-person-gear me-1"></i>PM: \${v.project_manager_name}</div>\`
+                            : ''}
+                        `;
                     }
 
                     const vDate = v.visit_date ? new Date(v.visit_date) : null;
@@ -517,12 +533,7 @@
                         <div class="small">${timeStr}</div>
                     </td>
                     <td>
-                        <span class="status-pill" style="background:${ui.bg}; color:${ui.color};">
-                            <i class="bi ${ui.icon} me-1"></i>${ui.label}
-                        </span>
-                        ${v.project_manager_name
-                            ? `<div class="mt-1" style="font-size:0.75rem;color:#64748b;"><i class="bi bi-person-gear me-1"></i>PM: ${v.project_manager_name}</div>`
-                            : ''}
+                        ${badgeHtml}
                     </td>
                     <td>${remarksHtml}</td>
                     <td>${photoCell}</td>

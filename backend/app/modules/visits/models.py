@@ -58,3 +58,7 @@ class Visit(Base):
     def shop_status(self) -> str:
         return self.shop.status.value if self.shop and self.shop.status else None
 
+    @property
+    def shop_demo_stage(self) -> int:
+        return getattr(self.shop, 'demo_stage', 0) if self.shop else 0
+

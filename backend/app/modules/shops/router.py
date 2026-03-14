@@ -237,3 +237,13 @@ def read_accepted_leads_history(
     Get history of accepted leads. Scoped by role.
     """
     return ShopService.get_accepted_leads(db, current_user)
+
+@router.get("/analytics/pm-pipeline")
+def read_pm_pipeline_analytics(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """
+    Get pipeline status counts grouped by PM.
+    """
+    return ShopService.get_pm_pipeline_analytics(db)

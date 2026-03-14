@@ -545,3 +545,35 @@ class ShopService:
             ]
             shops.append(shop_data)
         return shops
+
+    @staticmethod
+    def get_pm_pipeline_analytics(db: Session):
+        from app.modules.shops.models import Shop, ShopStatus
+        from sqlalchemy.orm import selectinload
+
+        query = db.query(Shop).options(selectinload(Shop.project_manager)).filter(
+            Shop.is_archived == False,
+            Shop.project_manager_id != None
+        )
+        
+        results = query.all()
+        
+        pm_stats = {}
+        for shop in results:
+            pm_name = shop.project_manager.name if shop.project_manager else "Unknown"
+            if pm_name not in pm_stats:
+                pm_stats[pm_name] = {
+                    "pm_name": pm_name,
+                    "in_demo": 0,
+                    "meeting_set": 0,
+                    "converted": 0
+                }
+                
+            if shop.status == ShopStatus.CONVERTED:
+                pm_stats[pm_name]["converted"] += 1
+            elif shop.status == ShopStatus.MEETING_SET:
+                pm_stats[pm_name]["meeting_set"] += 1
+            else:
+                pm_stats[pm_name]["in_demo"] += 1
+                
+        return list(pm_stats.values())
