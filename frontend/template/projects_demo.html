@@ -174,18 +174,34 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="sched-shop-id">
-                    <input type="hidden" id="sched-client-id">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Target Shop</label>
+                        <input type="text" id="sched-shop-name" class="form-control" readonly disabled>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Demo Title</label>
-                        <input type="text" id="sched-title" class="form-control" placeholder="e.g. Demo Session 1">
+                        <input type="text" id="sched-title" class="form-control" placeholder="e.g. Platform Overview">
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Date</label>
+                            <input type="date" id="sched-date" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Time</label>
+                            <input type="time" id="sched-time" class="form-control">
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Date & Time</label>
-                        <input type="datetime-local" id="sched-datetime" class="form-control">
+                        <label class="form-label fw-semibold">Demo Type</label>
+                        <select id="sched-type" class="form-select">
+                            <option value="Google Meet">Google Meet</option>
+                            <option value="In-Person Demo">In-Person Demo</option>
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Notes (optional)</label>
-                        <textarea id="sched-notes" class="form-control" rows="2" placeholder="Any notes for this demo..."></textarea>
+                        <label class="form-label fw-semibold">Pre-Demo Notes</label>
+                        <textarea id="sched-notes" class="form-control" rows="2" placeholder="Any specific requirements..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -252,7 +268,7 @@
 
                 // Status badge
                 const statusBadge = isMeetingSet
-                    ? `<span class="status-badge-ms"><i class="bi bi-check-circle-fill me-1"></i>Meeting Set</span>`
+                    ? `<span class="badge bg-warning-subtle text-warning rounded-pill" style="font-size:0.68rem;">In Demo (Meeting Set)</span>`
                     : `<span class="badge bg-warning-subtle text-warning rounded-pill" style="font-size:0.68rem;">In Demo</span>`;
 
                 // Demo Progress column: completed count + scheduled date or (+) button
@@ -267,10 +283,18 @@
                     </div>`;
 
                 // Actions column
-                const scheduleBtn = `<button class="btn btn-sm btn-outline-primary btn-demo-action" onclick="openScheduleDemo(${shop.id})"><i class="bi bi-calendar-plus me-1"></i>${hasDemoScheduled ? 'Reschedule' : 'Schedule Demo'}</button>`;
-                const markDoneBtn = hasDemoScheduled
-                    ? `<button class="btn btn-sm btn-primary btn-demo-action" onclick="markDemoComplete(${shop.id})"><i class="bi bi-check-circle me-1"></i>Mark Demo Done</button>`
-                    : `<button class="btn btn-sm btn-outline-secondary btn-demo-action" disabled title="Schedule a demo first"><i class="bi bi-check-circle me-1"></i>Mark Demo Done</button>`;
+                const dropdownHtml = `<div class="dropdown">
+                    <button class="btn btn-sm btn-light border-0 dropdown-toggle-no-caret" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots-vertical text-muted"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 fs-sm" style="min-width: 180px;">
+                        <li><h6 class="dropdown-header text-uppercase" style="font-size:0.65rem;letter-spacing:0.05em;">Demo Actions</h6></li>
+                        <li><a class="dropdown-item py-2 fw-medium ${!hasDemoScheduled ? 'disabled' : ''}" href="#" onclick="event.preventDefault(); markDemoComplete(${shop.id})"><i class="bi bi-check-circle me-2 text-success"></i>Mark Done</a></li>
+                        <li><a class="dropdown-item py-2 fw-medium" href="#" onclick="event.preventDefault(); openScheduleDemo(${shop.id}, '${shop.name?.replace(/'/g, "\\'") || ''}')"><i class="bi bi-calendar-event me-2 text-primary"></i>${hasDemoScheduled ? 'Reschedule' : 'Schedule Demo'}</a></li>
+                        ${(shop.demo_type === 'Google Meet' && shop.demo_meet_link) ? `<li><a class="dropdown-item py-2 fw-medium" href="${shop.demo_meet_link}" target="_blank"><i class="bi bi-camera-video me-2 text-danger"></i>Join Meet</a></li>` : ''}
+                        ${hasDemoScheduled ? `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item py-2 fw-medium text-danger" href="#" onclick="event.preventDefault(); cancelDemo(${shop.id})"><i class="bi bi-x-circle me-2"></i>Cancel Demo</a></li>` : ''}
+                    </ul>
+                </div>`;
 
                 html += `<tr id="shop-row-${shop.id}">
                     <td class="px-4 py-3">
@@ -287,11 +311,8 @@
                         <div class="small text-muted" style="font-size:0.72rem;">Sales Agent</div>
                     </td>
                     <td class="px-3 py-3 text-center">${statusBadge}</td>
-                    <td class="px-4 py-3">
-                        <div class="d-flex flex-wrap gap-1 justify-content-end">
-                            ${scheduleBtn}
-                            ${markDoneBtn}
-                        </div>
+                    <td class="px-4 py-3 text-end">
+                        ${dropdownHtml}
                     </td>
                 </tr>`;
             });
@@ -314,32 +335,46 @@
         }
 
         // ── Open Schedule Demo Modal ──
-        window.openScheduleDemo = (shopId) => {
+        window.openScheduleDemo = (shopId, shopName) => {
             document.getElementById('sched-shop-id').value = shopId;
+            document.getElementById('sched-shop-name').value = shopName || '';
+            document.getElementById('sched-title').value = '';
             document.getElementById('sched-notes').value = '';
+            document.getElementById('sched-type').value = 'Google Meet';
             // Default to tomorrow 10am
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(10, 0, 0, 0);
-            const local = new Date(tomorrow - tomorrow.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-            document.getElementById('sched-datetime').value = local;
+            document.getElementById('sched-date').value = tomorrow.toISOString().split('T')[0];
+            document.getElementById('sched-time').value = '10:00';
             bootstrap.Modal.getOrCreateInstance(document.getElementById('scheduleDemoModal')).show();
         };
 
         // ── Save Demo (hits POST /shops/{id}/schedule-demo) ──
         window.saveDemoMeeting = async () => {
             const shopId = document.getElementById('sched-shop-id').value;
-            const dt = document.getElementById('sched-datetime').value;
+            const title = document.getElementById('sched-title').value.trim();
+            const dateStr = document.getElementById('sched-date').value;
+            const timeStr = document.getElementById('sched-time').value;
+            const type = document.getElementById('sched-type').value;
+            const notes = document.getElementById('sched-notes').value.trim();
+            
             const btn = document.getElementById('save-demo-btn');
 
-            if (!dt) { showToast('Please pick a date and time', 'error'); return; }
+            if (!dateStr || !timeStr) { showToast('Please pick a date and time', 'error'); return; }
+            
+            const scheduledAt = new Date(`${dateStr}T${timeStr}:00`).toISOString();
 
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
             try {
                 await window.ApiClient.request(`/shops/${shopId}/schedule-demo`, {
                     method: 'POST',
-                    body: { scheduled_at: new Date(dt).toISOString() }
+                    body: {
+                        scheduled_at: scheduledAt,
+                        title: title || null,
+                        demo_type: type,
+                        notes: notes || null
+                    }
                 });
                 showToast('Demo scheduled!', 'success');
                 bootstrap.Modal.getInstance(document.getElementById('scheduleDemoModal')).hide();
@@ -353,12 +388,22 @@
             }
         };
 
+        // ── Cancel Demo ──
+        window.cancelDemo = async (shopId) => {
+            if (!confirm("Are you sure you want to cancel the scheduled demo?")) return;
+            try {
+                await window.ApiClient.request(`/shops/${shopId}/cancel-demo`, { method: 'POST' });
+                showToast('Demo canceled successfully', 'success');
+                await loadDemoQueue();
+            } catch (e) {
+                console.error('Cancel demo failed', e);
+                showToast(e?.data?.detail || 'Failed to cancel demo', 'error');
+            }
+        };
+
         // ── Mark Demo Complete ──
         window.markDemoComplete = async (shopId) => {
-            const btn = document.querySelector(`#shop-row-${shopId} .btn-primary.btn-demo-action`);
-            const originalHtml = btn ? btn.innerHTML : '';
-            if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; }
-
+            // Note: because the button is now a dropdown item, we just show a toast state immediately instead of finding the btn
             try {
                 const result = await window.ApiClient.request(`/shops/${shopId}/complete-demo`, { method: 'POST' });
                 const msg = result.demo_stage === 1
@@ -369,7 +414,6 @@
             } catch (e) {
                 console.error('Mark demo done failed', e);
                 showToast(e?.data?.detail || 'Failed to mark demo complete', 'error');
-                if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
             }
         };
 

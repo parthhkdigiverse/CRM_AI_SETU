@@ -467,8 +467,8 @@
                 tbody.innerHTML = visits.map(v => {
                     let ui = statusMap[v.status] || { bg: '#f1f5f9', color: '#475569', label: v.status, icon: 'bi-dot' };
 
-                    // Dynamic override: if shop is actively in the demo pipeline, show "In Demo"
-                    if (v.project_manager_name && v.shop_status !== 'MEETING_SET' && v.shop_status !== 'CONVERTED') {
+                    // Dynamic pipeline overrides: show the shop's current pipeline stage instead of raw visit outcome
+                    if (v.project_manager_name) {
                         ui = { bg: '#e0e7ff', color: '#4f46e5', label: 'In Demo', icon: 'bi-easel' };
                     }
 
@@ -520,10 +520,8 @@
                         <span class="status-pill" style="background:${ui.bg}; color:${ui.color};">
                             <i class="bi ${ui.icon} me-1"></i>${ui.label}
                         </span>
-                        ${v.project_manager_name && v.shop_status !== 'MEETING_SET' && v.shop_status !== 'CONVERTED'
+                        ${v.project_manager_name
                             ? `<div class="mt-1" style="font-size:0.75rem;color:#64748b;"><i class="bi bi-person-gear me-1"></i>PM: ${v.project_manager_name}</div>`
-                            : (v.status === 'SATISFIED' && v.project_manager_name)
-                            ? `<div class="mt-1" style="font-size:0.7rem;color:#6d28d9;"><i class="bi bi-person-gear me-1"></i>With PM: ${v.project_manager_name}</div>`
                             : ''}
                     </td>
                     <td>${remarksHtml}</td>

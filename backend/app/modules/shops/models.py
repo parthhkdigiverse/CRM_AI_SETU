@@ -53,6 +53,10 @@ class Shop(SoftDeleteMixin, Base):
     project_manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     demo_stage = Column(Integer, default=0, nullable=False, server_default="0")
     demo_scheduled_at = Column(DateTime(timezone=True), nullable=True)
+    demo_title = Column(String, nullable=True)
+    demo_type = Column(String, nullable=True)
+    demo_notes = Column(Text, nullable=True)
+    demo_meet_link = Column(String, nullable=True)
 
     
     # Relationships — from both branches

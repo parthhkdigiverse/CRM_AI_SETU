@@ -1,5 +1,5 @@
 # backend/app/modules/shops/router.py
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, status, Query, HTTPException
 from pydantic import BaseModel
@@ -13,6 +13,9 @@ from app.modules.clients.schemas import ClientRead
 
 class ScheduleDemoRequest(BaseModel):
     scheduled_at: datetime
+    title: Optional[str] = None
+    demo_type: Optional[str] = None
+    notes: Optional[str] = None
 
 router = APIRouter()
 
@@ -143,7 +146,7 @@ def schedule_demo(
     """
     Schedule the next demo for a shop. Sets demo_scheduled_at.
     """
-    return ShopService.schedule_demo(db, shop_id, body.scheduled_at, current_user)
+    return ShopService.schedule_demo(db, shop_id, body, current_user)
 
 @router.post("/{shop_id}/complete-demo", response_model=ShopRead)
 def complete_demo(
@@ -156,6 +159,17 @@ def complete_demo(
     First completion (demo_stage == 1) auto-advances status to MEETING_SET.
     """
     return ShopService.complete_demo(db, shop_id, current_user)
+
+@router.post("/{shop_id}/cancel-demo", response_model=ShopRead)
+def cancel_demo(
+    shop_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(pm_checker)
+) -> Any:
+    """
+    Cancel the currently scheduled demo for a shop.
+    """
+    return ShopService.cancel_demo(db, shop_id, current_user)
 
 @router.post("/{shop_id}/approve", response_model=ClientRead)
 def approve_pipeline(

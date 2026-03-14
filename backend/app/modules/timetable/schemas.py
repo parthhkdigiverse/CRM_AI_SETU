@@ -19,6 +19,7 @@ class TimelineEvent(BaseModel):
     status: Optional[str] = None
     reference_id: Optional[int] = None
     description: Optional[str] = None
+    meet_url: Optional[str] = None
 
     # New fields for generic calendar events
     start: Optional[str] = None

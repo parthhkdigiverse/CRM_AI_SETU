@@ -68,6 +68,10 @@ class ShopRead(ShopBase):
     project_manager_name: Optional[str] = None
     demo_stage: Optional[int] = 0
     demo_scheduled_at: Optional[datetime] = None
+    demo_title: Optional[str] = None
+    demo_type: Optional[str] = None
+    demo_notes: Optional[str] = None
+    demo_meet_link: Optional[str] = None
 
     class Config:
         from_attributes = True

@@ -430,14 +430,65 @@ class ShopService:
         ]
         return shop_data
 
-    # ── Schedule a demo on the shop ──
+    # ── Cancel a scheduled demo on the shop ──
     @staticmethod
-    def schedule_demo(db: Session, shop_id: int, scheduled_at, current_user: User):
+    def cancel_demo(db: Session, shop_id: int, current_user: User):
         shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
 
-        shop.demo_scheduled_at = scheduled_at
+        shop.demo_scheduled_at = None
+        shop.demo_title = None
+        shop.demo_type = None
+        shop.demo_notes = None
+        shop.demo_meet_link = None
+        
+        db.commit()
+        db.refresh(shop)
+
+        # Build response map
+        shop_data = shop.__dict__.copy()
+        shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+        shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+        shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
+        shop_data["archived_by_name"] = None
+        shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+        shop_data["last_visitor_name"] = None
+        shop_data["last_visit_status"] = None
+        shop_data.pop("_sa_instance_state", None)
+        shop_data["assigned_users"] = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None}
+            for u in getattr(shop, 'assigned_owners_list', [])
+        ]
+        return shop_data
+
+    # ── Schedule a demo on the shop ──
+    @staticmethod
+    def schedule_demo(db: Session, shop_id: int, payload, current_user: User):
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        if not shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
+
+        shop.demo_scheduled_at = payload.scheduled_at
+        shop.demo_title = payload.title
+        shop.demo_type = payload.demo_type
+        shop.demo_notes = payload.notes
+
+        # Generate real Google Meet link if requested
+        if payload.demo_type == "Google Meet":
+            from app.utils.google_meet import generate_google_meet_link
+            try:
+                result = generate_google_meet_link(
+                    title=payload.title or f"Demo: {shop.name}",
+                    start_time=payload.scheduled_at,
+                    description=payload.notes or ""
+                )
+                shop.demo_meet_link = result.get("meet_link")
+            except Exception as e:
+                print(f"[ShopService] Failed to generate Google Meet link: {e}")
+                shop.demo_meet_link = None
+        else:
+            shop.demo_meet_link = None
         db.commit()
         db.refresh(shop)
 

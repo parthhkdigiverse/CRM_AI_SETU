@@ -252,43 +252,54 @@ def get_timetable(
     # 5. Fetch Scheduled Shop Demos (from SM demo pipeline)
     demo_query = db.query(Shop).filter(Shop.demo_scheduled_at.isnot(None))
     if not is_admin:
-        # PMs see only their own assigned demos
         demo_query = demo_query.filter(Shop.project_manager_id == user_id)
 
     demo_shops = demo_query.all()
-    from datetime import timedelta
+    from datetime import timedelta, timezone
+    
+    # Define IST explicitly to prevent double-shifting by JS
+    ist_tz = timezone(timedelta(hours=5, minutes=30))
+
     for shop in demo_shops:
         start_dt = shop.demo_scheduled_at
-        if not start_dt:
+        if start_dt is None:
             continue
-
-        # Strip tzinfo if present - value is already in display timezone
-        if start_dt.tzinfo:
-            start_dt = start_dt.replace(tzinfo=None)
-        local_start = start_dt  # No offset needed — stored as naive local time
+            
+        if start_dt.tzinfo is not None:
+            local_start = start_dt.astimezone(ist_tz)
+        else:
+            local_start = start_dt 
+            
         local_end = local_start + timedelta(minutes=45)
-
+        
+        # Resolve PM name so the UI doesn't hide the event
         pm_name = username
         try:
-            if shop.project_manager:
+            if getattr(shop, 'project_manager', None):
                 pm_name = shop.project_manager.name or shop.project_manager.email
         except:
             pass
-
+        
+        # Map the new implementation plan fields safely
+        display_title = getattr(shop, 'demo_title', None) or f"Demo: {shop.name}"
+        display_loc = getattr(shop, 'demo_type', None) or (shop.area.name if getattr(shop, 'area', None) else "Online")
+        display_desc = getattr(shop, 'demo_notes', None)
+        
         events.append(TimelineEvent(
             id=f"demo_shop_{shop.id}",
-            title=f"Demo: {shop.name}",
-            date=date_str(local_start),
+            title=display_title,
+            date=local_start.strftime("%Y-%m-%d"),
             user=pm_name,
             sh=local_start.hour,
             sm=local_start.minute,
             eh=local_end.hour,
             em=local_end.minute,
-            loc=shop.area.name if getattr(shop, 'area', None) else "Shop",
-            description=f"{getattr(shop, 'contact_person', 'No Contact')} | {getattr(shop, 'phone', 'No Phone')}",
+            loc=display_loc,
             event_type="DEMO",
             status="SCHEDULED",
             reference_id=shop.id,
+            description=display_desc,
+            meet_url=getattr(shop, 'demo_meet_link', None),
             backgroundColor="#4f46e5"
         ))
 

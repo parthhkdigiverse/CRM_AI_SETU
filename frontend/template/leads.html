@@ -559,6 +559,11 @@
                                     </span>
                                     ${(() => {
                                         if (!l.last_visit_status) return '';
+                                        let effectiveStatus = l.last_visit_status;
+                                        // If a PM is assigned, force status to SATISFIED (unless officially ACCEPTED)
+                                        if (l.project_manager_id && effectiveStatus !== 'ACCEPT') {
+                                            effectiveStatus = 'SATISFIED';
+                                        }
                                         const vsColors = {
                                             'SATISFIED':          'background:#dbeafe;color:#1d4ed8;',
                                             'ACCEPT':             'background:#dcfce7;color:#16a34a;',
@@ -573,8 +578,8 @@
                                             'TAKE_TIME_TO_THINK': 'Thinking',
                                             'OTHER':              'Other',
                                         };
-                                        const vstyle = vsColors[l.last_visit_status] || 'background:#f1f5f9;color:#475569;';
-                                        const vlabel = vsLabels[l.last_visit_status] || l.last_visit_status.replace(/_/g, ' ');
+                                        const vstyle = vsColors[effectiveStatus] || 'background:#f1f5f9;color:#475569;';
+                                        const vlabel = vsLabels[effectiveStatus] || effectiveStatus.replace(/_/g, ' ');
                                         return `<span class="badge ms-1" style="${vstyle}font-size:0.65rem;">${vlabel}</span>`;
                                     })()}
                                 </div>` : ''}
@@ -648,6 +653,11 @@
                             ${(() => {
                                 let bits = '';
                                 if (l.last_visit_status) {
+                                    let effectiveStatus = l.last_visit_status;
+                                    // If a PM is assigned, force status to SATISFIED (unless officially ACCEPTED)
+                                    if (l.project_manager_id && effectiveStatus !== 'ACCEPT') {
+                                        effectiveStatus = 'SATISFIED';
+                                    }
                                     const vsColors = {
                                         'SATISFIED':          'background:#dbeafe;color:#1d4ed8;',
                                         'ACCEPT':             'background:#dcfce7;color:#16a34a;',
@@ -659,8 +669,8 @@
                                         'SATISFIED': 'Satisfied', 'ACCEPT': 'Accepted',
                                         'DECLINE': 'Declined', 'TAKE_TIME_TO_THINK': 'Thinking', 'OTHER': 'Other',
                                     };
-                                    const vstyle = vsColors[l.last_visit_status] || 'background:#f1f5f9;color:#475569;';
-                                    const vlabel = vsLabels[l.last_visit_status] || l.last_visit_status.replace(/_/g,' ');
+                                    const vstyle = vsColors[effectiveStatus] || 'background:#f1f5f9;color:#475569;';
+                                    const vlabel = vsLabels[effectiveStatus] || effectiveStatus.replace(/_/g,' ');
                                     bits += `<span class="badge mt-1 me-1" style="${vstyle}font-size:0.62rem;">${vlabel}</span>`;
                                 }
                                 if (l.project_manager_name) {

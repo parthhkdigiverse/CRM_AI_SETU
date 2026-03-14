@@ -2020,8 +2020,32 @@
                     actionBtn.innerHTML = '<i class="bi bi-arrow-up-right-square me-2"></i>Reschedule / Manage Demo';
                     actionBtn.onclick = () => window.location.href = 'projects_demo.html';
                     actionBtn.style.display = 'block';
+
+                    // Authorization Check: Only show Meet link to the assigned PM
+                    const currUserName = currentUser ? (currentUser.name || currentUser.email) : '';
+                    const isOwner = (ev.user === currUserName);
+
+                    if (ev.meet_url && isOwner) {
+                        const meetBtn = document.createElement('button');
+                        meetBtn.id = 'view-meet-btn';
+                        meetBtn.className = "btn btn-success w-100 fw-bold rounded-pill mt-2";
+                        meetBtn.innerHTML = '<i class="bi bi-camera-video me-2"></i>Join Google Meet';
+                        meetBtn.onclick = () => window.open(ev.meet_url, '_blank');
+
+                        // Ensure we don't stack duplicate buttons if modal is opened multiple times
+                        const existingBtn = document.getElementById('view-meet-btn');
+                        if (existingBtn) existingBtn.remove();
+
+                        document.querySelector('#viewEventModal .modal-footer').appendChild(meetBtn);
+                    } else {
+                        // Ensure button is hidden for non-owners opening other peoples' demos
+                        const existingBtn = document.getElementById('view-meet-btn');
+                        if (existingBtn) existingBtn.remove();
+                    }
                 } else {
                     actionBtn.style.display = 'none'; // Hide action button for generic visits
+                    const existingBtn = document.getElementById('view-meet-btn');
+                    if (existingBtn) existingBtn.remove();
                 }
 
                 new bootstrap.Modal(document.getElementById('viewEventModal')).show();
