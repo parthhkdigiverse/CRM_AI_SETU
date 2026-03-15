@@ -1,13 +1,12 @@
 // auth.js — shared across all pages
-let API = localStorage.getItem('api_base') || (window.location.origin + '/api');
+let API = window.location.origin + '/api';
 
 // Background Refresh Config
-fetch((window.location.origin) + '/api/config')
+fetch(window.location.origin + '/api/config')
     .then(r => r.json())
     .then(data => {
         if (data.API_BASE_URL) {
             API = data.API_BASE_URL;
-            localStorage.setItem('api_base', API);
         }
     })
     .catch(e => console.warn('Config fetch error:', e));

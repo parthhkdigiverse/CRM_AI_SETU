@@ -70,7 +70,75 @@ def resolve_invoice_workflow(
   """Resolve amount, QR requirement and payable metadata for selected payment/GST type."""
   return BillingService(db).resolve_workflow(payload)
 
-@router.post("/", response_model=BillRead, status_code=status.HTTP_201_CREATED)
+
+@router.post("/generate-qr")
+def generate_payment_qr(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_access),
+) -> Any:
+    """
+    Step 2 of the new invoice wizard.
+    Resolves the total amount, generates a PhonePe UPI QR (or static fallback),
+    and returns display data. No invoice is created yet.
+    """
+    payment_type = payload.get("payment_type", "")
+    gst_type     = payload.get("gst_type", "")
+    amount       = float(payload.get("amount") or 0)
+    phone        = str(payload.get("phone") or "9999999999")
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be greater than 0")
+    return BillingService(db).generate_payment_qr_for_new_invoice(
+        payment_type=payment_type,
+        gst_type=gst_type,
+        amount=amount,
+        phone=phone,
+    )
+
+
+@router.post("/phonepe-callback")
+async def phonepe_payment_callback(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> Any:
+    """
+    PhonePe posts payment status here after redirect.
+    Validates HMAC signature, logs the event, and returns 200.
+    Note: In production, use this to auto-verify invoices.
+    """
+    import hashlib, hmac as _hmac, base64 as _b64, json as _json
+    from app.core.config import settings
+
+    body = await request.body()
+    x_verify = request.headers.get("X-VERIFY", "")
+    salt_key  = settings.PHONEPE_SALT_KEY
+    salt_idx  = settings.PHONEPE_SALT_INDEX
+
+    # Validate signature: sha256(base64_response + salt_key) + "###" + salt_index
+    try:
+        data_b64 = _json.loads(body).get("response", "")
+        expected_hash = hashlib.sha256((data_b64 + salt_key).encode()).hexdigest()
+        expected_verify = f"{expected_hash}###{salt_idx}"
+        sig_ok = _hmac.compare_digest(x_verify, expected_verify)
+    except Exception:
+        sig_ok = False
+
+    if not sig_ok:
+        print("[PhonePe Callback] Signature mismatch — ignoring")
+        return {"status": "ignored"}
+
+    try:
+        decoded = _json.loads(_b64.b64decode(data_b64).decode())
+        txn_id  = decoded.get("data", {}).get("merchantTransactionId", "")
+        code    = decoded.get("code", "")
+        print(f"[PhonePe Callback] txn={txn_id}  code={code}  ok={sig_ok}")
+    except Exception as exc:
+        print(f"[PhonePe Callback] Parse error: {exc}")
+
+    return {"status": "received"}
+
+
+@router.post("/", response_model=BillRead)
 def create_invoice(
     bill_in: BillCreate,
     db: Session = Depends(get_db),
@@ -103,6 +171,15 @@ def list_invoices(
     gst_type=gst_type,
     search=search,
   )
+
+
+@router.get("/whatsapp-health")
+def whatsapp_health(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_access),
+) -> Any:
+    """Validate WhatsApp token + phone number configuration with Meta Graph API."""
+    return BillingService(db).check_whatsapp_health(current_user)
 
 
 @router.get("/{bill_id}", response_model=BillRead)
@@ -227,14 +304,6 @@ async def send_invoice_whatsapp(
         "client_id": bill.client_id,
     }
 
-
-@router.get("/whatsapp-health")
-def whatsapp_health(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(staff_access),
-) -> Any:
-    """Validate WhatsApp token + phone number configuration with Meta Graph API."""
-    return BillingService(db).check_whatsapp_health(current_user)
 
 
 # ──────────────────── Printable Invoice HTML ──────────────────────────────────
@@ -460,11 +529,6 @@ def _build_invoice_html(bill, settings: dict) -> str:
   /* words strip */
   .words-strip{{border:1px solid #dde1e7;padding:8px 12px;font-size:13px;
     margin-bottom:8px;background:#ffffff;}}
-  /* bank box */
-  .bank-box{{border:1px solid #dde1e7;border-radius:6px;padding:10px 14px;
-    font-size:11.5px;margin-top:8px;}}
-  .bank-box table td{{padding:2px 6px;font-size:11.5px;}}
-  .bank-box .lbl{{color:#666;white-space:nowrap;}}
   /* footer */
   .inv-footer{{border-top:1.5px solid #222;margin-top:8px;padding-top:8px;
     display:flex;justify-content:space-between;align-items:flex-end;}}

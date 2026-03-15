@@ -1,6 +1,6 @@
-let API_BASE_URL = 'http://127.0.0.1:8000/api'; // Fallback
+let API_BASE_URL = window.location.origin + '/api'; // Fallback
 // Try to load dynamically from the backend Python config endpoint
-fetch('http://127.0.0.1:8000/api/config')
+fetch(window.location.origin + '/api/config')
     .then(r => r.json())
     .then(data => {
         if (data.API_BASE_URL) {
@@ -505,6 +505,10 @@ class ApiClient {
     static async resolveInvoiceWorkflow(data) {
         return this.request('/billing/workflow/resolve', { method: 'POST', body: data });
     }
+    static async generateInvoicePaymentQR(data) {
+        return this.request('/billing/generate-qr', { method: 'POST', body: data });
+    }
+
 
     // ─── Projects ────────────────────────────────────────────
     static async getProjects(params = '') {

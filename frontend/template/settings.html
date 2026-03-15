@@ -1074,7 +1074,7 @@
                 document.getElementById('employee-code-settings').style.display = 'block';
                 document.getElementById('data-management-settings').style.display = 'block';
 
-                const apiUrl = window.API_BASE || 'http://localhost:8000';
+                const apiUrl = window.API_BASE || (window.location.origin + '/api');
                 document.getElementById('api-url-display').textContent = apiUrl;
                 document.getElementById('sys-user-id').textContent = `#${u?.id || '—'}`;
 

@@ -85,8 +85,8 @@ python app.py
 ```
 
 The app will be available at:
-- **Frontend UI:** http://127.0.0.1:8000/frontend/template/index.html
-- **API Docs:** http://127.0.0.1:8000/docs
+- **Frontend UI:** http://127.0.0.1:8080/frontend/template/index.html
+- **API Docs:** http://127.0.0.1:8080/docs
 
 ---
 

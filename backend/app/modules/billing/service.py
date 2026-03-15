@@ -545,7 +545,7 @@ class BillingService:
             raise HTTPException(status_code=502, detail=f"Could not fetch invoice PDF for WhatsApp upload: {exc}")
 
     @staticmethod
-    def _build_invoice_pdf_bytes(bill: Bill, invoice_settings: dict) -> bytes:
+    def _build_invoice_pdf_bytes(bill: Bill, invoice_settings: dict, qr_image_b64: str = None) -> bytes:
         """Build invoice PDF bytes directly to avoid self-calling API over HTTP."""
         buf = io.BytesIO()
         c = canvas.Canvas(buf, pagesize=A4)
@@ -625,6 +625,21 @@ class BillingService:
         if payment_upi:
             c.drawString(x, y, f"UPI: {payment_upi}")
             y -= 13
+
+        # Add QR Image if provided
+        if qr_image_b64:
+            try:
+                # qr_image_b64 is "data:image/png;base64,...."
+                header, encoded = qr_image_b64.split(",", 1)
+                import base64
+                img_data = base64.b64decode(encoded)
+                from reportlab.lib.utils import ImageReader
+                img_reader = ImageReader(io.BytesIO(img_data))
+                c.drawImage(img_reader, x, y - 85, width=80, height=80)
+                y -= 95
+            except Exception:
+                pass
+
         c.drawString(x, y, "This is a system-generated invoice.")
 
         c.showPage()
@@ -905,57 +920,129 @@ class BillingService:
         return None
 
     def _create_phonepe_upi_qr(self, bill: Bill, phone: str) -> str | None:
-        # ─────────────────────────────────────────────────────────────────────
-        # PHONEPE PAYMENT GATEWAY — UPI QR CODE (currently disabled)
-        #
-        # Enable this to generate a UPI QR image (base64 PNG) that can be
-        # embedded directly in the invoice HTML for instant in-person payment.
-        # Same prerequisites as _create_phonepe_payment_link above.
-        # ─────────────────────────────────────────────────────────────────────
-        #
-        # import httpx, hashlib, base64, json as _json
-        # merchant_id  = settings.PHONEPE_MERCHANT_ID
-        # salt_key     = settings.PHONEPE_SALT_KEY
-        # salt_index   = settings.PHONEPE_SALT_INDEX
-        # is_sandbox   = settings.PHONEPE_ENV != "production"
-        # base_api     = (
-        #     "https://api-preprod.phonepe.com/apis/pg-sandbox"
-        #     if is_sandbox else
-        #     "https://api.phonepe.com/apis/hermes"
-        # )
-        # txn_id  = f"QR-{bill.invoice_number}-{uuid.uuid4().hex[:8]}".replace("/", "-")
-        # payload = {
-        #     "merchantId":            merchant_id,
-        #     "merchantTransactionId": txn_id,
-        #     "merchantUserId":        f"MUID-{phone}",
-        #     "amount":                int(round(bill.amount * 100)),  # paise
-        #     "mobileNumber":          phone[-10:],
-        #     "paymentInstrument":     {"type": "UPI_QR"},
-        # }
-        # encoded  = base64.b64encode(_json.dumps(payload).encode()).decode()
-        # chk_str  = encoded + "/pg/v1/pay" + salt_key
-        # checksum = hashlib.sha256(chk_str.encode()).hexdigest() + "###" + str(salt_index)
-        # headers  = {
-        #     "Content-Type":  "application/json",
-        #     "X-VERIFY":      checksum,
-        #     "X-MERCHANT-ID": merchant_id,
-        # }
-        # with httpx.Client(timeout=15) as client:
-        #     resp = client.post(f"{base_api}/pg/v1/pay", headers=headers, json={"request": encoded})
-        #     resp.raise_for_status()
-        #     data = resp.json()
-        # if data.get("success"):
-        #     qr_data = data["data"]["instrumentResponse"]["intentInfo"]["intentUrl"]
-        #     # qr_data is a "upi://pay?..." string; convert to image using qrcode lib:
-        #     # import qrcode, io
-        #     # img = qrcode.make(qr_data)
-        #     # buf = io.BytesIO(); img.save(buf, format="PNG")
-        #     # return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
-        #     return qr_data  # or return the base64 image string above
-        # return None
-        #
-        _ = (bill, phone)
+        """
+        Generate a UPI QR code image (base64 PNG) for the invoice amount.
+        Tries PhonePe API first; falls back to building a UPI intent URL + qrcode lib.
+        Returns a base64-encoded PNG string (data:image/png;base64,...) or None.
+        """
+        import base64 as _b64
+        import hashlib as _hashlib
+        import json as _json
+        import httpx
+        import qrcode
+
+        merchant_id   = settings.PHONEPE_MERCHANT_ID
+        salt_key      = settings.PHONEPE_SALT_KEY
+        salt_index    = settings.PHONEPE_SALT_INDEX
+        is_sandbox    = settings.PHONEPE_ENV != "production"
+        base_api      = (
+            "https://api-preprod.phonepe.com/apis/pg-sandbox"
+            if is_sandbox else
+            "https://api.phonepe.com/apis/hermes"
+        )
+
+        # Helper: convert upi:// intent or any string to base64 PNG via qrcode lib
+        def _make_qr_b64(data_str: str) -> str:
+            img = qrcode.make(data_str)
+            buf = io.BytesIO()
+            img.save(buf, format="PNG")
+            return "data:image/png;base64," + _b64.b64encode(buf.getvalue()).decode()
+
+        # ── Attempt PhonePe UPI QR API ──────────────────────────────────────────
+        if merchant_id and salt_key:
+            try:
+                txn_id  = f"QR-{(bill.invoice_number or str(bill.id)).replace('/', '-')}-{uuid.uuid4().hex[:8]}"
+                payload = {
+                    "merchantId":            merchant_id,
+                    "merchantTransactionId": txn_id,
+                    "merchantUserId":        f"MUID-{phone[-10:]}",
+                    "amount":                int(round((bill.amount or 0) * 100)),  # paise
+                    "mobileNumber":          phone[-10:],
+                    "paymentInstrument":     {"type": "UPI_QR"},
+                }
+                encoded  = _b64.b64encode(_json.dumps(payload).encode()).decode()
+                chk_str  = encoded + "/pg/v1/pay" + salt_key
+                checksum = _hashlib.sha256(chk_str.encode()).hexdigest() + "###" + str(salt_index)
+                headers  = {
+                    "Content-Type":  "application/json",
+                    "X-VERIFY":      checksum,
+                    "X-MERCHANT-ID": merchant_id,
+                }
+                with httpx.Client(timeout=15) as client:
+                    resp = client.post(f"{base_api}/pg/v1/pay", headers=headers, json={"request": encoded})
+                    data = resp.json() if resp.text else {}
+                if data.get("success"):
+                    intent_url = (
+                        data.get("data", {})
+                        .get("instrumentResponse", {})
+                        .get("intentInfo", {})
+                        .get("intentUrl", "")
+                    )
+                    if intent_url:
+                        return _make_qr_b64(intent_url)
+            except Exception:
+                pass  # Fall through to UPI fallback
+
+        # ── Fallback: build a UPI intent URL from settings and generate QR ───────
+        inv_settings = self.get_invoice_defaults()
+        upi_id   = inv_settings.get("payment_upi_id") or ""
+        upi_name = inv_settings.get("payment_account_name") or "Payment"
+        amount   = float(bill.amount or 0)
+        if upi_id and amount > 0:
+            txn_note = f"Invoice {bill.invoice_number or bill.id}".replace("/", "-")
+            upi_url  = f"upi://pay?pa={upi_id}&pn={upi_name}&am={amount:.2f}&tn={txn_note}&cu=INR"
+            return _make_qr_b64(upi_url)
+
         return None
+
+    def generate_payment_qr_for_new_invoice(self, payment_type: str, gst_type: str, amount: float, phone: str) -> dict:
+        """
+        Called BEFORE creating an invoice: resolves the amount, generates a UPI QR
+        (via PhonePe or static UPI fallback) and returns display data for the
+        Step-2 payment screen.
+        """
+        self._validate_payment_mode(payment_type, gst_type)
+        inv_settings = self.get_invoice_defaults()
+
+        if gst_type == "WITH_GST":
+            gst_amount   = round(amount * 0.18, 2)
+            total_amount = round(amount + gst_amount, 2)
+        else:
+            gst_amount   = 0.0
+            total_amount = round(amount, 2)
+
+        requires_qr = payment_type != "CASH"
+        qr_b64      = None
+        upi_id      = inv_settings.get("payment_upi_id") or ""
+        upi_name    = inv_settings.get("payment_account_name") or ""
+        static_qr   = inv_settings.get("payment_qr_image_url") or ""
+
+        if requires_qr:
+            # Build a lightweight temp Bill-like object so _create_phonepe_upi_qr can work
+            class _TempBill:
+                invoice_number = None
+                id             = 0
+            _tmp = _TempBill()
+            _tmp.amount = total_amount
+
+            # Try dynamic QR (PhonePe or UPI string)
+            safe_phone = phone.strip().replace("+", "").replace(" ", "")
+            if len(safe_phone) == 10:
+                safe_phone = "91" + safe_phone
+            qr_b64 = self._create_phonepe_upi_qr(_tmp, safe_phone)
+
+        return {
+            "payment_type":  payment_type,
+            "gst_type":      gst_type,
+            "base_amount":   amount,
+            "gst_amount":    gst_amount,
+            "total_amount":  total_amount,
+            "requires_qr":   requires_qr,
+            "qr_image_b64":  qr_b64,            # dynamic QR (PhonePe / UPI)
+            "static_qr_url": static_qr,         # admin-configured QR image URL
+            "upi_id":        upi_id,
+            "upi_name":      upi_name,
+        }
 
     async def send_whatsapp_invoice(self, bill_id: int, current_user: User, base_url: str = "") -> Bill:
         """
@@ -984,7 +1071,13 @@ class BillingService:
         phone = self._normalize_indian_phone(bill.invoice_client_phone)
         filename = f"Invoice-{(bill.invoice_number or str(bill.id)).replace('/', '-')}.pdf"
         phonepe_payment_link = self._create_phonepe_payment_link(bill, phone)
-        pdf_bytes = self._build_invoice_pdf_bytes(bill, invoice_settings)
+        
+        # Generate QR for PDF
+        qr_image = None
+        if bill.requires_qr and bill.payment_type != "CASH":
+            qr_image = self._create_phonepe_upi_qr(bill, phone)
+            
+        pdf_bytes = self._build_invoice_pdf_bytes(bill, invoice_settings, qr_image)
         media_id = self._upload_whatsapp_media(pdf_bytes, filename)
         self._send_whatsapp_via_gateway(phone, media_id, caption, filename)
 
