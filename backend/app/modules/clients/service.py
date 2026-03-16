@@ -19,7 +19,7 @@ class ClientService:
         return self.db.query(Client).filter(Client.id == client_id).first()
 
     
-    def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc", include_inactive: bool = False, pm_id: int = None, is_active: bool | None = True):
+    def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc", include_inactive: bool = False, pm_id: int = None, owner_id: int = None, is_active: bool | None = True, pm_filter_id: int = None):
         try:
             query = self.db.query(Client)
             if is_active is True:
@@ -37,6 +37,9 @@ class ClientService:
                 query = query.filter(Client.pm_id == pm_id)
             elif owner_id:
                 query = query.filter(Client.owner_id == owner_id)
+                
+            if pm_filter_id:
+                query = query.filter(Client.pm_id == pm_filter_id)
             if search:
                 search_pattern = f"%{search}%"
                 query = query.filter(

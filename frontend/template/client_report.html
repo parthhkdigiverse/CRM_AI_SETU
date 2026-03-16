@@ -391,34 +391,39 @@
             function exportPDF() {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
-                const indigo = [79, 70, 229]; // #4f46e5
-                const lightIndigo = [238, 242, 255]; // #eef2ff
+                
+                // --- Premium Double-Shaded Dark Palette ---
+                const primaryDark = [30, 41, 59];    // Slate 800
+                const secondaryDark = [71, 85, 105]; // Slate 600
+                const primaryLight = [241, 245, 249]; // Slate 100
                 
                 // --- Background & Borders ---
-                doc.setDrawColor(...indigo);
+                doc.setDrawColor(...primaryDark);
                 doc.setLineWidth(0.5);
                 doc.line(10, 10, 200, 10); // Top line
                 
                 // --- Company Branding ---
                 doc.setFont("helvetica", "bold");
-                doc.setFontSize(24);
-                doc.setTextColor(...indigo);
+                doc.setFontSize(18);
+                doc.setTextColor(...primaryDark);
                 doc.text("SRM AI SETU", 15, 25);
                 
                 // --- Report Header Label ---
-                doc.setFillColor(79, 70, 229);
-                doc.rect(140, 15, 55, 12, 'F');
-                doc.setFontSize(10);
+                doc.setFillColor(...secondaryDark);
+                doc.rect(145, 17, 50, 10, 'F');
+                doc.setFontSize(9);
                 doc.setTextColor(255);
-                doc.text("CLIENT PORTFOLIO", 147, 23);
+                doc.text("CLIENT PORTFOLIO", 150, 24);
                 
                 // --- Meta Information ---
                 doc.setFont("helvetica", "normal");
                 doc.setTextColor(100);
-                doc.setFontSize(10);
+                doc.setFontSize(9);
                 doc.text(`Generated: ${new Date().toLocaleDateString('en-IN', {day: 'numeric', month: 'long', year: 'numeric'})}`, 15, 35);
-                doc.text(`Client: ${clientSearch}`, 15, 40);
-                doc.text(`Duration: ${durationText}`, 15, 45);
+                const searchTxt = document.getElementById('filter-client') ? document.getElementById('filter-client').options[document.getElementById('filter-client').selectedIndex].text : 'All';
+                const durationTxt = document.getElementById('filter-duration') ? document.getElementById('filter-duration').options[document.getElementById('filter-duration').selectedIndex].text : 'All Time';
+                doc.text(`Client: ${searchTxt}`, 15, 40);
+                doc.text(`Duration: ${durationTxt}`, 15, 45);
                 
                 // Support line below header
                 doc.setDrawColor(200);
@@ -440,25 +445,22 @@
                     body: tableData,
                     theme: 'striped',
                     headStyles: { 
-                        fillColor: indigo, 
+                        fillColor: primaryDark, 
                         textColor: 255, 
-                        fontSize: 10,
-                        fontStyle: 'bold',
-                        halign: 'left'
+                        fontSize: 9,
+                        fontStyle: 'bold'
                     },
-                    columnStyles: {
-                        3: { halign: 'right', fontStyle: 'bold' }
-                    },
-                    alternateRowStyles: { fillColor: [250, 251, 255] },
+                    alternateRowStyles: { fillColor: primaryLight },
                     styles: { 
-                        fontSize: 9, 
+                        halign: 'left',
+                        fontSize: 8, 
                         cellPadding: 4,
                         font: "helvetica",
                         lineColor: [230, 230, 230]
                     },
                     didDrawPage: function(data) {
                         // Footer
-                        doc.setFontSize(8);
+                        doc.setFontSize(7);
                         doc.setTextColor(150);
                         doc.text("SRM AI SETU - Confidential Portfolio Analytics Report", 15, 285);
                         doc.text(`Page ${doc.internal.getNumberOfPages()}`, 190, 285);
@@ -467,11 +469,11 @@
 
                 // Summary / Totals Section below table
                 const finalY = doc.lastAutoTable.finalY + 10;
-                doc.setFillColor(...lightIndigo);
+                doc.setFillColor(...primaryLight);
                 doc.rect(120, finalY, 75, 15, 'F');
                 doc.setFont("helvetica", "bold");
-                doc.setFontSize(10);
-                doc.setTextColor(...indigo);
+                doc.setFontSize(9);
+                doc.setTextColor(...primaryDark);
                 doc.text("TOTAL OUTSTANDING:", 125, finalY + 10);
                 doc.text(`INR ${totalOutstanding.toLocaleString('en-IN')}`, 190, finalY + 10, { align: 'right' });
 

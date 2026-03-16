@@ -23,6 +23,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_deleted = Column(Boolean, default=False)
     preferences = Column(JSON, nullable=True, default=dict)
+    incentive_enabled: bool = True
 
     # --- Employee / HR Profile (merged from Employee table) ---
     employee_code = Column(String, unique=True, index=True, nullable=True)

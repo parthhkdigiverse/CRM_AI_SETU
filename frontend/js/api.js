@@ -234,14 +234,6 @@ class ApiClient {
         return this.request('/attendance/punch', { method: 'POST' });
     }
 
-    // ─── Attendance ──────────────────────────────────────────
-    static async getPunchStatus() {
-        return this.request('/attendance/status');
-    }
-    static async punch() {
-        return this.request('/attendance/punch', { method: 'POST' });
-    }
-
     // ─── Clients ─────────────────────────────────────────────
     static async getClients(params = '') {
         return this.request(`/clients/${params}`);
@@ -357,6 +349,7 @@ class ApiClient {
     }
     static async deleteFeedback(feedbackId) {
         return this.request(`/feedback/${feedbackId}`, { method: 'DELETE' });
+    }   
     static async getAllClientFeedbacks() {
         const candidates = [
             '/clients/feedbacks/all',

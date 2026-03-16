@@ -289,40 +289,8 @@ class ReportService:
         
         for row in results:
             u, visits, leads, revenue = row
-            # Calculate 5% incentive as requested
+            # Calculate 5% incentive dynamically
             incentive_val = float(revenue) * 0.05
-        for u in users:
-            visits = db.query(func.count(Visit.id)).filter(
-                Visit.user_id == u.id,
-                extract('year', Visit.visit_date) == year,
-                extract('month', Visit.visit_date) == m
-            ).scalar() or 0
-            
-            leads = db.query(func.count(Visit.id)).filter(
-                Visit.user_id == u.id,
-                Visit.status.in_(['ACCEPT', 'SATISFIED']),
-                extract('year', Visit.visit_date) == year,
-                extract('month', Visit.visit_date) == m
-            ).scalar() or 0
-            
-            payments = db.query(func.count(Payment.id)).filter(
-                Payment.generated_by_id == u.id,
-                Payment.status == PaymentStatus.VERIFIED,
-                extract('year', Payment.verified_at) == year,
-                extract('month', Payment.verified_at) == m
-            ).scalar() or 0
-            
-            revenue = db.query(func.sum(Payment.amount)).filter(
-                Payment.generated_by_id == u.id,
-                Payment.status == PaymentStatus.VERIFIED,
-                extract('year', Payment.verified_at) == year,
-                extract('month', Payment.verified_at) == m
-            ).scalar() or 0.0
-            
-            incentive = db.query(IncentiveSlip.total_incentive).filter(
-                IncentiveSlip.user_id == u.id,
-                IncentiveSlip.period == month
-            ).scalar() or 0.0
 
             projects = db.query(func.count(Project.id)).filter(
                 Project.pm_id == u.id
@@ -338,13 +306,12 @@ class ReportService:
                 "id": u.id,
                 "name": u.name or u.email.split('@')[0],
                 "email": u.email,
-                "role": str(u.role),
+                "role": str(u.role).replace('UserRole.', ''),
                 "total_visits": int(visits),
                 "total_leads": int(leads),
                 "total_sales": float(revenue),
                 "total_revenue": float(revenue),
                 "total_incentive": float(incentive_val),
-                "total_incentive": float(incentive),
                 "total_projects": projects,
                 "total_open_issues": open_issues
             })
@@ -458,17 +425,26 @@ class ReportService:
             # Ensure naive datetimes to avoid mixing aware/naive
             def ensure_naive(dt):
                 if not dt: return datetime.utcnow()
-                return dt.replace(tzinfo=None) if hasattr(dt, 'replace') else dt
+                if getattr(dt, "replace", None) and not isinstance(dt, str):
+                    return dt.replace(tzinfo=None)
+                if isinstance(dt, str):
+                    try:
+                        from dateutil.parser import parse
+                        parsed = parse(dt)
+                        return parsed.replace(tzinfo=None)
+                    except Exception:
+                        pass
+                return datetime.utcnow()
 
             iDate = ensure_naive(last_visit.visit_date if last_visit and last_visit.visit_date else p.created_at)
 
             # Safer priority/status extraction
             p_val = "MEDIUM"
-            if p.priority:
+            if getattr(p, 'priority', None):
                 p_val = str(p.priority.value if hasattr(p.priority, 'value') else p.priority)
             
             s_val = "PLANNING"
-            if p.status:
+            if getattr(p, 'status', None):
                 s_val = str(p.status.value if hasattr(p.status, 'value') else p.status)
 
             portfolio.append({
@@ -478,9 +454,9 @@ class ReportService:
                 "org": getattr(p.client, 'organization', 'Individual') or 'Individual',
                 "project": p.name or "Unnamed Project",
                 "priority": p_val,
-                "totalAmount": float(p.budget or 0),
+                "totalAmount": float(p.budget or 0.0),
                 "paidAmount": float(paid_sum),
-                "outstanding": float(max(0, (float(p.budget or 0) - float(paid_sum)))),
+                "outstanding": float(max(0.0, (float(p.budget or 0) - float(paid_sum)))),
                 "lastMeeting": last_visit.remarks if last_visit and last_visit.remarks else "No recent interaction",
                 "interactionDate": iDate,
                 "status": s_val
@@ -506,10 +482,15 @@ class ReportService:
         activities = []
         
         for v in visits:
+            # Map visit type/status to a readable string format
+            act_type = "Site Visit"
+            if v.remarks:
+                act_type = v.remarks[:25] + "..." if len(v.remarks) > 25 else v.remarks
+
             activities.append({
                 "date": v.visit_date,
-                "client": v.shop.name if v.shop else "Unknown",
-                "type": v.remarks[:30] + "..." if v.remarks and len(v.remarks) > 30 else (v.remarks or "Site Visit"),
+                "client": v.shop.name if v.shop else "Unknown Client",
+                "type": act_type,
                 "status": str(v.status.value if hasattr(v.status, 'value') else v.status)
             })
             
