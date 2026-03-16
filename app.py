@@ -7,20 +7,18 @@ import signal
 # -- Windows signal blocking -------------------------------------------------
 if os.name == "nt":
     import ctypes
+    import time
     _handler_t = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_ulong)
+    _start_time = time.time()
 
     @_handler_t
     def _win_ctrl_handler(ctrl_type):
-        # CTRL_C_EVENT (0) — only stop if user pressed it in THIS terminal
-        # VSCode sends spurious CTRL_C when re-attaching terminal, ignore those
-        # CTRL_BREAK_EVENT (1) — allow as manual stop
-        # CTRL_CLOSE/LOGOFF/SHUTDOWN (2,5,6) — block
-        if ctrl_type == 1:
-            print("\n[Shutdown] Ctrl+Break received — stopping server.", flush=True)
-            return False  # Let it propagate → stops uvicorn
-        if ctrl_type == 0:
-            print("[DEBUG] CTRL_C received — ignoring (use Ctrl+Break to stop)", flush=True)
-            return True   # Block it
+        if ctrl_type == 0:  # CTRL_C_EVENT
+            elapsed = time.time() - _start_time
+            print(f"[DEBUG] CTRL_C at {elapsed:.1f}s", flush=True)
+            if elapsed < 15:
+                return True  # Block
+            return False  # Allow
         return ctrl_type in {2, 5, 6}
 
     ctypes.windll.kernel32.SetConsoleCtrlHandler(_win_ctrl_handler, True)

@@ -316,15 +316,7 @@ class ShopService:
         is_hard = policy and policy.value == "HARD"
 
         if is_hard:
-            from app.modules.salary.models import AppSetting
-        policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
-        is_hard = policy and policy.value == "HARD"
-
-        if is_hard:
             db.delete(db_shop)
-        else:
-            db_shop.is_deleted = True
-
         else:
             db_shop.is_deleted = True
 
