@@ -165,7 +165,8 @@
                             </div>
                         </div>
                         <div class="col-md-2 text-end">
-                            <button class="btn btn-primary px-4 fw-bold shadow-sm" style="height: 42px; border-radius: 10px;" onclick="loadEmployeeReport()">
+                            <button class="btn btn-primary px-4 fw-bold shadow-sm"
+                                style="height: 42px; border-radius: 10px;" onclick="loadEmployeeReport()">
                                 <i class="bi bi-binoculars me-2"></i>Filter
                             </button>
                         </div>
@@ -219,14 +220,17 @@
                 <div class="modal-body pt-3">
                     <!-- Employee Brief -->
                     <div class="d-flex align-items-center mb-4 p-3 bg-light rounded-4">
-                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold me-3" style="width: 50px; height: 50px; font-size: 1.2rem;" id="modal-emp-initials">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold me-3"
+                            style="width: 50px; height: 50px; font-size: 1.2rem;" id="modal-emp-initials">
                             JD
                         </div>
                         <div>
                             <h5 class="fw-bold mb-0" id="modal-emp-name">John Doe</h5>
                             <div class="text-muted small">
-                                <span class="me-2"><i class="bi bi-hash small"></i><span id="modal-emp-id">#EMP-01</span></span>
-                                <span><i class="bi bi-briefcase small me-1"></i><span id="modal-emp-role">Sales Manager</span></span>
+                                <span class="me-2"><i class="bi bi-hash small"></i><span
+                                        id="modal-emp-id">#EMP-01</span></span>
+                                <span><i class="bi bi-briefcase small me-1"></i><span id="modal-emp-role">Sales
+                                        Manager</span></span>
                             </div>
                         </div>
                     </div>
@@ -276,7 +280,8 @@
                     <!-- Admin Notes -->
                     <div class="p-3 border rounded-4 bg-light bg-opacity-50">
                         <label class="form-label fw-bold small mb-2">Admin Performance Notes</label>
-                        <textarea id="admin-note" class="form-control border-0 bg-white" rows="3" placeholder="Add a private note regarding this employee's performance..."></textarea>
+                        <textarea id="admin-note" class="form-control border-0 bg-white" rows="3"
+                            placeholder="Add a private note regarding this employee's performance..."></textarea>
                         <div class="text-end mt-2">
                             <button class="btn btn-primary btn-sm px-4" onclick="saveAdminNote()">
                                 <i class="bi bi-save me-1"></i>Save Note
@@ -443,7 +448,7 @@
                 if (empId !== 'all') exportUrl += `&user_id=${empId}`;
 
                 const filename = `Employee_Performance_Report_${new Date().toISOString().split('T')[0]}.csv`;
-                
+
                 ApiClient.download(exportUrl, filename)
                     .then(() => showToast("Export downloaded successfully", "success"))
                     .catch(() => showToast("Failed to download CSV", "danger"));
@@ -452,41 +457,40 @@
             function exportPDF() {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
-                
+
                 // --- Premium Double-Shaded Dark Palette ---
                 const primaryDark = [30, 41, 59];    // Slate 800
                 const secondaryDark = [71, 85, 105]; // Slate 600
                 const primaryLight = [241, 245, 249]; // Slate 100
-                
+
                 // --- Background & Borders ---
                 doc.setDrawColor(...primaryDark);
                 doc.setLineWidth(0.5);
                 doc.line(10, 10, 200, 10); // Top line
-                
-                // --- Company Branding ---
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(18);
-                doc.setTextColor(...primaryDark);
-                doc.text("SRM AI SETU", 15, 25);
-                
-                // --- Report Header Label ---
-                doc.setFillColor(...secondaryDark);
-                doc.rect(142, 17, 53, 10, 'F');
-                doc.setFontSize(9);
-                doc.setTextColor(255);
-                doc.text("PERFORMANCE REPORT", 145, 24);
-                
+
+                // --- Company Branding (Logo) ---
+                const logo = document.getElementById('pdf-logo');
+                if (logo && logo.complete && logo.naturalWidth !== 0) {
+                    doc.addImage(logo, 'PNG', 15, 15, 40, 15);
+                } else {
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(16);
+                    doc.setTextColor(...primaryDark);
+                    doc.text("SRM AI SETU", 15, 25);
+                }
+
                 // --- Meta Information ---
                 doc.setFont("helvetica", "normal");
                 doc.setTextColor(100);
-                doc.setFontSize(9);
-                doc.text(`Generated: ${new Date().toLocaleDateString('en-IN', {day: 'numeric', month: 'long', year: 'numeric'})}`, 15, 35);
-                doc.text(`Employee: ${empName}`, 15, 40);
-                doc.text(`Period: ${dateRange}`, 15, 45);
-                
-                // Support line below header
-                doc.setDrawColor(200);
-                doc.line(15, 50, 195, 50);
+                doc.setFontSize(8);
+                doc.text(`Generated: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`, 15, 38);
+                doc.text(`Employee: ${empName}`, 15, 43);
+                doc.text(`Period: ${dateRange}`, 15, 48);
+
+                // Support line (right after meta info, no extra space)
+                doc.setDrawColor(220);
+                doc.setLineWidth(0.1);
+                doc.line(15, 51, 195, 51);
 
                 const tableData = currentReportMetrics.map(row => [
                     row.name,
@@ -506,21 +510,21 @@
                     head: [["Name", "Role", "Visits", "Leads", "Revenue", "Incentive"]],
                     body: tableData,
                     theme: 'striped',
-                    headStyles: { 
-                        fillColor: primaryDark, 
-                        textColor: 255, 
+                    headStyles: {
+                        fillColor: primaryDark,
+                        textColor: 255,
                         fontSize: 9,
                         fontStyle: 'bold'
                     },
                     alternateRowStyles: { fillColor: primaryLight },
-                    styles: { 
+                    styles: {
                         halign: 'left',
-                        fontSize: 8, 
+                        fontSize: 8,
                         cellPadding: 4,
                         font: "helvetica",
                         lineColor: [230, 230, 230]
                     },
-                    didDrawPage: function(data) {
+                    didDrawPage: function (data) {
                         // Footer
                         doc.setFontSize(7);
                         doc.setTextColor(150);
@@ -537,12 +541,12 @@
                 doc.setFontSize(9);
                 doc.setTextColor(...primaryDark);
                 doc.text("GRAND TOTALS", 125, finalY + 8);
-                
+
                 doc.setFont("helvetica", "normal");
                 doc.setTextColor(50);
                 doc.text(`Total Sales:`, 125, finalY + 15);
                 doc.text(`INR ${totalSales.toLocaleString('en-IN')}`, 190, finalY + 15, { align: 'right' });
-                
+
                 doc.text(`Total Incentive:`, 125, finalY + 20);
                 doc.text(`INR ${totalIncentive.toLocaleString('en-IN')}`, 190, finalY + 20, { align: 'right' });
 
@@ -555,22 +559,22 @@
 
         async function openDrillDown(id, name, role, leads, sales) {
             const modal = new bootstrap.Modal(document.getElementById('drillDownModal'));
-            
+
             // Set details
             document.getElementById('modal-emp-name').textContent = name;
             document.getElementById('modal-emp-id').textContent = `#EMP-0${id}`;
             document.getElementById('modal-emp-role').textContent = formatRole(role);
             document.getElementById('modal-emp-initials').textContent = name.split(' ').map(n => n[0]).join('').toUpperCase();
-            
+
             // Conversion logic
             const visits = parseInt(leads) * 2.5; // Back-simulating visits for conversion view
             const conversion = visits > 0 ? ((parseInt(leads) / visits) * 100).toFixed(1) : "0";
             document.getElementById('modal-conversion').textContent = `${conversion}%`;
-            
+
             // Populate actual activity data
             const activityTbody = document.getElementById('modal-activity-tbody');
             activityTbody.innerHTML = '<tr><td colspan="4" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>';
-            
+
             try {
                 const dateFrom = document.getElementById('date-from').value;
                 const dateTo = document.getElementById('date-to').value;
@@ -615,6 +619,7 @@
 
         document.addEventListener('DOMContentLoaded', initFilters);
     </script>
+    <img id="pdf-logo" src="/frontend/images/logo.png" style="display:none;">
 </body>
 
 </html>
