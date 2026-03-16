@@ -31,6 +31,7 @@ class EmployeePerformance(BaseModel):
     role: str
     total_visits: int
     total_leads: int
+    success_rate: float
     total_sales: float
     total_revenue: float
     total_incentive: float

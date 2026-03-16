@@ -301,14 +301,20 @@ class ReportService:
                 Issue.status.notin_([IssueStatus.SOLVED, IssueStatus.RESOLVED, IssueStatus.COMPLETED, IssueStatus.CANCELLED])
             ).scalar() or 0
             
+            # Calculate Success Rate: (Leads / Visits) * 100
+            total_v = int(visits)
+            total_l = int(leads)
+            success_rate = (total_l / total_v * 100) if total_v > 0 else 0.0
+            
             performance.append({
                 "user_id": u.id,
                 "id": u.id,
                 "name": u.name or u.email.split('@')[0],
                 "email": u.email,
                 "role": str(u.role).replace('UserRole.', ''),
-                "total_visits": int(visits),
-                "total_leads": int(leads),
+                "total_visits": total_v,
+                "total_leads": total_l,
+                "success_rate": round(success_rate, 1),
                 "total_sales": float(revenue),
                 "total_revenue": float(revenue),
                 "total_incentive": float(incentive_val),
