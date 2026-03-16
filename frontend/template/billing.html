@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- frontend/template/billing.html -->
 <html lang="en">
 <head>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -553,12 +552,6 @@ let selectedBillIds = new Set();
 // Wizard state
 let wizardStep = 1;
 let wizardQRData = null;   // result from /generate-qr
-let autoConvertShopId = null; // set when redirected from leads.html via close_shop_id param
-let selectedBillIds = new Set();
-
-// Wizard state
-let wizardStep = 1;
-let wizardQRData = null;   // result from /generate-qr
 
 function fmtMoney(v) {
     const n = Number(v);
@@ -798,7 +791,6 @@ function openCreateModal() {
     document.getElementById('createModal').classList.remove('d-none');
 }
 function closeCreateModal() {
-    autoConvertShopId = null; // clear so subsequent manual invoices aren't linked to any shop
     document.getElementById('createModal').classList.add('d-none');
     wizardQRData = null;
 }

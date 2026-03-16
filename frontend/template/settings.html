@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- frontend/template/settings.html -->
 <html lang="en">
 
 <head>
@@ -1090,17 +1089,6 @@
                                 <div class="setting-label">Logged-in User ID</div>
                                 <span class="text-muted" id="sys-user-id" style="font-size:0.85rem;"></span>
                             </div>
-                            
-                            <div class="setting-row mt-3 pt-3" style="border-top: 1px dashed #e2e8f0;">
-                                <div>
-                                    <div class="setting-label">Enable Soft Delete <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">ADMIN</span></div>
-                                    <div class="setting-desc">Archive records instead of permanent deletion. Disabling reveals a <b class="text-danger">Permanent Delete</b> option across modules.</div>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="sys-soft-delete" onchange="saveGlobalSetting('enable_soft_delete', this.checked)">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
                         </div>
 
                         <!-- ── Danger Zone ───── -->
@@ -1296,90 +1284,13 @@
                     document.getElementById('api-status-chip').style.color = '#b91c1c';
                     document.getElementById('api-status-chip').style.borderColor = '#fca5a5';
                 });
-
-                loadSlabsSettings();
-                loadAdminTargets();
-                
-                // Fetch Global System Settings
-                ApiClient.request('/settings/')
-                    .then(res => {
-                        const flags = res.feature_flags || {};
-                        const sdToggle = document.getElementById('sys-soft-delete');
-                        if (sdToggle) {
-                            sdToggle.checked = flags.enable_soft_delete !== false; // Default true if not set
-                        }
-                    })
-                    .catch(err => console.error("Failed to load global settings", err));
             } else {
                 document.getElementById('system-nav-link').style.display = 'none';
             }
         }
-        
-        // ── Save Global Setting ──
-        async function saveGlobalSetting(key, value) {
-            try {
-                // Fetch existing settings first
-                const res = await ApiClient.request('/settings/');
-                const flags = res.feature_flags || {};
-                flags[key] = value;
-                
-                await ApiClient.request('/settings/', {
-                    method: 'PATCH',
-                    body: JSON.stringify({ feature_flags: flags })
-                });
-                showToast('Global setting updated!');
-            } catch (err) {
-                console.error('Failed to save global setting', err);
-                showToast('Failed to save global setting', true);
-                // Revert toggle on error
-                const toggle = document.getElementById('sys-soft-delete');
-                if (toggle) toggle.checked = !value;
-            }
-        }
 
-
-        async function loadAttendanceSettings() {
-            try {
-                const settings = await ApiClient.getAttendanceSettings();
-                document.getElementById('att-absent-threshold').value = settings.absent_hours_threshold ?? 0;
-                document.getElementById('att-halfday-threshold').value = settings.half_day_hours_threshold ?? 4;
-                document.getElementById('att-saturday').value = (settings.weekly_off_saturday || 'FULL').toUpperCase();
-                document.getElementById('att-sunday').value = (settings.weekly_off_sunday || 'FULL').toUpperCase();
-
-                const holidays = (settings.official_holidays || []).map(d => {
-                    if (typeof d === 'string') return d;
-                    try { return new Date(d).toISOString().slice(0, 10); } catch { return ''; }
-                }).filter(Boolean);
-                document.getElementById('att-holidays').value = holidays.join(', ');
-            } catch (err) {
-                console.error('Failed to load attendance settings', err);
-            }
-        }
-
-        async function saveAttendanceSettings() {
-            const btnMsg = document.getElementById('att-save-msg');
-            const absent = parseFloat(document.getElementById('att-absent-threshold').value || '0');
-            const half = parseFloat(document.getElementById('att-halfday-threshold').value || '4');
-            const saturday = document.getElementById('att-saturday').value;
-            const sunday = document.getElementById('att-sunday').value;
-            const holidayRaw = document.getElementById('att-holidays').value || '';
-            const holidays = holidayRaw.split(',').map(h => h.trim()).filter(Boolean);
-
-            try {
-                await ApiClient.updateAttendanceSettings({
-                    absent_hours_threshold: absent,
-                    half_day_hours_threshold: half,
-                    weekly_off_saturday: saturday,
-                    weekly_off_sunday: sunday,
-                    official_holidays: holidays
-                });
-                btnMsg.classList.remove('d-none');
-                setTimeout(() => btnMsg.classList.add('d-none'), 2000);
-            } catch (err) {
-                console.error('Attendance settings save failed', err);
-                showToast('Failed to save attendance settings', true);
-            }
-        }
+        loadSettings();
+        initSystem();
 
         async function loadAttendanceSettings() {
             try {
