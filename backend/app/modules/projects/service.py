@@ -21,16 +21,30 @@ class ProjectService:
         
         # Calculate progress for each project
         from app.modules.issues.models import Issue, IssueStatus
+        made_changes = False
+        
         for p in projects:
             p.total_issues = self.db.query(Issue).filter(Issue.project_id == p.id).count()
-            p.resolved_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.status == IssueStatus.RESOLVED).count()
+            p.resolved_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.status == IssueStatus.SOLVED).count()
             p.progress_percentage = (p.resolved_issues / p.total_issues * 100) if p.total_issues > 0 else 0.0
             
-            # Populate names
+            # --- Silent Self-Healing: Sync Project PM with Client PM ---
+            if p.client and p.client.pm_id and p.pm_id != p.client.pm_id:
+                p.pm_id = p.client.pm_id
+                made_changes = True
+
+            # Populate names and contact info
             if p.client:
                 p.client_name = p.client.name
+                p.contact_person = p.client.name
+                p.phone = p.client.phone
+                p.email = p.client.email
+                p.project_type = p.client.project_type
             if p.project_manager:
                 p.pm_name = p.project_manager.name or p.project_manager.email
+                
+        if made_changes:
+            self.db.commit()
             
         return projects
 
@@ -42,9 +56,13 @@ class ProjectService:
             project.resolved_issues = self.db.query(Issue).filter(Issue.project_id == project_id, Issue.status == IssueStatus.RESOLVED).count()
             project.progress_percentage = (project.resolved_issues / project.total_issues * 100) if project.total_issues > 0 else 0.0
             
-            # Populate names
+            # Populate names and contact info
             if project.client:
                 project.client_name = project.client.name
+                project.contact_person = project.client.name
+                project.phone = project.client.phone
+                project.email = project.client.email
+                project.project_type = project.client.project_type
             if project.project_manager:
                 project.pm_name = project.project_manager.name or project.project_manager.email
         return project

@@ -100,34 +100,42 @@ class ClientService:
             assigned_pm = random.choice(least_loaded_pms)
 
             db_client.pm_id = assigned_pm.id
+        else:
+            print("[PM Auto-Assign] WARNING: No active Project Managers found. Client will remain unassigned.")
         # -------------------------------------------
 
         try:
             self.db.add(db_client)
             self.db.commit()
             self.db.refresh(db_client)
+
+            if assigned_pm:
+                # Ensure the pm_id is securely saved and refreshed
+                db_client.pm_id = assigned_pm.id
+                self.db.commit()
+                self.db.refresh(db_client)
+
+                # Record PM assignment history
+                history = ClientPMHistory(client_id=db_client.id, pm_id=assigned_pm.id)
+                self.db.add(history)
+                self.db.commit()
+
+                # Notify the assigned PM by email (non-blocking; errors are swallowed)
+                try:
+                    email_svc = EmailService()
+                    email_svc.send_pm_assignment_notification(
+                        pm_email=assigned_pm.email,
+                        pm_name=assigned_pm.name or assigned_pm.email,
+                        client_name=db_client.name,
+                        client_org=db_client.organization or "-",
+                        client_phone=db_client.phone or "-",
+                    )
+                except Exception as e:
+                    print(f"[PM Notify] Email failed (non-fatal): {e}")
+                    
         except IntegrityError:
             self.db.rollback()
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Client with this phone number or email already exists.")
-
-        # Record PM assignment history
-        if assigned_pm:
-            history = ClientPMHistory(client_id=db_client.id, pm_id=assigned_pm.id)
-            self.db.add(history)
-            self.db.commit()
-
-            # Notify the assigned PM by email (non-blocking; errors are swallowed)
-            try:
-                email_svc = EmailService()
-                email_svc.send_pm_assignment_notification(
-                    pm_email=assigned_pm.email,
-                    pm_name=assigned_pm.name or assigned_pm.email,
-                    client_name=db_client.name,
-                    client_org=db_client.organization or "-",
-                    client_phone=db_client.phone or "-",
-                )
-            except Exception as e:
-                print(f"[PM Notify] Email failed (non-fatal): {e}")
 
         await self.activity_logger.log_activity(
             user_id=current_user.id,
@@ -177,6 +185,59 @@ class ClientService:
             }
             for pm in sorted(active_pms, key=lambda p: count_map.get(p.id, 0))
         ]
+
+    def retroactive_pm_balance(self):
+        """Finds all unassigned clients and retroactively balances them across active PMs."""
+        # Find all unassigned active clients
+        stuck_clients = self.db.query(Client).filter(
+            Client.pm_id.is_(None),
+            Client.is_active == True
+        ).all()
+
+        if not stuck_clients:
+            return {"detail": "No unassigned clients found.", "count": 0}
+
+        active_pms = self.db.query(User).filter(
+            User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]),
+            User.is_active == True
+        ).all()
+
+        if not active_pms:
+            raise HTTPException(status_code=400, detail="Cannot balance: No active Project Managers available in the system.")
+
+        pm_ids = [pm.id for pm in active_pms]
+        import random
+
+        processed_count = 0
+        for client in stuck_clients:
+            # Re-calculate workloads dynamically in the loop so assignments balance out correctly
+            client_counts = self.db.query(
+                Client.pm_id,
+                func.count(Client.id).label("client_count")
+            ).filter(
+                Client.pm_id.in_(pm_ids),
+                Client.is_active == True
+            ).group_by(Client.pm_id).all()
+
+            count_map = {row.pm_id: row.client_count for row in client_counts}
+            pm_workloads = [(pm, count_map.get(pm.id, 0)) for pm in active_pms]
+            min_load = min(w[1] for w in pm_workloads)
+            least_loaded_pms = [w[0] for w in pm_workloads if w[1] == min_load]
+            
+            assigned_pm = random.choice(least_loaded_pms)
+
+            # Assign and commit
+            client.pm_id = assigned_pm.id
+            self.db.commit()
+            self.db.refresh(client)
+
+            # Keep history
+            history = ClientPMHistory(client_id=client.id, pm_id=assigned_pm.id)
+            self.db.add(history)
+            self.db.commit()
+            processed_count += 1
+
+        return {"detail": f"Successfully balanced {processed_count} unassigned clients.", "count": processed_count}
 
     def get_pm_history(self, client_id: int) -> List[ClientPMHistory]:
         """Return the full PM assignment history for a given client."""

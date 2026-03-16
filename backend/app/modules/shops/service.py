@@ -18,6 +18,10 @@ class ShopService:
         db_shop = Shop(**shop_in.model_dump())
         db_shop.created_by_id = current_user.id
         
+        # Auto-assign the creator as the PM/Sales owner if no one else is assigned
+        pm_id = getattr(shop_in, 'project_manager_id', None) or current_user.id
+        db_shop.project_manager_id = pm_id
+        
         # Auto-Assign if not Admin
         if current_user.role != UserRole.ADMIN:
             db_user = db.query(User).filter(User.id == current_user.id).first()
@@ -397,6 +401,107 @@ class ShopService:
             for u in getattr(shop, 'assigned_owners_list', [])
         ]
         return shop_data
+
+    # ── Auto-Assign PM with lowest workload ──
+    @staticmethod
+    def auto_assign_shop(db: Session, shop_id: int, current_user: User):
+        from app.modules.users.models import UserRole
+        from app.modules.projects.models import Project, ProjectStatus
+        import random
+        
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        if not shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
+
+        # Fetch active PMs
+        pms = db.query(User).filter(
+            User.is_active == True,
+            User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES])
+        ).all()
+        
+        if not pms:
+            raise HTTPException(status_code=400, detail="No active Project Managers found to assign")
+
+        pm_scores = {}
+        for pm in pms:
+            active_shops_count = db.query(Shop).filter(
+                Shop.project_manager_id == pm.id,
+                Shop.is_archived == False,
+                Shop.status.in_([ShopStatus.NEW, ShopStatus.CONTACTED, ShopStatus.MEETING_SET])
+            ).count()
+            
+            active_projects_count = db.query(Project).filter(
+                Project.pm_id == pm.id,
+                Project.status.in_([ProjectStatus.PLANNING, ProjectStatus.IN_PROGRESS, ProjectStatus.ONGOING])
+            ).count()
+            
+            pm_scores[pm.id] = active_shops_count + active_projects_count
+            
+        min_score = min(pm_scores.values())
+        tied_pms = [pm_id for pm_id, score in pm_scores.items() if score == min_score]
+        
+        selected_pm_id = random.choice(tied_pms)
+        selected_pm = next((pm for pm in pms if pm.id == selected_pm_id), None)
+        
+        shop.project_manager_id = selected_pm_id
+        db.commit()
+        db.refresh(shop)
+
+        shop_data = shop.__dict__.copy()
+        shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+        shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+        shop_data["project_manager_name"] = selected_pm.name if selected_pm else None
+        shop_data["archived_by_name"] = None
+        shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+        shop_data["last_visitor_name"] = None
+        shop_data.pop("_sa_instance_state", None)
+        shop_data["assigned_users"] = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None}
+            for u in getattr(shop, 'assigned_owners_list', [])
+        ]
+        return shop_data
+
+    # ── Auto-Suggest PM with lowest workload ──
+    @staticmethod
+    def suggest_least_busy_pm(db: Session, current_user: User):
+        from app.modules.users.models import UserRole
+        from app.modules.projects.models import Project, ProjectStatus
+        import random
+
+        # Fetch active PMs
+        pms = db.query(User).filter(
+            User.is_active == True,
+            User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES])
+        ).all()
+        
+        if not pms:
+            raise HTTPException(status_code=400, detail="No active Project Managers found to suggest")
+
+        pm_scores = {}
+        for pm in pms:
+            active_shops_count = db.query(Shop).filter(
+                Shop.project_manager_id == pm.id,
+                Shop.is_archived == False,
+                Shop.status.in_([ShopStatus.NEW, ShopStatus.CONTACTED, ShopStatus.MEETING_SET])
+            ).count()
+            
+            active_projects_count = db.query(Project).filter(
+                Project.pm_id == pm.id,
+                Project.status.in_([ProjectStatus.PLANNING, ProjectStatus.IN_PROGRESS, ProjectStatus.ONGOING])
+            ).count()
+            
+            pm_scores[pm.id] = active_shops_count + active_projects_count
+            
+        min_score = min(pm_scores.values())
+        tied_pms = [pm_id for pm_id, score in pm_scores.items() if score == min_score]
+        
+        selected_pm_id = random.choice(tied_pms)
+        selected_pm = next((pm for pm in pms if pm.id == selected_pm_id), None)
+        
+        return {
+            "suggested_pm_id": selected_pm.id,
+            "name": selected_pm.name
+        }
 
     # ── Mark a demo as completed, auto-advance to MEETING_SET on first completion ──
     @staticmethod

@@ -470,6 +470,7 @@ let workflowOptions = null;
 let qrConfirmedForCreate = false;
 let searchDebounceTimer = null;
 let invoiceActionsById = {};
+let autoConvertShopId = null; // set when redirected from leads.html via close_shop_id param
 
 function fmtMoney(v) {
     const n = Number(v);
@@ -541,6 +542,26 @@ async function init() {
         }
 
         await loadBills();
+
+        // ── Close Deal auto-fill (redirected from leads.html with ?close_shop_id=N) ──
+        const urlParams = new URLSearchParams(window.location.search);
+        const closeShopId = urlParams.get('close_shop_id');
+        if (closeShopId) {
+            autoConvertShopId = closeShopId;
+            // Remove param from URL so a page refresh doesn't re-trigger
+            window.history.replaceState({}, document.title, window.location.pathname);
+            try {
+                const shop = await ApiClient.request('/shops/' + autoConvertShopId);
+                document.getElementById('c-name').value    = shop.contact_person || shop.name || '';
+                document.getElementById('c-phone').value   = shop.phone || '';
+                document.getElementById('c-email').value   = shop.email || '';
+                document.getElementById('c-org').value     = shop.name || '';
+                document.getElementById('c-address').value = shop.address || '';
+                openCreateModal();
+            } catch(e) {
+                showToast('Could not pre-fill shop details: ' + (e.message || 'Unknown error'), 'error');
+            }
+        }
     } catch(e) {
         showToast('Failed to load page: ' + e.message, 'error');
     }
@@ -675,6 +696,7 @@ function openCreateModal() {
     document.getElementById('createModal').classList.remove('d-none');
 }
 function closeCreateModal() {
+    autoConvertShopId = null; // clear so subsequent manual invoices aren't linked to any shop
     document.getElementById('createModal').classList.add('d-none');
 }
 
@@ -812,6 +834,7 @@ async function submitCreateInvoice() {
             payment_type: paymentType,
             gst_type: gstType,
             amount: resolved.amount,
+            shop_id: autoConvertShopId ? parseInt(autoConvertShopId) : null,
         });
         closeCreateModal();
         showToast('Invoice created! Awaiting verification approval.', 'success');

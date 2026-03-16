@@ -453,7 +453,12 @@
                     <input type="hidden" id="assign-pm-shop-id">
                     <p class="text-muted small mb-3">Select a Project Manager to take ownership of this lead and schedule the demo sessions.</p>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Project Manager</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold mb-0">Project Manager</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary d-flex align-items-center" style="padding: 2px 8px; font-size: 0.75rem;" onclick="window.autoSuggestPM()">
+                                <i class="bi bi-magic me-1"></i> Auto Suggest
+                            </button>
+                        </div>
                         <select id="pm-select" class="form-select">
                             <option value="">— Loading PMs... —</option>
                         </select>
@@ -588,6 +593,13 @@
                                     <span class="badge" style="background:#ede9fe;color:#6d28d9;font-size:0.65rem;">
                                         <i class="bi bi-person-gear me-1"></i>PM: ${l.project_manager_name}
                                     </span>
+                                </div>` : ''}
+                                ${status === 'MEETING_SET' ? `
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-success w-100 fw-bold"
+                                        onclick="event.stopPropagation(); window.location.href='billing.html?close_shop_id=${l.id}'">
+                                        <i class="bi bi-check2-circle me-1"></i>Close Deal &#10140;
+                                    </button>
                                 </div>` : ''}
                             </div>
                         `;
@@ -772,6 +784,12 @@
                     <i class="bi bi-person-badge"></i> ${pmBtnLabel}
                 </button>` : '';
 
+            const closeDealBtnHtml = (l.status === 'MEETING_SET') ? `
+                <button class="btn btn-success w-100 mb-2 d-flex align-items-center gap-2 justify-content-center"
+                    onclick="window.location.href='billing.html?close_shop_id=${l.id}'">
+                    <i class="bi bi-check2-circle"></i> Close Deal &#10140;
+                </button>` : '';
+
             const content = `
                 <div class="mb-4">
                     <label class="text-muted small text-uppercase fw-bold mb-1">Company</label>
@@ -797,6 +815,7 @@
                 <div class="mt-4 pt-4 border-top">
                     <!-- Changed redirect to open Edit modal -->
                     <button class="btn btn-outline-primary w-100 mb-2" onclick="openEditShopModal(${l.id})">Edit Details</button>
+                    ${closeDealBtnHtml}
                     ${pmAssignBtnHtml}
                 </div>
                 ${timelineHtml}
@@ -1043,6 +1062,20 @@
             } catch (e) {
                 pmSelect.innerHTML = '<option value="">— Failed to load —</option>';
                 console.error('Failed to load users', e);
+            }
+        };
+
+        window.autoSuggestPM = async () => {
+            try {
+                const response = await window.ApiClient.request('/shops/suggest-pm', { method: 'GET' });
+                if (response && response.suggested_pm_id) {
+                    const pmSelect = document.getElementById('pm-select');
+                    pmSelect.value = response.suggested_pm_id;
+                    showToast(`Suggested: ${response.name} (Least busy)`, 'success');
+                }
+            } catch (e) {
+                console.error("Auto suggest failed", e);
+                showToast(e?.data?.detail || e?.message || 'Failed to suggest PM', 'error');
             }
         };
 

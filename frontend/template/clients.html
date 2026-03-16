@@ -22,7 +22,10 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
                         <h2 class="page-section-title">Clients</h2>
-                        <small class="text-muted" id="client-count"></small>
+                        <div class="d-flex align-items-center gap-3">
+                            <small class="text-muted" id="client-count"></small>
+                            <button class="btn btn-warning btn-sm" onclick="forceBalancePMs()"><i class="bi bi-magic me-2"></i>Force Balance Stuck Clients</button>
+                        </div>
                     </div>
                 </div>
                 <!-- Filter Panel Wrapper -->
@@ -399,6 +402,16 @@
                     });
                 } catch (err) {
                     console.error("Filter Init Failed", err);
+                }
+            }
+
+            async function forceBalancePMs() {
+                try {
+                    await apiPost('/clients/retroactive-balance', {});
+                    showToast('Successfully balanced all stuck clients!', 'success');
+                    loadClients(); // Refresh the table
+                } catch (e) {
+                    showToast(e.message || 'Failed to balance clients', 'error');
                 }
             }
 

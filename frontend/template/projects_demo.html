@@ -264,7 +264,7 @@
                 const demoStage = shop.demo_stage || 0;
                 const hasDemoScheduled = !!shop.demo_scheduled_at;
                 const shopStatus = shop.status || '';
-                const isMeetingSet = shopStatus === 'MEETING_SET' || shopStatus === 'CONVERTED';
+                const isMeetingSet = shopStatus === 'MEETING_SET';
 
                 // Status badge
                 const statusBadge = isMeetingSet
@@ -327,7 +327,9 @@
             wrapper.innerHTML = `<div class="empty-state"><div class="spinner-border text-primary" role="status"></div><div class="mt-2 text-muted">Loading...</div></div>`;
             try {
                 const shops = await window.ApiClient.request('/shops/demo-queue');
-                renderDemoTable(shops || []);
+                // Exclude shops that have already been converted (deal closed via billing)
+                const activeDemos = (shops || []).filter(shop => shop.status !== 'CONVERTED');
+                renderDemoTable(activeDemos);
             } catch (err) {
                 console.error('Failed to load demo queue', err);
                 wrapper.innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-circle text-danger fs-2 d-block mb-2"></i><div>Failed to load demo queue</div></div>`;

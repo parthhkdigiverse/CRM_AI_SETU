@@ -91,6 +91,16 @@ def read_shops(
 ) -> Any:
     return ShopService.list_shops(db, current_user, skip, limit, status, owner_id)
 
+@router.get("/suggest-pm")
+def suggest_pm(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """
+    Suggest a Project Manager with the lowest workload.
+    """
+    return ShopService.suggest_least_busy_pm(db, current_user)
+
 @router.get("/{shop_id}", response_model=ShopRead)
 def read_shop(
     shop_id: int,
@@ -135,6 +145,17 @@ def assign_pm(
     Assign a Project Manager to a CONTACTED lead.
     """
     return ShopService.assign_pm(db, shop_id, body.pm_id, current_user)
+
+@router.post("/{shop_id}/auto-assign", response_model=ShopRead)
+def auto_assign_shop(
+    shop_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """
+    Auto assign a Project Manager to a shop based on workload.
+    """
+    return ShopService.auto_assign_shop(db, shop_id, current_user)
 
 @router.post("/{shop_id}/schedule-demo", response_model=ShopRead)
 def schedule_demo(

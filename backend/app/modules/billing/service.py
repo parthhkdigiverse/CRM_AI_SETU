@@ -572,6 +572,32 @@ class BillingService:
         self.db.commit()
         self.db.refresh(bill)
 
+        # Auto-convert linked shop to CONVERTED once invoice is dispatched
+        if bill.shop_id:
+            from app.modules.shops.models import Shop, ShopStatus
+            from app.modules.projects.models import Project, ProjectStatus
+            shop = self.db.query(Shop).filter(Shop.id == bill.shop_id).first()
+            if shop and shop.status != ShopStatus.CONVERTED:
+                shop.status = ShopStatus.CONVERTED
+                self.db.commit()
+
+                # Auto-create a Project record for this newly converted shop
+                # pm_id falls back to the current billing user if no PM is assigned
+                resolved_pm_id = shop.project_manager_id or current_user.id
+                existing_project = self.db.query(Project).filter(
+                    Project.client_id == bill.client_id
+                ).first()
+                if not existing_project:
+                    new_project = Project(
+                        name=f"{shop.name} Implementation",
+                        description=f"Project auto-created on deal close. Invoice: {bill.invoice_number}.",
+                        client_id=bill.client_id,
+                        pm_id=resolved_pm_id,
+                        status=ProjectStatus.IN_PROGRESS,
+                    )
+                    self.db.add(new_project)
+                    self.db.commit()
+
         # Build WhatsApp message
         settings = self.get_invoice_defaults()
         # Build a public (no-auth) invoice view URL using HMAC token

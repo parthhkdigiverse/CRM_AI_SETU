@@ -126,6 +126,19 @@ def get_pm_workload(
     return service.get_pm_workload()
 
 
+@router.post("/retroactive-balance", status_code=status.HTTP_200_OK)
+def retroactive_balance_clients(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+) -> Any:
+    """
+    Admin-only: Finds all unassigned clients and retroactively balances them
+    across active Project Managers.
+    """
+    service = ClientService(db)
+    return service.retroactive_pm_balance()
+
+
 # ── Parametric routes ────────────────────────────────────────────────────────
 
 @router.get("/{client_id}", response_model=ClientRead)
