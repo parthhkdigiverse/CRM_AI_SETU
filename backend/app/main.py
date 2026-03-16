@@ -18,12 +18,30 @@ from app.utils.scheduler import start_scheduler, stop_scheduler
 async def lifespan(app: FastAPI):
     """Startup & shutdown hooks."""
     # ── Startup ──────────────────────────────────────────────────
-    from app.core.database import init_db
-    init_db()
-    start_scheduler()
+    try:
+        from app.core.database import init_db
+        print("[Lifespan] Initializing database...")
+        init_db()
+        print("[Lifespan] Database initialized successfully.")
+        
+        print("[Lifespan] Starting scheduler...")
+        start_scheduler()
+        print("[Lifespan] Scheduler started successfully.")
+    except Exception as startup_error:
+        print(f"[Lifespan] STARTUP ERROR: {startup_error}")
+        traceback.print_exc()
+        raise startup_error
+    
     yield
+    
     # ── Shutdown ─────────────────────────────────────────────────
-    stop_scheduler()
+    try:
+        print("[Lifespan] Stopping scheduler...")
+        stop_scheduler()
+        print("[Lifespan] Scheduler stopped successfully.")
+    except Exception as shutdown_error:
+        print(f"[Lifespan] SHUTDOWN ERROR: {shutdown_error}")
+        traceback.print_exc()
 
 
 app = FastAPI(title="SRM AI SETU API", lifespan=lifespan)
@@ -85,11 +103,10 @@ async def root():
 app.include_router(api_router, prefix="/api")
 
 @app.get("/api/config")
-async def get_config():
+async def get_config(request: Request):
+    # Prefer request-derived base URL so frontend always targets the active host/port.
+    request_base = str(request.base_url).rstrip("/")
     return {
-        "API_BASE_URL": config.API_BASE_URL
+        "API_BASE_URL": f"{request_base}/api"
     }
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)

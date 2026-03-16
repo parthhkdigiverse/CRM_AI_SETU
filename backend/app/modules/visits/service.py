@@ -23,7 +23,7 @@ class VisitService:
         self.activity_logger = ActivityLogger(db)
 
     def get_visit(self, visit_id: int):
-        return self.db.query(Visit).filter(Visit.id == visit_id).first()
+        return self.db.query(Visit).filter(Visit.id == visit_id, Visit.is_deleted == False).first()
 
     def get_visits(self, skip: int = 0, limit: int = 100, current_user: User = None, shop_id: int = None, user_id: int | None = None):
         try:
@@ -31,12 +31,11 @@ class VisitService:
             from sqlalchemy import or_
             from app.modules.users.models import UserRole
 
-            query = self.db.query(Visit).options(
+            query = self.db.query(Visit).join(ShopModel, ShopModel.id == Visit.shop_id).options(
                 joinedload(Visit.shop).joinedload(ShopModel.area),
                 joinedload(Visit.shop).joinedload(ShopModel.project_manager),
                 joinedload(Visit.user)
-            )
-
+            ).filter(Visit.is_deleted == False, ShopModel.is_deleted == False)
             if shop_id:
                 query = query.filter(Visit.shop_id == shop_id)
             
@@ -48,7 +47,6 @@ class VisitService:
             if current_user and current_user.role not in [UserRole.ADMIN]:
                 query = (
                     query
-                    .join(ShopModel, ShopModel.id == Visit.shop_id)
                     .filter(
                         or_(
                             Visit.user_id == current_user.id,

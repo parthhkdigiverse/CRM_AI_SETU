@@ -10,8 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
-    <link rel="stylesheet" href="../css/components.css?v=1772780187">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
+    <link rel="stylesheet" href="../css/components.css?v=1772780188">
 </head>
 
 <body>
@@ -410,6 +410,7 @@
                                         <col class="col-slab">
                                         <col class="col-rate">
                                         <col class="col-total">
+                                        <col style="width:14%;">
                                     </colgroup>
                                     <thead class="table-light">
                                         <tr>
@@ -419,10 +420,11 @@
                                             <th>Slab</th>
                                             <th class="text-end">Per Task</th>
                                             <th class="pe-3 text-end">Total</th>
+                                            <th class="pe-3 text-end">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="slips-tbody">
-                                        <tr><td colspan="6" class="text-center py-5 text-muted">
+                                        <tr><td colspan="7" class="text-center py-5 text-muted">
                                             <span class="spinner-border spinner-border-sm me-2"></span>Loading...
                                         </td></tr>
                                     </tbody>
@@ -589,8 +591,10 @@
 
         const user = getUser();
         const isAdmin = user?.role === 'ADMIN';
+        const canManageIncentive = window.hasFeatureAccess ? window.hasFeatureAccess('incentive_manage_roles') : isAdmin;
+        const canViewAllIncentive = window.hasFeatureAccess ? window.hasFeatureAccess('incentive_view_all_roles') : isAdmin;
 
-        if (isAdmin) {
+        if (canManageIncentive) {
             document.getElementById('admin-header-actions').style.display = 'block';
             document.getElementById('btn-add-slab').style.display = 'inline-flex';
             document.getElementById('slab-actions-col').style.display = '';
@@ -600,6 +604,10 @@
 
         // Modal helpers
         function openCalcModal() {
+            if (!canManageIncentive) {
+                showToast('You do not have permission to calculate incentives', 'error');
+                return;
+            }
             // Reset to step 1
             document.getElementById('calc-step-inputs').style.display = '';
             document.getElementById('calc-step-preview').style.display = 'none';
@@ -620,7 +628,7 @@
 
         // Load employees into filter and calc selects (admin only)
         function populateEmployeeFilters() {
-            if (!isAdmin) return;
+            if (!canManageIncentive && !canViewAllIncentive) return;
             ApiClient.getEmployees().then(emps => {
                 const filterEl = document.getElementById('slip-user-filter');
                 const calcEl = document.getElementById('calc-user');
@@ -645,7 +653,7 @@
         }
 
         async function calcAllIncentives() {
-            if (!isAdmin) return;
+            if (!canManageIncentive) return;
 
             const period = prompt('Enter period (YYYY-MM) for bulk incentive generation:', getDefaultBulkPeriod());
             if (!period) return;
@@ -684,7 +692,7 @@
         // Load slabs
         async function loadSlabs() {
             const tbody = document.getElementById('slabs-tbody');
-            const slabColspan = isAdmin ? 4 : 3;
+            const slabColspan = canManageIncentive ? 4 : 3;
             tbody.innerHTML = `<tr><td colspan="${slabColspan}" class="text-center py-4 text-muted small"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>`;
             try {
                 const slabs = await ApiClient.getIncentiveSlabs();
@@ -699,7 +707,7 @@
                     <td class="ps-3 fw-semibold text-dark"><span class="slab-range-badge">${s.min_units}-${s.max_units}</span></td>
                     <td class="fw-bold text-primary">Rs ${fmt(s.incentive_per_unit)}</td>
                     <td class="fw-bold text-success">Rs ${fmt(s.slab_bonus)}</td>
-                    ${isAdmin ? `<td class="pe-3 text-center">
+                    ${canManageIncentive ? `<td class="pe-3 text-center">
                         <button class="btn btn-sm py-0 px-2" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:0.72rem;border-radius:6px;" onclick="openEditSlab(${s.id},${s.min_units},${s.max_units},${s.incentive_per_unit},${s.slab_bonus})"><i class="bi bi-pencil"></i></button>
                         <button class="btn btn-sm py-0 px-2 ms-1" style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;font-size:0.72rem;border-radius:6px;" onclick="deleteSlab(${s.id})"><i class="bi bi-trash"></i></button>
                     </td>` : ''}
@@ -711,6 +719,10 @@
 
         // Add slab
         async function addSlab() {
+            if (!canManageIncentive) {
+                showToast('You do not have permission to manage slabs', 'error');
+                return;
+            }
             const min = parseInt(document.getElementById('slab-min').value);
             const max = parseInt(document.getElementById('slab-max').value);
             const perUnit = parseFloat(document.getElementById('slab-per-unit').value);
@@ -745,6 +757,10 @@
         }
 
         async function saveEditSlab() {
+            if (!canManageIncentive) {
+                showToast('You do not have permission to manage slabs', 'error');
+                return;
+            }
             const id = parseInt(document.getElementById('edit-slab-id').value);
             const min = parseInt(document.getElementById('edit-slab-min').value);
             const max = parseInt(document.getElementById('edit-slab-max').value);
@@ -771,6 +787,10 @@
         }
 
         async function deleteSlab(id) {
+            if (!canManageIncentive) {
+                showToast('You do not have permission to manage slabs', 'error');
+                return;
+            }
             if (!confirm('Delete this slab?')) return;
             try {
                 await ApiClient.deleteIncentiveSlab(id);
@@ -801,12 +821,12 @@
             const userFilterEl = document.getElementById('slip-user-filter');
             const userId = userFilterEl ? userFilterEl.value : '';
             const tbody = document.getElementById('slips-tbody');
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
             try {
                 let slips;
                 if (userId) {
                     slips = await ApiClient.getUserIncentiveSlips(userId);
-                } else if (isAdmin) {
+                } else if (canViewAllIncentive) {
                     slips = await ApiClient.getAllIncentiveSlips();
                 } else {
                     slips = await ApiClient.getMyIncentiveSlips();
@@ -834,7 +854,7 @@
                 document.getElementById('slip-filter-summary').innerText = `${slips.length} slip${slips.length === 1 ? '' : 's'}`;
 
                 if (!slips.length) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No incentive slips found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">No incentive slips found.</td></tr>';
                     return;
                 }
 
@@ -846,6 +866,15 @@
                     const rawAppliedSlab = s.applied_slab == null ? '' : String(s.applied_slab).trim();
                     const hasValidSlab = rawAppliedSlab !== '' && rawAppliedSlab !== '0' && rawAppliedSlab !== '0.0' && rawAppliedSlab.toLowerCase() !== 'none';
                     const slabLabel = hasValidSlab ? rawAppliedSlab : 'No slab matched';
+                    const canRemark = (!canManageIncentive && Number(s.user_id) === Number(user?.id) && Boolean(s.is_visible_to_employee)) || canManageIncentive;
+                    const employeeRemarkEnc = encodeURIComponent(s.employee_remarks || '');
+                    const managerRemarkEnc = encodeURIComponent(s.manager_remarks || '');
+                    const visibilityBtn = canManageIncentive
+                        ? `<button class="btn btn-sm btn-outline-secondary" title="${s.is_visible_to_employee ? 'Hide from employee' : 'Release to employee'}" onclick="toggleIncentiveVisibility(${s.id}, ${s.is_visible_to_employee ? 'false' : 'true'})"><i class="bi ${s.is_visible_to_employee ? 'bi-eye-slash' : 'bi-eye'}"></i></button>`
+                        : '';
+                    const remarksBtn = canRemark
+                        ? `<button class="btn btn-sm btn-outline-info" title="Remarks" onclick="openIncentiveRemarks(${s.id}, '${employeeRemarkEnc}', '${managerRemarkEnc}', ${canManageIncentive ? 'true' : 'false'})"><i class="bi bi-chat-left-text"></i></button>`
+                        : '';
                     return `<tr>
                         <td class="ps-3 slip-employee-cell">
                             <div class="d-flex align-items-center gap-2">
@@ -869,10 +898,15 @@
                             <span class="text-primary fw-semibold">Rs&nbsp;${fmt(perTask)}</span>
                         </td>
                         <td class="pe-3 text-end fw-bold slip-total-cell">Rs&nbsp;${fmt(s.total_incentive)}</td>
+                        <td class="pe-3 text-end">
+                            <div class="d-flex gap-1 justify-content-end">
+                                ${visibilityBtn}${remarksBtn}
+                            </div>
+                        </td>
                     </tr>`;
                 }).join('');
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger small">${e.message || 'Error'}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger small">${e.message || 'Error'}</td></tr>`;
                 document.getElementById('stat-tasks').innerText = '-';
                 document.getElementById('stat-confirmed').innerText = '-';
                 document.getElementById('stat-pending').innerText = '-';
@@ -880,8 +914,53 @@
             }
         }
 
+        async function toggleIncentiveVisibility(slipId, isVisible) {
+            if (!canManageIncentive) {
+                showToast('You do not have permission to change visibility', 'error');
+                return;
+            }
+            try {
+                await ApiClient.updateIncentiveSlipVisibility(slipId, { is_visible_to_employee: Boolean(isVisible) });
+                showToast(Boolean(isVisible) ? 'Incentive slip released to employee' : 'Incentive slip hidden from employee', 'success');
+                loadSlips();
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to update visibility', 'error');
+            }
+        }
+
+        async function openIncentiveRemarks(slipId, employeeRemarkEnc, managerRemarkEnc, isManager) {
+            const employeeRemarks = decodeURIComponent(employeeRemarkEnc || '');
+            const managerRemarks = decodeURIComponent(managerRemarkEnc || '');
+            if (isManager) {
+                const newManagerRemarks = prompt('Manager remarks for this incentive slip:', managerRemarks || '');
+                if (newManagerRemarks === null) return;
+                try {
+                    await ApiClient.updateIncentiveSlipRemarks(slipId, { manager_remarks: newManagerRemarks });
+                    showToast('Manager remarks saved', 'success');
+                    loadSlips();
+                } catch (e) {
+                    showToast(e.data?.detail || e.message || 'Failed to save remarks', 'error');
+                }
+                return;
+            }
+
+            const newEmployeeRemarks = prompt('Your remarks for this incentive slip:', employeeRemarks || '');
+            if (newEmployeeRemarks === null) return;
+            try {
+                await ApiClient.updateIncentiveSlipRemarks(slipId, { employee_remarks: newEmployeeRemarks });
+                showToast('Remarks saved', 'success');
+                loadSlips();
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to save remarks', 'error');
+            }
+        }
+
         // Step 1: Preview calculation
         async function previewCalcIncentive() {
+            if (!canManageIncentive) {
+                showToast('You do not have permission to calculate incentives', 'error');
+                return;
+            }
             const userId = document.getElementById('calc-user').value;
             const period = document.getElementById('calc-period').value;
             const btn = document.getElementById('calc-preview-btn');
@@ -924,6 +1003,10 @@
 
         // Step 2: Save incentive slip
         async function calcIncentive() {
+            if (!canManageIncentive) {
+                showToast('You do not have permission to calculate incentives', 'error');
+                return;
+            }
             const userId = document.getElementById('calc-user').value;
             const period = document.getElementById('calc-period').value;
             const btn = document.getElementById('calc-submit-btn');
@@ -955,7 +1038,7 @@
                     { value: 'pending', label: 'Pending' }
                 ]}
             ];
-            if (isAdmin) {
+            if (canViewAllIncentive || canManageIncentive) {
                 filters.splice(1, 0, { type: 'select', label: 'Employee', id: 'slip-user-filter', options: [{ value: '', label: 'All Employees' }] });
             }
 

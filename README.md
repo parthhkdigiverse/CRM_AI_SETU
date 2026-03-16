@@ -84,9 +84,38 @@ cd ..
 python app.py
 ```
 
+If you run from VS Code, prefer the launch profile named SRM Server (Stable Uvicorn).
+It runs the backend directly with Uvicorn in an integrated terminal and is more stable
+than running arbitrary current-file launches from the top-right Run button.
+
 The app will be available at:
 - **Frontend UI:** http://127.0.0.1:8000/frontend/template/index.html
 - **API Docs:** http://127.0.0.1:8000/docs
+
+---
+
+## Production / Live Deployment
+
+Do not use the VS Code Run button for live hosting. Use a process manager/service
+so the app auto-recovers and stays online.
+
+Windows (PowerShell example):
+
+```powershell
+$env:SRM_HOST="0.0.0.0"
+$env:SRM_PORT="8000"
+e:/CRM AI SETU/.venv/Scripts/python.exe e:/CRM AI SETU/app.py
+```
+
+Linux (systemd/supervisor/docker recommended):
+
+```bash
+SRM_HOST=0.0.0.0 SRM_PORT=8000 python app.py
+```
+
+If port 8000 is occupied, launcher will automatically move to the next free port.
+To pin strictly to one port in live environments, ensure your process manager starts
+only one instance and reserve the port for that service.
 
 ---
 

@@ -19,7 +19,7 @@ class BillCreate(BaseModel):
     amount: Optional[float] = None
     payment_type: Literal["BUSINESS_ACCOUNT", "PERSONAL_ACCOUNT", "CASH"]
     gst_type: Literal["WITH_GST", "WITHOUT_GST"]
-    service_description: Optional[str] = "CRM AI SETU Software – Annual Subscription"
+    service_description: Optional[str] = "Harikrushn DigiVerse LLP Software – Annual Subscription"
 
     @field_validator('invoice_client_name')
     @classmethod
@@ -57,6 +57,7 @@ class BillRead(BaseModel):
     status: str
     invoice_number: Optional[str] = None
     whatsapp_sent: bool
+    is_archived: bool = False
 
     service_description: Optional[str] = None
 
@@ -96,4 +97,7 @@ class BillingWorkflowResolveResponse(BaseModel):
 class BillingInvoiceActionResponse(BaseModel):
     can_verify: bool
     can_send_whatsapp: bool
+    can_archive: bool = False
+    can_unarchive: bool = False
+    can_delete_archived: bool = False
     allowed_verifier_roles: list[str]

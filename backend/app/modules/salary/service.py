@@ -17,6 +17,18 @@ PAID_LEAVE_LIMIT = 1  # 1 free paid leave per month
 class SalaryService:
     def __init__(self, db: Session):
         self.db = db
+        self._ensure_salary_columns()
+
+    def _ensure_salary_columns(self) -> None:
+        """Self-heal environments where salary visibility/remarks migration is not applied yet."""
+        from sqlalchemy import text
+        try:
+            self.db.execute(text("ALTER TABLE salary_slips ADD COLUMN IF NOT EXISTS is_visible_to_employee BOOLEAN DEFAULT false"))
+            self.db.execute(text("ALTER TABLE salary_slips ADD COLUMN IF NOT EXISTS employee_remarks TEXT"))
+            self.db.execute(text("ALTER TABLE salary_slips ADD COLUMN IF NOT EXISTS manager_remarks TEXT"))
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
 
     # ── Internal helpers ────────────────────────────────────────
 
@@ -25,6 +37,7 @@ class SalaryService:
         approved_leaves = self.db.query(LeaveRecord).filter(
             LeaveRecord.user_id == user_id,
             LeaveRecord.status == LeaveStatus.APPROVED,
+            LeaveRecord.is_deleted == False,
             extract('year', LeaveRecord.start_date) == year,
             extract('month', LeaveRecord.start_date) == month_num
         ).all()
@@ -112,6 +125,9 @@ class SalaryService:
             'status': s.status or 'CONFIRMED',
             'confirmed_by': s.confirmed_by,
             'confirmed_at': s.confirmed_at,
+            'is_visible_to_employee': bool(getattr(s, 'is_visible_to_employee', True)),
+            'employee_remarks': getattr(s, 'employee_remarks', None),
+            'manager_remarks': getattr(s, 'manager_remarks', None),
             'generated_at': s.generated_at,
             'user_name': (s.user.name or s.user.email) if s.user else f"User #{s.user_id}",
             'confirmer_name': (s.confirmer.name or s.confirmer.email) if s.confirmer else None,
@@ -136,7 +152,8 @@ class SalaryService:
 
         existing = self.db.query(SalarySlip).filter(
             SalarySlip.user_id == user_id,
-            SalarySlip.month == month
+            SalarySlip.month == month,
+            SalarySlip.is_deleted == False
         ).first()
 
         return {
@@ -207,6 +224,7 @@ class SalaryService:
             total_earnings=calc['total_earnings'],
             final_salary=calc['final_salary'],
             status="DRAFT",
+            is_visible_to_employee=False,
             generated_at=datetime.now(UTC).date(),
         )
         self.db.add(db_salary)
@@ -274,17 +292,19 @@ class SalaryService:
         self.db.refresh(slip)
         return self._format_slip(slip)
 
-    def get_user_salary_slips(self, user_id: int, show_drafts: bool = True) -> List[dict]:
+    def get_user_salary_slips(self, user_id: int, show_drafts: bool = True, only_visible: bool = False) -> List[dict]:
         """Get salary slips for a specific user."""
-        query = self.db.query(SalarySlip).filter(SalarySlip.user_id == user_id)
+        query = self.db.query(SalarySlip).filter(SalarySlip.user_id == user_id, SalarySlip.is_deleted == False)
         if not show_drafts:
             query = query.filter(SalarySlip.status == "CONFIRMED")
+        if only_visible:
+            query = query.filter(SalarySlip.is_visible_to_employee == True)
         slips = query.order_by(SalarySlip.month.desc()).all()
         return [self._format_slip(s) for s in slips]
 
     def get_all_salary_slips(self) -> List[dict]:
         """Get all salary slips (admin use)."""
-        slips = self.db.query(SalarySlip).order_by(SalarySlip.month.desc()).all()
+        slips = self.db.query(SalarySlip).filter(SalarySlip.is_deleted == False).order_by(SalarySlip.month.desc()).all()
         return [self._format_slip(s) for s in slips]
 
     def generate_invoice_html(self, slip_id: int) -> str:

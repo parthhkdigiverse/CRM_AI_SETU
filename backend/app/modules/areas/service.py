@@ -279,9 +279,20 @@ class AreaService:
         if not area:
             raise HTTPException(status_code=404, detail="Area not found")
         
-        # Cascading delete: Remove all shops associated with this area
-        self.db.query(Shop).filter(Shop.area_id == area_id).delete()
-        
-        self.db.delete(area)
+        from app.modules.salary.models import AppSetting
+        policy = self.db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        is_hard = policy and policy.value == "HARD"
+
+        if is_hard:
+            # Cascading delete: Remove all shops associated with this area
+            from app.modules.shops.models import Shop
+            self.db.query(Shop).filter(Shop.area_id == area_id).delete()
+            self.db.delete(area)
+        else:
+            area.is_deleted = True
+            # Soft delete associated shops too
+            from app.modules.shops.models import Shop
+            self.db.query(Shop).filter(Shop.area_id == area_id).update({"is_deleted": True}, synchronize_session=False)
+
         self.db.commit()
-        return {"detail": "Area and associated shops permanently deleted"}
+        return {"detail": f"Area and associated shops {'permanently ' if is_hard else ''}deleted"}

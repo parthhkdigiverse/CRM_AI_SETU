@@ -10,8 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
-    <link rel="stylesheet" href="../css/components.css?v=1772780187">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
+    <link rel="stylesheet" href="../css/components.css?v=1772780188">
 </head>
 
 <body class="bg-app">
@@ -244,15 +244,17 @@
 
         const user = getUser();
         const isAdmin = user?.role === 'ADMIN';
+        const canManageSalary = window.hasFeatureAccess ? window.hasFeatureAccess('salary_manage_roles') : isAdmin;
+        const canViewAllSalary = window.hasFeatureAccess ? window.hasFeatureAccess('salary_view_all_roles') : isAdmin;
 
-        if (isAdmin) {
+        if (canManageSalary) {
             const aa = document.getElementById('admin-actions');
             aa.classList.remove('d-none');
             aa.classList.add('d-flex');
         } else {
-            // Non-admin: hide filter toolbar entirely
+            // Employee viewer mode: hide filter toolbar unless allowed to view all
             const ft = document.getElementById('filter-panel-wrapper');
-            if (ft) ft.style.display = 'none';
+            if (ft && !canViewAllSalary) ft.style.display = 'none';
         }
 
         const salaryFilterPanelBody = document.getElementById('salary-filter-panel-body');
@@ -302,6 +304,10 @@
 
         // Modal
         function openSalaryModal() {
+            if (!canManageSalary) {
+                showToast('You do not have permission to generate salary slips', 'error');
+                return;
+            }
             document.getElementById('salaryModal').classList.add('show');
             document.getElementById('s-user').value = '';
             document.getElementById('s-month').value = '';
@@ -410,7 +416,7 @@
 
             try {
                 let slips;
-                if (isAdmin) {
+                if (canViewAllSalary) {
                     const userId = document.getElementById('slip-user-filter').value;
                     slips = userId
                         ? await ApiClient.getSalaryRecords(userId)
@@ -420,11 +426,11 @@
                 }
 
                 // Status filter
-                const statusFilter = isAdmin ? document.getElementById('slip-status-filter').value : '';
+                const statusFilter = canViewAllSalary ? document.getElementById('slip-status-filter').value : '';
                 if (statusFilter) slips = slips.filter(s => s.status === statusFilter);
 
                 // Month filter
-                const monthFilter = isAdmin ? document.getElementById('slip-month-filter').value : '';
+                const monthFilter = canViewAllSalary ? document.getElementById('slip-month-filter').value : '';
                 if (monthFilter) slips = slips.filter(s => s.month === monthFilter);
 
                 document.getElementById('slip-count').textContent = slips.length + ' record(s)';
@@ -440,9 +446,19 @@
                         : 'badge-yellow-light';
                     const statusIcon = s.status === 'CONFIRMED' ? 'bi-check-circle' : 'bi-hourglass-split';
                     const statusLabel = s.status === 'CONFIRMED' ? 'Paid' : 'Draft';
+                    const visibleLabel = s.is_visible_to_employee ? 'Visible' : 'Hidden';
 
-                    const confirmBtn = isAdmin && s.status === 'DRAFT'
+                    const confirmBtn = canManageSalary && s.status === 'DRAFT'
                         ? `<button class="btn btn-sm btn-outline-success" title="Mark as Paid" onclick="confirmSlip(${s.id})"><i class="bi bi-check-lg"></i></button>`
+                        : '';
+                    const visibilityBtn = canManageSalary
+                        ? `<button class="btn btn-sm btn-outline-secondary" title="${s.is_visible_to_employee ? 'Hide from employee' : 'Release to employee'}" onclick="toggleSalaryVisibility(${s.id}, ${s.is_visible_to_employee ? 'false' : 'true'})"><i class="bi ${s.is_visible_to_employee ? 'bi-eye-slash' : 'bi-eye'}"></i></button>`
+                        : '';
+                    const canAddEmployeeRemark = !canManageSalary && s.status === 'CONFIRMED' && s.is_visible_to_employee;
+                    const empRemarksEnc = encodeURIComponent(s.employee_remarks || '');
+                    const mgrRemarksEnc = encodeURIComponent(s.manager_remarks || '');
+                    const remarkBtn = (canManageSalary || canAddEmployeeRemark)
+                        ? `<button class="btn btn-sm btn-outline-info" title="Remarks" onclick="openSalaryRemarks(${s.id}, '${empRemarksEnc}', '${mgrRemarksEnc}', ${canManageSalary ? 'true' : 'false'})"><i class="bi bi-chat-left-text"></i></button>`
                         : '';
                     const invoiceBtn = s.status === 'CONFIRMED'
                         ? `<button class="btn btn-sm btn-outline-primary" title="View Invoice" onclick="downloadInvoice(${s.id})"><i class="bi bi-file-earmark-text"></i></button>`
@@ -462,10 +478,13 @@
                         <td style="color:#059669; font-weight:600;">+${INR(totalBonus)}</td>
                         <td style="color:#B91C1C; font-weight:600;">-${INR(s.deduction_amount)}</td>
                         <td class="fw-bold">${INR(s.final_salary)}</td>
-                        <td><span class="status-pill ${statusCls}"><i class="bi ${statusIcon} me-1"></i>${statusLabel}</span></td>
+                        <td>
+                            <span class="status-pill ${statusCls}"><i class="bi ${statusIcon} me-1"></i>${statusLabel}</span>
+                            <div class="small text-muted mt-1">${visibleLabel}</div>
+                        </td>
                         <td class="text-end">
                             <div class="d-flex gap-1 justify-content-end">
-                                ${confirmBtn}${invoiceBtn}
+                                ${confirmBtn}${visibilityBtn}${remarkBtn}${invoiceBtn}
                             </div>
                         </td>
                     </tr>`;
@@ -476,6 +495,10 @@
         }
 
         async function generateSalarySlip() {
+            if (!canManageSalary) {
+                showToast('You do not have permission to generate salary slips', 'error');
+                return;
+            }
             const userId = document.getElementById('s-user').value;
             const month = document.getElementById('s-month').value;
             const btn = document.getElementById('salary-gen-btn');
@@ -500,6 +523,10 @@
         }
 
         async function updateDraftSlip() {
+            if (!canManageSalary) {
+                showToast('You do not have permission to update salary slips', 'error');
+                return;
+            }
             const btn = document.getElementById('salary-update-btn');
             const slipId = btn.dataset.slipId;
             if (!slipId) { showToast('No draft slip found to update', 'error'); return; }
@@ -525,6 +552,10 @@
         }
 
         async function regenerateSlip() {
+            if (!canManageSalary) {
+                showToast('You do not have permission to regenerate salary slips', 'error');
+                return;
+            }
             const btn = document.getElementById('salary-regen-btn');
             const userId = document.getElementById('s-user').value;
             const month = document.getElementById('s-month').value;
@@ -550,12 +581,57 @@
         }
 
         async function confirmSlip(slipId) {
+            if (!canManageSalary) {
+                showToast('You do not have permission to confirm salary slips', 'error');
+                return;
+            }
             if (!confirm('Mark this salary slip as Paid? Once confirmed, the employee will be able to view it.')) return;
             try {
                 await ApiClient.confirmSalarySlip(slipId);
                 showToast('Salary slip confirmed.', 'success');
                 loadSlips();
             } catch (e) { showToast(e.data?.detail || e.message || 'Failed', 'error'); }
+        }
+
+        async function toggleSalaryVisibility(slipId, isVisible) {
+            if (!canManageSalary) {
+                showToast('You do not have permission to change visibility', 'error');
+                return;
+            }
+            try {
+                await ApiClient.updateSalarySlipVisibility(slipId, { is_visible_to_employee: Boolean(isVisible) });
+                showToast(Boolean(isVisible) ? 'Salary slip released to employee' : 'Salary slip hidden from employee', 'success');
+                loadSlips();
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to update visibility', 'error');
+            }
+        }
+
+        async function openSalaryRemarks(slipId, currentEmployeeRemarksEnc, currentManagerRemarksEnc, isManager) {
+            const currentEmployeeRemarks = decodeURIComponent(currentEmployeeRemarksEnc || '');
+            const currentManagerRemarks = decodeURIComponent(currentManagerRemarksEnc || '');
+            if (isManager) {
+                const newManagerRemarks = prompt('Manager remarks for this slip:', currentManagerRemarks || '');
+                if (newManagerRemarks === null) return;
+                try {
+                    await ApiClient.updateSalarySlipRemarks(slipId, { manager_remarks: newManagerRemarks });
+                    showToast('Manager remarks saved', 'success');
+                    loadSlips();
+                } catch (e) {
+                    showToast(e.data?.detail || e.message || 'Failed to save remarks', 'error');
+                }
+                return;
+            }
+
+            const newEmployeeRemarks = prompt('Your remarks for this salary slip:', currentEmployeeRemarks || '');
+            if (newEmployeeRemarks === null) return;
+            try {
+                await ApiClient.updateSalarySlipRemarks(slipId, { employee_remarks: newEmployeeRemarks });
+                showToast('Remarks saved', 'success');
+                loadSlips();
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to save remarks', 'error');
+            }
         }
 
         function downloadInvoice(slipId) {

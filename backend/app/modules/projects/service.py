@@ -1,4 +1,5 @@
 # backend/app/modules/projects/service.py
+from typing import Optional
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Request
 from app.modules.projects.models import Project
@@ -12,8 +13,9 @@ class ProjectService:
         self.db = db
         self.activity_logger = ActivityLogger(db)
 
-    def get_projects(self, skip: int = 0, limit: int = 100, pm_id: int = None):
-        query = self.db.query(Project)
+    def get_projects(self, skip: int = 0, limit: int = 100, pm_id: Optional[int] = None):
+        query = self.db.query(Project).filter(Project.is_deleted == False)
+            
         if pm_id:
             query = query.filter(Project.pm_id == pm_id)
         
@@ -24,8 +26,8 @@ class ProjectService:
         made_changes = False
         
         for p in projects:
-            p.total_issues = self.db.query(Issue).filter(Issue.project_id == p.id).count()
-            p.resolved_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.status == IssueStatus.SOLVED).count()
+            p.total_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.is_deleted == False).count()
+            p.resolved_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.status == IssueStatus.RESOLVED, Issue.is_deleted == False).count()
             p.progress_percentage = (p.resolved_issues / p.total_issues * 100) if p.total_issues > 0 else 0.0
             
             # --- Silent Self-Healing: Sync Project PM with Client PM ---
@@ -49,11 +51,12 @@ class ProjectService:
         return projects
 
     def get_project(self, project_id: int):
-        project = self.db.query(Project).filter(Project.id == project_id).first()
+        query = self.db.query(Project).filter(Project.id == project_id, Project.is_deleted == False)
+        project = query.first()
         if project:
             from app.modules.issues.models import Issue, IssueStatus
-            project.total_issues = self.db.query(Issue).filter(Issue.project_id == project_id).count()
-            project.resolved_issues = self.db.query(Issue).filter(Issue.project_id == project_id, Issue.status == IssueStatus.RESOLVED).count()
+            project.total_issues = self.db.query(Issue).filter(Issue.project_id == project_id, Issue.is_deleted == False).count()
+            project.resolved_issues = self.db.query(Issue).filter(Issue.project_id == project_id, Issue.status == IssueStatus.RESOLVED, Issue.is_deleted == False).count()
             project.progress_percentage = (project.resolved_issues / project.total_issues * 100) if project.total_issues > 0 else 0.0
             
             # Populate names and contact info
@@ -114,12 +117,21 @@ class ProjectService:
         return project
 
     async def delete_project(self, project_id: int, current_user: User, request: Request):
-        project = self.get_project(project_id)
+        project = self.db.query(Project).filter(Project.id == project_id).first()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        old_data = {"name": project.name}
-        self.db.delete(project)
+        from app.modules.salary.models import AppSetting
+        policy = self.db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        is_hard = policy and policy.value == "HARD"
+
+        old_data = {"name": project.name, "policy": "HARD" if is_hard else "SOFT"}
+        
+        if is_hard:
+            self.db.delete(project)
+        else:
+            project.is_deleted = True
+            
         self.db.commit()
 
         await self.activity_logger.log_activity(
@@ -132,4 +144,4 @@ class ProjectService:
             new_data=None,
             request=request
         )
-        return {"detail": "Project deleted"}
+        return {"detail": f"Project {'permanently ' if is_hard else ''}deleted"}

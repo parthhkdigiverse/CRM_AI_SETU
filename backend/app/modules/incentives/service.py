@@ -18,10 +18,19 @@ class IncentiveService:
         self.db = db
 
     def _ensure_slab_bonus_column(self) -> None:
-        """Self-heal for environments where migration wasn't applied yet."""
+        """Self-heal for environments where incentive slip migrations weren't applied yet."""
         try:
             self.db.execute(
                 text("ALTER TABLE incentive_slips ADD COLUMN IF NOT EXISTS slab_bonus_amount DOUBLE PRECISION DEFAULT 0")
+            )
+            self.db.execute(
+                text("ALTER TABLE incentive_slips ADD COLUMN IF NOT EXISTS is_visible_to_employee BOOLEAN DEFAULT false")
+            )
+            self.db.execute(
+                text("ALTER TABLE incentive_slips ADD COLUMN IF NOT EXISTS employee_remarks TEXT")
+            )
+            self.db.execute(
+                text("ALTER TABLE incentive_slips ADD COLUMN IF NOT EXISTS manager_remarks TEXT")
             )
             self.db.commit()
         except Exception:
@@ -142,6 +151,7 @@ class IncentiveService:
             existing_slip.amount_per_unit = incentive_per_unit
             existing_slip.slab_bonus_amount = slab_bonus
             existing_slip.total_incentive = round(total_incentive, 2)
+            existing_slip.is_visible_to_employee = bool(getattr(existing_slip, "is_visible_to_employee", False))
             existing_slip.generated_at = datetime.now(UTC)
             db_slip = existing_slip
         else:
@@ -154,6 +164,7 @@ class IncentiveService:
                 applied_slab=applied_slab_label,
                 amount_per_unit=incentive_per_unit,
                 slab_bonus_amount=slab_bonus,
+                is_visible_to_employee=False,
                 total_incentive=round(total_incentive, 2),
                 generated_at=datetime.now(UTC)
             )
@@ -320,6 +331,9 @@ class IncentiveService:
                 s.applied_slab,
                 s.amount_per_unit,
                 s.slab_bonus_amount,
+                s.is_visible_to_employee,
+                s.employee_remarks,
+                s.manager_remarks,
                 s.total_incentive,
                 s.generated_at,
                 u.name AS user_name
@@ -344,6 +358,9 @@ class IncentiveService:
                 applied_slab=(str(row.get("applied_slab")) if row.get("applied_slab") is not None else None),
                 amount_per_unit=self._to_float(row.get("amount_per_unit")),
                 slab_bonus_amount=self._to_float(row.get("slab_bonus_amount")),
+                is_visible_to_employee=bool(row.get("is_visible_to_employee")),
+                employee_remarks=row.get("employee_remarks"),
+                manager_remarks=row.get("manager_remarks"),
                 total_incentive=self._to_float(row.get("total_incentive")),
                 generated_at=row.get("generated_at"),
                 user_name=row.get("user_name") or f"Employee #{self._to_int(row.get('user_id'))}",
@@ -352,6 +369,7 @@ class IncentiveService:
         return results
 
     def get_user_incentive_slips(self, user_id: int):
+        self._ensure_slab_bonus_column()
         try:
             slips = self.db.query(IncentiveSlip).options(
                 joinedload(IncentiveSlip.user)
@@ -370,6 +388,29 @@ class IncentiveService:
                 return self._serialize_slip_rows(self._get_slip_rows_fallback(user_id=user_id))
             except Exception:
                 return []
+
+    def get_visible_user_incentive_slips(self, user_id: int):
+        self._ensure_slab_bonus_column()
+        try:
+            slips = self.db.query(IncentiveSlip).options(
+                joinedload(IncentiveSlip.user)
+            ).filter(
+                IncentiveSlip.user_id == user_id,
+                IncentiveSlip.is_visible_to_employee == True
+            ).order_by(IncentiveSlip.period.desc()).all()
+            results = []
+            for s in slips:
+                r = IncentiveSlipRead.model_validate(s)
+                r.user_name = self._user_display_name(s.user, s.user_id)
+                results.append(r)
+            return results
+        except Exception:
+            self.db.rollback()
+            try:
+                rows = [r for r in self._get_slip_rows_fallback(user_id=user_id) if bool(r.get("is_visible_to_employee"))]
+                return self._serialize_slip_rows(rows)
+            except Exception:
+                return []
         except Exception:
             self.db.rollback()
             try:
@@ -378,6 +419,7 @@ class IncentiveService:
                 return []
 
     def get_all_incentive_slips(self):
+        self._ensure_slab_bonus_column()
         try:
             slips = self.db.query(IncentiveSlip).options(
                 joinedload(IncentiveSlip.user)
