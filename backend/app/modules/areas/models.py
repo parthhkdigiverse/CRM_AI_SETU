@@ -1,5 +1,5 @@
 # backend/app/modules/areas/models.py
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean, JSON, Table, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, Boolean, Boolean, JSON, Table, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from app.core.mixins import SoftDeleteMixin
@@ -23,6 +23,7 @@ class Area(SoftDeleteMixin, Base):
     # Add Google Maps coordinates
     lat = Column(Float, nullable=True)
     lng = Column(Float, nullable=True)
+    is_deleted = Column(Boolean, default=False, index=True)
     is_deleted = Column(Boolean, default=False, index=True)
     
     assignment_status = Column(String, default="UNASSIGNED", nullable=False)

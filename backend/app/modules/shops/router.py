@@ -1,5 +1,5 @@
 # backend/app/modules/shops/router.py
-from typing import List, Any, Dict, Optional
+from typing import List, Any, Dict, Optional, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, status, Query, HTTPException
 from pydantic import BaseModel
@@ -85,8 +85,8 @@ def read_shops(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    status: Optional[ShopStatus] = None,
-    owner_id: Optional[int] = None,
+    status: Optional[Optional[ShopStatus]] = None,
+    owner_id: Optional[Optional[int]] = None,
     current_user: User = Depends(staff_checker)
 ) -> Any:
     return ShopService.list_shops(db, current_user, skip, limit, status, owner_id)

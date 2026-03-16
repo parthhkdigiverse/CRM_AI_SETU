@@ -1,5 +1,5 @@
 # backend/app/modules/attendance/models.py
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Date, Float, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Date, Float, Boolean, Boolean
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from datetime import datetime

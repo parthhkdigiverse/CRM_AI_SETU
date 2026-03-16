@@ -2476,6 +2476,14 @@
                     saveSelectedCalendars();
                 }
 
+                if (!isTimetableAdmin()) {
+                    selectedCalendars.clear();
+                    if (currUserName) selectedCalendars.add(currUserName);
+                    selectedCalendars.add('Tasks');
+                    selectedCalendars.add('Birthdays');
+                    saveSelectedCalendars();
+                }
+
             } catch (error) {
                 console.error("Failed to initialize users", error);
                 const userSel = document.getElementById('ev-user');

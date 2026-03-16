@@ -548,6 +548,11 @@ let invoiceSettings = {};
 let workflowOptions = null;
 let searchDebounceTimer = null;
 let invoiceActionsById = {};
+let selectedBillIds = new Set();
+
+// Wizard state
+let wizardStep = 1;
+let wizardQRData = null;   // result from /generate-qr
 let autoConvertShopId = null; // set when redirected from leads.html via close_shop_id param
 let selectedBillIds = new Set();
 
@@ -625,26 +630,6 @@ async function init() {
             createBtn.title = 'You do not have permission to create invoices';
         }
         await loadBills();
-
-        // ── Close Deal auto-fill (redirected from leads.html with ?close_shop_id=N) ──
-        const urlParams = new URLSearchParams(window.location.search);
-        const closeShopId = urlParams.get('close_shop_id');
-        if (closeShopId) {
-            autoConvertShopId = closeShopId;
-            // Remove param from URL so a page refresh doesn't re-trigger
-            window.history.replaceState({}, document.title, window.location.pathname);
-            try {
-                const shop = await ApiClient.request('/shops/' + autoConvertShopId);
-                document.getElementById('c-name').value    = shop.contact_person || shop.name || '';
-                document.getElementById('c-phone').value   = shop.phone || '';
-                document.getElementById('c-email').value   = shop.email || '';
-                document.getElementById('c-org').value     = shop.name || '';
-                document.getElementById('c-address').value = shop.address || '';
-                openCreateModal();
-            } catch(e) {
-                showToast('Could not pre-fill shop details: ' + (e.message || 'Unknown error'), 'error');
-            }
-        }
     } catch(e) {
         showToast('Failed to load page: ' + e.message, 'error');
     }
@@ -987,7 +972,6 @@ async function submitCreateInvoice() {
             payment_type: pt,
             gst_type:     gt,
             amount:       amt,
-            shop_id: autoConvertShopId ? parseInt(autoConvertShopId) : null,
         });
 
         showToast('Invoice created in pending verification state.', 'success');

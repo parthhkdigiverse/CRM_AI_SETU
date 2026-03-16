@@ -1,5 +1,5 @@
 # backend/app/modules/timetable/models.py
-from sqlalchemy import Column, Integer, String, Date, Time, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Date, Time, ForeignKey, Boolean, Boolean
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 

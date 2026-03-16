@@ -1381,6 +1381,49 @@
             }
         }
 
+        async function loadAttendanceSettings() {
+            try {
+                const settings = await ApiClient.getAttendanceSettings();
+                document.getElementById('att-absent-threshold').value = settings.absent_hours_threshold ?? 0;
+                document.getElementById('att-halfday-threshold').value = settings.half_day_hours_threshold ?? 4;
+                document.getElementById('att-saturday').value = (settings.weekly_off_saturday || 'FULL').toUpperCase();
+                document.getElementById('att-sunday').value = (settings.weekly_off_sunday || 'FULL').toUpperCase();
+
+                const holidays = (settings.official_holidays || []).map(d => {
+                    if (typeof d === 'string') return d;
+                    try { return new Date(d).toISOString().slice(0, 10); } catch { return ''; }
+                }).filter(Boolean);
+                document.getElementById('att-holidays').value = holidays.join(', ');
+            } catch (err) {
+                console.error('Failed to load attendance settings', err);
+            }
+        }
+
+        async function saveAttendanceSettings() {
+            const btnMsg = document.getElementById('att-save-msg');
+            const absent = parseFloat(document.getElementById('att-absent-threshold').value || '0');
+            const half = parseFloat(document.getElementById('att-halfday-threshold').value || '4');
+            const saturday = document.getElementById('att-saturday').value;
+            const sunday = document.getElementById('att-sunday').value;
+            const holidayRaw = document.getElementById('att-holidays').value || '';
+            const holidays = holidayRaw.split(',').map(h => h.trim()).filter(Boolean);
+
+            try {
+                await ApiClient.updateAttendanceSettings({
+                    absent_hours_threshold: absent,
+                    half_day_hours_threshold: half,
+                    weekly_off_saturday: saturday,
+                    weekly_off_sunday: sunday,
+                    official_holidays: holidays
+                });
+                btnMsg.classList.remove('d-none');
+                setTimeout(() => btnMsg.classList.add('d-none'), 2000);
+            } catch (err) {
+                console.error('Attendance settings save failed', err);
+                showToast('Failed to save attendance settings', true);
+            }
+        }
+
         // ── Incentives config (admin-only)
         async function loadSlabsSettings() {
             const list = document.getElementById('slabs-settings-list');

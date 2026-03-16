@@ -1,5 +1,5 @@
 # backend/app/modules/feedback/models.py
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Boolean, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base

@@ -31,7 +31,7 @@ class VisitService:
             from sqlalchemy import or_
             from app.modules.users.models import UserRole
 
-            query = self.db.query(Visit).join(ShopModel, ShopModel.id == Visit.shop_id).options(
+            query = self.db.query(Visit).join(ShopModel, ShopModel.id == Visit.shop_id).options(.filter(Visit.is_deleted == False, Shop.is_deleted == False)
                 joinedload(Visit.shop).joinedload(ShopModel.area),
                 joinedload(Visit.shop).joinedload(ShopModel.project_manager),
                 joinedload(Visit.user)

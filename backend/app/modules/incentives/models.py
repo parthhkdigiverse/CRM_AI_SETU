@@ -1,5 +1,5 @@
 # backend/app/modules/incentives/models.py
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Boolean, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Boolean, Text, Boolean, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base

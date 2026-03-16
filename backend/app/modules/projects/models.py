@@ -1,5 +1,5 @@
 # backend/app/modules/projects/models.py
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum, Float, Boolean
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum, Float, Boolean, Boolean
 
 from sqlalchemy.orm import relationship
 from datetime import datetime

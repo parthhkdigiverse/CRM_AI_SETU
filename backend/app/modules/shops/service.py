@@ -76,6 +76,9 @@ class ShopService:
         if not policy or policy.value == "SOFT":
             query = query.filter(Shop.is_deleted == False)
         
+        if not policy or policy.value == "SOFT":
+            query = query.filter(Shop.is_deleted == False)
+        
         if status:
             query = query.filter(Shop.status == status)
             
@@ -123,6 +126,9 @@ class ShopService:
             selectinload(Shop.visits).selectinload(VisitModel.user),  # for last_visitor_name
             selectinload(Shop.project_manager)
         ).filter(Shop.is_archived == False)
+        
+        if not policy or policy.value == "SOFT":
+            query = query.filter(Shop.is_deleted == False)
         
         if not policy or policy.value == "SOFT":
             query = query.filter(Shop.is_deleted == False)
@@ -271,7 +277,9 @@ class ShopService:
     # ── Unarchive ──
     @staticmethod
     def unarchive_shop(db: Session, shop_id: int, current_user: User):
-        db_shop = ShopService.get_shop(db, shop_id)
+        db_shop = db.query(Shop).filter(Shop.id == shop_id).first()
+        if not db_shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
 
         # Check permissions
         if current_user.role != "ADMIN":
@@ -308,7 +316,15 @@ class ShopService:
         is_hard = policy and policy.value == "HARD"
 
         if is_hard:
+            from app.modules.salary.models import AppSetting
+        policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        is_hard = policy and policy.value == "HARD"
+
+        if is_hard:
             db.delete(db_shop)
+        else:
+            db_shop.is_deleted = True
+
         else:
             db_shop.is_deleted = True
 

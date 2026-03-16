@@ -1,3 +1,4 @@
+from typing import Optional
 # backend/app/modules/projects/service.py
 from typing import Optional
 from sqlalchemy.orm import Session

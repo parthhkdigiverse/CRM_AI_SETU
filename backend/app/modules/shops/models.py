@@ -1,6 +1,6 @@
 # backend/app/modules/shops/models.py
 import enum
-from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, ForeignKey, Table, Boolean
+from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, ForeignKey, Boolean, Table, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 from app.core.database import Base
