@@ -10,8 +10,8 @@
     <title>Issues — SRM AI SETU</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
-    <link rel="stylesheet" href="../css/components.css?v=1772780187">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
+    <link rel="stylesheet" href="../css/components.css?v=1772780188">
 </head>
 
 <body class="bg-light">
@@ -25,7 +25,7 @@
                         <h2 class="page-section-title">Issues</h2>
                         <small class="text-muted" id="issue-count"></small>
                     </div>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addIssueModal">
+                    <button class="btn btn-primary" id="report-issue-btn" data-bs-toggle="modal" data-bs-target="#addIssueModal">
                         <i class="bi bi-plus-lg me-1"></i>Report Issue
                     </button>
                 </div>
@@ -51,7 +51,7 @@
                             </thead>
                             <tbody id="issues-table">
                                 <tr>
-                                    <td colspan="7" class="text-center py-5 text-muted">
+                                    <td colspan="8" class="text-center py-5 text-muted">
                                         <i class="bi bi-arrow-clockwise" style="font-size:2rem;"></i>
                                         <p class="mt-2">Loading...</p>
                                     </td>
@@ -178,6 +178,15 @@
             LOW: `<i class="bi bi-exclamation-triangle text-secondary me-2"></i>`
         };
 
+        const currentUser = ApiClient.getCurrentUser() || {};
+        const isAdminUser = String(currentUser.role || '').toUpperCase() === 'ADMIN';
+        const canCreateIssue = window.hasFeatureAccess ? window.hasFeatureAccess('issue_create_roles') : true;
+
+        const reportIssueBtn = document.getElementById('report-issue-btn');
+        if (reportIssueBtn && !canCreateIssue) {
+            reportIssueBtn.style.display = 'none';
+        }
+
         async function loadIssues(filters = {}) {
             const params = new URLSearchParams();
             params.append('limit', '200');
@@ -202,9 +211,11 @@
                     // Check if critical
                     const isCritical = i.severity === 'HIGH' && i.status === 'PENDING';
                     const criticalClass = isCritical ? 'critical-issue-row' : '';
+                    const canUpdateIssue = isAdminUser || i.assigned_to_id === currentUser.id || i.reporter_id === currentUser.id;
+                    const canDeleteIssue = isAdminUser;
 
                     return `
-                <tr class="bg-white align-middle ${criticalClass}" style="height: 60px; cursor: pointer;" onclick="openHandleModal(${i.id}, '${i.status}', '${(i.remarks || '').replace(/'/g, "\\'")}')">
+                <tr class="bg-white align-middle ${criticalClass}" style="height: 60px; cursor: ${canUpdateIssue ? 'pointer' : 'default'};" ${canUpdateIssue ? `onclick="openHandleModal(${i.id}, '${i.status}', '${(i.remarks || '').replace(/'/g, "\\'")}')"` : ''}>
                     <td class="ps-3" onclick="event.stopPropagation()">
                         <input type="checkbox" class="form-check-input issue-checkbox" value="${i.id}" onclick="updateSelectedCount()">
                     </td>
@@ -222,14 +233,14 @@
                     <td class="text-muted">${new Date(i.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                     <td class="text-end" onclick="event.stopPropagation()">
                         <div class="d-flex gap-2 justify-content-end">
-                            <button class="btn btn-sm btn-outline-primary" onclick="openHandleModal(${i.id}, '${i.status}', '${(i.remarks || '').replace(/'/g, "\\'")}')" title="Handle"><i class="bi bi-wrench-adjustable"></i></button>
-                            ${i.status !== 'SOLVED' && i.status !== 'CANCELLED' ? `<button class="btn btn-sm btn-outline-success" onclick="quickResolve(${i.id})" title="Quick Resolve"><i class="bi bi-check-lg"></i></button>` : ''}
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteIssue(${i.id})" title="Delete"><i class="bi bi-trash"></i></button>
+                            ${canUpdateIssue ? `<button class="btn btn-sm btn-outline-primary" onclick="openHandleModal(${i.id}, '${i.status}', '${(i.remarks || '').replace(/'/g, "\\'")}')" title="Handle"><i class="bi bi-wrench-adjustable"></i></button>` : ''}
+                            ${canUpdateIssue && i.status !== 'SOLVED' && i.status !== 'COMPLETED' && i.status !== 'CANCEL' ? `<button class="btn btn-sm btn-outline-success" onclick="quickResolve(${i.id})" title="Quick Resolve"><i class="bi bi-check-lg"></i></button>` : ''}
+                            ${canDeleteIssue ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteIssue(${i.id})" title="Delete"><i class="bi bi-trash"></i></button>` : ''}
                         </div>
                     </td>
                 </tr>`;
                 }).join('')
-                : '<tr><td colspan="7" class="text-center py-5 text-muted">No issues found.</td></tr>';
+                : '<tr><td colspan="8" class="text-center py-5 text-muted">No issues found.</td></tr>';
         }
 
         window.openHandleModal = (id, currentStatus, currentRemarks) => {
@@ -331,13 +342,22 @@
         };
 
         document.getElementById('save-issue-btn').addEventListener('click', async () => {
+            if (!canCreateIssue) {
+                showToast('You do not have permission to report issues', 'error');
+                return;
+            }
             const clientId = document.getElementById('i-client').value;
             if (!clientId) return showToast('Select a client', 'error');
             const btn = document.getElementById('save-issue-btn');
             btn.disabled = true; btn.textContent = 'Saving...';
             try {
+                const title = document.getElementById('i-title').value.trim();
+                if (!title) {
+                    showToast('Issue title is required', 'error');
+                    return;
+                }
                 await apiPost(`/clients/${clientId}/issues`, {
-                    title: document.getElementById('i-title').value,
+                    title,
                     description: document.getElementById('i-desc').value,
                     severity: document.getElementById('i-sev').value,
                     project_id: document.getElementById('i-project').value || null,
@@ -446,6 +466,11 @@
                         row.classList.add('highlight-row');
                     }
                 }, 500);
+            }
+
+            const urlClient = urlParams.get('client_id');
+            if (urlClient && !canCreateIssue) {
+                showToast('You do not have permission to report issues', 'error');
             }
         });
     </script>

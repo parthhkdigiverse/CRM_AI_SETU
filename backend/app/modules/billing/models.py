@@ -29,6 +29,7 @@ class Bill(Base):
     invoice_series = Column(String, nullable=False, default="INV")
     invoice_sequence = Column(Integer, nullable=False, default=1)
     requires_qr = Column(Boolean, nullable=False, default=True)
+    is_deleted = Column(Boolean, default=False, index=True)
 
     # Invoice lifecycle:
     #   DRAFT → PENDING_VERIFICATION → VERIFIED → SENT
@@ -36,6 +37,7 @@ class Bill(Base):
     status = Column(String, default="PENDING")        # kept for backwards compatibility
     invoice_number = Column(String, unique=True, index=True)
     whatsapp_sent = Column(Boolean, default=False)
+    is_archived = Column(Boolean, nullable=False, default=False)
 
     # Audit
     created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
@@ -43,7 +45,7 @@ class Bill(Base):
     verified_at = Column(DateTime, nullable=True)
 
     # Service/product description
-    service_description = Column(Text, nullable=True, default="CRM AI SETU Software – Annual Subscription")
+    service_description = Column(Text, nullable=True, default="Harikrushn DigiVerse LLP Software – Annual Subscription")
 
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))

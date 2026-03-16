@@ -1,5 +1,5 @@
 # backend/app/modules/feedback/models.py
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
@@ -13,6 +13,7 @@ class Feedback(Base):
     rating = Column(Integer, nullable=False)
     comments = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    is_deleted = Column(Boolean, default=False, index=True)
 
     client = relationship("app.modules.clients.models.Client", backref="feedbacks")
 
@@ -26,6 +27,7 @@ class UserFeedback(Base):
     message = Column(Text, nullable=False)
     status = Column(String, default="PENDING")
     created_at = Column(DateTime, default=datetime.utcnow)
+    is_deleted = Column(Boolean, default=False, index=True)
 
     # Relationships
     user = relationship("app.modules.users.models.User", backref="system_feedbacks")

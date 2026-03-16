@@ -55,6 +55,9 @@ class IncentiveSlipRead(BaseModel):
     applied_slab: Optional[str]
     amount_per_unit: Optional[float]
     slab_bonus_amount: Optional[float] = 0.0
+    is_visible_to_employee: bool = False
+    employee_remarks: Optional[str] = None
+    manager_remarks: Optional[str] = None
     total_incentive: float
     generated_at: datetime
     user_name: Optional[str] = None

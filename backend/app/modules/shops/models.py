@@ -35,6 +35,7 @@ class Shop(SoftDeleteMixin, Base):
     project_type = Column(String, nullable=True)   # e.g., "AI Integration", "CRM Setup"
     requirements = Column(Text, nullable=True)
     status = Column(Enum(ShopStatus), default=ShopStatus.NEW, index=True)
+    is_deleted = Column(Boolean, default=False, index=True)
 
     # Foreign keys — from both branches
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)

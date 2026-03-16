@@ -52,22 +52,105 @@ window.updateBulkActionBar = function (options) {
 };
 console.log('UI Components: updateBulkActionBar ready');
 
+window.getRoleFlags = function (roleValue) {
+    const role = (roleValue || '').toUpperCase();
+    return {
+        role,
+        isAdmin: role === 'ADMIN',
+        isSales: role === 'SALES' || role === 'PROJECT_MANAGER_AND_SALES',
+        isTelesales: role === 'TELESALES',
+        isPM: role === 'PROJECT_MANAGER' || role === 'PROJECT_MANAGER_AND_SALES',
+        isClient: role === 'CLIENT'
+    };
+}
+
+window.getQuickAddItems = function (roleValue) {
+    const flags = getRoleFlags(roleValue);
+    const items = [];
+
+    if (flags.isAdmin || flags.isSales || flags.isTelesales || flags.isPM) {
+        items.push({ href: 'clients.html', icon: 'bi-people', iconClass: 'text-info', label: 'New Client' });
+    }
+    if (flags.isAdmin || flags.isPM) {
+        items.push({ href: 'projects.html?add=true', icon: 'bi-briefcase', iconClass: 'text-primary', label: 'New Project' });
+    }
+    if (flags.isAdmin || flags.isSales) {
+        items.push({ href: 'areas.html?add=true', icon: 'bi-building', iconClass: '', iconStyle: 'color:#6366f1;', label: 'New Area / Shop' });
+    }
+    if (flags.isAdmin || flags.isSales || flags.isTelesales) {
+        items.push({ href: 'visits.html?add=true', icon: flags.isTelesales ? 'bi-telephone' : 'bi-geo-alt', iconClass: 'text-success', label: flags.isTelesales ? 'New Call Log' : 'New Visit' });
+    }
+    if (flags.isAdmin || flags.isPM) {
+        items.push({ href: 'meetings.html?add=true', icon: 'bi-calendar-event', iconClass: 'text-success', label: 'New Meeting' });
+    }
+    if (!flags.isClient) {
+        items.push({ href: 'todo.html', icon: 'bi-check2-square', iconClass: 'text-primary', label: 'New Task' });
+    }
+    if (flags.isAdmin || flags.isSales || flags.isTelesales || flags.isPM) {
+        items.push({ href: 'javascript:void(0)', onclick: 'if(window.openNewBillModal) window.openNewBillModal();', icon: 'bi-receipt', iconClass: 'text-danger', label: 'New Payment' });
+    }
+    if (flags.isAdmin || flags.isPM) {
+        items.push({ href: 'issues.html?add=true', icon: 'bi-exclamation-triangle', iconClass: 'text-warning', label: 'New Issue' });
+        items.push({ href: 'feedback.html?add=true', icon: 'bi-chat-square-text', iconClass: 'text-info', label: 'New Feedback' });
+    }
+    if (!flags.isClient) {
+        items.push({ href: 'leaves.html?add=true', icon: 'bi-calendar3', iconClass: 'text-warning', label: 'New Leave Request' });
+    }
+    if (flags.isAdmin) {
+        items.push({ divider: true });
+        items.push({ href: 'admin.html', icon: 'bi-person-plus', iconClass: 'text-secondary', label: 'New User' });
+    }
+
+    return items;
+}
+
+window.renderQuickAddItems = function (roleValue) {
+    return getQuickAddItems(roleValue).map(item => {
+        if (item.divider) {
+            return '<li><hr class="dropdown-divider my-1"></li>';
+        }
+        const action = item.onclick
+            ? `href="${item.href}" onclick="${item.onclick}"`
+            : `href="${item.href}"`;
+        return `<li><a class="dropdown-item rounded-2 py-2" ${action}><i class="bi ${item.icon} me-2 ${item.iconClass || ''}" ${item.iconStyle ? `style="${item.iconStyle}"` : ''}></i> ${item.label}</a></li>`;
+    }).join('');
+}
+
 // ─── SIDEBAR ──────────────────────────────────────────────────────────
-function renderSidebar(active) {
+window.renderSidebar = function (active) {
     const u = getUser();
     const role = u?.role || 'TELESALES';
     console.log('Sidebar Debug - Role:', role);
 
-    const isAdmin = role === 'ADMIN';
-    const isSales = role === 'SALES' || role === 'PROJECT_MANAGER_AND_SALES';
-    const isTelesales = role === 'TELESALES';
-    const isPM = role === 'PROJECT_MANAGER' || role === 'PROJECT_MANAGER_AND_SALES';
-    const isClient = role === 'CLIENT';
+    const { isAdmin, isSales, isTelesales, isPM, isClient } = getRoleFlags(role);
+
+    const roleName = String(role || '').toUpperCase();
+    const fallbackPages = {
+        ADMIN: ['*'],
+        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
+        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
+        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
+        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
+        CLIENT: ['dashboard.html']
+    };
+    const effectivePolicy = window.__crmEffectiveAccessPolicy;
+    const allowedPages = Array.isArray(effectivePolicy?.allowed_pages)
+        ? effectivePolicy.allowed_pages
+        : (effectivePolicy?.policy?.page_access?.[roleName] || fallbackPages[roleName] || []);
+    const allowAllPages = roleName === 'ADMIN' || allowedPages.includes('*');
+    const canShowPage = (href) => {
+        const page = String(href || '').split('?')[0];
+        if (!page) return false;
+        if (allowAllPages) return true;
+        return allowedPages.includes(page);
+    };
 
     let nav = '';
 
     function sbSection(id, label, icon, items) {
-        const isActiveSection = items.some(i => i.id === active);
+        const visibleItems = (items || []).filter(item => canShowPage(item.href));
+        if (!visibleItems.length) return '';
+        const isActiveSection = visibleItems.some(i => i.id === active);
         return `
         <div class="sb-section">
             <div class="sb-section-header ${isActiveSection ? 'open' : ''}" onclick="toggleSbSection('${id}')">
@@ -76,7 +159,7 @@ function renderSidebar(active) {
                 <i class="bi bi-chevron-right sb-arrow"></i>
             </div>
             <ul class="sb-section-items ${isActiveSection ? 'open' : ''}">
-                ${items.map(item => `
+                ${visibleItems.map(item => `
                 <li><a href="${item.href}" class="sb-link ${active === item.id ? 'active' : ''}">
                     <i class="bi ${item.icon}"></i><span>${item.label}</span></a></li>`).join('')}
             </ul>
@@ -91,21 +174,18 @@ function renderSidebar(active) {
     ]);
 
     // ADMINISTRATION
-    if (isAdmin) {
-        nav += sbSection('admin', 'Administration', 'bi-shield-check', [
-            { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
-        ]);
-    }
+    nav += sbSection('admin', 'Administration', 'bi-shield-check', [
+        { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
+    ]);
 
     // FIELD OPERATIONS
-    const fieldItems = [
-        { id: 'leads', href: 'leads.html', icon: 'bi-kanban', label: 'Project Overview' },
-        { id: 'visits', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' }
-    ];
-    if (isAdmin || isSales || isPM) {
-        fieldItems.splice(1, 0, { id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas & Shops' });
+    const fieldItems = [];
+    fieldItems.push({ id: 'leads', href: 'leads.html', icon: 'bi-kanban', label: 'Project Overview' });
+    fieldItems.push({ id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas & Shops' });
+    fieldItems.push({ id: 'visits', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' });
+    if (fieldItems.length) {
+        nav += sbSection('field', 'Field Operations', 'bi-geo-alt', fieldItems);
     }
-    nav += sbSection('field', 'Field Operations', 'bi-geo-alt', fieldItems);
 
     // PROJECT MANAGEMENT
     nav += sbSection('pm', 'Project Management', 'bi-briefcase', [
@@ -118,22 +198,18 @@ function renderSidebar(active) {
     // CLIENT RELATIONS
     const crItems = [
         { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
-        { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' }
+        { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' },
+        { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
     ];
-    if (isAdmin || isPM) {
-        crItems.push({ id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' });
-    }
     nav += sbSection('cr', 'Client Relations', 'bi-people', crItems);
 
     // HR & PAYROLL
     const hrItems = [
-        { id: 'leaves', href: 'leaves.html', icon: 'bi-calendar3', label: 'Leaves' }
+        { id: 'employees', href: 'employees.html', icon: 'bi-people', label: 'Employees' },
+        { id: 'salary', href: 'salary.html', icon: 'bi-cash-stack', label: 'Salary' },
+        { id: 'leaves', href: 'leaves.html', icon: 'bi-calendar3', label: 'Leaves' },
+        { id: 'incentives', href: 'incentives.html', icon: 'bi-trophy', label: 'Incentives' }
     ];
-    if (isAdmin) {
-        hrItems.unshift({ id: 'employees', href: 'employees.html', icon: 'bi-people', label: 'Employees' });
-        hrItems.splice(1, 0, { id: 'salary', href: 'salary.html', icon: 'bi-cash-stack', label: 'Salary' });
-        hrItems.push({ id: 'incentives', href: 'incentives.html', icon: 'bi-trophy', label: 'Incentives' });
-    }
     nav += sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', hrItems);
 
     // REPORTS
@@ -154,7 +230,7 @@ function renderSidebar(active) {
         </div>
         <div class="sb-scroll-area mt-2">${nav}</div>
         <div class="sb-bottom">
-            <a href="settings.html" class="sb-bottom-link"><i class="bi bi-gear-fill"></i> Settings</a>
+            ${canShowPage('settings.html') ? '<a href="settings.html" class="sb-bottom-link"><i class="bi bi-gear-fill"></i> Settings</a>' : ''}
             <a href="#" class="sb-bottom-link logout" onclick="logout();return false;"><i class="bi bi-box-arrow-right"></i> Logout</a>
         </div>
     </div>`;
@@ -176,7 +252,7 @@ window.toggleSbSection = function (id) {
 };
 
 // ─── TOP HEADER ───────────────────────────────────────────────────────
-function injectTopHeader(pageTitle) {
+window.injectTopHeader = function (pageTitle) {
     if (document.querySelector('.top-header')) return;
     const u = getUser();
     const role = (u?.role || '').replace(/_/g, ' ');
@@ -233,6 +309,8 @@ function injectTopHeader(pageTitle) {
 
     const alertsRedDot = '<span id="nav-notif-dot" class="position-absolute bg-danger border border-white rounded-circle d-none" style="width:10px;height:10px;top:8px;right:8px;"></span>';
 
+    const quickAddItems = renderQuickAddItems(u?.role);
+
     const headerHtml = `
     <div class="top-header">
         <div class="d-flex align-items-center">${breadcrumbHtml}</div>
@@ -252,19 +330,7 @@ function injectTopHeader(pageTitle) {
                     <i class="bi bi-plus-lg"></i> Add New
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px; min-width:210px;">
-                    <li><a class="dropdown-item rounded-2 py-2" href="clients.html"><i class="bi bi-people me-2 text-info"></i> New Client</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="projects.html?add=true"><i class="bi bi-briefcase me-2 text-primary"></i> New Project</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="areas.html?add=true"><i class="bi bi-building me-2" style="color:#6366f1;"></i> New Area / Shop</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="visits.html?add=true"><i class="bi bi-geo-alt me-2 text-success"></i> New Visit</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="meetings.html?add=true"><i class="bi bi-calendar-event me-2 text-success"></i> New Meeting</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="todo.html"><i class="bi bi-check2-square me-2 text-primary"></i> New Task</a></li>
-                    <li><hr class="dropdown-divider my-1"></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="javascript:void(0)" onclick="if(window.openNewBillModal) window.openNewBillModal();"><i class="bi bi-receipt me-2 text-danger"></i> New Payment</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="issues.html?add=true"><i class="bi bi-exclamation-triangle me-2 text-warning"></i> New Issue</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="feedback.html?add=true"><i class="bi bi-chat-square-text me-2 text-info"></i> New Feedback</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="leaves.html?add=true"><i class="bi bi-calendar3 me-2 text-warning"></i> New Leave Request</a></li>
-                    <li><hr class="dropdown-divider my-1"></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="admin.html"><i class="bi bi-person-plus me-2 text-secondary"></i> New User</a></li>
+                    ${quickAddItems}
                 </ul>
             </div>
             <!-- Notifications Bell -->
@@ -452,7 +518,7 @@ window.refreshBell = async function () {
 
 window._shownPushes = window._shownPushes || new Set();
 
-function showBrowserNotification(notifId, title, bodyStr, link) {
+window.showBrowserNotification = function (notifId, title, bodyStr, link) {
     if (window._shownPushes.has(notifId) || !('Notification' in window)) return;
     window._shownPushes.add(notifId);
     if (Notification.permission === 'granted') {
@@ -461,7 +527,7 @@ function showBrowserNotification(notifId, title, bodyStr, link) {
     }
 }
 
-function startNotificationPolling() {
+window.startNotificationPolling = function () {
     if (window._notifPollStarted) return;
     window._notifPollStarted = true;
     if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
@@ -796,7 +862,7 @@ window.renderFilterPanel = function (config) {
 };
 
 // Start both polls
-function startAllPolling() {
+window.startAllPolling = function () {
     startNotificationPolling();
     // High priority check every 60s
     setInterval(window.checkHighPriorityIssues, 60000);

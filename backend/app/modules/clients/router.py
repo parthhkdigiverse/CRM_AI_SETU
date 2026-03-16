@@ -68,8 +68,19 @@ def read_clients(
         client_active_status = None if normalized_status == "all" else True
 
     pm_filter_id = None
+    scoped_user_id = None
+    scoped_mode = None
     if current_user and current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
-        pm_filter_id = current_user.id
+        if current_user.role == UserRole.PROJECT_MANAGER:
+            pm_filter_id = current_user.id
+            scoped_user_id = current_user.id
+            scoped_mode = "pm"
+        else:
+            scoped_user_id = current_user.id
+            scoped_mode = "mixed"
+    elif current_user and current_user.role in [UserRole.SALES, UserRole.TELESALES]:
+        scoped_user_id = current_user.id
+        scoped_mode = "owner"
     elif pm_id and pm_id not in {"ALL", "all"}:
         try:
             pm_filter_id = int(pm_id)
@@ -83,7 +94,9 @@ def read_clients(
         sort_by=sort_by,
         sort_order=sort_order,
         is_active=client_active_status,
-        pm_id=pm_filter_id
+        pm_id=pm_filter_id,
+        scoped_user_id=scoped_user_id,
+        scoped_mode=scoped_mode,
     )
 
 
@@ -154,6 +167,15 @@ def read_client_by_id(
     client = service.get_client(client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
+
+    if current_user.role != UserRole.ADMIN:
+        has_access = (
+            client.owner_id == current_user.id
+            or client.pm_id == current_user.id
+            or client.referred_by_id == current_user.id
+        )
+        if not has_access:
+            raise HTTPException(status_code=403, detail="Access denied")
     return client
 
 

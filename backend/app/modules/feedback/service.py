@@ -16,10 +16,13 @@ class FeedbackService:
         return db_feedback
 
     def get_client_feedbacks(self, client_id: int):
-        return self.db.query(Feedback).filter(Feedback.client_id == client_id).all()
+        return self.db.query(Feedback).filter(
+            Feedback.client_id == client_id,
+            Feedback.is_deleted == False
+        ).all()
 
     def get_all_client_feedbacks(self):
-        return self.db.query(Feedback).all()
+        return self.db.query(Feedback).filter(Feedback.is_deleted == False).all()
 
     def create_user_feedback(self, user_id: int, feedback_in: UserFeedbackCreate):
         db_feedback = UserFeedback(
@@ -32,4 +35,4 @@ class FeedbackService:
         return db_feedback
 
     def get_user_feedbacks(self):
-        return self.db.query(UserFeedback).all()
+        return self.db.query(UserFeedback).filter(UserFeedback.is_deleted == False).all()
