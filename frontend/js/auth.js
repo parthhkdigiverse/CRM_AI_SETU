@@ -96,21 +96,61 @@ function requireAuth() {
     }
 
     // --- ROLE BASED ROUTING GUARD ---
-    const ROLE_PERMISSIONS = {
+    const ROLE_PERMISSIONS_FALLBACK = {
         'ADMIN': ['*'],
-        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html'],
-        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html'],
+        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
+        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
         'PROJECT_MANAGER': ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html'],
         'PROJECT_MANAGER_AND_SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html'],
         'CLIENT': ['dashboard.html']
     };
+
+    window.__crmEffectiveAccessPolicy = window.__crmEffectiveAccessPolicy || null;
+
+    const FEATURE_ACCESS_FALLBACK = {
+        issue_create_roles: ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
+        issue_manage_roles: ['ADMIN', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES', 'SALES', 'TELESALES'],
+        invoice_creator_roles: ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER_AND_SALES'],
+        invoice_verifier_roles: ['ADMIN'],
+        leave_apply_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
+        leave_edit_own_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
+        leave_cancel_own_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
+        leave_manage_roles: ['ADMIN'],
+        salary_manage_roles: ['ADMIN'],
+        salary_view_all_roles: ['ADMIN'],
+        incentive_manage_roles: ['ADMIN'],
+        incentive_view_all_roles: ['ADMIN'],
+        employee_manage_roles: ['ADMIN'],
+    };
+
+    window.hasFeatureAccess = function(featureKey, roleInput) {
+        const roleName = String(roleInput || getUser()?.role || '').toUpperCase();
+        if (!roleName) return false;
+        const effective = window.__crmEffectiveAccessPolicy;
+        const featureAccess = effective?.feature_access || effective?.policy?.feature_access || FEATURE_ACCESS_FALLBACK;
+        const allowedRoles = featureAccess?.[featureKey] || FEATURE_ACCESS_FALLBACK[featureKey] || [];
+        return Array.isArray(allowedRoles) && allowedRoles.map(v => String(v).toUpperCase()).includes(roleName);
+    };
+
+    function getAllowedPagesForRole(role) {
+        const roleName = (role || '').toUpperCase();
+        const effective = window.__crmEffectiveAccessPolicy;
+        if (effective && Array.isArray(effective.allowed_pages) && effective.role === roleName) {
+            return effective.allowed_pages;
+        }
+        const policyMap = effective?.policy?.page_access;
+        if (policyMap && policyMap[roleName]) {
+            return policyMap[roleName];
+        }
+        return ROLE_PERMISSIONS_FALLBACK[roleName] || [];
+    }
 
     function enforceRoleAccess(role) {
         if (!role || role === 'ADMIN') return true;
         const path = window.location.pathname.split('/').pop();
         if (!path || path === 'index.html') return true;
 
-        const allowed = ROLE_PERMISSIONS[role] || [];
+        const allowed = getAllowedPagesForRole(role);
         if (!allowed.includes(path) && !allowed.includes('*')) {
             showAccessDeniedState(role, path);
             return false;
@@ -146,10 +186,19 @@ function requireAuth() {
             }
             return r.json();
         })
-        .then(profile => {
+        .then(async profile => {
             if (!profile) return;
             const userData = { id: profile.id, name: profile.name || profile.email, role: profile.role };
             localStorage.setItem('crm_user', JSON.stringify(userData));
+
+            if (window.ApiClient && window.ApiClient.getEffectiveAccessPolicy) {
+                try {
+                    const effective = await window.ApiClient.getEffectiveAccessPolicy();
+                    window.__crmEffectiveAccessPolicy = effective;
+                } catch (e) {
+                    console.warn('Failed to load effective access policy, using fallback map', e);
+                }
+            }
 
             enforceRoleAccess(userData.role);
             document.body.style.visibility = 'visible';

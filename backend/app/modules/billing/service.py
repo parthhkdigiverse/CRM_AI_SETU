@@ -74,6 +74,18 @@ class BillingService:
         role_name = self._current_role_name(current_user)
         return role_name in self._allowed_verifier_roles()
 
+    def _allowed_invoice_creator_roles(self) -> set[str]:
+        raw = (
+            self._get_setting("invoice_creator_roles", "ADMIN,SALES,TELESALES,PROJECT_MANAGER_AND_SALES")
+            or "ADMIN,SALES,TELESALES,PROJECT_MANAGER_AND_SALES"
+        ).strip()
+        roles = {r.strip().upper() for r in raw.split(",") if r.strip()}
+        return roles or {"ADMIN", "SALES", "TELESALES", "PROJECT_MANAGER_AND_SALES"}
+
+    def _can_create_invoice(self, current_user: User) -> bool:
+        role_name = self._current_role_name(current_user)
+        return role_name in self._allowed_invoice_creator_roles()
+
     @staticmethod
     def _can_archive_invoice(current_user: User, bill: Bill) -> bool:
         if current_user.role == UserRole.ADMIN:
@@ -94,6 +106,24 @@ class BillingService:
             "invoice_default_amount",
             "personal_without_gst_default_amount",
             "invoice_terms_conditions",
+            # Business Account fields
+            "business_payment_upi_id",
+            "business_payment_account_name",
+            "business_payment_qr_image_url",
+            "business_payment_bank_name",
+            "business_payment_account_number",
+            "business_payment_ifsc",
+            "business_payment_branch",
+            # Personal Account fields
+            "personal_payment_upi_id",
+            "personal_payment_account_name",
+            "personal_payment_qr_image_url",
+            "personal_payment_bank_name",
+            "personal_payment_account_number",
+            "personal_payment_ifsc",
+            "personal_payment_branch",
+            
+            # Legacy fallback keys
             "payment_upi_id",
             "payment_account_name",
             "payment_qr_image_url",
@@ -101,6 +131,7 @@ class BillingService:
             "payment_account_number",
             "payment_ifsc",
             "payment_branch",
+
             "company_name",
             "company_address",
             "company_header_image_details",
@@ -114,6 +145,7 @@ class BillingService:
             "invoice_seq_with_gst",
             "invoice_seq_without_gst",
             "invoice_verifier_roles",
+            "invoice_creator_roles",
             "whatsapp_invoice_caption",
         ]
         rows = self.db.query(AppSetting).filter(AppSetting.key.in_(keys)).all()
@@ -155,12 +187,14 @@ class BillingService:
             "invoice_seq_with_gst": _to_int(mapping.get("invoice_seq_with_gst"), 1),
             "invoice_seq_without_gst": _to_int(mapping.get("invoice_seq_without_gst"), 1),
             "invoice_verifier_roles": mapping.get("invoice_verifier_roles") or "ADMIN",
+            "invoice_creator_roles": mapping.get("invoice_creator_roles") or "ADMIN,SALES,TELESALES,PROJECT_MANAGER_AND_SALES",
             "whatsapp_invoice_caption": mapping.get("whatsapp_invoice_caption") or "Please find your invoice attached.",
         }
 
     def get_workflow_options(self, current_user: User) -> dict:
         settings = self.get_invoice_defaults()
         allowed_roles = sorted(self._allowed_verifier_roles())
+        allowed_creator_roles = sorted(self._allowed_invoice_creator_roles())
         return {
             "payment_types": ["BUSINESS_ACCOUNT", "PERSONAL_ACCOUNT", "CASH"],
             "gst_types": ["WITH_GST", "WITHOUT_GST"],
@@ -178,6 +212,8 @@ class BillingService:
             "permissions": {
                 "allowed_verifier_roles": allowed_roles,
                 "can_verify_or_send": self._can_verify_or_send(current_user),
+                "allowed_creator_roles": allowed_creator_roles,
+                "can_create_invoice": self._can_create_invoice(current_user),
             },
         }
 
@@ -245,6 +281,23 @@ class BillingService:
             "invoice_default_amount",
             "personal_without_gst_default_amount",
             "invoice_terms_conditions",
+            # Business Account fields
+            "business_payment_upi_id",
+            "business_payment_account_name",
+            "business_payment_qr_image_url",
+            "business_payment_bank_name",
+            "business_payment_account_number",
+            "business_payment_ifsc",
+            "business_payment_branch",
+            # Personal Account fields
+            "personal_payment_upi_id",
+            "personal_payment_account_name",
+            "personal_payment_qr_image_url",
+            "personal_payment_bank_name",
+            "personal_payment_account_number",
+            "personal_payment_ifsc",
+            "personal_payment_branch",
+            # Legacy fallback keys
             "payment_upi_id",
             "payment_account_name",
             "payment_qr_image_url",
@@ -252,6 +305,7 @@ class BillingService:
             "payment_account_number",
             "payment_ifsc",
             "payment_branch",
+
             "company_name",
             "company_address",
             "company_header_image_details",
@@ -265,6 +319,7 @@ class BillingService:
             "invoice_seq_with_gst",
             "invoice_seq_without_gst",
             "invoice_verifier_roles",
+            "invoice_creator_roles",
             "whatsapp_invoice_caption",
         }
         for key, value in payload.items():
@@ -283,6 +338,9 @@ class BillingService:
     def create_invoice(self, bill_in: BillCreate, current_user: User) -> Bill:
         """Create a new invoice in DRAFT status."""
         self._validate_payment_mode(bill_in.payment_type, bill_in.gst_type)
+
+        if not self._can_create_invoice(current_user):
+            raise HTTPException(status_code=403, detail="You do not have permission to create invoices")
 
         if bill_in.invoice_client_phone:
             active_bill = self.db.query(Bill).filter(
@@ -316,6 +374,18 @@ class BillingService:
                 .filter(Client.phone == bill_in.invoice_client_phone.strip())
                 .first()
             )
+
+        if existing_client and current_user.role != UserRole.ADMIN:
+            can_use_existing_client = (
+                existing_client.owner_id == current_user.id
+                or existing_client.pm_id == current_user.id
+                or existing_client.referred_by_id == current_user.id
+            )
+            if not can_use_existing_client:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You can create invoice only for your own client or a new client"
+                )
 
         db_bill = Bill(
             shop_id=bill_in.shop_id,
@@ -557,7 +627,9 @@ class BillingService:
         company_name = invoice_settings.get("company_name") or "Harikrushn DigiVerse LLP"
         company_address = invoice_settings.get("company_address") or ""
         company_gst = invoice_settings.get("company_gst") or ""
-        payment_upi = invoice_settings.get("payment_upi_id") or ""
+        
+        prefix = "business_" if bill.payment_type == "BUSINESS_ACCOUNT" else "personal_" if bill.payment_type == "PERSONAL_ACCOUNT" else ""
+        payment_upi = invoice_settings.get(f"{prefix}payment_upi_id") or invoice_settings.get("payment_upi_id") or ""
 
         c.setFont("Helvetica-Bold", 15)
         c.drawString(x, y, company_name)
@@ -985,13 +1057,37 @@ class BillingService:
 
         # ── Fallback: build a UPI intent URL from settings and generate QR ───────
         inv_settings = self.get_invoice_defaults()
-        upi_id   = inv_settings.get("payment_upi_id") or ""
-        upi_name = inv_settings.get("payment_account_name") or "Payment"
+        prefix = "business_" if bill.payment_type == "BUSINESS_ACCOUNT" else "personal_" if bill.payment_type == "PERSONAL_ACCOUNT" else ""
+        upi_id   = inv_settings.get(f"{prefix}payment_upi_id") or inv_settings.get("payment_upi_id") or ""
+        upi_name = inv_settings.get(f"{prefix}payment_account_name") or inv_settings.get("payment_account_name") or "Payment"
+        static_qr = inv_settings.get(f"{prefix}payment_qr_image_url") or inv_settings.get("payment_qr_image_url") or ""
         amount   = float(bill.amount or 0)
+        
         if upi_id and amount > 0:
             txn_note = f"Invoice {bill.invoice_number or bill.id}".replace("/", "-")
             upi_url  = f"upi://pay?pa={upi_id}&pn={upi_name}&am={amount:.2f}&tn={txn_note}&cu=INR"
             return _make_qr_b64(upi_url)
+        elif static_qr:
+            from pathlib import Path
+            import httpx
+            if static_qr.startswith("/static/"):
+                filepath = Path(__file__).parent.parent.parent.parent / static_qr.lstrip("/")
+                if filepath.exists():
+                    with open(filepath, "rb") as bf:
+                        import base64 as _base64
+                        ext = static_qr.split(".")[-1].lower() if "." in static_qr else "png"
+                        mime = "image/jpeg" if ext in ("jpg", "jpeg") else f"image/{ext}"
+                        return f"data:{mime};base64," + _base64.b64encode(bf.read()).decode()
+            elif static_qr.startswith("http"):
+                try:
+                    with httpx.Client(timeout=10) as client:
+                        resp = client.get(static_qr)
+                        if resp.status_code == 200:
+                            import base64 as _base64
+                            mime = resp.headers.get("content-type", "image/png")
+                            return f"data:{mime};base64," + _base64.b64encode(resp.content).decode()
+                except:
+                    pass
 
         return None
 
@@ -1013,9 +1109,13 @@ class BillingService:
 
         requires_qr = payment_type != "CASH"
         qr_b64      = None
-        upi_id      = inv_settings.get("payment_upi_id") or ""
-        upi_name    = inv_settings.get("payment_account_name") or ""
-        static_qr   = inv_settings.get("payment_qr_image_url") or ""
+        
+        # Decide which settings to use
+        prefix = "business_" if payment_type == "BUSINESS_ACCOUNT" else "personal_" if payment_type == "PERSONAL_ACCOUNT" else ""
+        
+        upi_id      = inv_settings.get(f"{prefix}payment_upi_id") or inv_settings.get("payment_upi_id") or ""
+        upi_name    = inv_settings.get(f"{prefix}payment_account_name") or inv_settings.get("payment_account_name") or ""
+        static_qr   = inv_settings.get(f"{prefix}payment_qr_image_url") or inv_settings.get("payment_qr_image_url") or ""
 
         if requires_qr:
             # Build a lightweight temp Bill-like object so _create_phonepe_upi_qr can work

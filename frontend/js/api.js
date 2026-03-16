@@ -176,6 +176,15 @@ class ApiClient {
     static async updateUserStatus(userId, isActive) {
         return this.request(`/users/${userId}/status`, { method: 'PATCH', body: { is_active: isActive } });
     }
+    static async getAccessPolicy() {
+        return this.request('/users/access-policy');
+    }
+    static async updateAccessPolicy(data) {
+        return this.request('/users/access-policy', { method: 'PUT', body: data });
+    }
+    static async getEffectiveAccessPolicy() {
+        return this.request('/users/access-policy/effective');
+    }
 
     // ─── Dashboard ───────────────────────────────────────────
     static async getDashboardStats() {
@@ -375,6 +384,12 @@ class ApiClient {
     static async confirmSalarySlip(slipId) {
         return this.request(`/hrm/salary/confirm/${slipId}`, { method: 'PATCH' });
     }
+    static async updateSalarySlipRemarks(slipId, data) {
+        return this.request(`/hrm/salary/slip/${slipId}/remarks`, { method: 'PATCH', body: data });
+    }
+    static async updateSalarySlipVisibility(slipId, data) {
+        return this.request(`/hrm/salary/slip/${slipId}/visibility`, { method: 'PATCH', body: data });
+    }
     static async getPayslipSettings() {
         return this.request('/hrm/payslip-settings');
     }
@@ -391,6 +406,12 @@ class ApiClient {
     }
     static async applyLeave(data) {
         return this.request('/hrm/leave', { method: 'POST', body: data });
+    }
+    static async updateLeave(leaveId, data) {
+        return this.request(`/hrm/leave/${leaveId}`, { method: 'PATCH', body: data });
+    }
+    static async deleteLeave(leaveId) {
+        return this.request(`/hrm/leave/${leaveId}`, { method: 'DELETE' });
     }
     static async approveRejectLeave(leaveId, status, remarks = null) {
         const body = { status };
@@ -434,6 +455,12 @@ class ApiClient {
     }
     static async getUserIncentiveSlips(userId) {
         return this.request(`/incentives/slips/${userId}`);
+    }
+    static async updateIncentiveSlipRemarks(slipId, data) {
+        return this.request(`/incentives/slips/${slipId}/remarks`, { method: 'PATCH', body: data });
+    }
+    static async updateIncentiveSlipVisibility(slipId, data) {
+        return this.request(`/incentives/slips/${slipId}/visibility`, { method: 'PATCH', body: data });
     }
 
     // ─── Payments ────────────────────────────────────────────
@@ -501,6 +528,9 @@ class ApiClient {
     }
     static async getInvoiceWorkflowOptions() {
         return this.request('/billing/workflow/options');
+    }
+    static async getBillingAutofillSource(source) {
+        return this.request(`/billing/autofill-sources?source=${encodeURIComponent(source)}`);
     }
     static async resolveInvoiceWorkflow(data) {
         return this.request('/billing/workflow/resolve', { method: 'POST', body: data });

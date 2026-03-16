@@ -70,6 +70,9 @@ class SalarySlip(Base):
     status = Column(String, nullable=False, server_default="CONFIRMED")
     confirmed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     confirmed_at = Column(Date, nullable=True)
+    is_visible_to_employee = Column(Boolean, nullable=False, default=False, server_default="false")
+    employee_remarks = Column(Text, nullable=True)
+    manager_remarks = Column(Text, nullable=True)
 
     file_url = Column(String, nullable=True)
     is_deleted = Column(Boolean, default=False, index=True)

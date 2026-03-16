@@ -9,6 +9,7 @@ from app.modules.users.models import User
 from app.modules.clients.models import Client
 from app.modules.notifications.service import EmailService
 from fastapi import BackgroundTasks
+from sqlalchemy import or_
 
 class IssueService:
     def __init__(self, db: Session):
@@ -58,6 +59,84 @@ class IssueService:
         except Exception as e:
             print(f"Error fetching issues: {e}")
             return []
+
+    def get_all_issues_for_user(
+        self,
+        current_user: User,
+        skip: int = 0,
+        limit: int = 100,
+        status: Optional[str] = None,
+        severity: Optional[str] = None,
+        client_id: Optional[int] = None,
+        assigned_to_id: Optional[int] = None,
+    ):
+        """
+        Admin sees all issues.
+        Non-admin staff sees only issues that are:
+        - assigned to them, OR
+        - reported by them, OR
+        - related to clients they own/manage/referred.
+        """
+        try:
+            query = self.db.query(Issue).join(Client, Client.id == Issue.client_id).filter(Issue.is_deleted == False)
+
+            if current_user.role.value != "ADMIN":
+                query = query.filter(or_(
+                    Issue.assigned_to_id == current_user.id,
+                    Issue.reporter_id == current_user.id,
+                    Client.owner_id == current_user.id,
+                    Client.pm_id == current_user.id,
+                    Client.referred_by_id == current_user.id,
+                ))
+
+            if status:
+                if ',' in status:
+                    status_list = [s.strip() for s in status.split(',')]
+                    query = query.filter(Issue.status.in_(status_list))
+                else:
+                    query = query.filter(Issue.status == status)
+            if severity:
+                query = query.filter(Issue.severity == severity)
+            if client_id:
+                query = query.filter(Issue.client_id == client_id)
+            if assigned_to_id:
+                query = query.filter(Issue.assigned_to_id == assigned_to_id)
+
+            issues = query.order_by(Issue.id.desc()).offset(skip).limit(limit).all()
+
+            for issue in issues:
+                if issue.assigned_to:
+                    issue.pm_name = issue.assigned_to.name or issue.assigned_to.email or issue.assigned_to.employee_code or f"PM #{issue.assigned_to_id}"
+                if issue.project:
+                    issue.project_name = issue.project.name
+                elif issue.client:
+                    issue.project_name = issue.client.name
+                if issue.reporter:
+                    issue.reporter_name = issue.reporter.name or issue.reporter.email or issue.reporter.employee_code or f"User #{issue.reporter_id}"
+
+            return issues
+        except Exception as e:
+            print(f"Error fetching scoped issues: {e}")
+            return []
+
+    def can_access_issue(self, issue: Issue, current_user: User) -> bool:
+        if current_user.role.value == "ADMIN":
+            return True
+        client = issue.client or self.db.query(Client).filter(Client.id == issue.client_id).first()
+        if not client:
+            return issue.reporter_id == current_user.id or issue.assigned_to_id == current_user.id
+        return (
+            issue.assigned_to_id == current_user.id
+            or issue.reporter_id == current_user.id
+            or client.owner_id == current_user.id
+            or client.pm_id == current_user.id
+            or client.referred_by_id == current_user.id
+        )
+
+    def can_update_issue(self, issue: Issue, current_user: User) -> bool:
+        if current_user.role.value == "ADMIN":
+            return True
+        return issue.assigned_to_id == current_user.id or issue.reporter_id == current_user.id
 
     async def create_issue(self, issue: IssueCreate, client_id: int, current_user: User, request: Request, background_tasks: BackgroundTasks = None):
         client = self.db.query(Client).filter(Client.id == client_id).first()
@@ -123,6 +202,9 @@ class IssueService:
         db_issue = self.get_issue(issue_id)
         if not db_issue:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Issue not found")
+
+        if not self.can_update_issue(db_issue, current_user):
+            raise HTTPException(status_code=403, detail="You can update only issues assigned to you or reported by you")
 
         old_data = {
             "title": db_issue.title,

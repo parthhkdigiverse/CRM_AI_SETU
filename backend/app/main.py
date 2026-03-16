@@ -96,11 +96,10 @@ async def root():
 app.include_router(api_router, prefix="/api")
 
 @app.get("/api/config")
-async def get_config():
+async def get_config(request: Request):
+    # Prefer request-derived base URL so frontend always targets the active host/port.
+    request_base = str(request.base_url).rstrip("/")
     return {
-        "API_BASE_URL": config.API_BASE_URL
+        "API_BASE_URL": f"{request_base}/api"
     }
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="127.0.0.1", port=8080, reload=True)

@@ -123,10 +123,33 @@ window.renderSidebar = function (active) {
 
     const { isAdmin, isSales, isTelesales, isPM, isClient } = getRoleFlags(role);
 
+    const roleName = String(role || '').toUpperCase();
+    const fallbackPages = {
+        ADMIN: ['*'],
+        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
+        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
+        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
+        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
+        CLIENT: ['dashboard.html']
+    };
+    const effectivePolicy = window.__crmEffectiveAccessPolicy;
+    const allowedPages = Array.isArray(effectivePolicy?.allowed_pages)
+        ? effectivePolicy.allowed_pages
+        : (effectivePolicy?.policy?.page_access?.[roleName] || fallbackPages[roleName] || []);
+    const allowAllPages = roleName === 'ADMIN' || allowedPages.includes('*');
+    const canShowPage = (href) => {
+        const page = String(href || '').split('?')[0];
+        if (!page) return false;
+        if (allowAllPages) return true;
+        return allowedPages.includes(page);
+    };
+
     let nav = '';
 
     function sbSection(id, label, icon, items) {
-        const isActiveSection = items.some(i => i.id === active);
+        const visibleItems = (items || []).filter(item => canShowPage(item.href));
+        if (!visibleItems.length) return '';
+        const isActiveSection = visibleItems.some(i => i.id === active);
         return `
         <div class="sb-section">
             <div class="sb-section-header ${isActiveSection ? 'open' : ''}" onclick="toggleSbSection('${id}')">
@@ -135,7 +158,7 @@ window.renderSidebar = function (active) {
                 <i class="bi bi-chevron-right sb-arrow"></i>
             </div>
             <ul class="sb-section-items ${isActiveSection ? 'open' : ''}">
-                ${items.map(item => `
+                ${visibleItems.map(item => `
                 <li><a href="${item.href}" class="sb-link ${active === item.id ? 'active' : ''}">
                     <i class="bi ${item.icon}"></i><span>${item.label}</span></a></li>`).join('')}
             </ul>
@@ -150,60 +173,48 @@ window.renderSidebar = function (active) {
     ]);
 
     // ADMINISTRATION
-    if (!isClient) {
-        nav += sbSection('admin', 'Administration', 'bi-shield-check', [
-            { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
-        ]);
-    }
+    nav += sbSection('admin', 'Administration', 'bi-shield-check', [
+        { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
+    ]);
 
     // FIELD OPERATIONS
     const fieldItems = [];
-    if (!isClient) {
-        fieldItems.push({ id: 'leads', href: 'leads.html', icon: 'bi-kanban', label: 'Project Overview' });
-        fieldItems.push({ id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas & Shops' });
-        fieldItems.push({ id: 'visits', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' });
-    }
+    fieldItems.push({ id: 'leads', href: 'leads.html', icon: 'bi-kanban', label: 'Project Overview' });
+    fieldItems.push({ id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas & Shops' });
+    fieldItems.push({ id: 'visits', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' });
     if (fieldItems.length) {
         nav += sbSection('field', 'Field Operations', 'bi-geo-alt', fieldItems);
     }
 
     // PROJECT MANAGEMENT
-    if (!isClient) {
-        nav += sbSection('pm', 'Project Management', 'bi-briefcase', [
-            { id: 'demo', href: 'projects_demo.html', icon: 'bi-play-circle', label: 'Demo' },
-            { id: 'projects', href: 'projects.html', icon: 'bi-briefcase', label: 'Projects' },
-            { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
-            { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
-        ]);
-    }
+    nav += sbSection('pm', 'Project Management', 'bi-briefcase', [
+        { id: 'demo', href: 'projects_demo.html', icon: 'bi-play-circle', label: 'Demo' },
+        { id: 'projects', href: 'projects.html', icon: 'bi-briefcase', label: 'Projects' },
+        { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
+        { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
+    ]);
 
     // CLIENT RELATIONS
-    if (!isClient) {
-        const crItems = [
-            { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
-            { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' },
-            { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
-        ];
-        nav += sbSection('cr', 'Client Relations', 'bi-people', crItems);
-    }
+    const crItems = [
+        { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
+        { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' },
+        { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
+    ];
+    nav += sbSection('cr', 'Client Relations', 'bi-people', crItems);
 
     // HR & PAYROLL
-    if (!isClient) {
-        const hrItems = [
-            { id: 'employees', href: 'employees.html', icon: 'bi-people', label: 'Employees' },
-            { id: 'salary', href: 'salary.html', icon: 'bi-cash-stack', label: 'Salary' },
-            { id: 'leaves', href: 'leaves.html', icon: 'bi-calendar3', label: 'Leaves' },
-            { id: 'incentives', href: 'incentives.html', icon: 'bi-trophy', label: 'Incentives' }
-        ];
-        nav += sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', hrItems);
-    }
+    const hrItems = [
+        { id: 'employees', href: 'employees.html', icon: 'bi-people', label: 'Employees' },
+        { id: 'salary', href: 'salary.html', icon: 'bi-cash-stack', label: 'Salary' },
+        { id: 'leaves', href: 'leaves.html', icon: 'bi-calendar3', label: 'Leaves' },
+        { id: 'incentives', href: 'incentives.html', icon: 'bi-trophy', label: 'Incentives' }
+    ];
+    nav += sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', hrItems);
 
     // REPORTS
-    if (!isClient) {
-        nav += sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
-            { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
-        ]);
-    }
+    nav += sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
+        { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
+    ]);
 
     const userName = u?.name || u?.email || 'User';
     const initials = userName.slice(0, 2).toUpperCase();
@@ -218,7 +229,7 @@ window.renderSidebar = function (active) {
         </div>
         <div class="sb-scroll-area mt-2">${nav}</div>
         <div class="sb-bottom">
-            <a href="settings.html" class="sb-bottom-link"><i class="bi bi-gear-fill"></i> Settings</a>
+            ${canShowPage('settings.html') ? '<a href="settings.html" class="sb-bottom-link"><i class="bi bi-gear-fill"></i> Settings</a>' : ''}
             <a href="#" class="sb-bottom-link logout" onclick="logout();return false;"><i class="bi bi-box-arrow-right"></i> Logout</a>
         </div>
     </div>`;

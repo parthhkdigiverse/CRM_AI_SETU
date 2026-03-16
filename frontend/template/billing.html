@@ -132,10 +132,7 @@
                     <p class="text-muted mb-0 small">Create client payment invoices with payment mode, GST type, verification and WhatsApp dispatch workflow.</p>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button id="admin-settings-btn" class="btn btn-light d-flex align-items-center justify-content-center" style="width:42px;height:42px;border-radius:10px;display:none;" onclick="openSettingsModal()" title="Billing Settings">
-                        <i class="bi bi-gear-fill" style="font-size:1.2rem;color:#475569;"></i>
-                    </button>
-                    <button class="btn btn-primary d-flex align-items-center gap-2" onclick="openCreateModal()">
+                    <button class="btn btn-primary d-flex align-items-center gap-2" id="new-invoice-btn" onclick="openCreateModal()">
                         <i class="bi bi-plus-lg"></i> New Invoice
                     </button>
                 </div>
@@ -619,6 +616,12 @@ async function init() {
         if (settingsBtn) settingsBtn.style.display = isAdmin ? 'flex' : 'none';
 
         try { workflowOptions = await ApiClient.getInvoiceWorkflowOptions(); } catch(e) { workflowOptions = null; }
+        const canCreateInvoice = Boolean(workflowOptions?.permissions?.can_create_invoice);
+        const createBtn = document.getElementById('new-invoice-btn');
+        if (createBtn && !canCreateInvoice) {
+            createBtn.disabled = true;
+            createBtn.title = 'You do not have permission to create invoices';
+        }
         await loadBills();
     } catch(e) {
         showToast('Failed to load page: ' + e.message, 'error');
@@ -768,6 +771,10 @@ function _setWizardStep(n) {
 }
 
 function openCreateModal() {
+    if (workflowOptions && workflowOptions.permissions && workflowOptions.permissions.can_create_invoice === false) {
+        showToast('You do not have permission to create invoices', 'error');
+        return;
+    }
     // Always reset _everything_ so old data never leaks
     wizardQRData = null;
     ['c-name','c-phone','c-email','c-org','c-address'].forEach(id => {
@@ -958,26 +965,8 @@ async function submitCreateInvoice() {
             gst_type:     gt,
             amount:       amt,
         });
-        
-        showToast('Invoice generated! Finalizing...', 'success');
-        
-        // Auto-Verify
-        try {
-            await ApiClient.verifyInvoice(newBill.id);
-            showToast('Invoice verified correctly.', 'success');
-        } catch(ve) {
-            console.error('Auto-verify failed', ve);
-        }
 
-        // Auto-Send via WA
-        try {
-            const waRes = await ApiClient.sendInvoiceWhatsApp(newBill.id);
-            if (waRes.success) {
-                showToast('Invoice sent to WhatsApp!', 'success');
-            }
-        } catch(we) {
-            showToast('Invoice created but WhatsApp send failed. Please check token.', 'warning');
-        }
+        showToast('Invoice created in pending verification state.', 'success');
 
         closeCreateModal();
         await loadBills();
@@ -998,28 +987,16 @@ async function openAutofillPicker(source) {
     document.getElementById('autofill-list').innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm"></span></div>';
     document.getElementById('autofillModal').classList.remove('d-none');
     try {
-        if (source === 'visit') {
-            const shops = await ApiClient.request('/shops/');
-            autofillSourceData = shops.map(s => ({
-                id: s.id, name: s.contact_person || s.name || '', phone: s.phone || '',
-                email: s.email || '', org: s.name || '', address: s.address || '',
-                _label: (s.contact_person || s.name || 'Shop') + (s.name ? ` · ${s.name}` : ''),
-            }));
-        } else if (source === 'feedback') {
-            const [fbs, clients] = await Promise.all([
-                ApiClient.getAllClientFeedbacks().catch(() => []),
-                ApiClient.getClients().catch(() => []),
-            ]);
-            const clientsById = new Map((clients || []).map(c => [c.id, c]));
-            autofillSourceData = fbs.map(f => ({
-                id: f.id, name: f.client_name || clientsById.get(f.client_id)?.name || '',
-                phone: clientsById.get(f.client_id)?.phone || '',
-                email: clientsById.get(f.client_id)?.email || '',
-                org: clientsById.get(f.client_id)?.organization || '',
-                address: clientsById.get(f.client_id)?.address || '',
-                _label: f.client_name || clientsById.get(f.client_id)?.name || 'Feedback',
-            }));
-        }
+        const rows = await ApiClient.getBillingAutofillSource(source);
+        autofillSourceData = (rows || []).map(r => ({
+            id: r.id,
+            name: r.name || '',
+            phone: r.phone || '',
+            email: r.email || '',
+            org: r.org || '',
+            address: r.address || '',
+            _label: r.label || r.name || 'Client',
+        }));
         filterAutofillList();
     } catch(e) {
         document.getElementById('autofill-list').innerHTML = `<div class="text-center py-4 text-danger small">${e.message || 'Failed to load'}</div>`;
@@ -1131,8 +1108,8 @@ async function submitSendWhatsApp() {
     btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
     try {
         await ApiClient.getWhatsAppHealth();
-        await ApiClient.sendInvoiceWhatsApp(pendingActionBillId);
-        const waUrl = buildWhatsAppChatUrl(pendingActionPhone);
+        const waRes = await ApiClient.sendInvoiceWhatsApp(pendingActionBillId);
+        const waUrl = waRes?.wa_url || buildWhatsAppChatUrl(pendingActionPhone);
         closeWAModal(); showToast('Invoice sent via WhatsApp! Client auto-created if new.', 'success');
         if (waUrl) window.open(waUrl, '_blank');
         await loadBills();

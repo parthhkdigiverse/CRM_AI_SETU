@@ -26,7 +26,7 @@
                             approvals.</p>
                     </div>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-primary fw-semibold" style="border-radius:10px;"
+                        <button id="apply-leave-btn" class="btn btn-primary fw-semibold" style="border-radius:10px;"
                             onclick="openLeaveModal()">
                             <i class="bi bi-calendar-plus me-2"></i>Apply Leave
                         </button>
@@ -335,8 +335,19 @@
 
         const user = getUser();
         const isAdmin = user?.role === 'ADMIN';
+        const canApplyLeave = !isAdmin && (window.hasFeatureAccess ? window.hasFeatureAccess('leave_apply_roles') : true);
+        const canEditOwnLeave = window.hasFeatureAccess ? window.hasFeatureAccess('leave_edit_own_roles') : !isAdmin;
+        const canManageLeave = window.hasFeatureAccess ? window.hasFeatureAccess('leave_manage_roles') : isAdmin;
+        let leaveEditMode = false;
+        let editingLeaveId = null;
+        let currentLeaveRows = [];
 
-        if (isAdmin) {
+        const applyBtn = document.getElementById('apply-leave-btn');
+        if (applyBtn && !canApplyLeave) {
+            applyBtn.style.display = 'none';
+        }
+
+        if (canManageLeave) {
             document.getElementById('leave-summary-bar').style.display = 'flex';
             document.getElementById('admin-filter-toolbar').style.display = 'block';
             // Populate employee dropdown
@@ -414,17 +425,63 @@
 
         // Modal controls
         function openLeaveModal() {
+            leaveEditMode = false;
+            editingLeaveId = null;
             document.getElementById('leaveModal').classList.add('show');
             document.getElementById('leave-day-preview').style.display = 'none';
             document.getElementById('l-start').value = '';
             document.getElementById('l-end').value = '';
             document.getElementById('l-reason').value = '';
             document.getElementById('l-type').value = 'CASUAL';
+            document.getElementById('leave-submit-btn').textContent = 'Submit Request';
             document.getElementById('dt-full').checked = true;
             document.getElementById('dt-full-lbl').style.borderColor = '#4F46E5';
             document.getElementById('dt-full-lbl').style.background = '#EEF2FF';
             document.getElementById('dt-half-lbl').style.borderColor = '';
             document.getElementById('dt-half-lbl').style.background = '';
+        }
+
+        function openEditLeave(leaveId) {
+            const leave = (currentLeaveRows || []).find(l => l.id === leaveId);
+            if (!leave) return;
+            if (!canEditOwnLeave) return;
+            leaveEditMode = true;
+            editingLeaveId = leave.id;
+            document.getElementById('leaveModal').classList.add('show');
+            document.getElementById('l-start').value = leave.start_date;
+            document.getElementById('l-end').value = leave.end_date;
+            document.getElementById('l-reason').value = leave.reason || '';
+            document.getElementById('l-type').value = leave.leave_type || 'CASUAL';
+            if ((leave.day_type || 'FULL') === 'HALF') {
+                document.getElementById('dt-half').checked = true;
+                document.getElementById('dt-full-lbl').style.borderColor = '';
+                document.getElementById('dt-full-lbl').style.background = '';
+                document.getElementById('dt-half-lbl').style.borderColor = '#4F46E5';
+                document.getElementById('dt-half-lbl').style.background = '#EEF2FF';
+            } else {
+                document.getElementById('dt-full').checked = true;
+                document.getElementById('dt-full-lbl').style.borderColor = '#4F46E5';
+                document.getElementById('dt-full-lbl').style.background = '#EEF2FF';
+                document.getElementById('dt-half-lbl').style.borderColor = '';
+                document.getElementById('dt-half-lbl').style.background = '';
+            }
+            document.getElementById('leave-submit-btn').textContent = 'Update Request';
+            updateDayPreview();
+        }
+
+        async function cancelLeave(leaveId) {
+            if (!canEditOwnLeave) {
+                showToast('You do not have permission to cancel leave', 'error');
+                return;
+            }
+            if (!confirm('Cancel this leave request?')) return;
+            try {
+                await ApiClient.deleteLeave(leaveId);
+                showToast('Leave request cancelled.', 'success');
+                loadLeaves();
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to cancel leave', 'error');
+            }
         }
         function closeLeaveModal() { document.getElementById('leaveModal').classList.remove('show'); }
         document.getElementById('leaveModal').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
@@ -504,7 +561,7 @@
         }
 
         async function loadMyAttendanceSummary() {
-            if (isAdmin) return;
+            if (canManageLeave) return;
 
             const tbody = document.getElementById('my-attendance-tbody');
             const start = document.getElementById('my-att-start').value;
@@ -549,19 +606,20 @@
             try {
                 let allLeaves = null;
                 let leaves;
-                if (isAdmin) {
+                if (canManageLeave) {
                     allLeaves = await ApiClient.getAllLeaves();
                     leaves = [...allLeaves];
                 } else {
                     leaves = await ApiClient.getMyLeaves();
                 }
+                currentLeaveRows = leaves;
 
                 // Apply filters (admin only)
-                const userF = isAdmin ? document.getElementById('leave-user-filter')?.value : '';
-                const statusF = isAdmin ? document.getElementById('leave-status-filter').value : '';
-                const typeF = isAdmin ? document.getElementById('leave-type-filter').value : '';
-                const fromF = isAdmin ? document.getElementById('leave-from-filter')?.value : '';
-                const toF = isAdmin ? document.getElementById('leave-to-filter')?.value : '';
+                const userF = canManageLeave ? document.getElementById('leave-user-filter')?.value : '';
+                const statusF = canManageLeave ? document.getElementById('leave-status-filter').value : '';
+                const typeF = canManageLeave ? document.getElementById('leave-type-filter').value : '';
+                const fromF = canManageLeave ? document.getElementById('leave-from-filter')?.value : '';
+                const toF = canManageLeave ? document.getElementById('leave-to-filter')?.value : '';
                 if (userF) leaves = leaves.filter(l => String(l.user_id) === String(userF));
                 if (statusF) leaves = leaves.filter(l => l.status === statusF);
                 if (typeF) leaves = leaves.filter(l => (l.leave_type || 'CASUAL') === typeF);
@@ -569,7 +627,7 @@
                 if (toF) leaves = leaves.filter(l => l.end_date <= toF);
 
                 // Summary counts (admin) — uses unfiltered allLeaves saved before filter was applied
-                if (isAdmin) {
+                if (canManageLeave) {
                     let pending = 0, approved = 0, rejected = 0, totalDays = 0;
                     allLeaves.forEach(l => {
                         const d = Math.ceil((new Date(l.end_date) - new Date(l.start_date)) / 86400000) + 1;
@@ -588,7 +646,7 @@
                 const countEl = document.getElementById('leave-count');
                 const countNonAdmin = document.getElementById('leave-count-non-admin');
                 if (countEl) countEl.textContent = countStr;
-                if (countNonAdmin) countNonAdmin.textContent = isAdmin ? '' : countStr;
+                if (countNonAdmin) countNonAdmin.textContent = canManageLeave ? '' : countStr;
 
                 if (!leaves.length) {
                     tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted">No leave requests found.</td></tr>';
@@ -607,11 +665,16 @@
                     const typeCls = l.leave_type === 'UNPAID' ? 'bg-danger-subtle text-danger border' : 'bg-light text-dark border';
 
                     let lastCol;
-                    if (isAdmin && l.status === 'PENDING') {
+                    if (canManageLeave && l.status === 'PENDING') {
                         lastCol = `<div class="d-flex gap-1 flex-wrap">
                            <button class="btn btn-sm btn-outline-success" title="Approve" onclick="approveLeaveWithRemarks(${l.id}, 'APPROVED')"><i class="bi bi-check-lg"></i> Approve</button>
                            <button class="btn btn-sm btn-outline-danger" title="Reject" onclick="approveLeaveWithRemarks(${l.id}, 'REJECTED')"><i class="bi bi-x-lg"></i> Reject</button>
                          </div>`;
+                    } else if (!canManageLeave && canEditOwnLeave && l.status === 'PENDING' && String(l.user_id) === String(user?.id)) {
+                        lastCol = `<div class="d-flex gap-1 flex-wrap">
+                            <button class="btn btn-sm btn-outline-primary" title="Edit" onclick="openEditLeave(${l.id})"><i class="bi bi-pencil"></i> Edit</button>
+                            <button class="btn btn-sm btn-outline-danger" title="Cancel" onclick="cancelLeave(${l.id})"><i class="bi bi-x-circle"></i> Cancel</button>
+                        </div>`;
                     } else if (l.remarks) {
                         const remarksEsc = (l.remarks || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                         lastCol = `<span class="text-muted small d-block text-truncate" style="max-width:160px;" title="${remarksEsc}"><i class="bi bi-chat-left-text me-1"></i>${remarksEsc}</span>`;
@@ -650,20 +713,25 @@
             if (!reason) { showToast('Reason is mandatory. Please provide a justification.', 'error'); return; }
 
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>' + (leaveEditMode ? 'Updating...' : 'Submitting...');
             try {
-                await ApiClient.applyLeave({
+                const payload = {
                     start_date: start,
                     end_date: end,
                     leave_type: leaveType,
                     day_type: document.querySelector('input[name="day-type"]:checked').value,
                     reason: reason,
-                });
+                };
+                if (leaveEditMode && editingLeaveId) {
+                    await ApiClient.updateLeave(editingLeaveId, payload);
+                } else {
+                    await ApiClient.applyLeave(payload);
+                }
                 closeLeaveModal();
-                showToast('Leave request submitted successfully.', 'success');
+                showToast(leaveEditMode ? 'Leave request updated successfully.' : 'Leave request submitted successfully.', 'success');
                 loadLeaves();
             } catch (e) { showToast(e.data?.detail || e.message || 'Failed to apply leave', 'error'); }
-            finally { btn.disabled = false; btn.innerHTML = 'Submit Request'; }
+            finally { btn.disabled = false; btn.textContent = leaveEditMode ? 'Update Request' : 'Submit Request'; }
         }
 
         // Approve / Reject — with optional remarks modal
@@ -724,7 +792,7 @@
         const start = new Date();
         start.setDate(end.getDate() - 6);
 
-        if (!isAdmin) {
+        if (!canManageLeave) {
             document.getElementById('my-attendance-card').style.display = 'block';
             document.getElementById('my-att-start').value = start.toISOString().slice(0, 10);
             document.getElementById('my-att-end').value = end.toISOString().slice(0, 10);

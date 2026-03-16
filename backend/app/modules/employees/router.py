@@ -29,7 +29,10 @@ def list_employees(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
-    """List all non-deleted users (employees) with optional filters."""
+    """List employees with optional filters. Non-admin sees only own profile."""
+    if current_user.role != UserRole.ADMIN:
+        return [current_user]
+
     q = db.query(User).filter(User.is_deleted == False)
     
     if department:

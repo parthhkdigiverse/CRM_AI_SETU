@@ -1,10 +1,16 @@
 from typing import List, Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
+import shutil
+import uuid
+from pathlib import Path
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
 from app.modules.users.models import User, UserRole
+from app.modules.shops.models import Shop
+from app.modules.feedback.models import Feedback
+from app.modules.clients.models import Client
 from app.modules.billing.schemas import (
   BillCreate,
   BillRead,
@@ -30,6 +36,27 @@ admin_only = RoleChecker([UserRole.ADMIN])
 
 
 # ──────────────────── Settings ────────────────────────────────────────────────
+
+BASE_DIR = Path(__file__).parent.parent.parent.parent
+QR_UPLOAD_DIR = BASE_DIR / "static" / "uploads" / "qrs"
+QR_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+
+@router.post("/settings/upload-qr")
+async def upload_qr_image(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_only)
+) -> Any:
+    """Uploads a QR image and returns its URL."""
+    ext = file.filename.split('.')[-1] if '.' in file.filename else 'png'
+    filename = f"qr_{uuid.uuid4().hex}.{ext}"
+    file_path = QR_UPLOAD_DIR / filename
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    return {"url": f"/static/uploads/qrs/{filename}"}
+
 
 @router.get("/settings")
 def get_invoice_settings(
@@ -59,6 +86,67 @@ def get_invoice_workflow_options(
 ) -> Any:
   """Return payment type/GST constraints, defaults and role permissions."""
   return BillingService(db).get_workflow_options(current_user)
+
+
+@router.get("/autofill-sources")
+def get_billing_autofill_sources(
+  source: str,
+  db: Session = Depends(get_db),
+  current_user: User = Depends(staff_access),
+) -> Any:
+  source_key = (source or "").strip().lower()
+  if source_key not in {"visit", "feedback"}:
+    raise HTTPException(status_code=400, detail="source must be 'visit' or 'feedback'")
+
+  role = current_user.role
+
+  def _client_scope_filter(query):
+    if role == UserRole.ADMIN:
+      return query
+    if role in (UserRole.SALES, UserRole.TELESALES):
+      return query.filter(Client.owner_id == current_user.id)
+    if role == UserRole.PROJECT_MANAGER:
+      return query.filter(Client.pm_id == current_user.id)
+    return query.filter(
+      (Client.owner_id == current_user.id)
+      | (Client.pm_id == current_user.id)
+      | (Client.referred_by_id == current_user.id)
+    )
+
+  if source_key == "visit":
+    q = db.query(Shop).filter(Shop.is_deleted == False)
+    if role != UserRole.ADMIN:
+      q = q.filter(Shop.owner_id == current_user.id)
+    shops = q.order_by(Shop.id.desc()).limit(250).all()
+    return [
+      {
+        "id": s.id,
+        "name": s.contact_person or s.name or "",
+        "phone": s.phone or "",
+        "email": s.email or "",
+        "org": s.name or "",
+        "address": s.address or "",
+        "label": (s.contact_person or s.name or "Shop") + ((f" · {s.name}") if s.contact_person and s.name else ""),
+      }
+      for s in shops
+    ]
+
+  q = db.query(Feedback, Client).join(Client, Client.id == Feedback.client_id, isouter=True)
+  q = q.filter(Feedback.is_deleted == False)
+  q = _client_scope_filter(q)
+  rows = q.order_by(Feedback.created_at.desc()).limit(250).all()
+  return [
+    {
+      "id": f.id,
+      "name": f.client_name or (c.name if c else ""),
+      "phone": (c.phone if c else "") or "",
+      "email": (c.email if c else "") or "",
+      "org": (c.organization if c else "") or "",
+      "address": (c.address if c else "") or "",
+      "label": f.client_name or (c.name if c else "Feedback"),
+    }
+    for f, c in rows
+  ]
 
 
 @router.post("/workflow/resolve", response_model=BillingWorkflowResolveResponse)
@@ -335,13 +423,17 @@ def _build_invoice_html(bill, settings: dict) -> str:
     company_pan     = settings.get("company_pan")     or ""
     company_cin     = settings.get("company_cin")     or ""
     company_cst     = settings.get("company_cst_code") or ""
-    upi_id          = settings.get("payment_upi_id")  or ""
-    upi_name        = settings.get("payment_account_name") or company_name
-    qr_img_url      = settings.get("payment_qr_image_url") or ""
-    bank_name       = settings.get("payment_bank_name") or ""
-    bank_account_no = settings.get("payment_account_number") or ""
-    bank_ifsc       = settings.get("payment_ifsc") or ""
-    bank_branch     = settings.get("payment_branch") or ""
+    
+    # Resolve payment details based on bill payment type
+    prefix = "business_" if bill.payment_type == "BUSINESS_ACCOUNT" else "personal_" if bill.payment_type == "PERSONAL_ACCOUNT" else ""
+    
+    upi_id          = settings.get(f"{prefix}payment_upi_id") or settings.get("payment_upi_id") or ""
+    upi_name        = settings.get(f"{prefix}payment_account_name") or settings.get("payment_account_name") or company_name
+    qr_img_url      = settings.get(f"{prefix}payment_qr_image_url") or settings.get("payment_qr_image_url") or ""
+    bank_name       = settings.get(f"{prefix}payment_bank_name") or settings.get("payment_bank_name") or ""
+    bank_account_no = settings.get(f"{prefix}payment_account_number") or settings.get("payment_account_number") or ""
+    bank_ifsc       = settings.get(f"{prefix}payment_ifsc") or settings.get("payment_ifsc") or ""
+    bank_branch     = settings.get(f"{prefix}payment_branch") or settings.get("payment_branch") or ""
 
     header_bg = settings.get("invoice_header_bg") or "#2E5B82"
 

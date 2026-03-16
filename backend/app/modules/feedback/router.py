@@ -47,6 +47,19 @@ def read_client_feedback(
     from app.modules.feedback.service import FeedbackService
     from app.modules.salary.models import AppSetting
     policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+
+    client = db.query(Client).filter(Client.id == client_id, Client.is_deleted == False).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    if current_user.role != UserRole.ADMIN:
+        has_access = (
+            client.owner_id == current_user.id
+            or client.pm_id == current_user.id
+            or client.referred_by_id == current_user.id
+        )
+        if not has_access:
+            raise HTTPException(status_code=403, detail="Access denied")
+
     service = FeedbackService(db)
     feedbacks = service.get_client_feedbacks(client_id)
     if not policy or policy.value == "SOFT":
@@ -59,14 +72,18 @@ def read_all_client_feedbacks(
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_checker)
 ) -> Any:
-    from app.modules.feedback.service import FeedbackService
+    q = db.query(Feedback).join(Client, Feedback.client_id == Client.id, isouter=True)
+    if current_user.role != UserRole.ADMIN:
+        q = q.filter(
+            (Client.owner_id == current_user.id)
+            | (Client.pm_id == current_user.id)
+            | (Client.referred_by_id == current_user.id)
+        )
     from app.modules.salary.models import AppSetting
     policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
-    service = FeedbackService(db)
-    feedbacks = service.get_all_client_feedbacks()
     if not policy or policy.value == "SOFT":
-        feedbacks = [f for f in feedbacks if not getattr(f, 'is_deleted', False)]
-    return feedbacks
+        q = q.filter(Feedback.is_deleted == False)
+    return q.order_by(Feedback.created_at.desc()).all()
 
 @router.post("/user", response_model=UserFeedbackRead, status_code=status.HTTP_201_CREATED)
 def create_user_feedback(

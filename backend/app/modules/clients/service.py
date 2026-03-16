@@ -7,7 +7,7 @@ from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
 from app.modules.users.models import User, UserRole
 from app.modules.notifications.service import EmailService
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from typing import List, Dict
 
 class ClientService:
@@ -19,7 +19,21 @@ class ClientService:
         query = self.db.query(Client).filter(Client.id == client_id, Client.is_deleted == False)
         return query.first()
 
-    def get_clients(self, skip: int = 0, limit: int = 100, search: str = None, sort_by: str = "created_at", sort_order: str = "desc", include_inactive: bool = False, pm_id: int = None, is_active: bool | None = True):
+    def get_clients(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+        search: str = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc",
+        include_inactive: bool = False,
+        pm_id: int = None,
+        is_active: bool | None = True,
+        owner_id: int | None = None,
+        referred_by_id: int | None = None,
+        scoped_user_id: int | None = None,
+        scoped_mode: str | None = None,
+    ):
         try:
             query = self.db.query(Client).filter(Client.is_deleted == False)
             if is_active is True:
@@ -30,6 +44,22 @@ class ClientService:
                 query = query.filter(Client.is_active == True)
             if pm_id:
                 query = query.filter(Client.pm_id == pm_id)
+            if owner_id:
+                query = query.filter(Client.owner_id == owner_id)
+            if referred_by_id:
+                query = query.filter(Client.referred_by_id == referred_by_id)
+            if scoped_user_id and scoped_mode:
+                mode = str(scoped_mode).lower()
+                if mode == "owner":
+                    query = query.filter(Client.owner_id == scoped_user_id)
+                elif mode == "pm":
+                    query = query.filter(Client.pm_id == scoped_user_id)
+                elif mode == "mixed":
+                    query = query.filter(or_(
+                        Client.owner_id == scoped_user_id,
+                        Client.pm_id == scoped_user_id,
+                        Client.referred_by_id == scoped_user_id,
+                    ))
             if search:
                 search_pattern = f"%{search}%"
                 query = query.filter(
