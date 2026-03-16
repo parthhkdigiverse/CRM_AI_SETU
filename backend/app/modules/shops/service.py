@@ -1,3 +1,4 @@
+# backend/app/modules/shops/service.py
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.modules.shops.models import Shop, ShopStatus
@@ -10,16 +11,47 @@ logger = logging.getLogger(__name__)
 
 class ShopService:
     @staticmethod
-    def create_shop(db: Session, shop_in: ShopCreate):
+    def create_shop(db: Session, shop_in: ShopCreate, current_user: User):
+        from app.modules.users.models import UserRole
+        from datetime import datetime, UTC
+        
         db_shop = Shop(**shop_in.model_dump())
+        db_shop.created_by_id = current_user.id
+        
+        # Auto-assign the creator as the PM/Sales owner if no one else is assigned
+        pm_id = getattr(shop_in, 'project_manager_id', None) or current_user.id
+        db_shop.project_manager_id = pm_id
+        
+        # Auto-Assign if not Admin
+        if current_user.role != UserRole.ADMIN:
+            db_user = db.query(User).filter(User.id == current_user.id).first()
+            db_shop.assigned_owners_list = [db_user]
+            db_shop.assignment_status = "ACCEPTED"
+            db_shop.accepted_at = datetime.now(UTC)
+            db_shop.assigned_by_id = current_user.id
+            
         db.add(db_shop)
         db.commit()
         db.refresh(db_shop)
+        
+        # Add dynamic fields for Read schema
+        setattr(db_shop, 'owner_name', db_shop.owner.name if getattr(db_shop, 'owner', None) else None)
+        setattr(db_shop, 'area_name', db_shop.area.name if getattr(db_shop, 'area', None) else None)
+        setattr(db_shop, 'created_by_name', current_user.name)
+        
+        # Map assigned users for frontend UI
+        db_shop.assigned_users = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+            for u in getattr(db_shop, 'assigned_owners_list', [])
+        ]
+        
         return db_shop
 
     @staticmethod
     def get_shop(db: Session, shop_id: int):
-        shop = db.query(Shop).filter(Shop.id == shop_id).first()
+        query = db.query(Shop).filter(Shop.id == shop_id, Shop.is_deleted == False)
+        
+        shop = query.first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
         if getattr(shop, 'area', None):
@@ -27,39 +59,78 @@ class ShopService:
         return shop
 
     @staticmethod
-    def list_shops(db: Session, skip: int = 0, limit: int = 100, status: ShopStatus = None, owner_id: int = None):
-        from app.modules.areas.models import Area
-        query = db.query(
-            Shop, 
-            User.name.label("owner_name"),
-            Area.name.label("area_name")
-        ).outerjoin(User, Shop.owner_id == User.id).outerjoin(Area, Shop.area_id == Area.id)
+    def list_shops(db: Session, current_user: User, skip: int = 0, limit: int = 100, status: ShopStatus = None, owner_id: int = None):
+        from sqlalchemy.orm import selectinload
+        from app.modules.salary.models import AppSetting
+        policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        
+        query = db.query(Shop).options(
+            selectinload(Shop.owner),
+            selectinload(Shop.area),
+            selectinload(Shop.assigned_owners_list),
+            selectinload(Shop.archived_by),
+            selectinload(Shop.creator),
+            selectinload(Shop.project_manager)
+        ).filter(Shop.is_archived == False)
+        
+        if not policy or policy.value == "SOFT":
+            query = query.filter(Shop.is_deleted == False)
         
         if status:
             query = query.filter(Shop.status == status)
-        if owner_id:
+            
+        # If Admin, return all shops
+        if current_user.role != "ADMIN":
+            # Sales/Telesales: Check the many-to-many relationship
+            query = query.filter(
+                Shop.assigned_owners_list.any(User.id == current_user.id)
+            )
+        elif owner_id:
+            # Admins can optionally filter by a specific owner
             query = query.filter(Shop.owner_id == owner_id)
         
         results = query.offset(skip).limit(limit).all()
         shops = []
-        for shop, owner_name, area_name in results:
+        for shop in results:
             shop_data = shop.__dict__.copy()
-            shop_data["owner_name"] = owner_name
-            shop_data["area_name"] = area_name
+            shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+            shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+            shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
+            shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+            shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
+            shop_data.pop("_sa_instance_state", None)
+            
+            # Map assigned owners for frontend UI
+            shop_data["assigned_users"] = [
+                {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+                for u in getattr(shop, 'assigned_owners_list', [])
+            ]
             shops.append(shop_data)
         return shops
         
     @staticmethod
-    def list_kanban_shops(db: Session, owner_id: int = None):
-        from app.modules.areas.models import Area
-        query = db.query(
-            Shop, 
-            User.name.label("owner_name"),
-            Area.name.label("area_name")
-        ).outerjoin(User, Shop.owner_id == User.id).outerjoin(Area, Shop.area_id == Area.id)
+    def list_kanban_shops(db: Session, owner_id: int = None, source: str = None):
+        from sqlalchemy.orm import selectinload
+        from app.modules.visits.models import Visit as VisitModel
+        from app.modules.salary.models import AppSetting
+        policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        
+        query = db.query(Shop).options(
+            selectinload(Shop.owner),
+            selectinload(Shop.area),
+            selectinload(Shop.assigned_owners_list),
+            selectinload(Shop.archived_by),
+            selectinload(Shop.visits).selectinload(VisitModel.user),  # for last_visitor_name
+            selectinload(Shop.project_manager)
+        ).filter(Shop.is_archived == False)
+        
+        if not policy or policy.value == "SOFT":
+            query = query.filter(Shop.is_deleted == False)
         
         if owner_id:
             query = query.filter(Shop.owner_id == owner_id)
+        if source and source not in {"ALL", "all"}:
+            query = query.filter(Shop.source == source)
             
         results = query.all()
         
@@ -70,10 +141,28 @@ class ShopService:
             "CONVERTED": [],
         }
         
-        for shop, owner_name, area_name in results:
+        for shop in results:
             shop_data = shop.__dict__.copy()
-            shop_data["owner_name"] = owner_name
-            shop_data["area_name"] = area_name
+            shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+            shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+            shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
+            shop_data["last_visitor_name"] = shop.last_visitor_name  # @property — must be copied explicitly
+            shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
+
+            # Determine last visit status from pre-loaded visits (no extra query)
+            if shop.visits:
+                latest_visit = max(shop.visits, key=lambda v: v.visit_date or v.created_at)
+                raw_status = latest_visit.status
+                shop_data["last_visit_status"] = raw_status.value if hasattr(raw_status, "value") else str(raw_status)
+            else:
+                shop_data["last_visit_status"] = None
+            shop_data.pop("_sa_instance_state", None)
+            
+            shop_data["assigned_users"] = [
+                {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+                for u in getattr(shop, 'assigned_owners_list', [])
+            ]
+            
             status_val = str(shop.status.value) if hasattr(shop.status, "value") else str(shop.status)
             if status_val in kanban:
                 kanban[status_val].append(shop_data)
@@ -129,11 +218,79 @@ class ShopService:
         db.refresh(db_client)
         return db_client
 
+    # ── Soft Delete (Archive) ──
     @staticmethod
-    def delete_shop(db: Session, shop_id: int):
-        from sqlalchemy import or_
-
+    def archive_shop(db: Session, shop_id: int, current_user: User):
         db_shop = ShopService.get_shop(db, shop_id)
+
+        # Check permissions
+        if current_user.role != "ADMIN":
+            if not any(u.id == current_user.id for u in db_shop.assigned_owners_list):
+                 raise HTTPException(status_code=403, detail="Not authorized to archive this shop")
+
+        db_shop.is_archived = True
+        db_shop.archived_by_id = current_user.id
+        db.commit()
+        return {"detail": f"Shop \"{db_shop.name}\" has been archived"}
+
+    # ── Archived Listing ──
+    @staticmethod
+    def get_archived_shops(db: Session, current_user: User):
+        from sqlalchemy.orm import selectinload
+        
+        query = db.query(Shop).options(
+            selectinload(Shop.owner),
+            selectinload(Shop.area),
+            selectinload(Shop.assigned_owners_list),
+            selectinload(Shop.archived_by),
+            selectinload(Shop.creator)
+        ).filter(Shop.is_archived == True)
+
+        if current_user.role != "ADMIN":
+            query = query.filter(
+                (Shop.archived_by_id == current_user.id) | (Shop.assigned_owners_list.any(User.id == current_user.id))
+            )
+
+        results = query.all()
+        
+        shops = []
+        for shop in results:
+            shop_data = shop.__dict__.copy()
+            shop_data["owner_name"] = shop.owner.name if shop.owner else None
+            shop_data["area_name"] = shop.area.name if shop.area else None
+            shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
+            shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+            shop_data.pop("_sa_instance_state", None)
+            shop_data["assigned_users"] = [
+                {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+                for u in getattr(shop, 'assigned_owners_list', [])
+            ]
+            shops.append(shop_data)
+        return shops
+
+    # ── Unarchive ──
+    @staticmethod
+    def unarchive_shop(db: Session, shop_id: int, current_user: User):
+        db_shop = ShopService.get_shop(db, shop_id)
+
+        # Check permissions
+        if current_user.role != "ADMIN":
+            if db_shop.archived_by_id != current_user.id and not any(u.id == current_user.id for u in db_shop.assigned_owners_list):
+                 raise HTTPException(status_code=403, detail="Not authorized to unarchive this shop")
+
+        db_shop.is_archived = False
+        db_shop.archived_by_id = None
+        db.commit()
+        db.refresh(db_shop)
+        return db_shop
+
+    # ── Hard Delete (Admin only) ──
+    @staticmethod
+    def hard_delete_shop(db: Session, shop_id: int):
+        from sqlalchemy import or_
+        db_shop = db.query(Shop).filter(Shop.id == shop_id).first()
+        if not db_shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
         
         conditions = []
         if db_shop.email:
@@ -146,6 +303,408 @@ class ShopService:
             if client_exists:
                 raise HTTPException(status_code=400, detail="Cannot delete shop that has been converted to a client")
 
-        db.delete(db_shop)
+        from app.modules.salary.models import AppSetting
+        policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        is_hard = policy and policy.value == "HARD"
+
+        if is_hard:
+            db.delete(db_shop)
+        else:
+            db_shop.is_deleted = True
+
         db.commit()
-        return {"detail": "Shop deleted successfully"}
+        return {"detail": f"Shop {'permanently ' if is_hard else ''}deleted"}
+
+    # ── Accept Shop (Staff claims the shop) ──
+    @staticmethod
+    def accept_shop(db: Session, shop_id: int, current_user: User):
+        from app.modules.users.models import User
+        from app.modules.shops.models import Shop
+        shop = db.query(Shop).filter(Shop.id == shop_id).first()
+        if not shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
+            
+        if not any(u.id == current_user.id for u in shop.assigned_owners_list):
+            raise HTTPException(status_code=403, detail="You are not assigned to this shop.")
+            
+        from datetime import datetime, UTC
+        db_user = db.query(User).filter(User.id == current_user.id).first()
+        shop.assignment_status = "ACCEPTED"
+        shop.assigned_owners_list = [db_user]
+        shop.accepted_at = datetime.now(UTC)
+        
+        db.commit()
+        db.refresh(shop)
+        
+        shop_data = shop.__dict__.copy()
+        shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+        shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+        shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
+        shop_data.pop("_sa_instance_state", None)
+        
+        shop_data["assigned_users"] = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None} 
+            for u in shop.assigned_owners_list
+        ]
+        return shop_data
+
+    @staticmethod
+    def get_accepted_leads(db: Session, current_user: User):
+        from sqlalchemy.orm import joinedload
+        from sqlalchemy import not_, exists
+        from app.modules.users.models import User as UserModel, UserRole
+        from app.modules.visits.models import Visit
+
+        is_admin = (current_user.role == UserRole.ADMIN)
+
+        # Correlated NOT EXISTS subquery — works correctly even when Visit table is empty
+        # For staff: only exclude visits THEY logged; for admin: exclude any visit
+        if is_admin:
+            already_visited = ~exists().where(Visit.shop_id == Shop.id)
+        else:
+            already_visited = ~exists().where(
+                (Visit.shop_id == Shop.id) &
+                (Visit.user_id == current_user.id)
+            )
+
+        query = db.query(Shop).options(
+            joinedload(Shop.area),
+            joinedload(Shop.assigned_owners_list),
+            joinedload(Shop.assigned_by)
+        ).filter(
+            Shop.assignment_status == "ACCEPTED",
+            Shop.status == ShopStatus.NEW,   # progressed shops (CONTACTED+) are already visited
+            already_visited                  # belt-and-suspenders: no Visit record either
+        )
+
+        # Staff can only see their own assigned shops
+        if not is_admin:
+            query = query.filter(Shop.assigned_owners_list.any(UserModel.id == current_user.id))
+
+        results = query.order_by(Shop.accepted_at.desc()).all()
+
+        history = []
+        for shop in results:
+            assigned_to_name = shop.assigned_owners_list[0].name if shop.assigned_owners_list else "Unknown"
+            history.append({
+                "shop_id": shop.id,
+                "area_name": shop.area.name if shop.area else "N/A",
+                "shop_name": shop.name,
+                "assigned_to_name": assigned_to_name,
+                "assigned_by_name": shop.assigned_by.name if shop.assigned_by else "System",
+                "accepted_at": shop.accepted_at
+            })
+        return history
+
+    # ── Assign PM to a CONTACTED lead ──
+    @staticmethod
+    def assign_pm(db: Session, shop_id: int, pm_id: int, current_user: User):
+        from app.modules.users.models import UserRole
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        if not shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
+
+        pm = db.query(User).filter(User.id == pm_id).first()
+        if not pm:
+            raise HTTPException(status_code=404, detail="User not found")
+        if pm.role not in [UserRole.ADMIN, UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
+            raise HTTPException(status_code=400, detail="Selected user is not a Project Manager or Admin")
+
+        shop.project_manager_id = pm_id
+        db.commit()
+        db.refresh(shop)
+
+        shop_data = shop.__dict__.copy()
+        shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+        shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+        shop_data["project_manager_name"] = pm.name
+        shop_data["archived_by_name"] = None
+        shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+        shop_data["last_visitor_name"] = None
+        shop_data.pop("_sa_instance_state", None)
+        shop_data["assigned_users"] = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None}
+            for u in getattr(shop, 'assigned_owners_list', [])
+        ]
+        return shop_data
+
+    # ── Auto-Assign PM with lowest workload ──
+    @staticmethod
+    def auto_assign_shop(db: Session, shop_id: int, current_user: User):
+        from app.modules.users.models import UserRole
+        from app.modules.projects.models import Project, ProjectStatus
+        import random
+        
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        if not shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
+
+        # Fetch active PMs
+        pms = db.query(User).filter(
+            User.is_active == True,
+            User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES])
+        ).all()
+        
+        if not pms:
+            raise HTTPException(status_code=400, detail="No active Project Managers found to assign")
+
+        pm_scores = {}
+        for pm in pms:
+            active_shops_count = db.query(Shop).filter(
+                Shop.project_manager_id == pm.id,
+                Shop.is_archived == False,
+                Shop.status.in_([ShopStatus.NEW, ShopStatus.CONTACTED, ShopStatus.MEETING_SET])
+            ).count()
+            
+            active_projects_count = db.query(Project).filter(
+                Project.pm_id == pm.id,
+                Project.status.in_([ProjectStatus.PLANNING, ProjectStatus.IN_PROGRESS, ProjectStatus.ONGOING])
+            ).count()
+            
+            pm_scores[pm.id] = active_shops_count + active_projects_count
+            
+        min_score = min(pm_scores.values())
+        tied_pms = [pm_id for pm_id, score in pm_scores.items() if score == min_score]
+        
+        selected_pm_id = random.choice(tied_pms)
+        selected_pm = next((pm for pm in pms if pm.id == selected_pm_id), None)
+        
+        shop.project_manager_id = selected_pm_id
+        db.commit()
+        db.refresh(shop)
+
+        shop_data = shop.__dict__.copy()
+        shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+        shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+        shop_data["project_manager_name"] = selected_pm.name if selected_pm else None
+        shop_data["archived_by_name"] = None
+        shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+        shop_data["last_visitor_name"] = None
+        shop_data.pop("_sa_instance_state", None)
+        shop_data["assigned_users"] = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None}
+            for u in getattr(shop, 'assigned_owners_list', [])
+        ]
+        return shop_data
+
+    # ── Auto-Suggest PM with lowest workload ──
+    @staticmethod
+    def suggest_least_busy_pm(db: Session, current_user: User):
+        from app.modules.users.models import UserRole
+        from app.modules.projects.models import Project, ProjectStatus
+        import random
+
+        # Fetch active PMs
+        pms = db.query(User).filter(
+            User.is_active == True,
+            User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES])
+        ).all()
+        
+        if not pms:
+            raise HTTPException(status_code=400, detail="No active Project Managers found to suggest")
+
+        pm_scores = {}
+        for pm in pms:
+            active_shops_count = db.query(Shop).filter(
+                Shop.project_manager_id == pm.id,
+                Shop.is_archived == False,
+                Shop.status.in_([ShopStatus.NEW, ShopStatus.CONTACTED, ShopStatus.MEETING_SET])
+            ).count()
+            
+            active_projects_count = db.query(Project).filter(
+                Project.pm_id == pm.id,
+                Project.status.in_([ProjectStatus.PLANNING, ProjectStatus.IN_PROGRESS, ProjectStatus.ONGOING])
+            ).count()
+            
+            pm_scores[pm.id] = active_shops_count + active_projects_count
+            
+        min_score = min(pm_scores.values())
+        tied_pms = [pm_id for pm_id, score in pm_scores.items() if score == min_score]
+        
+        selected_pm_id = random.choice(tied_pms)
+        selected_pm = next((pm for pm in pms if pm.id == selected_pm_id), None)
+        
+        return {
+            "suggested_pm_id": selected_pm.id,
+            "name": selected_pm.name
+        }
+
+    # ── Mark a demo as completed, auto-advance to MEETING_SET on first completion ──
+    @staticmethod
+    def complete_demo(db: Session, shop_id: int, current_user: User):
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        if not shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
+
+        shop.demo_stage = (shop.demo_stage or 0) + 1
+        shop.demo_scheduled_at = None  # Reset after completion
+
+        # First completed demo → advance status to MEETING_SET
+        if shop.demo_stage == 1:
+            shop.status = ShopStatus.MEETING_SET
+
+        db.commit()
+        db.refresh(shop)
+
+        shop_data = shop.__dict__.copy()
+        shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+        shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+        shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
+        shop_data["archived_by_name"] = None
+        shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+        shop_data["last_visitor_name"] = None
+        shop_data["last_visit_status"] = None
+        shop_data.pop("_sa_instance_state", None)
+        shop_data["assigned_users"] = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None}
+            for u in getattr(shop, 'assigned_owners_list', [])
+        ]
+        return shop_data
+
+    # ── Cancel a scheduled demo on the shop ──
+    @staticmethod
+    def cancel_demo(db: Session, shop_id: int, current_user: User):
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        if not shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
+
+        shop.demo_scheduled_at = None
+        shop.demo_title = None
+        shop.demo_type = None
+        shop.demo_notes = None
+        shop.demo_meet_link = None
+        
+        db.commit()
+        db.refresh(shop)
+
+        # Build response map
+        shop_data = shop.__dict__.copy()
+        shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+        shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+        shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
+        shop_data["archived_by_name"] = None
+        shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+        shop_data["last_visitor_name"] = None
+        shop_data["last_visit_status"] = None
+        shop_data.pop("_sa_instance_state", None)
+        shop_data["assigned_users"] = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None}
+            for u in getattr(shop, 'assigned_owners_list', [])
+        ]
+        return shop_data
+
+    # ── Schedule a demo on the shop ──
+    @staticmethod
+    def schedule_demo(db: Session, shop_id: int, payload, current_user: User):
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        if not shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
+
+        shop.demo_scheduled_at = payload.scheduled_at
+        shop.demo_title = payload.title
+        shop.demo_type = payload.demo_type
+        shop.demo_notes = payload.notes
+
+        # Generate real Google Meet link if requested
+        if payload.demo_type == "Google Meet":
+            from app.utils.google_meet import generate_google_meet_link
+            try:
+                result = generate_google_meet_link(
+                    title=payload.title or f"Demo: {shop.name}",
+                    start_time=payload.scheduled_at,
+                    description=payload.notes or ""
+                )
+                shop.demo_meet_link = result.get("meet_link")
+            except Exception as e:
+                print(f"[ShopService] Failed to generate Google Meet link: {e}")
+                shop.demo_meet_link = None
+        else:
+            shop.demo_meet_link = None
+        db.commit()
+        db.refresh(shop)
+
+        shop_data = shop.__dict__.copy()
+        shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+        shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+        shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
+        shop_data["archived_by_name"] = None
+        shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+        shop_data["last_visitor_name"] = None
+        shop_data["last_visit_status"] = None
+        shop_data.pop("_sa_instance_state", None)
+        shop_data["assigned_users"] = [
+            {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None}
+            for u in getattr(shop, 'assigned_owners_list', [])
+        ]
+        return shop_data
+
+    # ── Get demo queue for PM dashboard ──
+    @staticmethod
+    def get_demo_queue(db: Session, current_user: User):
+        from sqlalchemy.orm import selectinload
+        from app.modules.users.models import UserRole
+
+        query = db.query(Shop).options(
+            selectinload(Shop.owner),
+            selectinload(Shop.area),
+            selectinload(Shop.assigned_owners_list),
+            selectinload(Shop.creator),
+            selectinload(Shop.project_manager)
+        ).filter(
+            Shop.is_archived == False,
+            Shop.project_manager_id != None
+        )
+
+        # Non-admin PMs only see their own queue
+        if current_user.role not in [UserRole.ADMIN]:
+            query = query.filter(Shop.project_manager_id == current_user.id)
+
+        results = query.order_by(Shop.id.desc()).all()
+        shops = []
+        for shop in results:
+            shop_data = shop.__dict__.copy()
+            shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
+            shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
+            shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
+            shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
+            shop_data["archived_by_name"] = None
+            shop_data["last_visitor_name"] = None
+            shop_data.pop("_sa_instance_state", None)
+            shop_data["assigned_users"] = [
+                {"id": u.id, "name": u.name, "role": getattr(u.role, 'value', str(u.role)) if u.role else None}
+                for u in getattr(shop, 'assigned_owners_list', [])
+            ]
+            shops.append(shop_data)
+        return shops
+
+    @staticmethod
+    def get_pm_pipeline_analytics(db: Session):
+        from app.modules.shops.models import Shop, ShopStatus
+        from sqlalchemy.orm import selectinload
+
+        query = db.query(Shop).options(selectinload(Shop.project_manager)).filter(
+            Shop.is_archived == False,
+            Shop.project_manager_id != None
+        )
+        
+        results = query.all()
+        
+        pm_stats = {}
+        for shop in results:
+            pm_name = shop.project_manager.name if shop.project_manager else "Unknown"
+            if pm_name not in pm_stats:
+                pm_stats[pm_name] = {
+                    "pm_name": pm_name,
+                    "in_demo": 0,
+                    "meeting_set": 0,
+                    "converted": 0
+                }
+                
+            if shop.status == ShopStatus.CONVERTED:
+                pm_stats[pm_name]["converted"] += 1
+            elif shop.status == ShopStatus.MEETING_SET:
+                pm_stats[pm_name]["meeting_set"] += 1
+            else:
+                pm_stats[pm_name]["in_demo"] += 1
+                
+        return list(pm_stats.values())

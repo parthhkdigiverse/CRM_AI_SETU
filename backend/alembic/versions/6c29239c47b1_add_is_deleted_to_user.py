@@ -1,3 +1,4 @@
+# backend/alembic/versions/6c29239c47b1_add_is_deleted_to_user.py
 """add_is_deleted_to_user
 
 Revision ID: 6c29239c47b1

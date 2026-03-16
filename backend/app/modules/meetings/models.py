@@ -1,3 +1,4 @@
+# backend/app/modules/meetings/models.py
 import enum
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Enum, JSON, Boolean
 from sqlalchemy.orm import relationship
@@ -39,6 +40,7 @@ class MeetingSummary(Base):
 
     cancellation_reason = Column(Text, nullable=True)
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    is_deleted = Column(Boolean, default=False, index=True)
 
     # Dedup flag: set True once the 15-min reminder notification is sent
     reminder_sent = Column(Boolean, default=False, nullable=False, server_default="false")

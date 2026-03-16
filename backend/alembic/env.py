@@ -1,3 +1,4 @@
+# backend/alembic/env.py
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -58,12 +59,21 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = settings.DATABASE_URL
+    from urllib.parse import urlparse, unquote
+    import psycopg2
+
+    parsed = urlparse(settings.DATABASE_URL)
     connectable = engine_from_config(
-        configuration,
+        {"sqlalchemy.url": "postgresql+psycopg2://"},
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        creator=lambda: psycopg2.connect(
+            host=parsed.hostname,
+            port=parsed.port or 5432,
+            dbname=unquote(parsed.path.lstrip("/")),
+            user=parsed.username,
+            password=unquote(parsed.password) if parsed.password else "",
+        ),
     )
 
     with connectable.connect() as connection:

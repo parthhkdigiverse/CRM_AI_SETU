@@ -1,3 +1,4 @@
+/* frontend/css/components.css */
 ﻿/* ═══════════════════════════════════════════════════════════════
    SRM AI SETU — Component Styles
    Unique UI patterns not covered by Bootstrap or theme.css
@@ -201,6 +202,240 @@
     flex-wrap: wrap;
 }
 .search-filter-bar .form-control { max-width: 300px; }
+
+/* ── Shared Filter Panel ─────────────────────────────────────── */
+.filter-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-xs);
+    overflow: hidden;
+    margin-bottom: 18px;
+}
+
+.filter-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-app);
+    cursor: pointer;
+    user-select: none;
+    flex-wrap: wrap;
+}
+
+.filter-panel-head-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1 1 280px;
+    flex-wrap: wrap;
+}
+
+.filter-panel-head-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-body);
+    white-space: nowrap;
+}
+
+.filter-panel-head-left i {
+    color: var(--primary);
+    font-size: 0.88rem;
+}
+
+.filter-panel-head-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+}
+
+.filter-summary-text {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.filter-active-pills {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.filter-pill-remove {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.7;
+}
+
+.filter-pill-remove:hover {
+    opacity: 1;
+}
+
+.filter-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.filter-toggle-btn:hover {
+    background: var(--border-subtle);
+    color: var(--text-body);
+}
+
+.filter-toggle-btn i {
+    font-size: 0.75rem;
+    transition: transform 0.22s ease;
+}
+
+.filter-toggle-btn.open i {
+    transform: rotate(180deg);
+}
+
+.filter-panel-body {
+    display: none;
+    padding: 16px;
+}
+
+.filter-panel-body.open {
+    display: block;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+}
+
+.filter-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.filter-field .form-control,
+.filter-field .form-select {
+    min-height: 38px;
+    border-radius: 10px;
+    border-color: var(--border);
+    box-shadow: none;
+    font-size: 0.86rem;
+}
+
+.filter-field .form-control:focus,
+.filter-field .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-ring);
+}
+
+.filter-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-subtle);
+    flex-wrap: wrap;
+}
+
+.btn-filter-apply,
+.btn-filter-reset {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 9px;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.btn-filter-apply {
+    background: var(--primary);
+    color: #fff;
+    border: 1px solid var(--primary);
+}
+
+.btn-filter-apply:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: #fff;
+}
+
+.btn-filter-reset {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+.btn-filter-reset:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+    background: var(--danger-light);
+}
+
+@media (max-width: 767.98px) {
+    .filter-panel-head {
+        align-items: flex-start;
+    }
+
+    .filter-panel-head-meta {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .filter-actions {
+        justify-content: stretch;
+    }
+
+    .btn-filter-apply,
+    .btn-filter-reset {
+        flex: 1 1 140px;
+    }
+}
 
 /* ── Kanban Card ─────────────────────────────────────────────── */
 .kanban-card { transition: transform 0.18s ease, box-shadow 0.18s ease; }

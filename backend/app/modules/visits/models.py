@@ -1,3 +1,4 @@
+# backend/app/modules/visits/models.py
 import enum
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum, Text
 from sqlalchemy.orm import relationship
@@ -48,4 +49,16 @@ class Visit(Base):
     @property
     def area_name(self) -> str:
         return self.shop.area.name if self.shop and self.shop.area else None
+
+    @property
+    def project_manager_name(self) -> str:
+        return self.shop.project_manager.name if self.shop and getattr(self.shop, 'project_manager', None) else None
+
+    @property
+    def shop_status(self) -> str:
+        return self.shop.status.value if self.shop and self.shop.status else None
+
+    @property
+    def shop_demo_stage(self) -> int:
+        return getattr(self.shop, 'demo_stage', 0) if self.shop else 0
 

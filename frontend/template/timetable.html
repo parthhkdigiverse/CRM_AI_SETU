@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- frontend/template/timetable.html -->
 <html lang="en">
 
 <head>
@@ -9,8 +10,8 @@
     <title>Timetable — SRM AI SETU</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
-    <link rel="stylesheet" href="../css/components.css?v=1772780187">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
+    <link rel="stylesheet" href="../css/components.css?v=1772780188">
     <style>
         body {
             background: #f8fafc;
@@ -984,16 +985,20 @@
     </div>
 
     <!-- ─── Scripts ───────────────────────────────────────── -->
+    <script src="../js/utils.js?v=2.3"></script>
+    <script src="../js/api.js?v=2.3"></script>
+    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/app.js?v=2.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/api.js?v=1772780187"></script>
-    <script src="../js/utils.js?v=1772780187"></script>
-    <script src="../js/ui_components.js?v=1772780187"></script>
-    <script src="../js/auth.js?v=1772780187"></script>
 
     <script>
         // ── Auth & Sidebar ──────────────────────────────────────
         requireAuth();
-        document.getElementById('sidebar').innerHTML = renderSidebar('timetable');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) {
+            sidebarElement.innerHTML = renderSidebar('timetable');
+        }
         injectTopHeader('Timetable');
 
         // ── Constants ───────────────────────────────────────────
@@ -1007,6 +1012,31 @@
         let ALL_USERS_LIST = [];
         let selectedCalendars = new Set();
         let currentUser = null;
+
+        function isTimetableAdmin() {
+            return currentUser && currentUser.role === 'ADMIN';
+        }
+
+        function getCurrentUserLabel() {
+            return currentUser ? (currentUser.name || currentUser.email || '') : '';
+        }
+
+        function configureTimetableAssigneeSelect() {
+            const sel = document.getElementById('ev-user');
+            if (!sel) return;
+
+            if (isTimetableAdmin()) {
+                sel.disabled = false;
+                return;
+            }
+
+            const currentLabel = getCurrentUserLabel();
+            sel.innerHTML = currentLabel
+                ? `<option value="${currentLabel}">${currentLabel}</option>`
+                : '<option value="">My Schedule</option>';
+            sel.value = currentLabel;
+            sel.disabled = true;
+        }
 
         const PALETTE = [
             { color: '#4f46e5', bg: 'rgba(79,70,229,.13)' },
@@ -1089,6 +1119,10 @@
             const defaultInitials = (ev.user || '?').substring(0, 2).toUpperCase();
             const baseUser = USERS[ev.user] || { color: '#6b7280', bg: 'rgba(107,114,128,0.13)', initials: defaultInitials };
 
+            if (ev.event_type === 'DEMO') {
+                return { color: '#4f46e5', bg: '#e0e7ff', initials: baseUser.initials };
+            }
+
             // Priority for Meetings or if status is explicitly actionable (Done/Cancelled)
             if (ev.event_type === 'MEETING' || status === 'COMPLETED' || status === 'CANCELLED' || status === 'DONE' || status === 'CANCEL') {
                 if (STATUS_COLORS[status]) {
@@ -1135,7 +1169,23 @@
             try {
                 const data = await ApiClient.getTimetable(startStr, endStr);
                 const evts = data.events || [];
-                evts.forEach(e => { e._uid = e.event_type + '_' + e.id; });
+                evts.forEach(e => { 
+                    e._uid = e.event_type + '_' + e.id; 
+                    
+                    // Support generic events (like DEMOs) returning ISO strings instead of decomposed times
+                    if (e.start && !e.date) {
+                        const sDt = new Date(e.start);
+                        e.date = dStr(sDt);
+                        e.sh = sDt.getHours();
+                        e.sm = sDt.getMinutes();
+                    }
+                    if (e.end && e.eh == null) {
+                        const eDt = new Date(e.end);
+                        e.eh = eDt.getHours();
+                        e.em = eDt.getMinutes();
+                    }
+                    if (!e.user) e.user = 'System';
+                });
                 return evts;
             } catch (error) {
                 console.error("Failed to load timetable events:", error);
@@ -1146,7 +1196,7 @@
         // ── Event actions ───────────────────────────────────────
         async function saveEvent() {
             const title = document.getElementById('ev-title').value.trim();
-            const user = document.getElementById('ev-user').value;
+            const user = isTimetableAdmin() ? document.getElementById('ev-user').value : getCurrentUserLabel();
             const date = document.getElementById('ev-date').value;
             const start = document.getElementById('ev-start').value;
             const end = document.getElementById('ev-end').value;
@@ -1179,6 +1229,7 @@
                     const el = document.getElementById(id); if (el) el.value = '';
                 });
                 document.getElementById('ev-user').value = '';
+                configureTimetableAssigneeSelect();
 
                 bsModal.hide();
                 await renderCalendar();
@@ -1276,6 +1327,9 @@
                     <label class="check-item">
                         <input type="checkbox" ${selectedCalendars.has('Tasks') ? 'checked' : ''} onchange="toggleCalendar('Tasks', this.checked)" class="accent-checkbox" style="--c:#8b5cf6"> Tasks
                     </label>
+                    <label class="check-item">
+                        <input type="checkbox" ${selectedCalendars.has('Demos') ? 'checked' : ''} onchange="toggleCalendar('Demos', this.checked)" class="accent-checkbox" style="--c:#4f46e5"> Demos
+                    </label>
                 </div>
             </div>`;
 
@@ -1292,7 +1346,7 @@
                 }
             });
 
-            const otherCals = `
+            const otherCals = !isTimetableAdmin() ? '' : `
             <div class="sidebar-section">
                 <div class="sidebar-title" data-bs-toggle="collapse" data-bs-target="#otherCalendarsCollapse" aria-expanded="${isOtherCalsOpen ? 'true' : 'false'}" style="cursor:pointer;" onclick="isOtherCalsOpen=!isOtherCalsOpen">
                     <span>Other calendars</span>
@@ -1451,6 +1505,9 @@
             const todayStr = dStr(today);
 
             const filteredEvents = events.filter(ev => {
+                if (ev.event_type === 'DEMO') {
+                    return selectedCalendars.has('Demos'); 
+                }
                 const user = ev.user || ev.assignee_name;
                 if (!user) return true;
                 return selectedCalendars.has(user);
@@ -1532,7 +1589,7 @@
                             <button class="${taskFilter === 'pending' ? 'active' : ''}" onclick="setTaskFilter('pending')">Pending</button>
                             <button class="${taskFilter === 'done' ? 'active' : ''}" onclick="setTaskFilter('done')">Completed</button>
                             <button class="${taskFilter === 'my' ? 'active' : ''}" onclick="setTaskFilter('my')">My Tasks</button>
-                            <button class="${taskFilter === 'employees' ? 'active' : ''}" onclick="setTaskFilter('employees')">Employee Tasks</button>
+                            ${isTimetableAdmin() ? `<button class="${taskFilter === 'employees' ? 'active' : ''}" onclick="setTaskFilter('employees')">Employee Tasks</button>` : ''}
                         </div>
                         <button class="task-toggle-btn active" onclick="toggleTaskView()" style="background:#e8eafd;color:#4f46e5;border-color:#c7d2fe;">
                             <i class="bi bi-calendar3"></i>
@@ -1970,8 +2027,54 @@
             const ev = events.find(e => e._uid === eventUid);
             if (!ev) return;
 
-            if (ev.event_type === 'VISIT' || ev.event_type === 'MEETING') {
-                showToastMsg(`Cannot edit synced ${ev.event_type.toLowerCase()}s from the calendar.`);
+            if (ev.event_type === 'DEMO' || ev.event_type === 'VISIT' || ev.event_type === 'MEETING') {
+                document.getElementById('view-title').innerText = ev.title;
+                document.getElementById('view-time').innerText = `${fmtH(ev.sh, ev.sm)} – ${fmtH(ev.eh, ev.em)}`;
+                document.getElementById('view-date').innerText = new Date(ev.date).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById('view-loc').innerText = ev.loc || 'No location specified';
+
+                if (ev.description) {
+                    document.getElementById('view-desc').innerText = ev.description;
+                    document.getElementById('view-desc-label').innerText = ev.event_type === 'DEMO' ? 'Contact Details' : 'Notes';
+                    document.getElementById('view-desc-container').style.display = 'flex';
+                } else {
+                    document.getElementById('view-desc-container').style.display = 'none';
+                }
+
+                const actionBtn = document.getElementById('view-action-btn');
+                if (ev.event_type === 'DEMO') {
+                    actionBtn.innerHTML = '<i class="bi bi-arrow-up-right-square me-2"></i>Reschedule / Manage Demo';
+                    actionBtn.onclick = () => window.location.href = 'projects_demo.html';
+                    actionBtn.style.display = 'block';
+
+                    // Authorization Check: Only show Meet link to the assigned PM
+                    const currUserName = currentUser ? (currentUser.name || currentUser.email) : '';
+                    const isOwner = (ev.user === currUserName);
+
+                    if (ev.meet_url && isOwner) {
+                        const meetBtn = document.createElement('button');
+                        meetBtn.id = 'view-meet-btn';
+                        meetBtn.className = "btn btn-success w-100 fw-bold rounded-pill mt-2";
+                        meetBtn.innerHTML = '<i class="bi bi-camera-video me-2"></i>Join Google Meet';
+                        meetBtn.onclick = () => window.open(ev.meet_url, '_blank');
+
+                        // Ensure we don't stack duplicate buttons if modal is opened multiple times
+                        const existingBtn = document.getElementById('view-meet-btn');
+                        if (existingBtn) existingBtn.remove();
+
+                        document.querySelector('#viewEventModal .modal-footer').appendChild(meetBtn);
+                    } else {
+                        // Ensure button is hidden for non-owners opening other peoples' demos
+                        const existingBtn = document.getElementById('view-meet-btn');
+                        if (existingBtn) existingBtn.remove();
+                    }
+                } else {
+                    actionBtn.style.display = 'none'; // Hide action button for generic visits
+                    const existingBtn = document.getElementById('view-meet-btn');
+                    if (existingBtn) existingBtn.remove();
+                }
+
+                new bootstrap.Modal(document.getElementById('viewEventModal')).show();
                 return;
             }
 
@@ -2022,7 +2125,7 @@
         async function updateActivity(id, type) {
             const isEvent = document.getElementById('typeEvent').checked;
             const title = document.getElementById('ev-title').value.trim();
-            const user = document.getElementById('ev-user').value;
+            const user = isTimetableAdmin() ? document.getElementById('ev-user').value : getCurrentUserLabel();
             const date = document.getElementById('ev-date').value;
             const start = document.getElementById('ev-start').value;
             const end = document.getElementById('ev-end').value;
@@ -2105,7 +2208,7 @@
             if (isEvent) {
                 // Event Creation
                 const title = document.getElementById('ev-title').value.trim();
-                const user = document.getElementById('ev-user').value;
+                const user = isTimetableAdmin() ? document.getElementById('ev-user').value : getCurrentUserLabel();
                 const date = document.getElementById('ev-date').value;
                 const start = document.getElementById('ev-start').value;
                 const end = document.getElementById('ev-end').value;
@@ -2157,7 +2260,7 @@
             } else {
                 // Task Creation
                 const title = document.getElementById('ev-title').value.trim();
-                const user = document.getElementById('ev-user').value;
+                const user = isTimetableAdmin() ? document.getElementById('ev-user').value : getCurrentUserLabel();
                 const priority = document.getElementById('td-priority').value;
                 let due = document.getElementById('td-due').value;
                 const startStr = document.getElementById('td-start').value;
@@ -2202,6 +2305,7 @@
                         const el = document.getElementById(id); if (el) el.value = '';
                     });
                     document.getElementById('ev-user').value = '';
+                    configureTimetableAssigneeSelect();
 
                     bsModal.hide();
                     await renderCalendar();
@@ -2300,16 +2404,19 @@
             try {
                 currentUser = ApiClient.getCurrentUser();
                 const emps = await ApiClient.getEmployees();
-                ALL_USERS_LIST = emps;
+                ALL_USERS_LIST = isTimetableAdmin()
+                    ? emps
+                    : emps.filter(e => e.id === currentUser?.id || (e.name || e.email) === getCurrentUserLabel());
 
                 // Populate Assignee dropdown
                 const sel = document.getElementById('ev-user');
                 sel.innerHTML = '<option value="">— Unassigned —</option>' +
-                    emps.map(e => {
-                        const uniqueVal = e.email || e.name;
+                    ALL_USERS_LIST.map(e => {
+                        const uniqueVal = e.name || e.email;
                         const role = (e.role || '').replace(/_/g, ' ');
                         return `<option value="${uniqueVal}">${e.name || e.email} (${role})</option>`;
                     }).join('');
+                configureTimetableAssigneeSelect();
 
                 const clients = await ApiClient.getClients();
                 const clientSel = document.getElementById('ev-client');
@@ -2351,6 +2458,21 @@
                     if (currUserName) selectedCalendars.add(currUserName);
                     selectedCalendars.add('Tasks');
                     selectedCalendars.add('Birthdays');
+                    selectedCalendars.add('Demos');
+                    saveSelectedCalendars();
+                }
+
+                if (!localStorage.getItem('demo_toggle_migrated')) {
+                    selectedCalendars.add('Demos');
+                    localStorage.setItem('demo_toggle_migrated', '1');
+                    saveSelectedCalendars();
+                }
+
+                if (!isTimetableAdmin()) {
+                    selectedCalendars.clear();
+                    if (currUserName) selectedCalendars.add(currUserName);
+                    selectedCalendars.add('Tasks');
+                    selectedCalendars.add('Birthdays');
                     saveSelectedCalendars();
                 }
 
@@ -2365,6 +2487,45 @@
 
         initApp();
     </script>
+
+<!-- Read-Only View Modal for synced events (DEMO, VISIT, MEETING) -->
+<div class="modal fade" id="viewEventModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content shadow" style="border-radius:20px; border:none;">
+            <div class="modal-header border-0 pb-0 px-4 pt-4">
+                <h5 class="modal-title fw-bold text-dark" id="view-title"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 pb-3 pt-3">
+                <div class="d-flex align-items-start mb-3">
+                    <i class="bi bi-clock text-primary me-3 mt-1 fs-5"></i>
+                    <div>
+                        <div class="fw-semibold text-dark" id="view-time"></div>
+                        <div class="text-muted small" id="view-date"></div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-start mb-3">
+                    <i class="bi bi-geo-alt text-primary me-3 mt-1 fs-5"></i>
+                    <div>
+                        <div class="fw-semibold text-dark">Location</div>
+                        <div class="text-muted small" id="view-loc"></div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-start mb-3" id="view-desc-container">
+                    <i class="bi bi-person-badge text-primary me-3 mt-1 fs-5"></i>
+                    <div>
+                        <div class="fw-semibold text-dark" id="view-desc-label">Details</div>
+                        <div class="text-muted small" id="view-desc"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                <button class="btn btn-primary w-100 fw-bold rounded-pill" id="view-action-btn" style="display:none;"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 
 </html>

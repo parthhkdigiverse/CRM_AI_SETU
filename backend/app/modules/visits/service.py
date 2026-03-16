@@ -1,9 +1,10 @@
+# backend/app/modules/visits/service.py
 import os
 import shutil
 from pathlib import Path
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, UploadFile, Request
-from datetime import datetime, UTC
+from datetime import date as dt_date, datetime, UTC, time, timedelta
 
 from app.modules.visits.models import Visit, VisitStatus
 from app.modules.visits.schemas import VisitCreate, VisitUpdate
@@ -22,15 +23,39 @@ class VisitService:
         self.activity_logger = ActivityLogger(db)
 
     def get_visit(self, visit_id: int):
-        return self.db.query(Visit).filter(Visit.id == visit_id).first()
+        return self.db.query(Visit).filter(Visit.id == visit_id, Visit.is_deleted == False).first()
 
-    def get_visits(self, skip: int = 0, limit: int = 100, user_id: int = None, shop_id: int = None):
+    def get_visits(self, skip: int = 0, limit: int = 100, current_user: User = None, shop_id: int = None, user_id: int | None = None):
         try:
-            query = self.db.query(Visit)
-            if user_id:
-                query = query.filter(Visit.user_id == user_id)
+            from app.modules.shops.models import Shop as ShopModel
+            from sqlalchemy import or_
+            from app.modules.users.models import UserRole
+
+            query = self.db.query(Visit).join(ShopModel, ShopModel.id == Visit.shop_id).options(
+                joinedload(Visit.shop).joinedload(ShopModel.area),
+                joinedload(Visit.shop).joinedload(ShopModel.project_manager),
+                joinedload(Visit.user)
+            ).filter(Visit.is_deleted == False, ShopModel.is_deleted == False)
             if shop_id:
                 query = query.filter(Visit.shop_id == shop_id)
+            
+            if user_id is not None:
+                query = query.filter(Visit.user_id == user_id)
+
+            # Admins see everything; staff see visits they authored OR
+            # visits logged on any shop they own (directly or via assignment)
+            if current_user and current_user.role not in [UserRole.ADMIN]:
+                query = (
+                    query
+                    .filter(
+                        or_(
+                            Visit.user_id == current_user.id,
+                            ShopModel.owner_id == current_user.id,
+                            ShopModel.assigned_owners_list.any(id=current_user.id)
+                        )
+                    )
+                )
+
             return query.order_by(Visit.visit_date.desc()).offset(skip).limit(limit).all()
         except Exception as e:
             print(f"Error fetching visits: {e}")
@@ -84,7 +109,19 @@ class VisitService:
 
         self.db.add(visit)
         self.db.commit()
-        self.db.refresh(visit)
+
+        # Re-fetch with eager-loaded relationships so @property fields
+        # (shop_name, area_name, user_name) resolve during response serialization
+        from app.modules.shops.models import Shop as ShopModel
+        visit = (
+            self.db.query(Visit)
+            .options(
+                joinedload(Visit.shop).joinedload(ShopModel.area),
+                joinedload(Visit.user)
+            )
+            .filter(Visit.id == visit.id)
+            .first()
+        )
 
         # --- Auto-transition Shop status based on visit outcome ---
         from app.modules.shops.models import ShopStatus

@@ -1,3 +1,4 @@
+# backend/app/modules/users/schemas.py
 from typing import Optional, Any
 from datetime import date
 from pydantic import BaseModel, EmailStr, field_validator
@@ -9,6 +10,7 @@ class UserBase(BaseModel):
     phone: Optional[str] = None
     role: Optional[UserRole] = UserRole.TELESALES
     is_active: Optional[bool] = True
+    incentive_enabled: Optional[bool] = True
 
     @field_validator("role", mode="before")
     @classmethod
@@ -65,6 +67,7 @@ class UserProfileUpdate(BaseModel):
     joining_date: Optional[date] = None
     base_salary: Optional[float] = None
     target: Optional[int] = None
+    incentive_enabled: Optional[bool] = None
     department: Optional[str] = None
 
     @field_validator("password")

@@ -1,3 +1,4 @@
+// frontend/js/notifications.js
 /**
  * SRM AI SETU — Notifications Page Logic
  * Handles fetching, rendering, and marking notifications as read.

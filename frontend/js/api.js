@@ -1,6 +1,7 @@
-let API_BASE_URL = 'http://127.0.0.1:8000/api'; // Fallback
+// frontend/js/api.js
+let API_BASE_URL = window.location.origin + '/api'; // Fallback
 // Try to load dynamically from the backend Python config endpoint
-fetch('http://127.0.0.1:8000/api/config')
+fetch(window.location.origin + '/api/config')
     .then(r => r.json())
     .then(data => {
         if (data.API_BASE_URL) {
@@ -176,6 +177,15 @@ class ApiClient {
     static async updateUserStatus(userId, isActive) {
         return this.request(`/users/${userId}/status`, { method: 'PATCH', body: { is_active: isActive } });
     }
+    static async getAccessPolicy() {
+        return this.request('/users/access-policy');
+    }
+    static async updateAccessPolicy(data) {
+        return this.request('/users/access-policy', { method: 'PUT', body: data });
+    }
+    static async getEffectiveAccessPolicy() {
+        return this.request('/users/access-policy/effective');
+    }
 
     // ─── Dashboard ───────────────────────────────────────────
     static async getDashboardStats() {
@@ -189,13 +199,20 @@ class ApiClient {
     static async punch() {
         return this.request('/attendance/punch', { method: 'POST' });
     }
-
-    // ─── Attendance ──────────────────────────────────────────
-    static async getPunchStatus() {
-        return this.request('/attendance/status');
-    }
-    static async punch() {
-        return this.request('/attendance/punch', { method: 'POST' });
+    static async getAttendanceSummary(params = {}) {
+        let query = '';
+        if (typeof params === 'object') {
+            const queryParams = new URLSearchParams();
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== undefined && value !== null) {
+                    queryParams.append(key, value);
+                }
+            }
+            query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+        } else if (typeof params === 'string' && params) {
+            query = params.startsWith('?') ? params : `?${params}`;
+        }
+        return this.request(`/attendance/summary${query}`);
     }
 
     // ─── Clients ─────────────────────────────────────────────
@@ -234,13 +251,26 @@ class ApiClient {
     static async deleteArea(areaId) {
         return this.request(`/areas/${areaId}`, { method: 'DELETE' });
     }
-    static async assignArea(areaId, userId, shopIds = []) {
-        return this.request(`/areas/${areaId}/assign`, { method: 'PATCH', body: { assigned_user_id: userId, shop_ids: shopIds } });
+    static async getArchivedAreas() {
+        return this.request('/areas/archived');
+    }
+    static async unarchiveArea(areaId) {
+        return this.request(`/areas/${areaId}/unarchive`, { method: 'PATCH' });
+    }
+    static async hardDeleteArea(areaId) {
+        return this.request(`/areas/${areaId}/hard-delete`, { method: 'DELETE' });
+    }
+    static async assignArea(areaId, userIds, shopIds = []) {
+        // userIds should be an array of IDs
+        return this.request(`/areas/${areaId}/assign`, { method: 'PATCH', body: { user_ids: userIds, shop_ids: shopIds } });
     }
 
     // ─── Shops ───────────────────────────────────────────────
     static async getShops(params = '') {
         return this.request(`/shops/${params}`);
+    }
+    static async getShop(shopId) {
+        return this.request(`/shops/${shopId}`);
     }
     static async createShop(data) {
         return this.request('/shops/', { method: 'POST', body: data });
@@ -250,6 +280,15 @@ class ApiClient {
     }
     static async deleteShop(shopId) {
         return this.request(`/shops/${shopId}`, { method: 'DELETE' });
+    }
+    static async getArchivedShops() {
+        return this.request('/shops/archived');
+    }
+    static async unarchiveShop(shopId) {
+        return this.request(`/shops/${shopId}/unarchive`, { method: 'PATCH' });
+    }
+    static async hardDeleteShop(shopId) {
+        return this.request(`/shops/${shopId}/hard-delete`, { method: 'DELETE' });
     }
     static async approvePipelineEntry(shopId) {
         return this.request(`/shops/${shopId}/approve`, { method: 'POST' });
@@ -308,6 +347,12 @@ class ApiClient {
     static async getClientFeedback(clientId) {
         return this.request(`/clients/${clientId}/feedback`);
     }
+    static async getAllClientFeedbacks() {
+        return this.request('/clients/feedbacks/all');
+    }
+    static async getClientFeedbacks(clientId) {
+        return this.request(`/clients/${clientId}/feedback`);
+    }
     static async createFeedback(clientId, data) {
         return this.request(`/clients/${clientId}/feedback`, { method: 'POST', body: data });
     }
@@ -362,6 +407,18 @@ class ApiClient {
     static async confirmSalarySlip(slipId) {
         return this.request(`/hrm/salary/confirm/${slipId}`, { method: 'PATCH' });
     }
+    static async updateSalarySlipRemarks(slipId, data) {
+        return this.request(`/hrm/salary/slip/${slipId}/remarks`, { method: 'PATCH', body: data });
+    }
+    static async updateSalarySlipVisibility(slipId, data) {
+        return this.request(`/hrm/salary/slip/${slipId}/visibility`, { method: 'PATCH', body: data });
+    }
+    static async getPayslipSettings() {
+        return this.request('/hrm/payslip-settings');
+    }
+    static async updatePayslipSettings(data) {
+        return this.request('/hrm/payslip-settings', { method: 'PUT', body: data });
+    }
 
     // ─── Leave ───────────────────────────────────────────────
     static async getMyLeaves() {
@@ -372,6 +429,12 @@ class ApiClient {
     }
     static async applyLeave(data) {
         return this.request('/hrm/leave', { method: 'POST', body: data });
+    }
+    static async updateLeave(leaveId, data) {
+        return this.request(`/hrm/leave/${leaveId}`, { method: 'PATCH', body: data });
+    }
+    static async deleteLeave(leaveId) {
+        return this.request(`/hrm/leave/${leaveId}`, { method: 'DELETE' });
     }
     static async approveRejectLeave(leaveId, status, remarks = null) {
         const body = { status };
@@ -395,8 +458,17 @@ class ApiClient {
     static async deleteIncentiveSlab(id) {
         return this.request(`/incentives/slabs/${id}`, { method: 'DELETE' });
     }
+    static async previewIncentive(data) {
+        return this.request('/incentives/calculate/preview', { method: 'POST', body: data });
+    }
     static async calculateIncentive(data) {
         return this.request('/incentives/calculate', { method: 'POST', body: data });
+    }
+    static async recalculateIncentive(data) {
+        return this.request('/incentives/calculate', { method: 'POST', body: { ...data, force_recalculate: true } });
+    }
+    static async calculateIncentiveBulk(data) {
+        return this.request('/incentives/calculate/bulk', { method: 'POST', body: data });
     }
     static async getAllIncentiveSlips() {
         return this.request('/incentives/slips');
@@ -406,6 +478,12 @@ class ApiClient {
     }
     static async getUserIncentiveSlips(userId) {
         return this.request(`/incentives/slips/${userId}`);
+    }
+    static async updateIncentiveSlipRemarks(slipId, data) {
+        return this.request(`/incentives/slips/${slipId}/remarks`, { method: 'PATCH', body: data });
+    }
+    static async updateIncentiveSlipVisibility(slipId, data) {
+        return this.request(`/incentives/slips/${slipId}/visibility`, { method: 'PATCH', body: data });
     }
 
     // ─── Payments ────────────────────────────────────────────
@@ -418,12 +496,72 @@ class ApiClient {
     static async verifyPayment(paymentId) {
         return this.request(`/payments/${paymentId}/verify`, { method: 'PATCH' });
     }
+    // ─── Billing / Invoices ──────────────────────────────────
+    /** @deprecated use createInvoice instead */
     static async generateBill(data) {
         return this.request('/billing/', { method: 'POST', body: data });
     }
-    static async getBills() {
-        return this.request('/billing/');
+    static async createInvoice(data) {
+        return this.request('/billing/', { method: 'POST', body: data });
     }
+    static async getBills(params = {}) {
+        const query = new URLSearchParams();
+        Object.entries(params || {}).forEach(([k, v]) => {
+            if (v === undefined || v === null || v === '') return;
+            query.set(k, String(v));
+        });
+        const qs = query.toString();
+        return this.request(`/billing/${qs ? `?${qs}` : ''}`);
+    }
+    static async getInvoice(billId) {
+        return this.request(`/billing/${billId}`);
+    }
+    static async getInvoiceActions(billId) {
+        return this.request(`/billing/${billId}/actions`);
+    }
+    static async verifyInvoice(billId) {
+        return this.request(`/billing/${billId}/verify`, { method: 'PATCH' });
+    }
+    static async archiveInvoice(billId) {
+        return this.request(`/billing/${billId}/archive`, { method: 'PATCH' });
+    }
+    static async unarchiveInvoice(billId) {
+        return this.request(`/billing/${billId}/unarchive`, { method: 'PATCH' });
+    }
+    static async archiveInvoicesBulk(ids = []) {
+        return this.request('/billing/archive/bulk', { method: 'PATCH', body: { ids } });
+    }
+    static async deleteArchivedInvoice(billId) {
+        return this.request(`/billing/${billId}/archive-delete`, { method: 'DELETE' });
+    }
+    static async deleteArchivedInvoicesBulk(ids = []) {
+        return this.request('/billing/archive/delete-bulk', { method: 'POST', body: { ids } });
+    }
+    static async sendInvoiceWhatsApp(billId) {
+        return this.request(`/billing/${billId}/send-whatsapp`, { method: 'POST' });
+    }
+    static async getWhatsAppHealth() {
+        return this.request('/billing/whatsapp-health');
+    }
+    static async getInvoiceSettings() {
+        return this.request('/billing/settings');
+    }
+    static async updateInvoiceSettings(data) {
+        return this.request('/billing/settings', { method: 'PUT', body: data });
+    }
+    static async getInvoiceWorkflowOptions() {
+        return this.request('/billing/workflow/options');
+    }
+    static async getBillingAutofillSource(source) {
+        return this.request(`/billing/autofill-sources?source=${encodeURIComponent(source)}`);
+    }
+    static async resolveInvoiceWorkflow(data) {
+        return this.request('/billing/workflow/resolve', { method: 'POST', body: data });
+    }
+    static async generateInvoicePaymentQR(data) {
+        return this.request('/billing/generate-qr', { method: 'POST', body: data });
+    }
+
 
     // ─── Projects ────────────────────────────────────────────
     static async getProjects(params = '') {
@@ -489,6 +627,28 @@ class ApiClient {
     // ─── Reports ─────────────────────────────────────────────
     static async getReportsDashboard() {
         return this.request('/reports/dashboard');
+    }
+
+    // ─── Generic Soft Delete (Archive) ───────────────────────
+    static async fetchArchived(moduleName) {
+        return this.request(`/${moduleName}/archived`);
+    }
+    static async archiveItem(moduleName, id) {
+        return this.request(`/${moduleName}/${id}`, { method: 'DELETE' });
+    }
+    static async unarchiveItem(moduleName, id) {
+        return this.request(`/${moduleName}/${id}/unarchive`, { method: 'PATCH' });
+    }
+    static async hardDeleteItem(moduleName, id) {
+        return this.request(`/${moduleName}/${id}/hard-delete`, { method: 'DELETE' });
+    }
+
+    // ─── Generic Accept Assignment ───────────────────────────
+    static async acceptItem(moduleName, id) {
+        return this.request(`/${moduleName}/${id}/accept`, { method: 'POST' });
+    }
+    static async getAcceptedLeads() {
+        return this.request('/shops/accepted/history');
     }
 }
 

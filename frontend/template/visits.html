@@ -3,15 +3,14 @@
 
 <head>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Visits — SRM AI SETU</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
-    <link rel="stylesheet" href="../css/components.css?v=1772780187">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
+    <link rel="stylesheet" href="../css/components.css?v=1772780188">
 </head>
 
 <body>
@@ -19,20 +18,17 @@
         <div id="sidebar"></div>
         <div class="flex-grow-1">
             <div class="page-content">
-                <!-- Page Header -->
                 <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                     <div>
                         <h2 class="page-section-title">Visits</h2>
                         <p class="text-muted small mb-0">Track field visits, call outcomes, and shop conversion status.
                         </p>
                     </div>
-                    <button id="add-visit-btn" class="btn btn-primary"
-                        onclick="document.getElementById('visitModal').classList.add('show')">
-                        <i class="bi bi-plus-lg me-2"></i>Log New Visit
+                    <button id="add-visit-btn" class="btn btn-primary" onclick="openVisitModal()">
+                        <i class="bi bi-plus-lg me-2"></i>Add New Visit
                     </button>
                 </div>
 
-                <!-- Stat Cards -->
                 <div class="row g-3 mb-4" id="stats-row">
                     <div class="col-md-4">
                         <div class="stat-card shadow-sm">
@@ -60,169 +56,292 @@
                                 <div class="stat-value" id="stat-declined">—</div>
                             </div>
                             <div class="stat-icon" style="background:#fef2f2; color:#ef4444;"><i
-                                    class="bi bi-x-circle"></i>
+                                    class="bi bi-x-circle"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion shadow-sm" id="visitsAccordion">
+
+                    <div class="accordion-item border-0 mb-3 rounded">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button fw-bold" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                <i class="bi bi-person-check-fill text-success me-2"></i> Pending Visits
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
+                            data-bs-parent="#visitsAccordion">
+                            <div class="accordion-body p-0 border border-top-0 rounded-bottom">
+                                <div class="table-responsive">
+                                    <table class="table mb-0 align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Area</th>
+                                                <th>Shop</th>
+                                                <th id="dynamic-assign-header">Agent Info</th>
+                                                <th>Accepted Date & Time</th>
+                                                <th>STATUS</th>
+                                                <th>ACTIONS</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="accepted-leads-table">
+                                            <tr>
+                                                <td colspan="6" class="text-center py-4 text-muted">
+                                                    <span class="spinner-border spinner-border-sm me-2"></span>Loading
+                                                    history...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Visits Table -->
-                <div class="grid-card">
-                    <div class="d-flex justify-content-between align-items-center p-4 border-bottom">
-                        <h6 class="fw-bold mb-0" style="color:#334155;">All Visit Records</h6>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Shop</th>
-                                    <th>Area</th>
-                                    <th>Agent</th>
-                                    <th>Date & Time</th>
-                                    <th>Outcome</th>
-                                    <th>Remarks</th>
-                                    <th>Photo</th>
-                                </tr>
-                            </thead>
-                            <tbody id="visits-table">
-                                <tr>
-                                    <td colspan="7" class="text-center py-5 text-muted">
-                                        <span class="spinner-border spinner-border-sm me-2"></span>Loading visits...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div><!-- /page-content -->
-        </div>
-    </div>
-
-    <!-- ─── Log Visit Modal ──────────────────────────────────────── -->
-    <div class="crm-modal-overlay" id="visitModal">
-        <div class="crm-modal-box">
-            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-                <h5 class="fw-bold mb-0"><i class="bi bi-geo-alt-fill text-primary me-2"></i>Log Shop Visit</h5>
-                <button class="btn-close" onclick="closeVisitModal()"></button>
-            </div>
-
-            <!-- Shop Selector -->
-            <div class="mb-3">
-                <label class="form-label fw-semibold small">Target Shop <span class="text-danger">*</span></label>
-                <select id="v-shop" class="form-select" required>
-                    <option value="">Loading shops...</option>
-                </select>
-            </div>
-
-            <!-- Outcome -->
-            <div class="mb-3">
-                <label class="form-label fw-semibold small">Interaction Outcome <span
-                        class="text-danger">*</span></label>
-                <div class="d-grid gap-2" id="outcome-buttons">
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <input type="radio" class="btn-check" name="v-status" id="out-satisfied" value="SATISFIED"
-                                autocomplete="off">
-                            <label class="btn btn-outline-primary w-100" for="out-satisfied"><i
-                                    class="bi bi-emoji-smile me-2"></i>Satisfied</label>
-                        </div>
-                        <div class="col-6">
-                            <input type="radio" class="btn-check" name="v-status" id="out-accept" value="ACCEPT"
-                                autocomplete="off">
-                            <label class="btn btn-outline-success w-100" for="out-accept"><i
-                                    class="bi bi-check-circle me-2"></i>Accepted</label>
-                        </div>
-                        <div class="col-6">
-                            <input type="radio" class="btn-check" name="v-status" id="out-decline" value="DECLINE"
-                                autocomplete="off">
-                            <label class="btn btn-outline-danger w-100" for="out-decline"><i
-                                    class="bi bi-x-circle me-2"></i>Declined</label>
-                        </div>
-                        <div class="col-6">
-                            <input type="radio" class="btn-check" name="v-status" id="out-thinking"
-                                value="TAKE_TIME_TO_THINK" autocomplete="off" checked>
-                            <label class="btn btn-outline-warning w-100" for="out-thinking"><i
-                                    class="bi bi-hourglass-split me-2"></i>Thinking</label>
-                        </div>
-                        <div class="col-12">
-                            <input type="radio" class="btn-check" name="v-status" id="out-other" value="OTHER"
-                                autocomplete="off">
-                            <label class="btn btn-outline-dark w-100" for="out-other"><i
-                                    class="bi bi-three-dots me-2"></i>Other</label>
+                    <div class="accordion-item border-0 mb-3 rounded">
+                        <h2 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                <i class="bi bi-list-ul text-primary me-2"></i> All Visit Records
+                            </button>
+                        </h2>
+                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo"
+                            data-bs-parent="#visitsAccordion">
+                            <div class="accordion-body p-0 border border-top-0 rounded-bottom">
+                                <div class="table-responsive">
+                                    <table class="table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Shop</th>
+                                                <th>Area</th>
+                                                <th>Agent</th>
+                                                <th>Date & Time</th>
+                                                <th>Outcome</th>
+                                                <th>Remarks</th>
+                                                <th>Photo</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="visits-table">
+                                            <tr>
+                                                <td colspan="7" class="text-center py-5 text-muted">
+                                                    <span class="spinner-border spinner-border-sm me-2"></span>Loading
+                                                    visits...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
+
                 </div>
-            </div>
 
-            <!-- Accepted info box — shows only when Accept is picked -->
-            <div id="accept-infobox" class="outcome-info mb-3"
-                style="display:none; background:#f0fdf4; color:#166534; border:1px solid #bbf7d0;">
-                <i class="bi bi-stars fs-5 mt-1"></i>
-                <div>
-                    <strong>Lead Accepted!</strong><br>
-                    After saving, the system will begin the client onboarding and payment flow.
-                </div>
-            </div>
-
-            <!-- Decline reason — shows only when Decline is picked -->
-            <div id="decline-reasonbox" style="display:none;">
-                <div class="mb-3">
-                    <label class="form-label fw-semibold small">Why did they decline? <span
-                            class="text-danger">*</span></label>
-                    <select id="v-decline-reason" class="form-select">
-                        <option value="too_expensive">Price is too high</option>
-                        <option value="not_interested">Not interested</option>
-                        <option value="already_subscribed">Already using a competitor</option>
-                        <option value="need_time">Need more time to decide</option>
-                        <option value="other">Other reason</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Other status input -->
-            <div id="other-status-div" style="display:none;" class="mb-3">
-                <label class="form-label fw-semibold small">Specify Outcome</label>
-                <input type="text" id="v-status-other" class="form-control" placeholder="Describe the outcome...">
-            </div>
-
-            <!-- Remarks -->
-            <div class="mb-3">
-                <label class="form-label fw-semibold small">Remarks / Notes <span class="text-danger">*</span></label>
-                <textarea id="v-remarks" class="form-control" rows="3"
-                    placeholder="What was discussed? Key concerns raised?"></textarea>
-            </div>
-
-            <!-- Photo Upload — only for Sales (hidden for Telesales) -->
-            <div class="mb-3" id="photo-upload-container">
-                <label class="form-label fw-semibold small">
-                    Photo of Visited Shop
-                    <span id="photo-required-badge" class="badge bg-danger ms-2" style="font-size:0.7rem;">Required for
-                        Sales</span>
-                </label>
-                <input type="file" id="v-photo" class="form-control" accept="image/*" onchange="previewPhoto(this)">
-                <div id="photo-preview-box"><img id="photo-preview-img" src="" alt="Preview"></div>
-            </div>
-
-            <!-- Footer -->
-            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                <button class="btn btn-light border" onclick="closeVisitModal()">Cancel</button>
-                <button class="btn btn-primary px-4 fw-semibold" id="save-visit-btn" onclick="saveVisit()">
-                    Save Visit Log
-                </button>
             </div>
         </div>
     </div>
 
+    <div class="modal fade" id="visitModal" tabindex="-1" aria-labelledby="visitModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header border-bottom pb-3">
+                    <h5 class="modal-title fw-bold" id="visitModalLabel">
+                        <i class="bi bi-geo-alt-fill text-primary me-2"></i>Add Shop Visit
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Target Shop <span
+                                class="text-danger">*</span></label>
+                        <select id="v-shop" class="form-select" required>
+                            <option value="">Loading shops...</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Interaction Outcome <span
+                                class="text-danger">*</span></label>
+                        <div id="outcome-buttons">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="v-status" id="out-satisfied"
+                                        value="SATISFIED" autocomplete="off">
+                                    <label class="btn btn-outline-primary w-100" for="out-satisfied"><i
+                                            class="bi bi-emoji-smile me-2"></i>Satisfied - Schedule Demo Session</label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="v-status" id="out-accept" value="ACCEPT"
+                                        autocomplete="off">
+                                    <label class="btn btn-outline-success w-100" for="out-accept"><i
+                                            class="bi bi-check-circle me-2"></i>Accepted</label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="v-status" id="out-decline"
+                                        value="DECLINE" autocomplete="off">
+                                    <label class="btn btn-outline-danger w-100" for="out-decline"><i
+                                            class="bi bi-x-circle me-2"></i>Declined</label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="v-status" id="out-thinking"
+                                        value="TAKE_TIME_TO_THINK" autocomplete="off" checked>
+                                    <label class="btn btn-outline-warning w-100" for="out-thinking"><i
+                                            class="bi bi-hourglass-split me-2"></i>Thinking</label>
+                                </div>
+                                <div class="col-12">
+                                    <input type="radio" class="btn-check" name="v-status" id="out-other" value="OTHER"
+                                        autocomplete="off">
+                                    <label class="btn btn-outline-dark w-100" for="out-other"><i
+                                            class="bi bi-three-dots me-2"></i>Other</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="accept-infobox" class="outcome-info mb-3"
+                        style="display:none; background:#f0fdf4; color:#166534; border:1px solid #bbf7d0;">
+                        <i class="bi bi-stars fs-5 mt-1"></i>
+                        <div><strong>Lead Accepted!</strong><br>After saving, the system will begin the client
+                            onboarding and payment flow.</div>
+                    </div>
+
+                    <div id="decline-reasonbox" style="display:none;">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Why did they decline? <span
+                                    class="text-danger">*</span></label>
+                            <select id="v-decline-reason" class="form-select">
+                                <option value="too_expensive">Price is too high</option>
+                                <option value="not_interested">Not interested</option>
+                                <option value="already_subscribed">Already using a competitor</option>
+                                <option value="need_time">Need more time to decide</option>
+                                <option value="other">Other reason</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="other-status-div" style="display:none;" class="mb-3">
+                        <label class="form-label fw-semibold small">Specify Outcome</label>
+                        <input type="text" id="v-status-other" class="form-control"
+                            placeholder="Describe the outcome...">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Remarks / Notes <span
+                                class="text-danger">*</span></label>
+                        <textarea id="v-remarks" class="form-control" rows="3"
+                            placeholder="What was discussed? Key concerns raised?"></textarea>
+                    </div>
+
+                    <div class="mb-3" id="photo-upload-container">
+                        <label class="form-label fw-semibold small">
+                            Photo of Visited Shop
+                            <span id="photo-required-badge" class="badge bg-danger ms-2"
+                                style="font-size:0.7rem;">Required for Sales</span>
+                        </label>
+                        <input type="file" id="v-photo" class="form-control" accept="image/*"
+                            onchange="previewPhoto(this)">
+                        <div id="photo-preview-box"><img id="photo-preview-img" src="" alt="Preview"></div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary px-4 fw-semibold" id="save-visit-btn"
+                        onclick="saveVisit()">
+                        Save Visit Record
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="shopDetailsModal" tabindex="-1" aria-labelledby="shopDetailsModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header border-bottom pb-3">
+                    <h5 class="modal-title fw-bold" id="shopDetailsModalLabel">
+                        <i class="bi bi-shop text-primary me-2"></i>Shop / Lead Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+
+                    <div id="shop-details-loading" class="text-center py-4 text-muted">
+                        <span class="spinner-border spinner-border-sm me-2"></span> Loading details...
+                    </div>
+
+                    <div id="shop-details-content" style="display:none;">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold small text-muted">Shop Name</label>
+                                <div id="sd-name" class="fw-bold fs-5"></div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold small text-muted">Area</label>
+                                <div id="sd-area" class="text-dark"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-muted">Address</label>
+                                <div id="sd-address" class="text-dark"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-muted">Lead Status</label>
+                                <div id="sd-status"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-muted">Contact Person</label>
+                                <div id="sd-contact" class="text-dark"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-muted">Phone</label>
+                                <div id="sd-phone" class="text-dark"></div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold small text-muted">Email</label>
+                                <div id="sd-email" class="text-dark"></div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold small text-muted">Requirements / Notes</label>
+                                <div id="sd-requirements" class="text-dark small" style="white-space:pre-wrap;"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-muted">Assignment</label>
+                                <div id="sd-assignment" class="text-dark"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small text-muted">Source</label>
+                                <div id="sd-source" class="text-dark"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <a href="areas.html" target="_blank" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Open in Areas Page
+                    </a>
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/api.js?v=1772780187"></script>
-    <script src="../js/ui_components.js?v=1772780187"></script>
+    <script src="../js/utils.js?v=2.3"></script>
+    <script src="../js/api.js?v=2.3"></script>
     <script src="../js/auth.js?v=2.3"></script>
-
+    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/app.js?v=2.3"></script>
     <script>
         requireAuth();
-        document.getElementById('sidebar').innerHTML = renderSidebar('visits');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) {
+            sidebarElement.innerHTML = renderSidebar('visits');
+        }
         injectTopHeader('Visits');
 
         const user = getUser();
@@ -231,18 +350,14 @@
         const isPM = user?.role === 'PROJECT_MANAGER';
         const isAdmin = user?.role === 'ADMIN';
 
-        // ── Role-based UI adjustments ───────────────────────────
         const addBtn = document.getElementById('add-visit-btn');
         if (isPM && !isSales) {
-            // Pure Project Managers are read-only for visits
             addBtn.style.display = 'none';
-        } else if (isTelesales) {
+        } else if (addBtn && isTelesales) {
             addBtn.innerHTML = '<i class="bi bi-telephone me-2"></i>Log Call Outcome';
-            // Hide photo for telesales
             document.getElementById('photo-upload-container').style.display = 'none';
         }
 
-        // ── Photo Preview ───────────────────────────────────────
         function previewPhoto(input) {
             const box = document.getElementById('photo-preview-box');
             const img = document.getElementById('photo-preview-img');
@@ -255,38 +370,69 @@
             }
         }
 
-        // ── Outcome Button Listeners ────────────────────────────
         document.querySelectorAll('input[name="v-status"]').forEach(radio => {
             radio.addEventListener('change', () => {
                 const val = radio.value;
-                document.getElementById('accept-infobox').style.display = val === 'ACCEPT' ? 'flex' : 'none';
-                document.getElementById('decline-reasonbox').style.display = val === 'DECLINE' ? 'block' : 'none';
-                document.getElementById('other-status-div').style.display = val === 'OTHER' ? 'block' : 'none';
+                const acceptInfobox = document.getElementById('accept-infobox');
+                const declineReasonbox = document.getElementById('decline-reasonbox');
+                const otherStatusDiv = document.getElementById('other-status-div');
+                if (acceptInfobox) acceptInfobox.style.display = val === 'ACCEPT' ? 'flex' : 'none';
+                if (declineReasonbox) declineReasonbox.style.display = val === 'DECLINE' ? 'block' : 'none';
+                if (otherStatusDiv) otherStatusDiv.style.display = val === 'OTHER' ? 'block' : 'none';
             });
         });
 
-        // ── Modal Controls ──────────────────────────────────────
-        function closeVisitModal() {
-            document.getElementById('visitModal').classList.remove('show');
+        // ── SAFE Bootstrap Modal Initialization ────────────────────────
+        let _visitModalBS = null;
+        let _shopModalBS = null;
+
+        function openVisitModal() {
+            if (!_visitModalBS) _visitModalBS = new bootstrap.Modal(document.getElementById('visitModal'));
+            _visitModalBS.show();
         }
-        document.getElementById('visitModal').addEventListener('click', function (e) {
-            if (e.target === this) closeVisitModal();
+        function closeVisitModal() {
+            if (_visitModalBS) _visitModalBS.hide();
+        }
+        function openShopModal() {
+            if (!_shopModalBS) _shopModalBS = new bootstrap.Modal(document.getElementById('shopDetailsModal'));
+            _shopModalBS.show();
+        }
+        function closeShopModal() {
+            if (_shopModalBS) _shopModalBS.hide();
+        }
+
+        // Reset pending switch whenever Log Visit modal is hidden
+        document.getElementById('visitModal').addEventListener('hidden.bs.modal', function () {
+            if (window._pendingCaptureSwitch) {
+                window._pendingCaptureSwitch.checked = false;
+                window._pendingCaptureSwitch = null;
+            }
         });
 
         // ── Load Shops ──────────────────────────────────────────
         apiGet('/shops/').then(shops => {
             const sel = document.getElementById('v-shop');
+            if (!sel) return;
             sel.innerHTML = '<option value="">— Select Shop —</option>' +
                 shops.map(s => `<option value="${s.id}">${s.name}${s.address ? ' · ' + s.address : ''}</option>`).join('');
-        }).catch(() => { });
+        }).catch(err => console.error("Failed to load shops dropdown:", err));
 
         // ── Load Visits ─────────────────────────────────────────
-        async function loadVisits() {
+        async function loadVisits(filters = {}) {
             const tbody = document.getElementById('visits-table');
+            if (!tbody) return;
             tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
 
+            const params = new URLSearchParams();
+            params.append('limit', '200');
+            if (filters.area) params.append('area_id', filters.area);
+            if (filters.user) params.append('user_id', filters.user);
+            if (filters.status) params.append('status', filters.status);
+            if (filters.start) params.append('start_date', filters.start);
+            if (filters.end) params.append('end_date', filters.end);
+
             try {
-                const visits = await apiGet('/visits/?limit=200');
+                const visits = await ApiClient.getVisits(`?${params.toString()}`);
 
                 const todayStr = new Date().toLocaleDateString('en-CA');
                 let todayCount = 0, acceptedCount = 0, declinedCount = 0;
@@ -298,9 +444,12 @@
                     if (v.status === 'DECLINE') declinedCount++;
                 });
 
-                document.getElementById('stat-today').textContent = todayCount;
-                document.getElementById('stat-accepted').textContent = acceptedCount;
-                document.getElementById('stat-declined').textContent = declinedCount;
+                const statToday = document.getElementById('stat-today');
+                const statAccepted = document.getElementById('stat-accepted');
+                const statDeclined = document.getElementById('stat-declined');
+                if (statToday) statToday.textContent = todayCount;
+                if (statAccepted) statAccepted.textContent = acceptedCount;
+                if (statDeclined) statDeclined.textContent = declinedCount;
 
                 const statusMap = {
                     SATISFIED: { bg: '#dbeafe', color: '#1d4ed8', label: 'Satisfied', icon: 'bi-emoji-smile' },
@@ -316,7 +465,29 @@
                 }
 
                 tbody.innerHTML = visits.map(v => {
-                    const ui = statusMap[v.status] || { bg: '#f1f5f9', color: '#475569', label: v.status, icon: 'bi-dot' };
+                    let ui = statusMap[v.status] || { bg: '#f1f5f9', color: '#475569', label: v.status, icon: 'bi-dot' };
+
+                    // Dynamic pipeline overrides: show the shop's current pipeline stage instead of raw visit outcome
+                    let badgeHtml = null;
+                    if (v.shop_status === 'CONVERTED') {
+                        badgeHtml = `<span class="badge bg-success-subtle text-success rounded-pill"><i class="bi bi-trophy me-1"></i>Converted</span><div class="small text-muted mt-1"><i class="bi bi-person me-1"></i>PM: ${v.project_manager_name || 'Assigned'}</div>`;
+                    } else if (v.shop_status === 'MEETING_SET' || v.shop_demo_stage >= 1) {
+                        badgeHtml = `<span class="badge" style="background:#d1fae5; color:#065f46; border-radius:50rem; padding: 4px 10px;"><i class="bi bi-check-circle-fill me-1"></i>Demo Completed</span><div class="small text-muted mt-1"><i class="bi bi-person me-1"></i>PM: ${v.project_manager_name || 'Assigned'}</div>`;
+                    } else if (v.shop_status === 'IN_DEMO' || v.project_manager_name) {
+                        badgeHtml = `<span class="badge bg-primary-subtle text-primary rounded-pill"><i class="bi bi-easel me-1"></i>In Demo</span><div class="small text-muted mt-1"><i class="bi bi-person me-1"></i>PM: ${v.project_manager_name || 'Assigned'}</div>`;
+                    }
+
+                    if (!badgeHtml) {
+                        badgeHtml = `
+                        <span class="status-pill" style="background:${ui.bg}; color:${ui.color};">
+                            <i class="bi ${ui.icon} me-1"></i>${ui.label}
+                        </span>
+                        ${v.project_manager_name
+                            ? `<div class="mt-1" style="font-size:0.75rem;color:#64748b;"><i class="bi bi-person-gear me-1"></i>PM: ${v.project_manager_name}</div>`
+                            : ''}
+                        `;
+                    }
+
                     const vDate = v.visit_date ? new Date(v.visit_date) : null;
                     const dateStr = vDate ? vDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
                     const timeStr = vDate ? vDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
@@ -324,6 +495,26 @@
                     const photoCell = v.photo_url
                         ? `<a href="${v.photo_url}" target="_blank" class="btn btn-sm btn-outline-secondary" style="border-radius:8px;"><i class="bi bi-image me-1"></i>View</a>`
                         : `<span class="text-muted" style="font-size:0.8rem;">—</span>`;
+
+                    let remarksHtml = '<span class="text-muted" style="font-size:0.8rem;">—</span>';
+                    if (v.remarks) {
+                        const safeRemarks = v.remarks.replace(/"/g, '&quot;');
+                        remarksHtml = `
+                            <div class="d-flex align-items-center justify-content-between gap-2">
+                                <span class="text-truncate text-muted" style="max-width: 150px;" title="${safeRemarks}">${v.remarks}</span>
+                                <a tabindex="0" class="btn btn-sm btn-light rounded-circle p-1 d-flex align-items-center justify-content-center" 
+                                   role="button" 
+                                   data-bs-toggle="popover" 
+                                   data-bs-trigger="focus" 
+                                   data-bs-placement="left" 
+                                   data-bs-custom-class="custom-popover"
+                                   data-bs-title="Visit Remarks"
+                                   data-bs-content="${safeRemarks}">
+                                    <i class="bi bi-chat-text-fill text-primary" style="font-size: 0.85rem;"></i>
+                                </a>
+                            </div>
+                        `;
+                    }
 
                     return `
                 <tr>
@@ -342,19 +533,86 @@
                         <div class="small">${timeStr}</div>
                     </td>
                     <td>
-                        <span class="status-pill" style="background:${ui.bg}; color:${ui.color};">
-                            <i class="bi ${ui.icon} me-1"></i>${ui.label}
-                        </span>
+                        ${badgeHtml}
                     </td>
-                    <td class="text-muted text-truncate" style="max-width:200px;" title="${v.remarks || ''}">
-                        ${v.remarks || '—'}
-                    </td>
+                    <td>${remarksHtml}</td>
                     <td>${photoCell}</td>
                 </tr>`;
                 }).join('');
 
+                // Initialize Bootstrap Popovers for the newly rendered rows
+                const popoverTriggerList = document.querySelectorAll('#visits-table [data-bs-toggle="popover"]');
+                [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
+
             } catch (err) {
                 tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Failed to load: ${err.message}</td></tr>`;
+            }
+        }
+
+        // ── Load Accepted Leads History ──────────────────────────
+        async function loadAcceptedLeads() {
+            const tbody = document.getElementById('accepted-leads-table');
+            const header = document.getElementById('dynamic-assign-header');
+
+            try {
+                if (isAdmin) {
+                    header.textContent = "Assigned To (Staff)";
+                } else {
+                    header.textContent = "Assigned By (Manager)";
+                }
+
+                const leads = await apiGet('/shops/accepted/history');
+
+                if (!leads || !leads.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No accepted leads found in your history.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = leads.map(l => {
+                    const agentValue = isAdmin ? l.assigned_to_name : l.assigned_by_name;
+                    const dateObj = l.accepted_at ? new Date(l.accepted_at) : null;
+                    const dateStr = dateObj ? dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+                    const timeStr = dateObj ? dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+
+                    return `
+                        <tr>
+                            <td class="text-muted"><i class="bi bi-geo-alt me-2"></i>${l.area_name || '—'}</td>
+                            <td class="fw-semibold text-dark">${l.shop_name || '—'}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width:28px;height:28px;font-size:0.7rem;font-weight:700;">
+                                        ${(agentValue || 'U').slice(0, 2).toUpperCase()}
+                                    </div>
+                                    <span class="text-muted small">${agentValue || 'Unknown'}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-medium text-dark">${dateStr}</div>
+                                <div class="small text-muted">${timeStr}</div>
+                            </td>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input capture-switch" type="checkbox" role="switch"
+                                        data-shop-id="${l.shop_id || l.id}"
+                                        data-shop-name="${l.shop_name || 'Selected Shop'}"
+                                        id="switch-${l.id}">
+                                    <label class="form-check-label text-warning small" for="switch-${l.id}">Pending</label>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary view-lead-btn"
+                                    data-shop-id="${l.shop_id || l.id}"
+                                    title="View Details">
+                                    <i class="bi bi-eye"></i> View
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error("History fetch error:", err);
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger small">Error: ${err.message || 'Failed to fetch history'}</td></tr>`;
             }
         }
 
@@ -366,7 +624,6 @@
             const selectedOutcome = document.querySelector('input[name="v-status"]:checked');
             const btn = document.getElementById('save-visit-btn');
 
-            // Validations
             if (!shopId) { showToast('Please select a shop', 'error'); return; }
             if (!selectedOutcome) { showToast('Please select an interaction outcome', 'error'); return; }
             if (!remarks) {
@@ -377,9 +634,7 @@
             document.getElementById('v-remarks').classList.remove('is-invalid');
 
             let status = selectedOutcome.value;
-            // OTHER is a valid enum value — no free-text override needed
 
-            // Photo required for Sales
             if (isSales && !photo) {
                 showToast('A photo of the visited shop is required for Sales roles', 'error');
                 document.getElementById('v-photo').classList.add('is-invalid');
@@ -402,48 +657,127 @@
             if (photo) fd.append('photo', photo);
 
             try {
-                const res = await apiFetch('/visits/', { method: 'POST', body: fd, headers: {} });
-
+                const token = localStorage.getItem('token') || localStorage.getItem('access_token');
+                const res = await fetch('/api/visits/', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: fd
+                });
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
-                    throw new Error(err.detail || 'Failed to save visit');
+                    let errorMsg = err.detail || 'Failed to save visit';
+
+                    // If FastAPI sent an array of specific field errors, format them nicely!
+                    if (Array.isArray(err.detail)) {
+                        errorMsg = err.detail.map(e => {
+                            const field = e.loc[e.loc.length - 1]; // gets the specific field name
+                            return `${field}: ${e.msg}`;
+                        }).join(' \n ');
+                    }
+                    throw new Error(errorMsg);
                 }
 
                 closeVisitModal();
-
-                if (status === 'ACCEPT') {
-                    showToast('🎉 Lead Accepted! Routing to client onboarding...', 'success');
-                    setTimeout(() => window.location.href = 'clients.html', 1800);
-                } else {
-                    showToast('Visit logged successfully!', 'success');
-                    loadVisits();
-                }
+                showToast('Visit logged successfully! ✅', 'success');
+                loadVisits();
+                loadAcceptedLeads();
             } catch (e) {
                 showToast(e.message, 'error');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = 'Save Visit Log';
+                btn.innerHTML = 'Save Visit Record';
             }
         }
 
-        loadVisits().then(() => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const highlightId = urlParams.get('id');
-            if (highlightId) {
-                setTimeout(() => {
-                    // Try to find a row containing the shop ID text explicitly or matching ID structure if possible
-                    // In the existing UI, the shop_id isn't directly on a data attribute, so we'll look for text match
-                    const rows = document.querySelectorAll('#visits-table tr');
-                    for (let row of rows) {
-                        if (row.innerHTML.includes(`Shop #${highlightId}`) || row.innerHTML.includes(`value="${highlightId}"`)) {
-                            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            row.classList.add('highlight-row');
-                            break;
-                        }
-                    }
-                }, 500);
+        // ── BULLETPROOF Capture Switch (Status Toggle) ───────────────────────
+        document.getElementById('accepted-leads-table').addEventListener('change', function (e) {
+            const sw = e.target.closest('.capture-switch');
+            if (!sw) return;
+
+            const shopId = sw.getAttribute('data-shop-id');
+            const shopName = sw.getAttribute('data-shop-name') || 'Selected Shop';
+
+            console.log("🔍 Detected Shop for Modal:", shopName, "(ID:", shopId, ")");
+
+            window._pendingCaptureSwitch = sw;
+
+            // 1. FORCE THE MODAL OPEN IMMEDIATELY
+            openVisitModal();
+
+            // 2. Force-inject the shop into the dropdown if it's missing, then select it
+            if (shopId && shopId !== 'undefined' && shopId !== 'null') {
+                const shopSel = document.getElementById('v-shop');
+
+                // Check if the shop exists in the dropdown list
+                const optionExists = Array.from(shopSel.options).some(opt => opt.value === shopId);
+
+                if (!optionExists) {
+                    console.log("💉 Shop hidden from general list. Injecting option dynamically!");
+                    shopSel.add(new Option(shopName, shopId));
+                }
+
+                // Select the shop!
+                shopSel.value = shopId;
+
+            } else {
+                console.error("⚠️ The modal opened, but the Shop ID is missing from the database record! ID:", shopId);
             }
         });
+
+        // ── View Lead Button ─────────────────────────────────────
+        document.getElementById('accepted-leads-table').addEventListener('click', function (e) {
+            const btn = e.target.closest('.view-lead-btn');
+            if (!btn) return;
+
+            const shopId = btn.getAttribute('data-shop-id');
+            console.log("🔍 Detected Shop ID for View Details:", shopId);
+
+            if (!shopId || shopId === 'undefined' || shopId === 'null') {
+                console.error("⚠️ Cannot view details. Shop ID is missing.");
+                return;
+            }
+            openShopDetails(shopId);
+        });
+
+        function openShopDetails(shopId) {
+            document.getElementById('shop-details-loading').style.display = 'block';
+            document.getElementById('shop-details-content').style.display = 'none';
+            openShopModal();
+
+            apiGet(`/shops/${shopId}`).then(s => {
+                const statusMap = {
+                    NEW: { bg: '#dbeafe', color: '#1d4ed8', label: 'New Lead' },
+                    CONTACTED: { bg: '#fef9c3', color: '#b45309', label: 'Contacted' },
+                    MEETING_SET: { bg: '#ede9fe', color: '#7c3aed', label: 'Meeting Set' },
+                    CONVERTED: { bg: '#dcfce7', color: '#16a34a', label: 'Converted' },
+                };
+                const st = statusMap[s.status] || { bg: '#f1f5f9', color: '#475569', label: s.status || '—' };
+
+                document.getElementById('sd-name').textContent = s.name || '—';
+                document.getElementById('sd-area').textContent = s.area_name || '—';
+                document.getElementById('sd-address').textContent = s.address || '—';
+                document.getElementById('sd-status').innerHTML =
+                    `<span class="status-pill" style="background:${st.bg};color:${st.color};">${st.label}</span>`;
+                document.getElementById('sd-contact').textContent = s.contact_person || '—';
+                document.getElementById('sd-phone').innerHTML = s.phone
+                    ? `<a href="tel:${s.phone}" class="text-decoration-none">${s.phone}</a>` : '—';
+                document.getElementById('sd-email').innerHTML = s.email
+                    ? `<a href="mailto:${s.email}" class="text-decoration-none">${s.email}</a>` : '—';
+                document.getElementById('sd-requirements').textContent = s.requirements || '—';
+                document.getElementById('sd-assignment').textContent = s.assignment_status || '—';
+                document.getElementById('sd-source').textContent = s.source || '—';
+
+                document.getElementById('shop-details-loading').style.display = 'none';
+                document.getElementById('shop-details-content').style.display = 'block';
+            }).catch(err => {
+                document.getElementById('shop-details-loading').innerHTML =
+                    `<i class="bi bi-exclamation-triangle text-danger me-2"></i>Failed to load: ${err.message}`;
+            });
+        }
+
+        // Initialize
+        loadVisits();
+        loadAcceptedLeads();
     </script>
 </body>
 

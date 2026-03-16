@@ -1,4 +1,6 @@
+# backend/app/modules/salary/service.py
 import calendar
+import os
 from sqlalchemy.orm import Session
 from sqlalchemy import extract
 from fastapi import HTTPException
@@ -15,6 +17,18 @@ PAID_LEAVE_LIMIT = 1  # 1 free paid leave per month
 class SalaryService:
     def __init__(self, db: Session):
         self.db = db
+        self._ensure_salary_columns()
+
+    def _ensure_salary_columns(self) -> None:
+        """Self-heal environments where salary visibility/remarks migration is not applied yet."""
+        from sqlalchemy import text
+        try:
+            self.db.execute(text("ALTER TABLE salary_slips ADD COLUMN IF NOT EXISTS is_visible_to_employee BOOLEAN DEFAULT false"))
+            self.db.execute(text("ALTER TABLE salary_slips ADD COLUMN IF NOT EXISTS employee_remarks TEXT"))
+            self.db.execute(text("ALTER TABLE salary_slips ADD COLUMN IF NOT EXISTS manager_remarks TEXT"))
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
 
     # ── Internal helpers ────────────────────────────────────────
 
@@ -23,6 +37,7 @@ class SalaryService:
         approved_leaves = self.db.query(LeaveRecord).filter(
             LeaveRecord.user_id == user_id,
             LeaveRecord.status == LeaveStatus.APPROVED,
+            LeaveRecord.is_deleted == False,
             extract('year', LeaveRecord.start_date) == year,
             extract('month', LeaveRecord.start_date) == month_num
         ).all()
@@ -110,6 +125,9 @@ class SalaryService:
             'status': s.status or 'CONFIRMED',
             'confirmed_by': s.confirmed_by,
             'confirmed_at': s.confirmed_at,
+            'is_visible_to_employee': bool(getattr(s, 'is_visible_to_employee', True)),
+            'employee_remarks': getattr(s, 'employee_remarks', None),
+            'manager_remarks': getattr(s, 'manager_remarks', None),
             'generated_at': s.generated_at,
             'user_name': (s.user.name or s.user.email) if s.user else f"User #{s.user_id}",
             'confirmer_name': (s.confirmer.name or s.confirmer.email) if s.confirmer else None,
@@ -134,7 +152,8 @@ class SalaryService:
 
         existing = self.db.query(SalarySlip).filter(
             SalarySlip.user_id == user_id,
-            SalarySlip.month == month
+            SalarySlip.month == month,
+            SalarySlip.is_deleted == False
         ).first()
 
         return {
@@ -205,6 +224,7 @@ class SalaryService:
             total_earnings=calc['total_earnings'],
             final_salary=calc['final_salary'],
             status="DRAFT",
+            is_visible_to_employee=False,
             generated_at=datetime.now(UTC).date(),
         )
         self.db.add(db_salary)
@@ -272,33 +292,55 @@ class SalaryService:
         self.db.refresh(slip)
         return self._format_slip(slip)
 
-    def get_user_salary_slips(self, user_id: int, show_drafts: bool = True) -> List[dict]:
+    def get_user_salary_slips(self, user_id: int, show_drafts: bool = True, only_visible: bool = False) -> List[dict]:
         """Get salary slips for a specific user."""
-        query = self.db.query(SalarySlip).filter(SalarySlip.user_id == user_id)
+        query = self.db.query(SalarySlip).filter(SalarySlip.user_id == user_id, SalarySlip.is_deleted == False)
         if not show_drafts:
             query = query.filter(SalarySlip.status == "CONFIRMED")
+        if only_visible:
+            query = query.filter(SalarySlip.is_visible_to_employee == True)
         slips = query.order_by(SalarySlip.month.desc()).all()
         return [self._format_slip(s) for s in slips]
 
     def get_all_salary_slips(self) -> List[dict]:
         """Get all salary slips (admin use)."""
-        slips = self.db.query(SalarySlip).order_by(SalarySlip.month.desc()).all()
+        slips = self.db.query(SalarySlip).filter(SalarySlip.is_deleted == False).order_by(SalarySlip.month.desc()).all()
         return [self._format_slip(s) for s in slips]
 
     def generate_invoice_html(self, slip_id: int) -> str:
-        """Generate a professional printable HTML payslip."""
+        """Generate a professional printable HTML salary slip (payslip)."""
+        import base64
         slip = self.db.query(SalarySlip).filter(SalarySlip.id == slip_id).first()
         if not slip:
             raise HTTPException(status_code=404, detail="Salary slip not found")
 
+        # Embed company logo as base64 so it works in print/new-window context
+        # Prefer logo_white.png for the dark header; fall back to logo.png
+        logo_data_uri = ""
+        try:
+            _here = os.path.abspath(__file__)
+            _root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(_here)))))
+            _logo_white_path = os.path.join(_root, "frontend", "images", "white logo.png")
+            _logo_path = os.path.join(_root, "frontend", "images", "logo.png")
+            _chosen = _logo_white_path if os.path.exists(_logo_white_path) else _logo_path
+            if os.path.exists(_chosen):
+                with open(_chosen, "rb") as _f:
+                    _ext = "png" if _chosen.endswith(".png") else "jpeg"
+                    logo_data_uri = f"data:image/{_ext};base64," + base64.b64encode(_f.read()).decode()
+        except Exception:
+            pass
+
         user = slip.user
         slab_bonus = slip.slab_bonus or 0.0
         incentive_amount = slip.incentive_amount or 0.0
-        daily_wage = slip.base_salary / 30
-        leave_deduction = round(daily_wage * slip.unpaid_leaves, 2)
+        daily_wage = round(slip.base_salary / 30, 2)
         extra_deduction = slip.deduction_amount or 0.0
-        total_deductions = leave_deduction + extra_deduction
-        gross_earnings = slip.total_earnings or slip.final_salary
+        # Gross Earnings = full base + all bonuses BEFORE any deductions
+        gross_earnings = round(slip.base_salary + incentive_amount + slab_bonus, 2)
+        # Derive totals from stored DB values to guarantee displayed math always matches net pay
+        total_deductions = round(gross_earnings - slip.final_salary, 2)
+        leave_deduction = round(total_deductions - extra_deduction, 2)
+        working_days = max(0, 30 - int(slip.unpaid_leaves))
 
         year, month_num = map(int, slip.month.split('-'))
         month_name = f"{calendar.month_name[month_num]} {year}"
@@ -312,7 +354,6 @@ class SalaryService:
         emp_name = user.name or user.email
         designation = str(user.role).replace('_', ' ').title()
 
-        # ------ amount in words (simple) ------
         def amount_in_words(amount: float) -> str:
             ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven",
                     "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen",
@@ -349,61 +390,73 @@ class SalaryService:
 
         net_in_words = amount_in_words(slip.final_salary)
         status_str = slip.status if isinstance(slip.status, str) else slip.status.value
-        invoice_no = f"INV-{year}{calendar.month_name[month_num].lower()}-{slip.id}"
+        slip_no = f"PS-{year}-{month_num:02d}-{user.id:04d}"
+
+        # Read configurable company contact from DB (fall back to defaults)
+        from app.modules.salary.models import AppSetting as _AppSetting
+        _DEFAULT_EMAIL = "hrmangukiya3494@gmail.com"
+        _DEFAULT_PHONE = "8866005029"
+        try:
+            _email_row = self.db.query(_AppSetting).filter(_AppSetting.key == "payslip_email").first()
+            _phone_row = self.db.query(_AppSetting).filter(_AppSetting.key == "payslip_phone").first()
+            company_email = _email_row.value if _email_row else _DEFAULT_EMAIL
+            company_phone = _phone_row.value if _phone_row else _DEFAULT_PHONE
+        except Exception:
+            company_email = _DEFAULT_EMAIL
+            company_phone = _DEFAULT_PHONE
 
         html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salary Slip &mdash; {month_name}</title>
+    <title>{slip_no} &mdash; {emp_name} &mdash; {month_name}</title>
     <style>
         @page {{ size: A4; margin: 10mm 12mm; }}
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{
             font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
-            background: #c8c8c8;
+            background: #dde3ec;
             color: #1a1a1a;
             font-size: 12px;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }}
-        /* ── A4 Page ── */
         .a4-page {{
             width: 210mm;
             min-height: 297mm;
             background: #ffffff;
             margin: 20px auto;
-            padding: 14mm 14mm 12mm;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+            padding: 12mm 14mm 10mm;
+            box-shadow: 0 6px 32px rgba(0,0,0,0.28);
         }}
-        /* ── Header ── */
-        .slip-header {{
+        /* ── Top banner ── */
+        .top-banner {{
+            background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+            margin: -12mm -14mm 0;
+            padding: 14px 14mm;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            padding-bottom: 14px;
-            border-bottom: 2.5px solid #2d7a6e;
-            margin-bottom: 14px;
+            align-items: center;
+            margin-bottom: 16px;
         }}
-        .logo-block {{ display: flex; align-items: center; gap: 12px; }}
-        .logo-icon {{
-            width: 56px; height: 56px;
-            background: linear-gradient(135deg, #2d7a6e 0%, #1a4f46 100%);
-            border-radius: 8px;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            color: #fff; font-size: 20px; font-weight: 900;
-            letter-spacing: -1px; flex-shrink: 0;
-            line-height: 1;
+        .banner-left {{ display: flex; align-items: center; gap: 14px; }}
+        .logo-img {{
+            height: 80px; width: auto;
+            object-fit: contain;
+            flex-shrink: 0;
         }}
-        .logo-icon span {{ font-size: 8px; font-weight: 600; letter-spacing: 0.5px; margin-top: 2px; opacity: 0.9; }}
-        .company-name-big {{ font-size: 17px; font-weight: 800; color: #1a1a1a; line-height: 1.25; }}
-        .company-tagline {{ font-size: 10px; color: #666; letter-spacing: 0.5px; margin-top: 3px; }}
-        .contact-block {{ text-align: right; font-size: 11.5px; color: #444; line-height: 2; }}
-        .contact-block strong {{ color: #111; }}
-        /* ── Invoice Meta ── */
-        .invoice-meta {{
+        .company-name {{ font-size: 16px; font-weight: 800; color: #fff; line-height: 1.2; }}
+        .company-sub {{ font-size: 10px; color: rgba(255,255,255,0.75); margin-top: 2px; letter-spacing: 0.4px; }}
+        .banner-right {{ text-align: right; }}
+        .payslip-badge {{
+            font-size: 22px; font-weight: 900; color: #fff;
+            letter-spacing: 2px; text-transform: uppercase;
+            opacity: 0.92;
+        }}
+        .payslip-period {{ font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 3px; text-align: right; }}
+        /* ── Slip meta strip ── */
+        .meta-strip {{
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             border: 1.5px solid #e2e8f0;
@@ -411,103 +464,128 @@ class SalaryService:
             overflow: hidden;
             margin-bottom: 14px;
         }}
-        .meta-cell {{ padding: 10px 14px; border-right: 1px solid #e2e8f0; }}
+        .meta-cell {{ padding: 10px 14px; border-right: 1px solid #e2e8f0; background: #f8fafc; }}
         .meta-cell:last-child {{ border-right: none; }}
-        .meta-label {{ font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; font-weight: 600; }}
-        .meta-value {{ font-size: 13px; font-weight: 700; color: #1a1a1a; word-break: break-word; }}
-        .status-draft {{ color: #B45309; }}
-        .status-confirmed {{ color: #059669; }}
-        /* ── Employee Section ── */
+        .meta-lbl {{ font-size: 9.5px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.7px; font-weight: 700; margin-bottom: 4px; }}
+        .meta-val {{ font-size: 13px; font-weight: 800; color: #1e293b; word-break: break-word; }}
+        .s-confirmed {{ color: #059669; }}
+        .s-draft {{ color: #D97706; }}
+        /* ── Section boxes ── */
         .section-box {{ border: 1.5px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 14px; }}
-        .section-header {{
-            background: #2d7a6e; color: #fff;
-            padding: 8px 14px; font-size: 11px;
-            font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+        .section-hdr {{
+            background: #1e3a5f; color: #fff;
+            padding: 8px 14px; font-size: 10.5px;
+            font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
         }}
-        .emp-grid2 {{ display: grid; grid-template-columns: 1fr 1fr; }}
-        .emp-col-l {{ border-right: 1px solid #e2e8f0; }}
-        .emp-row2 {{
+        /* ── Employee grid ── */
+        .emp-grid {{ display: grid; grid-template-columns: 1fr 1fr; }}
+        .emp-col {{ }}
+        .emp-col:first-child {{ border-right: 1px solid #e2e8f0; }}
+        .emp-row {{
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 8px 14px; border-bottom: 1px solid #f1f5f9; font-size: 12px;
+        }}
+        .emp-row:last-child {{ border-bottom: none; }}
+        .e-lbl {{ color: #64748b; font-weight: 500; white-space: nowrap; margin-right: 8px; }}
+        .e-val {{ font-weight: 700; color: #1e293b; text-align: right; word-break: break-word; max-width: 58%; }}
+        /* ── Attendance strip ── */
+        .att-strip {{
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            background: #f0f7ff; border: 1.5px solid #bfdbfe;
+            border-radius: 8px; overflow: hidden; margin-bottom: 14px;
+        }}
+        .att-cell {{
+            padding: 10px 12px; text-align: center;
+            border-right: 1px solid #bfdbfe;
+        }}
+        .att-cell:last-child {{ border-right: none; }}
+        .att-num {{ font-size: 20px; font-weight: 900; color: #1e40af; line-height: 1; }}
+        .att-num.green {{ color: #059669; }}
+        .att-num.red {{ color: #dc2626; }}
+        .att-lbl {{ font-size: 9.5px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; font-weight: 600; }}
+        /* ── Pay table ── */
+        .pay-table-wrap {{ display: grid; grid-template-columns: 1fr 1fr; }}
+        .pay-col {{ }}
+        .pay-col:first-child {{ border-right: 1px solid #e2e8f0; }}
+        .pay-col-hdr {{
+            background: #f8fafc; padding: 8px 14px;
+            font-size: 10px; color: #64748b; font-weight: 700;
+            letter-spacing: 0.7px; text-transform: uppercase;
+            border-bottom: 1.5px solid #e2e8f0;
+            display: flex; justify-content: space-between;
+        }}
+        .pay-row {{
             display: flex; justify-content: space-between; align-items: center;
             padding: 8px 14px; border-bottom: 1px solid #f1f5f9; font-size: 12px;
         }}
-        .emp-row2:last-child {{ border-bottom: none; }}
-        .emp-col-r .emp-row2:last-child {{ border-bottom: none; }}
-        .emp-lbl {{ color: #666; font-weight: 500; }}
-        .emp-val {{ font-weight: 700; color: #1a1a1a; text-align: right; max-width: 60%; word-break: break-word; }}
-        /* ── Leave Chips ── */
-        .leave-chips {{ display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }}
-        .lchip {{
-            padding: 5px 13px; border-radius: 20px; font-size: 11.5px; font-weight: 600;
-        }}
-        .chip-b {{ background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }}
-        .chip-g {{ background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }}
-        .chip-r {{ background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }}
-        /* ── Salary Table ── */
-        .salary-table {{ width: 100%; border-collapse: collapse; }}
-        .salary-table thead th {{
-            background: #f8fafc; padding: 8px 14px;
-            font-size: 10.5px; color: #64748b;
-            text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700;
-            text-align: left; border-bottom: 1.5px solid #e2e8f0;
-        }}
-        .salary-table thead th:last-child {{ text-align: right; }}
-        .salary-table tbody td {{
-            padding: 9px 14px; font-size: 12px;
-            border-bottom: 1px solid #f1f5f9; color: #222;
-        }}
-        .salary-table tbody td:last-child {{ text-align: right; font-weight: 700; }}
-        .salary-table tbody tr:last-child td {{ border-bottom: none; }}
-        .salary-table tfoot td {{
-            padding: 8px 14px; font-size: 12px; font-weight: 700;
+        .pay-row:last-child {{ border-bottom: none; }}
+        .pay-desc {{ color: #374151; }}
+        .pay-desc small {{ display: block; font-size: 10px; color: #94a3b8; margin-top: 1px; }}
+        .pay-amt {{ font-weight: 700; color: #1e293b; white-space: nowrap; }}
+        .pay-amt.earn {{ color: #059669; }}
+        .pay-amt.ded {{ color: #dc2626; }}
+        /* ── Totals row ── */
+        .totals-row {{
+            display: grid; grid-template-columns: 1fr 1fr;
             border-top: 2px solid #e2e8f0; background: #f8fafc;
         }}
-        .salary-table tfoot td:last-child {{ text-align: right; }}
-        /* ── Net Pay ── */
-        .net-pay-bar {{
-            background: linear-gradient(135deg, #2d7a6e 0%, #1a4f46 100%);
-            color: #fff; border-radius: 8px;
-            padding: 14px 18px;
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 18px;
+        .tot-cell {{
+            padding: 9px 14px; display: flex; justify-content: space-between; align-items: center;
+            font-size: 12px; font-weight: 700;
         }}
-        .net-words-lbl {{ font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.8; margin-bottom: 4px; }}
-        .net-words {{ font-size: 12px; font-style: italic; max-width: 320px; }}
-        .net-amount-lbl {{ font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.8; margin-bottom: 2px; text-align: right; }}
-        .net-amount {{ font-size: 26px; font-weight: 900; text-align: right; }}
+        .tot-cell:first-child {{ border-right: 1px solid #e2e8f0; }}
+        .tot-lbl {{ color: #374151; }}
+        .tot-val {{ }}
+        .tot-val.earn {{ color: #059669; }}
+        .tot-val.ded {{ color: #dc2626; }}
+        /* ── Net pay ── */
+        .net-bar {{
+            background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+            color: #fff; border-radius: 8px; padding: 14px 18px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 16px;
+        }}
+        .net-words-lbl {{ font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.75; margin-bottom: 4px; }}
+        .net-words {{ font-size: 11.5px; font-style: italic; max-width: 310px; line-height: 1.4; }}
+        .net-amt-lbl {{ font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.75; margin-bottom: 2px; text-align: right; }}
+        .net-amt {{ font-size: 28px; font-weight: 900; text-align: right; letter-spacing: -0.5px; }}
         /* ── Signatures ── */
         .sig-section {{
             display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 20px; margin-bottom: 16px;
+            gap: 20px; margin-bottom: 14px;
         }}
         .sig-block {{ text-align: center; }}
         .sig-line {{
-            border-top: 1px solid #999;
-            margin-top: 38px; padding-top: 5px;
-            font-size: 10.5px; color: #666;
+            border-top: 1px dashed #999;
+            margin-top: 36px; padding-top: 5px;
+            font-size: 10.5px; color: #64748b; font-weight: 600;
         }}
         /* ── Footer ── */
         .slip-footer {{
-            text-align: center; font-size: 10px; color: #999;
+            text-align: center; font-size: 9.5px; color: #94a3b8;
             border-top: 1px solid #e2e8f0; padding-top: 10px;
+            line-height: 1.6;
         }}
-        /* ── Print Bar ── */
+        /* ── Print bar ── */
         .print-bar {{
-            width: 210mm; margin: 12px auto;
+            width: 210mm; margin: 14px auto;
             display: flex; gap: 10px; justify-content: center;
         }}
         .btn-print {{
-            padding: 10px 30px; background: #2d7a6e; color: #fff;
+            padding: 10px 32px; background: #2563eb; color: #fff;
             border: none; font-size: 13px; font-weight: 700;
-            cursor: pointer; font-family: inherit; border-radius: 6px;
+            cursor: pointer; font-family: inherit; border-radius: 7px;
+            letter-spacing: 0.3px;
         }}
         .btn-close-w {{
-            padding: 10px 26px; background: #fff; color: #2d7a6e;
-            border: 2px solid #2d7a6e; font-size: 13px; font-weight: 700;
-            cursor: pointer; font-family: inherit; border-radius: 6px;
+            padding: 10px 28px; background: #fff; color: #2563eb;
+            border: 2px solid #2563eb; font-size: 13px; font-weight: 700;
+            cursor: pointer; font-family: inherit; border-radius: 7px;
         }}
         @media print {{
             body {{ background: #fff; }}
-            .a4-page {{ margin: 0; padding: 10mm 12mm; box-shadow: none; width: 100%; min-height: auto; }}
+            .a4-page {{ margin: 0; padding: 0; box-shadow: none; width: 100%; min-height: auto; }}
+            .top-banner {{ margin: 0; padding: 14px 14mm; }}
             .print-bar {{ display: none; }}
         }}
     </style>
@@ -516,167 +594,181 @@ class SalaryService:
 
 <div class="a4-page">
 
-    <!-- HEADER: Logo + Company + Contact -->
-    <div class="slip-header">
-        <div class="logo-block">
-            <div class="logo-icon">HK<span>DIGI</span></div>
-            <div>
-                <div class="company-name-big">HK DigiVerse<br>&amp; IT Consultancy</div>
-                <div class="company-tagline">Talent &nbsp;&middot;&nbsp; Property &nbsp;&middot;&nbsp; Fintech</div>
-            </div>
+    <!-- TOP BANNER -->
+    <div class="top-banner">
+        <div class="banner-left">
+            {'<img class="logo-img" src="' + logo_data_uri + '" alt="Company Logo">' if logo_data_uri else '<div style="width:52px;height:52px;background:rgba(255,255,255,0.18);border:2px solid rgba(255,255,255,0.35);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;">&#9670;</div>'}
         </div>
-        <div class="contact-block">
-            <div>Email: <strong>hrmangukiya3494@gmail.com</strong></div>
-            <div>Contact No: <strong>8866005029</strong></div>
+        <div class="banner-right">
+            <div class="payslip-badge">Salary Slip</div>
+            <div class="payslip-period">{month_name}</div>
+            <div class="company-sub" style="margin-top:5px;">{company_email} &nbsp;&middot;&nbsp; {company_phone}</div>
         </div>
     </div>
 
-    <!-- INVOICE META -->
-    <div class="invoice-meta">
+    <!-- SLIP META STRIP -->
+    <div class="meta-strip">
         <div class="meta-cell">
-            <div class="meta-label">Invoice No.</div>
-            <div class="meta-value">{invoice_no}</div>
+            <div class="meta-lbl">Slip No.</div>
+            <div class="meta-val">{slip_no}</div>
         </div>
         <div class="meta-cell">
-            <div class="meta-label">Date</div>
-            <div class="meta-value">{issue_date_str}</div>
+            <div class="meta-lbl">Issue Date</div>
+            <div class="meta-val">{issue_date_str}</div>
         </div>
         <div class="meta-cell">
-            <div class="meta-label">Payment Status</div>
-            <div class="meta-value {'status-confirmed' if status_str == 'CONFIRMED' else 'status-draft'}">{status_str.lower()}</div>
+            <div class="meta-lbl">Status</div>
+            <div class="meta-val {'s-confirmed' if status_str == 'CONFIRMED' else 's-draft'}">{'&#10003; Paid' if status_str == 'CONFIRMED' else '&#9679; Draft'}</div>
         </div>
         <div class="meta-cell">
-            <div class="meta-label">Total Amount</div>
-            <div class="meta-value">&#8377; {slip.final_salary:,.2f}</div>
+            <div class="meta-lbl">Net Payable</div>
+            <div class="meta-val" style="color:#2563eb;">&#8377;&nbsp;{slip.final_salary:,.2f}</div>
         </div>
     </div>
 
     <!-- EMPLOYEE DETAILS -->
     <div class="section-box">
-        <div class="section-header">Employee Information</div>
-        <div class="emp-grid2">
-            <div class="emp-col-l">
-                <div class="emp-row2">
-                    <span class="emp-lbl">Name</span>
-                    <span class="emp-val">{emp_name}</span>
+        <div class="section-hdr">Employee Details</div>
+        <div class="emp-grid">
+            <div class="emp-col">
+                <div class="emp-row">
+                    <span class="e-lbl">Name</span>
+                    <span class="e-val">{emp_name}</span>
                 </div>
-                <div class="emp-row2">
-                    <span class="emp-lbl">Designation</span>
-                    <span class="emp-val">{designation}</span>
+                <div class="emp-row">
+                    <span class="e-lbl">Designation</span>
+                    <span class="e-val">{designation}</span>
                 </div>
-                <div class="emp-row2">
-                    <span class="emp-lbl">Email</span>
-                    <span class="emp-val">{user.email}</span>
+                <div class="emp-row">
+                    <span class="e-lbl">Email</span>
+                    <span class="e-val">{user.email}</span>
                 </div>
             </div>
-            <div class="emp-col-r">
-                <div class="emp-row2">
-                    <span class="emp-lbl">Department</span>
-                    <span class="emp-val">{user.department or '&mdash;'}</span>
+            <div class="emp-col">
+                <div class="emp-row">
+                    <span class="e-lbl">Employee ID</span>
+                    <span class="e-val">EMP-{user.id:04d}</span>
                 </div>
-                <div class="emp-row2">
-                    <span class="emp-lbl">Employee ID</span>
-                    <span class="emp-val">EMP-{user.id:04d}</span>
+                <div class="emp-row">
+                    <span class="e-lbl">Department</span>
+                    <span class="e-val">{user.department or '<span style="font-weight:normal;color:#94a3b8;font-size:11px;">n/a</span>'}</span>
                 </div>
-                <div class="emp-row2">
-                    <span class="emp-lbl">Phone</span>
-                    <span class="emp-val">{user.phone or '&mdash;'}</span>
+                <div class="emp-row">
+                    <span class="e-lbl">Phone</span>
+                    <span class="e-val">{user.phone or '<span style="font-weight:normal;color:#94a3b8;font-size:11px;">n/a</span>'}</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- LEAVE SUMMARY CHIPS -->
-    <div class="leave-chips">
-        <div class="lchip chip-b">Pay Period: {month_name}</div>
-        <div class="lchip chip-b">Working Days: {max(0, 30 - slip.unpaid_leaves)} / 30</div>
-        <div class="lchip chip-g">Paid Leaves: {slip.paid_leaves}</div>
-        <div class="lchip chip-r">Unpaid Leaves: {slip.unpaid_leaves}</div>
+    <!-- ATTENDANCE SUMMARY -->
+    <div class="att-strip">
+        <div class="att-cell">
+            <div class="att-num">30</div>
+            <div class="att-lbl">Total Days</div>
+        </div>
+        <div class="att-cell">
+            <div class="att-num">{working_days}</div>
+            <div class="att-lbl">Working Days</div>
+        </div>
+        <div class="att-cell">
+            <div class="att-num green">{slip.paid_leaves}</div>
+            <div class="att-lbl">Paid Leaves</div>
+        </div>
+        <div class="att-cell">
+            <div class="att-num red">{slip.unpaid_leaves}</div>
+            <div class="att-lbl">Unpaid Leaves</div>
+        </div>
     </div>
 
-    <!-- SALARY DETAILS TABLE -->
+    <!-- EARNINGS & DEDUCTIONS (Two-column payslip) -->
     <div class="section-box">
-        <div class="section-header">Salary Details</div>
-        <table class="salary-table">
-            <thead>
-                <tr>
-                    <th>Description</th>
-                    <th>Type</th>
-                    <th>Amount (&#8377;)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Base Salary</td>
-                    <td><span style="color:#2563EB;font-size:10.5px;font-weight:700;">EARNING</span></td>
-                    <td>&#8377; {slip.base_salary:,.2f}</td>
-                </tr>
-                <tr>
-                    <td>Performance Incentive</td>
-                    <td><span style="color:#2563EB;font-size:10.5px;font-weight:700;">EARNING</span></td>
-                    <td>&#8377; {incentive_amount:,.2f}</td>
-                </tr>
-                <tr>
-                    <td>Slab Bonus</td>
-                    <td><span style="color:#2563EB;font-size:10.5px;font-weight:700;">EARNING</span></td>
-                    <td>&#8377; {slab_bonus:,.2f}</td>
-                </tr>
-                <tr>
-                    <td>Leave Deduction &nbsp;<span style="font-size:10.5px;color:#888;">({slip.unpaid_leaves} unpaid day(s) @ &#8377;{daily_wage:,.2f}/day)</span></td>
-                    <td><span style="color:#DC2626;font-size:10.5px;font-weight:700;">DEDUCTION</span></td>
-                    <td style="color:#DC2626;">&#8722; &#8377; {leave_deduction:,.2f}</td>
-                </tr>
-                <tr>
-                    <td>Other Deductions</td>
-                    <td><span style="color:#DC2626;font-size:10.5px;font-weight:700;">DEDUCTION</span></td>
-                    <td style="color:#DC2626;">&#8722; &#8377; {extra_deduction:,.2f}</td>
-                </tr>
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td>Gross Earnings</td>
-                    <td></td>
-                    <td style="color:#059669;">&#8377; {gross_earnings:,.2f}</td>
-                </tr>
-                <tr>
-                    <td>Total Deductions</td>
-                    <td></td>
-                    <td style="color:#DC2626;">&#8377; {total_deductions:,.2f}</td>
-                </tr>
-            </tfoot>
-        </table>
+        <div class="section-hdr">Earnings &amp; Deductions</div>
+        <div class="pay-table-wrap">
+            <!-- Earnings column -->
+            <div class="pay-col">
+                <div class="pay-col-hdr">
+                    <span>Earnings</span><span>Amount (&#8377;)</span>
+                </div>
+                <div class="pay-row">
+                    <div class="pay-desc">Basic Salary</div>
+                    <div class="pay-amt earn">&#8377;&nbsp;{slip.base_salary:,.2f}</div>
+                </div>
+                <div class="pay-row">
+                    <div class="pay-desc">Performance Incentive</div>
+                    <div class="pay-amt earn">&#8377;&nbsp;{incentive_amount:,.2f}</div>
+                </div>
+                <div class="pay-row">
+                    <div class="pay-desc">Slab Bonus</div>
+                    <div class="pay-amt earn">&#8377;&nbsp;{slab_bonus:,.2f}</div>
+                </div>
+            </div>
+            <!-- Deductions column -->
+            <div class="pay-col">
+                <div class="pay-col-hdr">
+                    <span>Deductions</span><span>Amount (&#8377;)</span>
+                </div>
+                <div class="pay-row">
+                    <div class="pay-desc">
+                        Leave Deduction
+                        <small>{slip.unpaid_leaves} unpaid day(s) &times; &#8377;{daily_wage:,.2f}/day</small>
+                    </div>
+                    <div class="pay-amt ded">&#8377;&nbsp;{leave_deduction:,.2f}</div>
+                </div>
+                <div class="pay-row">
+                    <div class="pay-desc">Other Deductions</div>
+                    <div class="pay-amt ded">&#8377;&nbsp;{extra_deduction:,.2f}</div>
+                </div>
+            </div>
+        </div>
+        <!-- Totals row -->
+        <div class="totals-row">
+            <div class="tot-cell">
+                <span class="tot-lbl">Total Earnings</span>
+                <span class="tot-val earn">&#8377;&nbsp;{gross_earnings:,.2f}</span>
+            </div>
+            <div class="tot-cell">
+                <span class="tot-lbl">Total Deductions</span>
+                <span class="tot-val ded">&#8377;&nbsp;{total_deductions:,.2f}</span>
+            </div>
+        </div>
     </div>
 
     <!-- NET PAY -->
-    <div class="net-pay-bar">
+    <div class="net-bar">
         <div>
             <div class="net-words-lbl">Net Salary in Words</div>
             <div class="net-words">{net_in_words}</div>
         </div>
         <div>
-            <div class="net-amount-lbl">Net Amount Payable</div>
-            <div class="net-amount">&#8377; {slip.final_salary:,.2f}</div>
+            <div class="net-amt-lbl">Net Amount Payable</div>
+            <div class="net-amt">&#8377;&nbsp;{slip.final_salary:,.2f}</div>
         </div>
     </div>
 
-    <!-- SIGNATURES -->
+    <!-- SIGNATURE SECTION -->
     <div class="sig-section">
-        <div class="sig-block"><div class="sig-line">Employee Signature</div></div>
-        <div class="sig-block"><div class="sig-line">HR / Payroll</div></div>
-        <div class="sig-block"><div class="sig-line">Authorized Signatory</div></div>
+        <div class="sig-block">
+            <div class="sig-line">Employee Signature</div>
+        </div>
+        <div class="sig-block">
+            <div class="sig-line">HR / Accounts</div>
+        </div>
+        <div class="sig-block">
+            <div class="sig-line">Authorized Signatory</div>
+        </div>
     </div>
 
     <!-- FOOTER -->
     <div class="slip-footer">
-        This is a computer-generated salary slip and does not require a physical signature.
-        &nbsp;&middot;&nbsp; HK DigiVerse &amp; IT Consultancy &nbsp;&middot;&nbsp; Confidential &mdash; For Employee Use Only
+        This is a computer generated salary slip by HK DigiVerse LLP &mdash; Confidential &mdash; For Employee Use Only
     </div>
 
 </div>
 
 <div class="print-bar">
-    <button class="btn-close-w" onclick="window.close()">&#10005; Close</button>
-    <button class="btn-print" onclick="window.print()">&#128438; Print / Save as PDF</button>
+    <button class="btn-close-w" onclick="window.close()">&#10005;&nbsp; Close</button>
+    <button class="btn-print" onclick="window.print()">&#128438;&nbsp; Print / Save as PDF</button>
 </div>
 
 </body>

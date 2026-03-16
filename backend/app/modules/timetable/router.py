@@ -1,3 +1,4 @@
+# backend/app/modules/timetable/router.py
 from typing import List, Any, Optional
 from fastapi import APIRouter, Depends, Query, status, HTTPException
 from sqlalchemy.orm import Session
@@ -37,7 +38,7 @@ def update_timetable_event(
     current_user: User = Depends(get_current_user)
 ) -> Any:
     user_id = current_user.id if current_user else 0
-    query = db.query(TimetableEvent).filter(TimetableEvent.id == event_id)
+    query = db.query(TimetableEvent).filter(TimetableEvent.id == event_id, TimetableEvent.is_deleted == False)
     if current_user and current_user.role != UserRole.ADMIN:
         query = query.filter(TimetableEvent.user_id == user_id)
     
@@ -61,7 +62,7 @@ def delete_timetable_event(
     current_user: User = Depends(get_current_user)
 ) -> None:
     user_id = current_user.id if current_user else 0
-    query = db.query(TimetableEvent).filter(TimetableEvent.id == event_id)
+    query = db.query(TimetableEvent).filter(TimetableEvent.id == event_id, TimetableEvent.is_deleted == False)
     if current_user and current_user.role != UserRole.ADMIN:
         query = query.filter(TimetableEvent.user_id == user_id)
     
@@ -70,7 +71,14 @@ def delete_timetable_event(
     if not event:
         raise HTTPException(status_code=404, detail="Timetable event not found")
         
-    db.delete(event)
+    from app.modules.salary.models import AppSetting
+    policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+    is_hard = policy and policy.value == "HARD"
+
+    if is_hard:
+        db.delete(event)
+    else:
+        event.is_deleted = True
     db.commit()
     from fastapi import Response
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -114,6 +122,10 @@ def get_timetable(
     visit_query = db.query(Visit).join(Shop)
     if not is_admin:
         visit_query = visit_query.filter(Visit.user_id == user_id)
+    
+    # Filter deleted visits and shops
+    visit_query = visit_query.filter(Shop.is_deleted == False)
+    
     visits = visit_query.filter(
         Visit.visit_date >= start_date,
         Visit.visit_date <= end_date
@@ -147,6 +159,10 @@ def get_timetable(
         meeting_query = meeting_query.filter(Client.pm_id == current_user.id)
     elif current_user and current_user.role != UserRole.ADMIN:
         meeting_query = meeting_query.filter(Client.owner_id == current_user.id)
+        
+    # Filter out deleted meetings and clients
+    meeting_query = meeting_query.filter(MeetingSummary.is_deleted == False, Client.is_deleted == False)
+
     meetings = meeting_query.filter(
         MeetingSummary.date >= start_date,
         MeetingSummary.date <= end_date
@@ -178,6 +194,9 @@ def get_timetable(
     todo_query = db.query(Todo)
     if not is_admin:
         todo_query = todo_query.filter(Todo.user_id == user_id)
+    
+    # Filter deleted todos
+    todo_query = todo_query.filter(Todo.is_deleted == False)
         
     todos = todo_query.filter(
         Todo.due_date >= start_date,
@@ -218,6 +237,9 @@ def get_timetable(
     tt_query = db.query(TimetableEvent)
     if not is_admin:
         tt_query = tt_query.filter(TimetableEvent.user_id == user_id)
+    
+    # Filter deleted events
+    tt_query = tt_query.filter(TimetableEvent.is_deleted == False)
         
     custom_events = tt_query.filter(
         TimetableEvent.date >= start_date.date(),
@@ -246,6 +268,60 @@ def get_timetable(
             status="PENDING",
             reference_id=c.id,
             description=None
+        ))
+
+    # 5. Fetch Scheduled Shop Demos (from SM demo pipeline)
+    demo_query = db.query(Shop).filter(Shop.demo_scheduled_at.isnot(None))
+    if not is_admin:
+        demo_query = demo_query.filter(Shop.project_manager_id == user_id)
+
+    demo_shops = demo_query.all()
+    from datetime import timedelta, timezone
+    
+    # Define IST explicitly to prevent double-shifting by JS
+    ist_tz = timezone(timedelta(hours=5, minutes=30))
+
+    for shop in demo_shops:
+        start_dt = shop.demo_scheduled_at
+        if start_dt is None:
+            continue
+            
+        if start_dt.tzinfo is not None:
+            local_start = start_dt.astimezone(ist_tz)
+        else:
+            local_start = start_dt 
+            
+        local_end = local_start + timedelta(minutes=45)
+        
+        # Resolve PM name so the UI doesn't hide the event
+        pm_name = username
+        try:
+            if getattr(shop, 'project_manager', None):
+                pm_name = shop.project_manager.name or shop.project_manager.email
+        except:
+            pass
+        
+        # Map the new implementation plan fields safely
+        display_title = getattr(shop, 'demo_title', None) or f"Demo: {shop.name}"
+        display_loc = getattr(shop, 'demo_type', None) or (shop.area.name if getattr(shop, 'area', None) else "Online")
+        display_desc = getattr(shop, 'demo_notes', None)
+        
+        events.append(TimelineEvent(
+            id=f"demo_shop_{shop.id}",
+            title=display_title,
+            date=local_start.strftime("%Y-%m-%d"),
+            user=pm_name,
+            sh=local_start.hour,
+            sm=local_start.minute,
+            eh=local_end.hour,
+            em=local_end.minute,
+            loc=display_loc,
+            event_type="DEMO",
+            status="SCHEDULED",
+            reference_id=shop.id,
+            description=display_desc,
+            meet_url=getattr(shop, 'demo_meet_link', None),
+            backgroundColor="#4f46e5"
         ))
 
     return {"events": events}

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- frontend/template/meetings.html -->
 <html lang="en">
 
 <head>
@@ -11,8 +12,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
-    <link rel="stylesheet" href="../css/components.css?v=1772780187">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
+    <link rel="stylesheet" href="../css/components.css?v=1772780188">
     <style>
         body {
             background: #f8fafc;
@@ -75,6 +76,8 @@
                         Schedule Session
                     </button>
                 </header>
+                <!-- Filter Panel Wrapper -->
+                <div id="filter-wrapper"></div>
 
                 <div class="card meeting-card">
                     <div class="card-body p-0">
@@ -225,15 +228,20 @@
     </div>
 
     <!-- Scripts -->
-    <script src="../js/utils.js?v=1772780187"></script>
-    <script src="../js/ui_components.js?v=1772780187"></script>
+    <script src="../js/utils.js?v=2.3"></script>
+    <script src="../js/api.js?v=2.3"></script>
     <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/app.js?v=2.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         // Security & Layout Init
         requireAuth();
-        document.getElementById('sidebar').innerHTML = renderSidebar('meetings');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) {
+            sidebarElement.innerHTML = renderSidebar('meetings');
+        }
         injectTopHeader('Meetings');
 
         let allClients = [];
@@ -242,24 +250,36 @@
             try {
                 allClients = await apiGet('/clients/');
                 const sel = document.getElementById('m-client');
+                if (!sel) return;
                 const urlClient = new URLSearchParams(window.location.search).get('client_id');
                 sel.innerHTML = '<option value="">-- Select Client --</option>' +
                     allClients.map(c => `<option value="${c.id}" ${c.id == urlClient ? 'selected' : ''}>${c.name}</option>`).join('');
-                if (urlClient) bootstrap.Modal.getOrCreateInstance(document.getElementById('addMeetingModal')).show();
+                if (urlClient) {
+                    const modal = document.getElementById('addMeetingModal');
+                    if (modal) bootstrap.Modal.getOrCreateInstance(modal).show();
+                }
             } catch (e) {
                 console.error("Client Load Failed", e);
             }
         }
 
-        async function loadMeetings() {
+        async function loadMeetings(filters = {}) {
             try {
                 // Using the new global endpoint for efficiency
-                const meetings = await apiGet('/meetings/');
+                const params = new URLSearchParams();
+                if (filters.client) params.append('client_id', filters.client);
+                if (filters.type) params.append('meeting_type', filters.type);
+                if (filters.status) params.append('status', filters.status);
+                if (filters.start) params.append('start_date', filters.start);
+                if (filters.end) params.append('end_date', filters.end);
+
+                const meetings = await apiGet(`/meetings/?${params.toString()}`);
                 const clientMap = {};
                 allClients.forEach(c => clientMap[c.id] = c.name);
 
                 meetings.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-                document.getElementById('meeting-count').textContent = `${meetings.length} active sessions found`;
+                const countEl = document.getElementById('meeting-count');
+                if (countEl) countEl.textContent = `${meetings.length} active sessions found`;
 
                 const statusBadge = s => {
                     const map = {
@@ -280,6 +300,7 @@
                 };
 
                 const tableBody = document.getElementById('meetings-table');
+                if (!tableBody) return;
                 if (meetings.length === 0) {
                     tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No meetings found. Start by scheduling one!</td></tr>';
                     return;
@@ -343,15 +364,22 @@
                 }).join('');
             } catch (e) {
                 console.error("Meetings Load Failed", e);
-                document.getElementById('meetings-table').innerHTML = '<tr><td colspan="6" class="text-center py-5 text-danger">Failed to load sessions. Please try refreshing.</td></tr>';
+                const tableBody = document.getElementById('meetings-table');
+                if (tableBody) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-danger">Failed to load sessions. Please try refreshing.</td></tr>';
+                }
             }
         }
 
         // AI Summary Viewer
         window.fetchAISummary = async (id) => {
-            const modal = new bootstrap.Modal(document.getElementById('aiSummaryModal'));
-            document.getElementById('ai-meeting-label').textContent = `Meeting ID: ${id}`;
-            document.getElementById('ai-summary-body').innerHTML = `
+            const aiModalEl = document.getElementById('aiSummaryModal');
+            if (!aiModalEl) return;
+            const modal = new bootstrap.Modal(aiModalEl);
+            const aiLabel = document.getElementById('ai-meeting-label');
+            const aiBody = document.getElementById('ai-summary-body');
+            if (aiLabel) aiLabel.textContent = `Meeting ID: ${id}`;
+            if (aiBody) aiBody.innerHTML = `
                 <div class="text-center py-4">
                     <div class="spinner-border text-primary" role="status"></div>
                     <p class="text-muted mt-2">Generating AI analysis...</p>
@@ -362,7 +390,7 @@
                 const result = await apiPost(`/meetings/${id}/generate-ai-summary`, {});
                 const highlights = result.highlights || [];
                 const nextSteps = result.next_steps || result.action_items || 'No action items found.';
-                document.getElementById('ai-summary-body').innerHTML = `
+                if (aiBody) aiBody.innerHTML = `
                     <div class="mb-4">
                         <h6 class="fw-bold text-primary mb-3"><i class="bi bi-lightbulb me-2"></i>Key Highlights</h6>
                         <ul class="list-group list-group-flush">
@@ -378,7 +406,7 @@
                         <p class="mb-0 text-dark">${nextSteps}</p>
                     </div>`;
             } catch (e) {
-                document.getElementById('ai-summary-body').innerHTML = `
+                if (aiBody) aiBody.innerHTML = `
                     <div class="alert alert-danger">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         Failed to fetch AI summary: ${e?.data?.detail || e?.message || 'Unknown error'}
@@ -517,8 +545,44 @@
             }
         }
 
+        // Initialize Filters
+        function initFilters() {
+            renderFilterPanel({
+                containerId: 'filter-wrapper',
+                filters: [
+                    { type: 'select', label: 'Client', id: 'filter-client', options: [{ value: 'ALL', label: 'All Clients' }, ...allClients.map(c => ({ value: c.id, label: c.name }))] },
+                    { type: 'select', label: 'Type', id: 'filter-type', options: [
+                        { value: 'ALL', label: 'All Types' },
+                        { value: 'In-Person', label: 'In-Person' },
+                        { value: 'Google Meet', label: 'Google Meet' },
+                        { value: 'Virtual', label: 'Virtual' }
+                    ]},
+                    { type: 'select', label: 'Status', id: 'filter-status', options: [
+                        { value: 'ALL', label: 'All Status' },
+                        { value: 'SCHEDULED', label: 'Scheduled' },
+                        { value: 'PENDING', label: 'Pending' },
+                        { value: 'COMPLETED', label: 'Completed' },
+                        { value: 'CANCELLED', label: 'Cancelled' }
+                    ]},
+                    { type: 'date', label: 'Start Date', id: 'filter-start' },
+                    { type: 'date', label: 'End Date', id: 'filter-end' }
+                ],
+                onApply: (data) => loadMeetings({
+                    client: data['client'],
+                    type: data['type'],
+                    status: data['status'],
+                    start: data['start'],
+                    end: data['end']
+                }),
+                onReset: () => loadMeetings()
+            });
+        }
+
         // Initialize
-        loadClients().then(loadMeetings);
+        loadClients().then(() => {
+            initFilters();
+            loadMeetings();
+        });
     </script>
 </body>
 

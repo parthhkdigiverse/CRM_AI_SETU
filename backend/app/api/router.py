@@ -1,3 +1,4 @@
+# backend/app/api/router.py
 from fastapi import APIRouter
 
 # Module Imports
@@ -24,10 +25,14 @@ from app.modules.timetable import router as timetable
 from app.modules.search import router as search
 from app.modules.idcards import router as idcards
 from app.modules.employees import router as employees
+from app.modules.settings import router as settings
 from app.modules.attendance import router as attendance
 
 
 api_router = APIRouter()
+
+# Settings
+api_router.include_router(settings.router, prefix="/settings", tags=["settings"])
 
 # Auth & Users
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])

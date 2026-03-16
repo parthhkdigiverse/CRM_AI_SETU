@@ -1,3 +1,4 @@
+# backend/app/modules/clients/models.py
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
@@ -20,6 +21,7 @@ class Client(Base):
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True) # For assignment
     pm_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Automatically assigned Project Manager
     is_active = Column(Boolean, default=True, index=True)
+    is_deleted = Column(Boolean, default=False, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
 
     

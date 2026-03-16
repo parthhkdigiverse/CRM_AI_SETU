@@ -1,3 +1,4 @@
+# backend/app/modules/users/models.py
 import enum
 from sqlalchemy import Column, Integer, String, Enum, Boolean, Date, Float, JSON
 from app.core.database import Base
@@ -29,4 +30,5 @@ class User(Base):
     joining_date = Column(Date, nullable=True)
     base_salary = Column(Float, default=0.0, nullable=True)
     target = Column(Integer, default=0, nullable=True)
+    incentive_enabled = Column(Boolean, default=True, nullable=False)
     department = Column(String, nullable=True)

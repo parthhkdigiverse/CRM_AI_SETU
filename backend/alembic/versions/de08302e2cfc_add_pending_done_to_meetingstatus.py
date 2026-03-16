@@ -1,3 +1,4 @@
+# backend/alembic/versions/de08302e2cfc_add_pending_done_to_meetingstatus.py
 """add_pending_done_to_meetingstatus
 
 Revision ID: de08302e2cfc
@@ -39,7 +40,8 @@ def upgrade() -> None:
                existing_server_default=sa.text('false'))
     op.create_index(
         op.f('ix_meeting_summaries_calendar_event_id'),
-        'meeting_summaries', ['calendar_event_id'], unique=False
+        'meeting_summaries', ['calendar_event_id'], unique=False,
+        if_not_exists=True
     )
     op.alter_column('notifications', 'created_at',
                existing_type=postgresql.TIMESTAMP(),

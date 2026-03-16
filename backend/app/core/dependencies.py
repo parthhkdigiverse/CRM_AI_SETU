@@ -1,3 +1,4 @@
+# backend/app/core/dependencies.py
 import jwt
 from typing import Generator
 from fastapi import Depends, HTTPException, status
@@ -61,7 +62,19 @@ class RoleChecker:
 
     def __call__(self, user: User = Depends(get_current_active_user)):
         if user is None:  # Demo Mode: synthetic admin has all privileges
-            return None
+            # Return a synthetic user object instead of None to avoid AttributeError in routes
+            class SyntheticUser:
+                id = 0
+                email = "admin@example.com"
+                name = "Demo Admin"
+                role = UserRole.ADMIN
+                is_active = True
+                
+                def __getitem__(self, key):
+                    return getattr(self, key)
+            
+            return SyntheticUser()
+
         if user.role not in self.allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

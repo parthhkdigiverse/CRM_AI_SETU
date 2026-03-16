@@ -1,3 +1,4 @@
+# backend/app/modules/issues/service.py
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Request
@@ -9,6 +10,7 @@ from app.modules.users.models import User
 from app.modules.clients.models import Client
 from app.modules.notifications.service import EmailService
 from fastapi import BackgroundTasks
+from sqlalchemy import or_
 
 class IssueService:
     def __init__(self, db: Session):
@@ -16,14 +18,16 @@ class IssueService:
         self.activity_logger = ActivityLogger(db)
 
     def get_issue(self, issue_id: int):
-        return self.db.query(Issue).filter(Issue.id == issue_id).first()
+        query = self.db.query(Issue).filter(Issue.id == issue_id, Issue.is_deleted == False)
+        return query.first()
 
     def get_issues(self, skip: int = 0, limit: int = 100):
-        return self.db.query(Issue).offset(skip).limit(limit).all()
+        query = self.db.query(Issue).filter(Issue.is_deleted == False)
+        return query.offset(skip).limit(limit).all()
 
     def get_all_issues(self, skip: int = 0, limit: int = 100, status: Optional[str] = None, severity: Optional[str] = None, client_id: Optional[int] = None, assigned_to_id: Optional[int] = None, pm_id: Optional[int] = None):
         try:
-            query = self.db.query(Issue)
+            query = self.db.query(Issue).filter(Issue.is_deleted == False)
             if pm_id: 
                 query = query.join(Client).filter(Client.pm_id == pm_id)
             if status:
@@ -57,6 +61,84 @@ class IssueService:
             print(f"Error fetching issues: {e}")
             return []
 
+    def get_all_issues_for_user(
+        self,
+        current_user: User,
+        skip: int = 0,
+        limit: int = 100,
+        status: Optional[str] = None,
+        severity: Optional[str] = None,
+        client_id: Optional[int] = None,
+        assigned_to_id: Optional[int] = None,
+    ):
+        """
+        Admin sees all issues.
+        Non-admin staff sees only issues that are:
+        - assigned to them, OR
+        - reported by them, OR
+        - related to clients they own/manage/referred.
+        """
+        try:
+            query = self.db.query(Issue).join(Client, Client.id == Issue.client_id).filter(Issue.is_deleted == False)
+
+            if current_user.role.value != "ADMIN":
+                query = query.filter(or_(
+                    Issue.assigned_to_id == current_user.id,
+                    Issue.reporter_id == current_user.id,
+                    Client.owner_id == current_user.id,
+                    Client.pm_id == current_user.id,
+                    Client.referred_by_id == current_user.id,
+                ))
+
+            if status:
+                if ',' in status:
+                    status_list = [s.strip() for s in status.split(',')]
+                    query = query.filter(Issue.status.in_(status_list))
+                else:
+                    query = query.filter(Issue.status == status)
+            if severity:
+                query = query.filter(Issue.severity == severity)
+            if client_id:
+                query = query.filter(Issue.client_id == client_id)
+            if assigned_to_id:
+                query = query.filter(Issue.assigned_to_id == assigned_to_id)
+
+            issues = query.order_by(Issue.id.desc()).offset(skip).limit(limit).all()
+
+            for issue in issues:
+                if issue.assigned_to:
+                    issue.pm_name = issue.assigned_to.name or issue.assigned_to.email or issue.assigned_to.employee_code or f"PM #{issue.assigned_to_id}"
+                if issue.project:
+                    issue.project_name = issue.project.name
+                elif issue.client:
+                    issue.project_name = issue.client.name
+                if issue.reporter:
+                    issue.reporter_name = issue.reporter.name or issue.reporter.email or issue.reporter.employee_code or f"User #{issue.reporter_id}"
+
+            return issues
+        except Exception as e:
+            print(f"Error fetching scoped issues: {e}")
+            return []
+
+    def can_access_issue(self, issue: Issue, current_user: User) -> bool:
+        if current_user.role.value == "ADMIN":
+            return True
+        client = issue.client or self.db.query(Client).filter(Client.id == issue.client_id).first()
+        if not client:
+            return issue.reporter_id == current_user.id or issue.assigned_to_id == current_user.id
+        return (
+            issue.assigned_to_id == current_user.id
+            or issue.reporter_id == current_user.id
+            or client.owner_id == current_user.id
+            or client.pm_id == current_user.id
+            or client.referred_by_id == current_user.id
+        )
+
+    def can_update_issue(self, issue: Issue, current_user: User) -> bool:
+        if current_user.role.value == "ADMIN":
+            return True
+        return issue.assigned_to_id == current_user.id or issue.reporter_id == current_user.id
+
     async def create_issue(self, issue: IssueCreate, client_id: int, current_user: User, request: Request, background_tasks: BackgroundTasks = None):
         client = self.db.query(Client).filter(Client.id == client_id).first()
         
@@ -64,9 +146,13 @@ class IssueService:
         # 1. Explicitly requested handler
         # 2. Client's PM
         # 3. None
-        pm_id = issue.assigned_to_id or (client.pm_id if client else None)
+        issue_data = issue.model_dump(exclude_none=True)
+        # Ensure assigned_to_id is not in issue_data even if for some reason pop failed previously
+        issue_data_clean = {k: v for k, v in issue_data.items() if k != "assigned_to_id"}
         
-        db_issue = Issue(**issue.model_dump(), client_id=client_id, reporter_id=current_user.id, assigned_to_id=pm_id)
+        pm_id = issue_data.pop("assigned_to_id", None) or (client.pm_id if client else None)
+
+        db_issue = Issue(**issue_data_clean, client_id=client_id, reporter_id=current_user.id, assigned_to_id=pm_id)
 
         self.db.add(db_issue)
         self.db.commit()
@@ -118,6 +204,9 @@ class IssueService:
         if not db_issue:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Issue not found")
 
+        if not self.can_update_issue(db_issue, current_user):
+            raise HTTPException(status_code=403, detail="You can update only issues assigned to you or reported by you")
+
         old_data = {
             "title": db_issue.title,
             "description": db_issue.description,
@@ -155,16 +244,25 @@ class IssueService:
         return db_issue
 
     async def delete_issue(self, issue_id: int, current_user: User, request: Request):
-        db_issue = self.get_issue(issue_id)
+        db_issue = self.db.query(Issue).filter(Issue.id == issue_id).first()
         if not db_issue:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Issue not found")
 
+        from app.modules.salary.models import AppSetting
+        policy = self.db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        is_hard = policy and policy.value == "HARD"
+
         old_data = {
             "title": db_issue.title,
-            "description": db_issue.description
+            "description": db_issue.description,
+            "policy": "HARD" if is_hard else "SOFT"
         }
 
-        self.db.delete(db_issue)
+        if is_hard:
+            self.db.delete(db_issue)
+        else:
+            db_issue.is_deleted = True
+            
         self.db.commit()
 
         await self.activity_logger.log_activity(
@@ -178,4 +276,4 @@ class IssueService:
             request=request
         )
 
-        return {"detail": "Issue deleted"}
+        return {"detail": f"Issue {'permanently ' if is_hard else ''}deleted"}

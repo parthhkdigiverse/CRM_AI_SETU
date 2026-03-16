@@ -1,3 +1,4 @@
+# backend/app/modules/activity_logs/models.py
 import enum
 from sqlalchemy import Column, Integer, String, Enum, DateTime, JSON, ForeignKey
 from sqlalchemy.orm import relationship

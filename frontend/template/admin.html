@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- frontend/template/admin.html -->
 <html lang="en">
 
 <head>
@@ -9,8 +10,8 @@
     <title>Users & Roles — SRM AI SETU</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
-    <link rel="stylesheet" href="../css/components.css?v=1772780187">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
+    <link rel="stylesheet" href="../css/components.css?v=1772780188">
     <style>
         .table-premium thead th {
             background-color: #f8fafc;
@@ -323,14 +324,31 @@
             </div>
         </div>
 
-        <script src="../js/api.js?v=1.1"></script>
-        <script src="../js/ui_components.js?v=1772780187"></script>
+        <script src="../js/utils.js?v=2.3"></script>
+        <script src="../js/api.js?v=2.3"></script>
         <script src="../js/auth.js?v=2.3"></script>
+        <script src="../js/ui_components.js?v=20260312"></script>
+        <script src="../js/app.js?v=2.3"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         <script>
             requireAuth();
-            document.getElementById('sidebar').innerHTML = renderSidebar('admin');
+            const sidebarElement = document.getElementById('sidebar');
+            if (sidebarElement) {
+                sidebarElement.innerHTML = renderSidebar('admin');
+            }
             injectTopHeader('Users & Roles');
+
+            const usersTableEl = document.getElementById('users-table');
+            const addUserButton = document.querySelector('.btn-add-user');
+
+            if (window.__accessDenied) {
+                if (usersTableEl) {
+                    usersTableEl.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">You do not have enough access to view user data.</td></tr>';
+                }
+                if (addUserButton) {
+                    addUserButton.disabled = true;
+                }
+            }
 
             const roleMeta = {
                 'ADMIN': { cls: 'role-admin', label: 'ADMIN' },
@@ -343,12 +361,14 @@
             let loadedUsers = [];
 
             async function loadData() {
+                if (window.__accessDenied) return;
                 try {
                     const users = await apiGet('/users/');
 
                     loadedUsers = users;
 
                     const tableBody = document.getElementById('users-table');
+                    if (!tableBody) return;
                     if (!users.length) {
                         tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">No users found.</td></tr>';
                         return;
@@ -383,7 +403,10 @@
 
                 } catch (err) {
                     console.error(err);
-                    document.getElementById('users-table').innerHTML = `<tr><td colspan="5" class="text-center py-4 text-danger">Error loading data: ${err.message}</td></tr>`;
+                    const tableBody = document.getElementById('users-table');
+                    if (tableBody) {
+                        tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-danger">Error loading data: ${err.message}</td></tr>`;
+                    }
                 }
             }
 
@@ -569,6 +592,7 @@
             };
 
             window.deleteUser = async (id) => {
+                if (window.__accessDenied) return;
                 if (!confirm(`Are you sure you want to delete user #${id}?`)) return;
                 try {
                     await ApiClient.request(`/users/${id}`, { method: 'DELETE' });
@@ -591,6 +615,7 @@
             };
 
             window.toggleUserStatus = async (id, currentStatus) => {
+                if (window.__accessDenied) return;
                 const action = currentStatus ? 'deactivate' : 'reactivate';
                 if (!confirm(`Are you sure you want to ${action} user #${id}?`)) return;
                 try {

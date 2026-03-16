@@ -1,3 +1,4 @@
+// frontend/js/ui_components.js
 // Helper to get initials
 window.getInitials = function (name) {
     if (!name) return '??';
@@ -51,22 +52,105 @@ window.updateBulkActionBar = function (options) {
 };
 console.log('UI Components: updateBulkActionBar ready');
 
+window.getRoleFlags = function (roleValue) {
+    const role = (roleValue || '').toUpperCase();
+    return {
+        role,
+        isAdmin: role === 'ADMIN',
+        isSales: role === 'SALES' || role === 'PROJECT_MANAGER_AND_SALES',
+        isTelesales: role === 'TELESALES',
+        isPM: role === 'PROJECT_MANAGER' || role === 'PROJECT_MANAGER_AND_SALES',
+        isClient: role === 'CLIENT'
+    };
+}
+
+window.getQuickAddItems = function (roleValue) {
+    const flags = getRoleFlags(roleValue);
+    const items = [];
+
+    if (flags.isAdmin || flags.isSales || flags.isTelesales || flags.isPM) {
+        items.push({ href: 'clients.html', icon: 'bi-people', iconClass: 'text-info', label: 'New Client' });
+    }
+    if (flags.isAdmin || flags.isPM) {
+        items.push({ href: 'projects.html?add=true', icon: 'bi-briefcase', iconClass: 'text-primary', label: 'New Project' });
+    }
+    if (flags.isAdmin || flags.isSales) {
+        items.push({ href: 'areas.html?add=true', icon: 'bi-building', iconClass: '', iconStyle: 'color:#6366f1;', label: 'New Area / Shop' });
+    }
+    if (flags.isAdmin || flags.isSales || flags.isTelesales) {
+        items.push({ href: 'visits.html?add=true', icon: flags.isTelesales ? 'bi-telephone' : 'bi-geo-alt', iconClass: 'text-success', label: flags.isTelesales ? 'New Call Log' : 'New Visit' });
+    }
+    if (flags.isAdmin || flags.isPM) {
+        items.push({ href: 'meetings.html?add=true', icon: 'bi-calendar-event', iconClass: 'text-success', label: 'New Meeting' });
+    }
+    if (!flags.isClient) {
+        items.push({ href: 'todo.html', icon: 'bi-check2-square', iconClass: 'text-primary', label: 'New Task' });
+    }
+    if (flags.isAdmin || flags.isSales || flags.isTelesales || flags.isPM) {
+        items.push({ href: 'javascript:void(0)', onclick: 'if(window.openNewBillModal) window.openNewBillModal();', icon: 'bi-receipt', iconClass: 'text-danger', label: 'New Payment' });
+    }
+    if (flags.isAdmin || flags.isPM) {
+        items.push({ href: 'issues.html?add=true', icon: 'bi-exclamation-triangle', iconClass: 'text-warning', label: 'New Issue' });
+        items.push({ href: 'feedback.html?add=true', icon: 'bi-chat-square-text', iconClass: 'text-info', label: 'New Feedback' });
+    }
+    if (!flags.isClient) {
+        items.push({ href: 'leaves.html?add=true', icon: 'bi-calendar3', iconClass: 'text-warning', label: 'New Leave Request' });
+    }
+    if (flags.isAdmin) {
+        items.push({ divider: true });
+        items.push({ href: 'admin.html', icon: 'bi-person-plus', iconClass: 'text-secondary', label: 'New User' });
+    }
+
+    return items;
+}
+
+window.renderQuickAddItems = function (roleValue) {
+    return getQuickAddItems(roleValue).map(item => {
+        if (item.divider) {
+            return '<li><hr class="dropdown-divider my-1"></li>';
+        }
+        const action = item.onclick
+            ? `href="${item.href}" onclick="${item.onclick}"`
+            : `href="${item.href}"`;
+        return `<li><a class="dropdown-item rounded-2 py-2" ${action}><i class="bi ${item.icon} me-2 ${item.iconClass || ''}" ${item.iconStyle ? `style="${item.iconStyle}"` : ''}></i> ${item.label}</a></li>`;
+    }).join('');
+}
+
 // ─── SIDEBAR ──────────────────────────────────────────────────────────
-function renderSidebar(active) {
+window.renderSidebar = function (active) {
     const u = getUser();
     const role = u?.role || 'TELESALES';
     console.log('Sidebar Debug - Role:', role);
 
-    const isAdmin = role === 'ADMIN';
-    const isSales = role === 'SALES' || role === 'PROJECT_MANAGER_AND_SALES';
-    const isTelesales = role === 'TELESALES';
-    const isPM = role === 'PROJECT_MANAGER' || role === 'PROJECT_MANAGER_AND_SALES';
-    const isClient = role === 'CLIENT';
+    const { isAdmin, isSales, isTelesales, isPM, isClient } = getRoleFlags(role);
+
+    const roleName = String(role || '').toUpperCase();
+    const fallbackPages = {
+        ADMIN: ['*'],
+        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
+        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
+        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
+        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
+        CLIENT: ['dashboard.html']
+    };
+    const effectivePolicy = window.__crmEffectiveAccessPolicy;
+    const allowedPages = Array.isArray(effectivePolicy?.allowed_pages)
+        ? effectivePolicy.allowed_pages
+        : (effectivePolicy?.policy?.page_access?.[roleName] || fallbackPages[roleName] || []);
+    const allowAllPages = roleName === 'ADMIN' || allowedPages.includes('*');
+    const canShowPage = (href) => {
+        const page = String(href || '').split('?')[0];
+        if (!page) return false;
+        if (allowAllPages) return true;
+        return allowedPages.includes(page);
+    };
 
     let nav = '';
 
     function sbSection(id, label, icon, items) {
-        const isActiveSection = items.some(i => i.id === active);
+        const visibleItems = (items || []).filter(item => canShowPage(item.href));
+        if (!visibleItems.length) return '';
+        const isActiveSection = visibleItems.some(i => i.id === active);
         return `
         <div class="sb-section">
             <div class="sb-section-header ${isActiveSection ? 'open' : ''}" onclick="toggleSbSection('${id}')">
@@ -75,7 +159,7 @@ function renderSidebar(active) {
                 <i class="bi bi-chevron-right sb-arrow"></i>
             </div>
             <ul class="sb-section-items ${isActiveSection ? 'open' : ''}">
-                ${items.map(item => `
+                ${visibleItems.map(item => `
                 <li><a href="${item.href}" class="sb-link ${active === item.id ? 'active' : ''}">
                     <i class="bi ${item.icon}"></i><span>${item.label}</span></a></li>`).join('')}
             </ul>
@@ -83,71 +167,55 @@ function renderSidebar(active) {
     }
 
     // DASHBOARD
-    if (!isClient) {
-        nav += sbSection('db', 'Dashboard', 'bi-grid-1x2', [
-            { id: 'dashboard', href: 'dashboard.html', icon: 'bi-bar-chart-line-fill', label: 'Overview' },
-            { id: 'timetable', href: 'timetable.html', icon: 'bi-calendar3', label: 'Timetable' },
-            { id: 'todo', href: 'todo.html', icon: 'bi-check2-square', label: 'To-Do List' }
-        ]);
-    }
+    nav += sbSection('db', 'Dashboard', 'bi-grid-1x2', [
+        { id: 'dashboard', href: 'dashboard.html', icon: 'bi-bar-chart-line-fill', label: 'Overview' },
+        { id: 'timetable', href: 'timetable.html', icon: 'bi-calendar3', label: 'Timetable' },
+        { id: 'todo', href: 'todo.html', icon: 'bi-check2-square', label: 'To-Do List' }
+    ]);
 
     // ADMINISTRATION
-    if (isAdmin) {
-        nav += sbSection('admin', 'Administration', 'bi-shield-check', [
-            { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
-        ]);
-    }
+    nav += sbSection('admin', 'Administration', 'bi-shield-check', [
+        { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
+    ]);
 
     // FIELD OPERATIONS
-    if (isAdmin || isSales || isTelesales) {
-        const fieldItems = [
-            { id: 'leads', href: 'leads.html', icon: 'bi-kanban', label: 'Project Overview' },
-            { id: 'visits', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' }
-        ];
-        if (isAdmin || isSales || isPM) {
-            fieldItems.splice(1, 0, { id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas & Shops' });
-        }
+    const fieldItems = [];
+    fieldItems.push({ id: 'leads', href: 'leads.html', icon: 'bi-kanban', label: 'Project Overview' });
+    fieldItems.push({ id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas & Shops' });
+    fieldItems.push({ id: 'visits', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' });
+    if (fieldItems.length) {
         nav += sbSection('field', 'Field Operations', 'bi-geo-alt', fieldItems);
     }
 
     // PROJECT MANAGEMENT
-    if (isAdmin || isPM) {
-        nav += sbSection('pm', 'Project Management', 'bi-briefcase', [
-            { id: 'projects_demo', href: 'projects_demo.html', icon: 'bi-display', label: 'Demo' },
-            { id: 'projects', href: 'projects.html', icon: 'bi-briefcase', label: 'Projects' },
-            { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
-            { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
-        ]);
-    }
+    nav += sbSection('pm', 'Project Management', 'bi-briefcase', [
+        { id: 'demo', href: 'projects_demo.html', icon: 'bi-play-circle', label: 'Demo' },
+        { id: 'projects', href: 'projects.html', icon: 'bi-briefcase', label: 'Projects' },
+        { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
+        { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
+    ]);
 
     // CLIENT RELATIONS
-    if (isAdmin || isSales || isTelesales || isPM) {
-        const crItems = [
-            { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
-            { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' }
-        ];
-        if (isAdmin || isPM) {
-            crItems.push({ id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' });
-        }
-        nav += sbSection('cr', 'Client Relations', 'bi-people', crItems);
-    }
+    const crItems = [
+        { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
+        { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' },
+        { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
+    ];
+    nav += sbSection('cr', 'Client Relations', 'bi-people', crItems);
 
     // HR & PAYROLL
-    if (isAdmin) {
-        nav += sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', [
-            { id: 'employees', href: 'employees.html', icon: 'bi-people', label: 'Employees' },
-            { id: 'salary', href: 'salary.html', icon: 'bi-cash-stack', label: 'Salary' },
-            { id: 'leaves', href: 'leaves.html', icon: 'bi-calendar3', label: 'Leaves' },
-            { id: 'incentives', href: 'incentives.html', icon: 'bi-trophy', label: 'Incentives' }
-        ]);
-    }
+    const hrItems = [
+        { id: 'employees', href: 'employees.html', icon: 'bi-people', label: 'Employees' },
+        { id: 'salary', href: 'salary.html', icon: 'bi-cash-stack', label: 'Salary' },
+        { id: 'leaves', href: 'leaves.html', icon: 'bi-calendar3', label: 'Leaves' },
+        { id: 'incentives', href: 'incentives.html', icon: 'bi-trophy', label: 'Incentives' }
+    ];
+    nav += sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', hrItems);
 
     // REPORTS
-    if (isAdmin || isPM) {
-        nav += sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
-            { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
-        ]);
-    }
+    nav += sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
+        { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
+    ]);
 
     const userName = u?.name || u?.email || 'User';
     const initials = userName.slice(0, 2).toUpperCase();
@@ -162,7 +230,7 @@ function renderSidebar(active) {
         </div>
         <div class="sb-scroll-area mt-2">${nav}</div>
         <div class="sb-bottom">
-            <a href="settings.html" class="sb-bottom-link"><i class="bi bi-gear-fill"></i> Settings</a>
+            ${canShowPage('settings.html') ? '<a href="settings.html" class="sb-bottom-link"><i class="bi bi-gear-fill"></i> Settings</a>' : ''}
             <a href="#" class="sb-bottom-link logout" onclick="logout();return false;"><i class="bi bi-box-arrow-right"></i> Logout</a>
         </div>
     </div>`;
@@ -184,7 +252,7 @@ window.toggleSbSection = function (id) {
 };
 
 // ─── TOP HEADER ───────────────────────────────────────────────────────
-function injectTopHeader(pageTitle) {
+window.injectTopHeader = function (pageTitle) {
     if (document.querySelector('.top-header')) return;
     const u = getUser();
     const role = (u?.role || '').replace(/_/g, ' ');
@@ -241,6 +309,8 @@ function injectTopHeader(pageTitle) {
 
     const alertsRedDot = '<span id="nav-notif-dot" class="position-absolute bg-danger border border-white rounded-circle d-none" style="width:10px;height:10px;top:8px;right:8px;"></span>';
 
+    const quickAddItems = renderQuickAddItems(u?.role);
+
     const headerHtml = `
     <div class="top-header">
         <div class="d-flex align-items-center">${breadcrumbHtml}</div>
@@ -260,19 +330,7 @@ function injectTopHeader(pageTitle) {
                     <i class="bi bi-plus-lg"></i> Add New
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px; min-width:210px;">
-                    <li><a class="dropdown-item rounded-2 py-2" href="clients.html"><i class="bi bi-people me-2 text-info"></i> New Client</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="projects.html?add=true"><i class="bi bi-briefcase me-2 text-primary"></i> New Project</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="areas.html?add=true"><i class="bi bi-building me-2" style="color:#6366f1;"></i> New Area / Shop</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="visits.html?add=true"><i class="bi bi-geo-alt me-2 text-success"></i> New Visit</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="meetings.html?add=true"><i class="bi bi-calendar-event me-2 text-success"></i> New Meeting</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="todo.html"><i class="bi bi-check2-square me-2 text-primary"></i> New Task</a></li>
-                    <li><hr class="dropdown-divider my-1"></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="javascript:void(0)" onclick="if(window.openNewBillModal) window.openNewBillModal();"><i class="bi bi-receipt me-2 text-danger"></i> New Payment</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="issues.html?add=true"><i class="bi bi-exclamation-triangle me-2 text-warning"></i> New Issue</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="feedback.html?add=true"><i class="bi bi-chat-square-text me-2 text-info"></i> New Feedback</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="leaves.html?add=true"><i class="bi bi-calendar3 me-2 text-warning"></i> New Leave Request</a></li>
-                    <li><hr class="dropdown-divider my-1"></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="admin.html"><i class="bi bi-person-plus me-2 text-secondary"></i> New User</a></li>
+                    ${quickAddItems}
                 </ul>
             </div>
             <!-- Notifications Bell -->
@@ -333,216 +391,7 @@ function injectTopHeader(pageTitle) {
     }, 500);
 }
 
-// ─── GLOBAL QUICK ADD HANDLER ──────────────────────────────────────────
-window.checkUrlForQuickAdd = function () {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('add') !== 'true') return;
 
-    const path = window.location.pathname.toLowerCase();
-
-    try {
-        if (path.includes('visits.html')) {
-            const modal = document.getElementById('visitModal');
-            if (modal) modal.classList.add('show');
-        }
-        else if (path.includes('meetings.html')) {
-            const modalEl = document.getElementById('addMeetingModal');
-            if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
-        }
-        else if (path.includes('issues.html')) {
-            const modalEl = document.getElementById('addIssueModal');
-            if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
-        }
-        else if (path.includes('projects.html')) {
-            const addBtn = document.querySelector('button[onclick*="openProjectUpdateModal"]') ||
-                document.querySelector('.page-content button.btn-primary');
-            if (addBtn) addBtn.click();
-        }
-        else if (path.includes('areas.html')) {
-            const addBtn = document.querySelector('button[onclick*="openAreaModal"]') ||
-                document.querySelector('.page-content button.btn-primary');
-            if (addBtn) addBtn.click();
-        }
-        else if (path.includes('feedback.html')) {
-            const modalEl = document.getElementById('addFeedbackModal');
-            if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
-        }
-        else if (path.includes('leaves.html')) {
-            if (window.openLeaveModal) window.openLeaveModal();
-            else {
-                const modal = document.getElementById('leaveModal');
-                if (modal) modal.classList.add('show');
-            }
-        }
-    } catch (e) {
-        console.warn("Quick Add trigger failed:", e);
-    }
-};
-
-// ─── NOTIFICATION BELL POLLING ────────────────────────────────────────
-window._notifPollStarted = window._notifPollStarted || false;
-
-window.refreshBell = async function () {
-    if (!localStorage.getItem('access_token')) return;
-
-    try {
-        const { unread } = await apiGet('/notifications/unread-count');
-        const dot = document.getElementById('nav-notif-dot');
-        if (dot) {
-            if (unread > 0) dot.classList.remove('d-none');
-            else dot.classList.add('d-none');
-        }
-
-        const all = await apiGet('/notifications/?limit=100');
-        const bellBody = document.getElementById('bell-notif-list');
-        if (!bellBody) return;
-
-        const unreadList = (Array.isArray(all) ? all : []).filter(n => !n.is_read).slice(0, 5);
-
-        if (unreadList.length === 0) {
-            bellBody.innerHTML = `
-                <div class="p-3 text-center">
-                    <i class="bi bi-bell-slash text-muted" style="font-size:2rem;"></i>
-                    <p class="text-muted small mt-2 mb-0">No new alerts right now.</p>
-                </div>`;
-            return;
-        }
-
-        bellBody.innerHTML = unreadList.map(n => {
-            let displayTitle = n.title;
-            if (n.title === "⏰ Upcoming Meeting") {
-                const match = n.message.match(/with (.*?) starts/);
-                const clientName = match ? match[1] : "Client";
-                displayTitle = `Upcoming Session: ${clientName}`;
-            }
-
-            const dateObj = new Date(n.created_at.endsWith('Z') || n.created_at.includes('+') ? n.created_at : n.created_at + 'Z');
-
-            return `
-            <div class="d-flex gap-2 px-3 py-2 border-bottom bg-primary-subtle"
-                 style="cursor:default; transition: background 0.2s;">
-                <i class="bi bi-bell-fill text-primary mt-1 flex-shrink-0" style="font-size:.85rem;"></i>
-                <div class="w-100 overflow-hidden">
-                    <div class="fw-bold text-truncate text-dark" style="font-size:.82rem;">${displayTitle}</div>
-                    <div class="text-muted text-wrap small mt-1" style="line-height: 1.3;">${n.message}</div>
-                    <div class="text-muted mt-1 d-flex align-items-center gap-1" style="font-size:.68rem;">
-                        <i class="bi bi-clock" style="font-size:.65rem;"></i>
-                        ${dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
-    } catch (e) {
-    }
-};
-
-function startNotificationPolling() {
-    if (window._notifPollStarted) return;
-    window._notifPollStarted = true;
-    window.refreshBell();
-    setInterval(window.refreshBell, 30000);
-}
-
-// ─── Global Live Search Logic ───
-window.initLiveSearch = function () {
-    const input = document.getElementById('global-search-input');
-    const dropdown = document.getElementById('live-search-dropdown');
-    if (!input || !dropdown) return;
-
-    let debounceTimer;
-
-    const typeIcons = {
-        client: '<i class="bi bi-person text-info"></i>',
-        issue: '<i class="bi bi-exclamation-triangle text-warning"></i>',
-        project: '<i class="bi bi-kanban text-primary"></i>',
-        employee: '<i class="bi bi-person-badge text-secondary"></i>',
-        lead: '<i class="bi bi-kanban text-danger"></i>',
-        payment: '<i class="bi bi-receipt text-success"></i>',
-        area: '<i class="bi bi-geo-alt" style="color:#6366f1;"></i>',
-        meeting: '<i class="bi bi-calendar-event text-success"></i>'
-    };
-
-    const typeLinks = {
-        client: 'clients.html?id=',
-        issue: 'issues.html?id=',
-        project: 'projects.html?id=',
-        employee: 'admin.html',
-        lead: 'leads.html?id=',
-        payment: 'clients.html',
-        area: 'areas.html?id=',
-        meeting: 'meetings.html?id='
-    };
-
-    input.addEventListener('input', (e) => {
-        clearTimeout(debounceTimer);
-        const query = e.target.value.trim();
-
-        if (query.length < 2) {
-            dropdown.classList.remove('show');
-            return;
-        }
-
-        debounceTimer = setTimeout(async () => {
-            try {
-                const res = await apiGet(`/search/?q=${encodeURIComponent(query)}`);
-
-                let html = '';
-                let hasResults = false;
-
-                const highlight = (text) => {
-                    if (!text) return '';
-                    const strText = String(text);
-                    const regex = new RegExp(`(${query})`, 'gi');
-                    return strText.replace(regex, '<span class="search-highlight">$1</span>');
-                };
-
-                for (const [category, items] of Object.entries(res)) {
-                    if (items && items.length > 0) {
-                        hasResults = true;
-                        const catLabel = category.charAt(0).toUpperCase() + category.slice(1);
-                        html += `<div class="search-section-header">${catLabel}</div>`;
-
-                        items.forEach(item => {
-                            const icon = typeIcons[item.type] || '<i class="bi bi-search py-1"></i>';
-                            const link = typeLinks[item.type] ? typeLinks[item.type] + item.id : 'search.html?q=' + encodeURIComponent(query);
-
-                            html += `
-                                <a href="${link}" class="search-result-item">
-                                    <div class="search-result-icon">${icon}</div>
-                                    <div class="search-result-info">
-                                        <div class="search-result-name">${highlight(item.name || 'Unknown')}</div>
-                                        <div class="search-result-sub">${highlight(item.subtext || '')}</div>
-                                    </div>
-                                </a>
-                            `;
-                        });
-                    }
-                }
-
-                if (!hasResults) {
-                    html = `<div class="p-3 text-center text-muted small">No results found for "${query}"</div>`;
-                }
-
-                dropdown.innerHTML = html;
-                dropdown.classList.add('show');
-            } catch (err) {
-                console.error("Live search failed", err);
-            }
-        }, 300);
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-            dropdown.classList.remove('show');
-        }
-    });
-
-    input.addEventListener('focus', () => {
-        if (input.value.trim().length >= 2 && dropdown.innerHTML.trim() !== '') {
-            dropdown.classList.add('show');
-        }
-    });
-};
 
 // ─── GLOBAL QUICK ADD HANDLER ──────────────────────────────────────────
 window.checkUrlForQuickAdd = function () {
@@ -669,7 +518,7 @@ window.refreshBell = async function () {
 
 window._shownPushes = window._shownPushes || new Set();
 
-function showBrowserNotification(notifId, title, bodyStr, link) {
+window.showBrowserNotification = function (notifId, title, bodyStr, link) {
     if (window._shownPushes.has(notifId) || !('Notification' in window)) return;
     window._shownPushes.add(notifId);
     if (Notification.permission === 'granted') {
@@ -678,7 +527,7 @@ function showBrowserNotification(notifId, title, bodyStr, link) {
     }
 }
 
-function startNotificationPolling() {
+window.startNotificationPolling = function () {
     if (window._notifPollStarted) return;
     window._notifPollStarted = true;
     if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
@@ -799,7 +648,7 @@ window.checkHighPriorityIssues = async function () {
     if (!localStorage.getItem('access_token')) return;
     try {
         const issues = await apiGet('/issues/');
-        const unreadHigh = (Array.isArray(issues) ? issues : []).filter(i => i.severity === 'HIGH' && i.status !== 'SOLVED');
+        const unreadHigh = (Array.isArray(issues) ? issues : []).filter(i => i.severity === 'HIGH' && i.status === 'PENDING');
 
         const alertContainerId = 'high-priority-global-alert';
         let alertEl = document.getElementById(alertContainerId);
@@ -812,7 +661,10 @@ window.checkHighPriorityIssues = async function () {
                         <i class="bi bi-exclamation-triangle-fill"></i>
                         <span>System Alert: ${unreadHigh.length} Unresolved High Priority Issue(s) detected.</span>
                     </div>
-                    <a href="issues.html" class="btn btn-sm btn-light py-0 px-2 fw-bold" style="font-size: 0.75rem; color: #B91C1C;">View Issues</a>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="issues.html" class="btn btn-sm btn-light py-0 px-2 fw-bold" style="font-size: 0.75rem; color: #B91C1C;">View Issues</a>
+                        <button type="button" onclick="(function(){ var el=document.getElementById('${alertContainerId}'); if(el) el.remove(); var th=document.querySelector('.top-header'); if(th) th.style.top='0'; var sb=document.getElementById('sidebar-container'); if(sb){sb.style.height='100vh';sb.style.top='0';} })()" style="background:none;border:none;color:white;font-size:1.1rem;line-height:1;padding:0 2px;cursor:pointer;opacity:0.85;" title="Dismiss">&times;</button>
+                    </div>
                 </div>`;
                 document.body.insertAdjacentHTML('afterbegin', html);
 
@@ -828,6 +680,9 @@ window.checkHighPriorityIssues = async function () {
                 }
             } else {
                 alertEl.querySelector('span').textContent = `System Alert: ${unreadHigh.length} Unresolved High Priority Issue(s) detected.`;
+                // Re-sync layout offsets in case header shifted
+                const topHeader = document.querySelector('.top-header');
+                if (topHeader) topHeader.style.top = alertEl.offsetHeight + 'px';
             }
         } else if (alertEl) {
             alertEl.remove();
@@ -844,8 +699,170 @@ window.checkHighPriorityIssues = async function () {
     }
 };
 
+/**
+ * Renders a unified filter panel based on a configuration object.
+ * @param {Object} config - The configuration for the filter panel.
+ * @param {string} config.containerId - The ID of the element where the panel will be rendered.
+ * @param {Array} config.filters - Array of filter definitions.
+ * @param {string} config.title - Optional title (default: 'Filters').
+ * @param {Function} config.onApply - Callback function called with filter data.
+ * @param {Function} config.onReset - Callback function called when filters are cleared.
+ */
+window.renderFilterPanel = function (config) {
+    const { containerId, filters, title = 'Filters', onApply, onReset, headerContent = '' } = config;
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`Filter container #${containerId} not found.`);
+        return;
+    }
+
+    // Generate Filter Fields HTML
+    const fieldsHtml = filters.map(f => {
+        let inputHtml = '';
+        if (f.type === 'select') {
+            inputHtml = `
+                <select id="${f.id}" class="form-select">
+                    ${(f.options || []).map(opt => `<option value="${opt.value}" ${opt.selected ? 'selected' : ''}>${opt.label}</option>`).join('')}
+                </select>`;
+        } else if (f.type === 'date' || f.type === 'month') {
+            inputHtml = `<input type="${f.type}" id="${f.id}" class="form-control" value="${f.value || ''}">`;
+        } else { // Default to text input for 'text' and any other unspecified types
+            inputHtml = `<input type="text" id="${f.id}" class="form-control" placeholder="${f.placeholder || ''}" value="${f.value || ''}">`;
+        }
+
+        return `
+            <div class="filter-field">
+                <label for="${f.id}">${f.label}</label>
+                ${inputHtml}
+            </div>`;
+    }).join('');
+
+    const html = `
+        <div class="filter-panel">
+            <div class="filter-panel-head" onclick="this.nextElementSibling.classList.toggle('open'); this.querySelector('.filter-toggle-btn').classList.toggle('open')">
+                <div class="filter-panel-head-main">
+                    <div class="filter-panel-head-left">
+                        <i class="bi bi-filter"></i>
+                        <span>${title}</span>
+                    </div>
+                    <div class="filter-active-pills" id="${containerId}-pills">
+                        <!-- Active pills will be injected here -->
+                    </div>
+                </div>
+                ${headerContent}
+                <div class="filter-panel-head-meta">
+                    <div class="filter-summary-text" id="${containerId}-summary">No filters active</div>
+                    <button class="filter-toggle-btn">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="filter-panel-body">
+                <div class="filter-grid">
+                    ${fieldsHtml}
+                </div>
+                <div class="filter-actions">
+                    <button class="btn-filter-reset" id="${containerId}-reset">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </button>
+                    <button class="btn-filter-apply" id="${containerId}-apply">
+                        <i class="bi bi-check2"></i> Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>`;
+
+    container.innerHTML = html;
+
+    const body = container.querySelector('.filter-panel-body');
+    const pillsContainer = container.querySelector(`#${containerId}-pills`);
+    const summaryText = container.querySelector(`#${containerId}-summary`);
+    const applyBtn = container.querySelector(`#${containerId}-apply`);
+    const resetBtn = container.querySelector(`#${containerId}-reset`);
+
+    const updateUI = () => {
+        const activeFilters = [];
+        filters.forEach(f => {
+            const el = document.getElementById(f.id);
+            if (!el) return;
+            const val = el.value;
+            // Only consider as active if it's not empty or "ALL"
+            if (val && val !== 'ALL' && val !== '') {
+                let displayVal = val;
+                if (f.type === 'select') {
+                    const opt = f.options.find(o => o.value === val);
+                    if (opt) displayVal = opt.label;
+                }
+                activeFilters.push({ id: f.id, label: f.label, value: displayVal });
+            }
+        });
+
+        pillsContainer.innerHTML = activeFilters.map(af => `
+            <div class="filter-pill">
+                ${af.label}: ${af.value}
+                <button class="filter-pill-remove" onclick="event.stopPropagation(); window.removeFilter('${containerId}', '${af.id}')">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>`).join('');
+
+        summaryText.textContent = activeFilters.length > 0 
+            ? `${activeFilters.length} filter${activeFilters.length > 1 ? 's' : ''} active` 
+            : 'No filters active';
+    };
+
+    // Global helper for pill removal
+    window.removeFilter = (cid, fid) => {
+        const el = document.getElementById(fid);
+        if (el) {
+            const filterDef = filters.find(f => f.id === fid);
+            if (filterDef && filterDef.type === 'select') {
+                el.value = filterDef.options[0]?.value || 'ALL';
+            } else {
+                el.value = '';
+            }
+            applyBtn.click();
+        }
+    };
+
+    applyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const data = {};
+        filters.forEach(f => {
+            const el = document.getElementById(f.id);
+            if (el) data[f.id.replace('f-', '')] = el.value;
+        });
+        updateUI();
+        body.classList.remove('open');
+        container.querySelector('.filter-toggle-btn').classList.remove('open');
+        if (onApply) onApply(data);
+    });
+
+    resetBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        filters.forEach(f => {
+            const el = document.getElementById(f.id);
+            if (el) {
+                if (f.type === 'select') {
+                    el.value = f.options[0]?.value || 'ALL';
+                } else {
+                    el.value = '';
+                }
+            }
+        });
+        updateUI();
+        body.classList.remove('open');
+        container.querySelector('.filter-toggle-btn').classList.remove('open');
+        if (onReset) onReset();
+    });
+
+    // Initial UI update - ensure closed by default
+    updateUI();
+    body.classList.remove('open');
+    container.querySelector('.filter-toggle-btn').classList.remove('open');
+};
+
 // Start both polls
-function startAllPolling() {
+window.startAllPolling = function () {
     startNotificationPolling();
     // High priority check every 60s
     setInterval(window.checkHighPriorityIssues, 60000);

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- frontend/template/dashboard.html -->
 <html lang="en">
 
 <head>
@@ -135,18 +136,20 @@
             border-radius: var(--radius-md);
             margin-bottom: 22px;
             box-shadow: var(--shadow-xs);
-            overflow: hidden;
+            overflow: visible;
         }
 
         .filter-panel-head {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 10px;
             padding: 11px 16px;
             border-bottom: 1px solid var(--border-subtle);
             background: var(--bg-app);
             cursor: pointer;
             user-select: none;
+            flex-wrap: wrap;
         }
 
         .filter-panel-head-left {
@@ -229,6 +232,7 @@
         .filter-panel-body {
             padding: 14px 16px 16px;
             display: none;
+            overflow: visible;
         }
 
         .filter-panel-body.open {
@@ -240,6 +244,14 @@
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 10px;
             margin-bottom: 12px;
+        }
+
+        .filter-field .dropdown-menu {
+            z-index: 1060;
+            /* Ensure it stays above all other dashboard elements */
+            margin-top: 5px !important;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
         }
 
         .filter-field label {
@@ -692,6 +704,75 @@
             color: var(--success-text);
         }
 
+        /* ── Period Picker ── */
+        .period-picker-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .period-picker-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .period-picker-group {
+            display: flex;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow-xs);
+        }
+
+        .period-btn {
+            background: transparent;
+            border: none;
+            border-right: 1px solid var(--border);
+            padding: 6px 15px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
+            line-height: 1.4;
+        }
+
+        .period-btn:last-child {
+            border-right: none;
+        }
+
+        .period-btn:hover {
+            background: var(--bg-app);
+            color: var(--text-body);
+        }
+
+        .period-btn.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .period-btn.active:hover {
+            background: var(--primary-hover);
+        }
+
+        .period-context-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: var(--bg-app);
+            border: 1px solid var(--border-subtle);
+            border-radius: 100px;
+            padding: 3px 10px;
+        }
+
         /* ── Empty state (compact) ── */
         .empty-state {
             text-align: center;
@@ -743,7 +824,7 @@
                     </div>
                 </div>
 
-                <!-- Filter Panel -->
+                <!-- Filter Panel (period picker integrated in header) -->
                 <div class="filter-panel">
                     <div class="filter-panel-head" id="filter-panel-toggle">
                         <div class="filter-panel-head-left">
@@ -751,6 +832,17 @@
                             Filters
                             <div class="filter-active-pills" id="filter-pills"></div>
                         </div>
+                        <div class="period-picker-group" onclick="event.stopPropagation()">
+                            <button class="period-btn" data-period="today">Today</button>
+                            <button class="period-btn" data-period="week">This Week</button>
+                            <button class="period-btn" data-period="month">This Month</button>
+                            <button class="period-btn" data-period="last_3_months">Last 3M</button>
+                            <button class="period-btn" data-period="last_6_months">Last 6M</button>
+                            <button class="period-btn" data-period="this_year">This Year</button>
+                            <button class="period-btn" data-period="last_year">Last Year</button>
+                            <button class="period-btn" data-period="all">All Time</button>
+                        </div>
+                        <span class="period-context-badge" id="period-context-badge">All Records</span>
                         <button class="filter-toggle-btn" id="filter-toggle-btn" type="button">
                             <span id="filter-toggle-label">Show</span>
                             <i class="bi bi-chevron-down"></i>
@@ -795,7 +887,7 @@
                             <div class="kpi-card kpi-visits h-100">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="flex-grow-1 me-3">
-                                        <div class="kpi-label">Total Visits</div>
+                                        <div class="kpi-label" id="kpi-visits-label">Total Visits</div>
                                         <div class="kpi-value" id="kpi-leads">
                                             <span class="spinner-border spinner-border-sm text-secondary"></span>
                                         </div>
@@ -813,7 +905,7 @@
                             <div class="kpi-card kpi-clients h-100">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="flex-grow-1 me-3">
-                                        <div class="kpi-label">Active Clients</div>
+                                        <div class="kpi-label" id="kpi-clients-label">Active Clients</div>
                                         <div class="kpi-value" id="kpi-clients">
                                             <span class="spinner-border spinner-border-sm text-secondary"></span>
                                         </div>
@@ -831,7 +923,7 @@
                             <div class="kpi-card kpi-projects h-100">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="flex-grow-1 me-3">
-                                        <div class="kpi-label">Ongoing Projects</div>
+                                        <div class="kpi-label" id="kpi-projects-label">Ongoing Projects</div>
                                         <div class="kpi-value" id="kpi-projects">
                                             <span class="spinner-border spinner-border-sm text-secondary"></span>
                                         </div>
@@ -849,7 +941,7 @@
                             <div class="kpi-card kpi-revenue h-100">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="flex-grow-1 me-3">
-                                        <div class="kpi-label">Revenue (MTD)</div>
+                                        <div class="kpi-label" id="kpi-revenue-label">Revenue (MTD)</div>
                                         <div class="kpi-value" id="kpi-revenue">
                                             <span class="spinner-border spinner-border-sm text-secondary"></span>
                                         </div>
@@ -893,8 +985,8 @@
                 <div class="row g-3 mb-4">
                     <div class="col-md-4">
                         <div class="chart-card">
-                            <div class="chart-card-title">Visits by Month</div>
-                            <div class="chart-card-sub">Field visit activity — last 6 months</div>
+                            <div class="chart-card-title" id="dynamic-visits-title">Visits by Month</div>
+                            <div class="chart-card-sub" id="dynamic-visits-sub">Field visit activity</div>
                             <div style="position:relative;height:220px;">
                                 <canvas id="leadsChart"></canvas>
                             </div>
@@ -911,18 +1003,31 @@
                     </div>
                     <div class="col-md-4">
                         <div class="chart-card d-flex flex-column">
-                            <div class="chart-card-title">Shop Sources</div>
-                            <div class="chart-card-sub">Distribution by acquisition channel</div>
+                            <div class="chart-card-title">Visit Outcomes</div>
+                            <div class="chart-card-sub">Distribution of interaction results</div>
                             <div class="d-flex justify-content-center flex-grow-1"
                                 style="position:relative;height:180px;">
-                                <canvas id="sourcesChart"></canvas>
+                                <canvas id="outcomesChart"></canvas>
                             </div>
-                            <div id="sources-legend" class="d-flex flex-wrap justify-content-center gap-3 mt-3"
+                            <div id="outcomes-legend" class="d-flex flex-wrap justify-content-center gap-3 mt-3"
                                 style="font-size:0.72rem;"></div>
                         </div>
                     </div>
                 </div>
-
+                <!-- PM Chart -->
+                <div class="row mt-4">
+                    <div class="col-12 col-lg-8">
+                        <div class="card border-0 shadow-sm rounded-4 mb-4">
+                            <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+                                <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>PM
+                                    Pipeline Health</h6>
+                            </div>
+                            <div class="card-body p-4">
+                                <canvas id="dashboardPmPipelineChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <!-- Activity + Issues Row -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-7">
@@ -1127,15 +1232,19 @@
         }
 
         // ── Charts (now using backend-aggregated data) ──────────────────
-        let leadsChartObj, revenueChartObj, sourcesChartObj;
+        let leadsChartObj, revenueChartObj, outcomesChartObj;
 
         function initCharts(stats) {
             Chart.defaults.font.family = "'Inter', 'Segoe UI', sans-serif";
 
-            // 1. Visits by Month (bar)
+            // UPDATE: Dynamic Chart Title & Data
+            document.getElementById('dynamic-visits-title').textContent = stats.visits_chart_title || 'Visits by Period';
+            document.getElementById('dynamic-visits-sub').textContent = 'Field visit activity — based on filter';
+
+            // 1. Visits (bar)
             try {
-                let labels = Object.keys(stats.visits_by_month || {});
-                let data = Object.values(stats.visits_by_month || {});
+                let labels = Object.keys(stats.visits_chart_data || {});
+                let data = Object.values(stats.visits_chart_data || {});
                 if (labels.length === 0) { labels = ['No Data']; data = [0]; }
 
                 if (leadsChartObj) leadsChartObj.destroy();
@@ -1190,23 +1299,38 @@
                 });
             } catch (e) { console.error("Revenue Chart Error:", e); }
 
-            // 3. Shop Sources (Donut)
+            // 3. Visit Outcomes (Donut)
             try {
-                let sData = stats.shop_sources_breakdown || {};
+                let sData = stats.visit_outcomes_breakdown || {};
                 if (Object.keys(sData).length === 0) { sData = { 'No Data': 1 }; }
 
                 const sLabels = Object.keys(sData);
                 const sValues = Object.values(sData);
-                const sColors = ['#6366f1', '#06b6d4', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6'];
 
-                if (sourcesChartObj) sourcesChartObj.destroy();
-                sourcesChartObj = new Chart(document.getElementById('sourcesChart'), {
+                // Map statuses to specific semantic colors
+                const colorMap = {
+                    'COMPLETED': '#10b981',          // Emerald Green
+                    'ACCEPTED': '#10b981',           // Emerald Green
+                    'SATISFIED': '#38bdf8',          // Light Blue
+                    'SCHEDULED': '#8b5cf6',          // Purple
+                    'TAKE_TIME_TO_THINK': '#f59e0b', // Amber/Orange
+                    'THINKING': '#f59e0b',           // Amber/Orange
+                    'CANCELLED': '#ef4444',          // Red
+                    'DECLINED': '#ef4444',           // Red
+                    'MISSED': '#64748b'              // Slate Gray
+                };
+
+                // Generate the colors array by looking up each label
+                const dynamicColors = sLabels.map(label => colorMap[label.toUpperCase()] || '#cbd5e1');
+
+                if (outcomesChartObj) outcomesChartObj.destroy();
+                outcomesChartObj = new Chart(document.getElementById('outcomesChart'), {
                     type: 'doughnut',
                     data: {
                         labels: sLabels,
                         datasets: [{
                             data: sValues,
-                            backgroundColor: sColors.slice(0, sLabels.length),
+                            backgroundColor: dynamicColors,
                             borderWidth: 0,
                             hoverOffset: 10
                         }]
@@ -1218,13 +1342,13 @@
                     }
                 });
 
-                document.getElementById('sources-legend').innerHTML = sLabels.map((s, i) =>
+                document.getElementById('outcomes-legend').innerHTML = sLabels.map((s, i) =>
                     `<div class="d-flex align-items-center gap-2 fw-medium text-secondary" style="font-size: 0.7rem;">
-                        <span style="width:8px;height:8px;background:${sColors[i % sColors.length]};border-radius:2px;display:inline-block;"></span> 
-                        <span>${s}</span>
+                        <span style="width:8px;height:8px;background:${dynamicColors[i]};border-radius:2px;display:inline-block;"></span> 
+                        <span>${s.replace(/_/g, ' ')}</span>
                     </div>`
                 ).join('');
-            } catch (e) { console.error("Sources Chart Error:", e); }
+            } catch (e) { console.error("Outcomes Chart Error:", e); }
         }
 
         // ── Activity Feed ─────────────────────────────────────────────────
@@ -1393,6 +1517,73 @@
             return `<span class="${color} fw-bold me-1" style="font-size: 0.7rem;"><i class="bi ${icon}"></i> ${prefix}${pct}%</span><span class="text-secondary opacity-75" style="font-size: 0.65rem;">vs last month</span>`;
         }
 
+        async function loadDashboardPipelineChart() {
+            try {
+                const data = await apiGet('/shops/analytics/pm-pipeline');
+                if (!data || !data.length) return;
+
+                const labels = data.map(item => item.pm_name);
+                const inDemoData = data.map(item => item.in_demo);
+                const meetingSetData = data.map(item => item.meeting_set);
+                const convertedData = data.map(item => item.converted);
+
+                const ctx = document.getElementById('dashboardPmPipelineChart').getContext('2d');
+
+                if (window._dashPmChart) window._dashPmChart.destroy();
+
+                window._dashPmChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'In Demo',
+                                data: inDemoData,
+                                backgroundColor: '#4f46e5',
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Meeting Set',
+                                data: meetingSetData,
+                                backgroundColor: '#eab308',
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Converted',
+                                data: convertedData,
+                                backgroundColor: '#10b981',
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true,
+                                grid: { display: false }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 },
+                                grid: { borderDash: [5, 5] }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { usePointStyle: true, padding: 20 }
+                            }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Error loading dashboard pipeline chart:", e);
+            }
+        }
+
         async function loadDashboard() {
             const areaId = document.getElementById('filter-area').value;
             const userId = document.getElementById('filter-user').value;
@@ -1434,6 +1625,9 @@
 
                 // Charts
                 initCharts(stats);
+
+                // PM Pipeline
+                loadDashboardPipelineChart();
 
             } catch (e) {
                 console.error("Dashboard Stats Error:", e);
@@ -1480,7 +1674,10 @@
             }
         }
 
-        document.getElementById('apply-filters').onclick = loadDashboard;
+        document.getElementById('apply-filters').onclick = function () {
+            updateFilterPills();
+            loadDashboard();
+        };
         document.getElementById('reset-filters').onclick = function () {
             document.getElementById('filter-area').value = '';
             document.getElementById('filter-user').value = '';
@@ -1490,11 +1687,10 @@
             loadDashboard();
         };
 
-        // Auto-apply on any filter change
+        // Update pills on change, but do NOT auto-reload — wait for Apply click
         ['filter-area', 'filter-user', 'filter-start', 'filter-end'].forEach(function (id) {
             document.getElementById(id).addEventListener('change', function () {
                 updateFilterPills();
-                loadDashboard();
             });
         });
 
@@ -1535,8 +1731,82 @@
             });
         }
 
+        // ── Period Picker ─────────────────────────────────────────────
+        const PERIOD_LABELS = {
+            today: { badge: 'Today Only', labels: ['Visits (Today)', 'Active Clients', 'Ongoing Projects', 'Revenue (Today)'] },
+            week: { badge: 'This Week', labels: ['Visits (This Week)', 'Active Clients', 'Ongoing Projects', 'Revenue (This Week)'] },
+            month: { badge: 'This Month', labels: ['Visits (MTD)', 'Active Clients', 'Ongoing Projects', 'Revenue (MTD)'] },
+            last_3_months: { badge: 'Last 3 Months', labels: ['Visits (3M)', 'Active Clients', 'Ongoing Projects', 'Revenue (3M)'] },
+            last_6_months: { badge: 'Last 6 Months', labels: ['Visits (6M)', 'Active Clients', 'Ongoing Projects', 'Revenue (6M)'] },
+            this_year: { badge: 'This Year', labels: ['Visits (YTD)', 'Active Clients', 'Ongoing Projects', 'Revenue (YTD)'] },
+            last_year: { badge: 'Previous Year', labels: ['Visits (Last Yr)', 'Active Clients', 'Ongoing Projects', 'Revenue (Last Yr)'] },
+            all: { badge: 'All Records', labels: ['Total Visits', 'Active Clients', 'Ongoing Projects', 'Total Revenue'] }
+        };
+
+        function applyPeriod(period, reload) {
+            const today = new Date();
+            const fmt = d => d.toISOString().split('T')[0];
+            let start = '', end = '';
+
+            if (period === 'today') {
+                start = end = fmt(today);
+            } else if (period === 'week') {
+                const day = today.getDay();
+                const monday = new Date(today);
+                monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
+                start = fmt(monday);
+                end = fmt(today);
+            } else if (period === 'month') {
+                start = fmt(new Date(today.getFullYear(), today.getMonth(), 1));
+                end = fmt(today);
+            } else if (period === 'last_3_months') {
+                start = fmt(new Date(today.getFullYear(), today.getMonth() - 3, 1));
+                end = fmt(today);
+            } else if (period === 'last_6_months') {
+                start = fmt(new Date(today.getFullYear(), today.getMonth() - 6, 1));
+                end = fmt(today);
+            } else if (period === 'this_year') {
+                start = fmt(new Date(today.getFullYear(), 0, 1));
+                end = fmt(today);
+            } else if (period === 'last_year') {
+                start = fmt(new Date(today.getFullYear() - 1, 0, 1));
+                end = fmt(new Date(today.getFullYear() - 1, 11, 31));
+            }
+            // 'all' leaves start/end empty
+
+            document.getElementById('filter-start').value = start;
+            document.getElementById('filter-end').value = end;
+
+            // Mark active button
+            document.querySelectorAll('.period-btn').forEach(function (btn) {
+                btn.classList.toggle('active', btn.dataset.period === period);
+            });
+
+            // Update context badge
+            var meta = PERIOD_LABELS[period] || PERIOD_LABELS.all;
+            document.getElementById('period-context-badge').textContent = meta.badge;
+
+            // Update KPI labels
+            var kpiIds = ['kpi-visits-label', 'kpi-clients-label', 'kpi-projects-label', 'kpi-revenue-label'];
+            kpiIds.forEach(function (id, i) {
+                var el = document.getElementById(id);
+                if (el) el.textContent = meta.labels[i];
+            });
+
+            updateFilterPills();
+            if (reload !== false) loadDashboard();
+        }
+
+        document.querySelectorAll('.period-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () { applyPeriod(btn.dataset.period); });
+        });
+
+
+
         populateFilters();
-        loadDashboard();
+
+        // Always default to 'all' (all data till now) on page load
+        applyPeriod('all');
     </script>
 </body>
 

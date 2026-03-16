@@ -1,3 +1,4 @@
+# backend/app/modules/clients/router.py
 from typing import List, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
@@ -48,6 +49,8 @@ def read_clients(
     skip: int = 0,
     limit: int = 100,
     search: Optional[str] = None,
+    status: Optional[str] = None,
+    pm_id: Optional[str] = None,
     sort_by: Optional[str] = "created_at",
     sort_order: Optional[str] = "desc",
     current_user: User = Depends(staff_checker)
@@ -57,9 +60,32 @@ def read_clients(
     PMs only see their assigned clients.
     """
     service = ClientService(db)
-    pm_id = None
+    client_active_status: Optional[bool] = True
+    normalized_status = (status or "").strip().lower()
+    if normalized_status in {"inactive", "false"}:
+        client_active_status = False
+    elif normalized_status in {"all", ""}:
+        client_active_status = None if normalized_status == "all" else True
+
+    pm_filter_id = None
+    scoped_user_id = None
+    scoped_mode = None
     if current_user and current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
-        pm_id = current_user.id
+        if current_user.role == UserRole.PROJECT_MANAGER:
+            pm_filter_id = current_user.id
+            scoped_user_id = current_user.id
+            scoped_mode = "pm"
+        else:
+            scoped_user_id = current_user.id
+            scoped_mode = "mixed"
+    elif current_user and current_user.role in [UserRole.SALES, UserRole.TELESALES]:
+        scoped_user_id = current_user.id
+        scoped_mode = "owner"
+    elif pm_id and pm_id not in {"ALL", "all"}:
+        try:
+            pm_filter_id = int(pm_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid pm_id")
 
     return service.get_clients(
         skip=skip,
@@ -67,7 +93,10 @@ def read_clients(
         search=search,
         sort_by=sort_by,
         sort_order=sort_order,
-        pm_id=pm_id
+        is_active=client_active_status,
+        pm_id=pm_filter_id,
+        scoped_user_id=scoped_user_id,
+        scoped_mode=scoped_mode,
     )
 
 
@@ -110,6 +139,19 @@ def get_pm_workload(
     return service.get_pm_workload()
 
 
+@router.post("/retroactive-balance", status_code=status.HTTP_200_OK)
+def retroactive_balance_clients(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+) -> Any:
+    """
+    Admin-only: Finds all unassigned clients and retroactively balances them
+    across active Project Managers.
+    """
+    service = ClientService(db)
+    return service.retroactive_pm_balance()
+
+
 # ── Parametric routes ────────────────────────────────────────────────────────
 
 @router.get("/{client_id}", response_model=ClientRead)
@@ -125,6 +167,15 @@ def read_client_by_id(
     client = service.get_client(client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
+
+    if current_user.role != UserRole.ADMIN:
+        has_access = (
+            client.owner_id == current_user.id
+            or client.pm_id == current_user.id
+            or client.referred_by_id == current_user.id
+        )
+        if not has_access:
+            raise HTTPException(status_code=403, detail="Access denied")
     return client
 
 

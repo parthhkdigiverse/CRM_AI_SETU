@@ -1,248 +1,426 @@
 <!DOCTYPE html>
+<!-- frontend/template/projects_demo.html -->
 <html lang="en">
 
 <head>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Demo — SRM AI SETU</title>
+    <title>Demo Pipeline — SRM AI SETU</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
-    <link rel="stylesheet" href="../css/components.css?v=1772780187">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
+    <link rel="stylesheet" href="../css/components.css?v=1772780188">
     <style>
-        body {
-            font-family: 'Outfit', sans-serif;
-            background: #f8fafc;
-        }
+        body { font-family: 'Outfit', sans-serif; background: #f8fafc; }
 
-        .demo-hero {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-            border-radius: 20px;
-            padding: 3rem;
+        .page-header-banner {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 60%, #a855f7 100%);
+            border-radius: 18px;
+            padding: 2rem 2.5rem;
             color: white;
             margin-bottom: 2rem;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 12px 40px rgba(79,70,229,0.25);
         }
-
-        .demo-hero::before {
+        .page-header-banner::before {
             content: '';
             position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 400px;
-            height: 400px;
-            background: rgba(255, 255, 255, 0.1);
+            top: -60px; right: -40px;
+            width: 260px; height: 260px;
+            background: rgba(255,255,255,0.08);
             border-radius: 50%;
-            z-index: 0;
+        }
+        .page-header-banner::after {
+            content: '';
+            position: absolute;
+            bottom: -80px; left: 30%;
+            width: 200px; height: 200px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
         }
 
-        .demo-hero-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .feature-card {
-            background: white;
-            border: none;
+        .demo-table-card {
+            background: #fff;
             border-radius: 16px;
-            padding: 2rem;
-            transition: all 0.3s ease;
-            height: 100%;
-            position: relative;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #f1f5f9;
             overflow: hidden;
         }
 
-        .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        .demo-step-tracker {
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
-
-        .feature-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
+        .demo-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .demo-step-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 16px;
-            padding: 1.5rem;
-        }
-
-        .stat-value {
-            font-size: 2.5rem;
+            font-size: 0.75rem;
             font-weight: 700;
-            color: #1e293b;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            color: #94a3b8;
+            transition: all 0.3s;
         }
-
-        .badge-premium {
-            background: rgba(255, 255, 255, 0.2);
+        .demo-step-dot.done {
+            background: #10b981;
+            border-color: #10b981;
             color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-size: 0.8rem;
+        }
+        .demo-step-dot.active {
+            background: #4f46e5;
+            border-color: #4f46e5;
+            color: white;
+            box-shadow: 0 0 0 3px rgba(79,70,229,0.2);
+        }
+        .demo-step-label {
+            font-size: 0.62rem;
+            color: #94a3b8;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 1rem;
-            display: inline-block;
+            text-align: center;
+        }
+        .demo-step-label.done { color: #10b981; }
+        .demo-step-label.active { color: #4f46e5; }
+        .demo-step-connector {
+            width: 18px;
+            height: 2px;
+            background: #e2e8f0;
+            margin-bottom: 14px;
+            transition: background 0.3s;
+        }
+        .demo-step-connector.done { background: #10b981; }
+
+        .btn-create-client { font-size: 0.8rem; }
+        .btn-demo-action { font-size: 0.78rem; }
+
+        .empty-state {
+            padding: 5rem 2rem;
+            text-align: center;
+            color: #94a3b8;
+        }
+        .status-badge-ms {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 20px;
+            background: #d1fae5;
+            color: #065f46;
         }
     </style>
 </head>
 
 <body class="bg-app">
-    <div class="d-flex">
+    <div class="d-flex" style="height:100vh;overflow:hidden;">
         <div id="sidebar"></div>
-        <div class="flex-grow-1">
+        <div class="flex-grow-1" style="overflow-y:auto;min-width:0;">
             <div class="page-content">
 
-                <div class="demo-hero">
-                    <div class="demo-hero-content">
-                        <span class="badge-premium">Intelligent Management</span>
-                        <h1 class="display-5 fw-bold mb-3">Next-Gen Project Ecosystem</h1>
-                        <p class="lead opacity-75 mb-4" style="max-width: 600px;">Elevate your workflow with our
-                            advanced project management suite. Real-time collaboration, predictive analytics, and
-                            seamless resource allocation.</p>
-                        <div class="d-flex gap-3">
-                            <button class="btn btn-white px-4 py-2 fw-semibold"
-                                style="background: white; color: #4f46e5; border-radius: 10px;">Launch
-                                Experience</button>
-                            <button class="btn btn-outline-light px-4 py-2 fw-semibold"
-                                style="border-radius: 10px;">Watch Overview</button>
+                <!-- Page Header -->
+                <div class="page-header-banner">
+                    <div style="position:relative;z-index:1;">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge" style="background:rgba(255,255,255,0.2);font-size:0.75rem;padding:5px 12px;border-radius:20px;">
+                                <i class="bi bi-collection-play me-1"></i>Demo Pipeline
+                            </span>
+                        </div>
+                        <h1 class="fw-bold mb-1" style="font-size:1.8rem;">PM Demo Dashboard</h1>
+                        <p class="mb-0 opacity-75" style="font-size:0.95rem;">Manage your assigned leads · Schedule demos · First demo advances to Meeting Set</p>
+                    </div>
+                    <div style="position:absolute;top:1.5rem;right:2rem;z-index:1;">
+                        <button class="btn btn-light btn-sm fw-semibold rounded-pill px-3" onclick="loadDemoQueue()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Demo Queue Table -->
+                <div class="demo-table-card">
+                    <div class="p-3 border-bottom d-flex align-items-center justify-content-between" style="background:#fafbfc;">
+                        <span class="fw-bold text-dark" style="font-size:0.95rem;"><i class="bi bi-table me-2 text-primary"></i>Assigned Leads</span>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill" id="queue-count-badge">0 leads</span>
+                    </div>
+                    <div id="demo-table-wrapper">
+                        <div class="empty-state">
+                            <i class="bi bi-hourglass fs-1 d-block mb-2 opacity-25"></i>
+                            <div class="fw-semibold">Loading demo queue...</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="row g-4 mb-5">
-                    <div class="col-md-4">
-                        <div class="feature-card">
-                            <div class="feature-icon" style="background: #e0e7ff; color: #4f46e5;">
-                                <i class="bi bi-kanban"></i>
-                            </div>
-                            <h4 class="fw-bold">Visual Kanban</h4>
-                            <p class="text-muted">Dynamic board systems that adapt to your team's velocity. Drag, drop,
-                                and deliver with zero friction.</p>
-                            <div class="mt-4 pt-3 border-top">
-                                <a href="#" class="text-primary text-decoration-none fw-semibold">Learn more <i
-                                        class="bi bi-arrow-right ms-1"></i></a>
-                            </div>
+            </div><!-- /page-content -->
+        </div>
+    </div>
+
+    <!-- Schedule Demo Modal -->
+    <div class="modal fade" id="scheduleDemoModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-calendar-plus me-2 text-primary"></i>Schedule Demo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="sched-shop-id">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Target Shop</label>
+                        <input type="text" id="sched-shop-name" class="form-control" readonly disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Demo Title</label>
+                        <input type="text" id="sched-title" class="form-control" placeholder="e.g. Platform Overview">
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Date</label>
+                            <input type="date" id="sched-date" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Time</label>
+                            <input type="time" id="sched-time" class="form-control">
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="feature-card">
-                            <div class="feature-icon" style="background: #dcfce7; color: #10b981;">
-                                <i class="bi bi-graph-up-arrow"></i>
-                            </div>
-                            <h4 class="fw-bold">Predictive Analytics</h4>
-                            <p class="text-muted">Anticipate bottlenecks before they happen. Our AI models analyze past
-                                performance to forecast future outcomes.</p>
-                            <div class="mt-4 pt-3 border-top">
-                                <a href="#" class="text-success text-decoration-none fw-semibold">View Insights <i
-                                        class="bi bi-arrow-right ms-1"></i></a>
-                            </div>
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Demo Type</label>
+                        <select id="sched-type" class="form-select">
+                            <option value="Google Meet">Google Meet</option>
+                            <option value="In-Person Demo">In-Person Demo</option>
+                        </select>
                     </div>
-                    <div class="col-md-4">
-                        <div class="feature-card">
-                            <div class="feature-icon" style="background: #fef3c7; color: #f59e0b;">
-                                <i class="bi bi-people"></i>
-                            </div>
-                            <h4 class="fw-bold">Seamless Sync</h4>
-                            <p class="text-muted">Connect your team, clients, and assets in one unified space.
-                                Effortless communication across all departments.</p>
-                            <div class="mt-4 pt-3 border-top">
-                                <a href="#" class="text-warning text-decoration-none fw-semibold">Connect Teams <i
-                                        class="bi bi-arrow-right ms-1"></i></a>
-                            </div>
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Pre-Demo Notes</label>
+                        <textarea id="sched-notes" class="form-control" rows="2" placeholder="Any specific requirements..."></textarea>
                     </div>
                 </div>
-
-                <div class="row g-4">
-                    <div class="col-md-8">
-                        <div class="grid-card p-4">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="fw-bold mb-0">Operational Efficiency</h5>
-                                <div class="dropdown">
-                                    <button class="btn btn-light btn-sm dropdown-toggle" data-bs-toggle="dropdown">Last
-                                        30 Days</button>
-                                </div>
-                            </div>
-                            <div class="p-5 text-center bg-light rounded-4 border-dashed"
-                                style="border: 2px dashed #e2e8f0;">
-                                <i class="bi bi-card-image text-muted opacity-25" style="font-size: 4rem;"></i>
-                                <p class="text-muted mt-3">Interactive Workspace Visualization coming soon</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="grid-card p-4 h-100">
-                            <h5 class="fw-bold mb-4">System Pulse</h5>
-                            <div class="mb-4">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-muted small">Automation Health</span>
-                                    <span class="fw-bold small">98%</span>
-                                </div>
-                                <div class="progress" style="height: 6px; border-radius: 10px;">
-                                    <div class="progress-bar bg-primary" role="progressbar" style="width: 98%"></div>
-                                </div>
-                            </div>
-                            <div class="mb-4">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-muted small">Server Uptime</span>
-                                    <span class="fw-bold small">99.9%</span>
-                                </div>
-                                <div class="progress" style="height: 6px; border-radius: 10px;">
-                                    <div class="progress-bar bg-success" role="progressbar" style="width: 99.9%"></div>
-                                </div>
-                            </div>
-                            <div class="mb-4">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-muted small">Resource Peak</span>
-                                    <span class="fw-bold small">42%</span>
-                                </div>
-                                <div class="progress" style="height: 6px; border-radius: 10px;">
-                                    <div class="progress-bar bg-warning" role="progressbar" style="width: 42%"></div>
-                                </div>
-                            </div>
-                            <div class="mt-5 p-3 rounded-4" style="background: #f1f5f9;">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="rounded-circle bg-white d-flex align-items-center justify-content-center shadow-sm"
-                                        style="width: 40px; height: 40px;">
-                                        <i class="bi bi-shield-check text-primary"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-bold" style="font-size: 0.9rem;">Enterprise Grade</div>
-                                        <div class="text-muted" style="font-size: 0.75rem;">Encryption enabled</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary fw-bold" id="save-demo-btn" onclick="saveDemoMeeting()">
+                        <i class="bi bi-calendar-check me-1"></i> Save Demo
+                    </button>
                 </div>
-
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/api.js?v=1772780187"></script>
+    <script src="../js/api.js?v=2.4"></script>
     <script src="../js/ui_components.js?v=1772780187"></script>
-    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/auth.js?v=1772780187"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
-        document.getElementById('sidebar').innerHTML = renderSidebar('projects_demo');
-        injectTopHeader('Demo');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) sidebarElement.innerHTML = renderSidebar('demo');
+        injectTopHeader('Demo Pipeline');
+
+        // ── Format datetime for display ──
+        function fmtDt(iso) {
+            if (!iso) return null;
+            const d = new Date(iso);
+            return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        }
+
+        // ── Render the full table ──
+        function renderDemoTable(shops) {
+            const wrapper = document.getElementById('demo-table-wrapper');
+            const badge = document.getElementById('queue-count-badge');
+            badge.textContent = `${shops.length} lead${shops.length !== 1 ? 's' : ''}`;
+
+            if (!shops || shops.length === 0) {
+                wrapper.innerHTML = `<div class="empty-state">
+                    <i class="bi bi-inbox fs-1 d-block mb-2 opacity-25"></i>
+                    <div class="fw-semibold">No leads in your demo queue</div>
+                    <div class="small mt-1 text-muted">Leads will appear here once a PM is assigned from the Project Overview page.</div>
+                </div>`;
+                return;
+            }
+
+            let html = `<div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="font-size:0.88rem;">
+                    <thead style="background:#f8fafc;border-bottom:2px solid #f1f5f9;">
+                        <tr>
+                            <th class="px-4 py-3 text-uppercase text-muted" style="font-size:0.7rem;letter-spacing:0.05em;font-weight:700;">Lead / Shop</th>
+                            <th class="px-3 py-3 text-uppercase text-muted" style="font-size:0.7rem;letter-spacing:0.05em;font-weight:700;">Contact</th>
+                            <th class="px-3 py-3 text-uppercase text-muted" style="font-size:0.7rem;letter-spacing:0.05em;font-weight:700;">Demo Progress</th>
+                            <th class="px-3 py-3 text-uppercase text-muted" style="font-size:0.7rem;letter-spacing:0.05em;font-weight:700;">Sourced By</th>
+                            <th class="px-3 py-3 text-uppercase text-muted text-center" style="font-size:0.7rem;letter-spacing:0.05em;font-weight:700;">Status</th>
+                            <th class="px-4 py-3 text-uppercase text-muted text-end" style="font-size:0.7rem;letter-spacing:0.05em;font-weight:700;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            shops.forEach(shop => {
+                const demoStage = shop.demo_stage || 0;
+                const hasDemoScheduled = !!shop.demo_scheduled_at;
+                const shopStatus = shop.status || '';
+                const isMeetingSet = shopStatus === 'MEETING_SET';
+
+                // Status badge
+                const statusBadge = isMeetingSet
+                    ? `<span class="badge bg-warning-subtle text-warning rounded-pill" style="font-size:0.68rem;">In Demo (Meeting Set)</span>`
+                    : `<span class="badge bg-warning-subtle text-warning rounded-pill" style="font-size:0.68rem;">In Demo</span>`;
+
+                // Demo Progress column: completed count + scheduled date or (+) button
+                const nextDemoLabel = hasDemoScheduled
+                    ? `<div class="mt-1"><span class="badge" style="background:#e0e7ff;color:#4f46e5;font-size:0.68rem;"><i class="bi bi-calendar-event me-1"></i>Next: ${fmtDt(shop.demo_scheduled_at)}</span></div>`
+                    : `<button class="btn btn-sm btn-outline-primary px-2 py-0 ms-2" style="font-size:0.72rem;" onclick="openScheduleDemo(${shop.id})" title="Schedule next demo"><i class="bi bi-plus-lg"></i></button>`;
+
+                const demoProgressCell = `
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="fw-semibold" style="font-size:0.82rem;">Demos: ${demoStage}</span>
+                        ${!isMeetingSet ? nextDemoLabel : ''}
+                    </div>`;
+
+                // Actions column
+                const dropdownHtml = `<div class="dropdown">
+                    <button class="btn btn-sm btn-light border-0 dropdown-toggle-no-caret" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots-vertical text-muted"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 fs-sm" style="min-width: 180px;">
+                        <li><h6 class="dropdown-header text-uppercase" style="font-size:0.65rem;letter-spacing:0.05em;">Demo Actions</h6></li>
+                        <li><a class="dropdown-item py-2 fw-medium ${!hasDemoScheduled ? 'disabled' : ''}" href="#" onclick="event.preventDefault(); markDemoComplete(${shop.id})"><i class="bi bi-check-circle me-2 text-success"></i>Mark Done</a></li>
+                        <li><a class="dropdown-item py-2 fw-medium" href="#" onclick="event.preventDefault(); openScheduleDemo(${shop.id}, '${shop.name?.replace(/'/g, "\\'") || ''}')"><i class="bi bi-calendar-event me-2 text-primary"></i>${hasDemoScheduled ? 'Reschedule' : 'Schedule Demo'}</a></li>
+                        ${(shop.demo_type === 'Google Meet' && shop.demo_meet_link) ? `<li><a class="dropdown-item py-2 fw-medium" href="${shop.demo_meet_link}" target="_blank"><i class="bi bi-camera-video me-2 text-danger"></i>Join Meet</a></li>` : ''}
+                        ${hasDemoScheduled ? `<li><hr class="dropdown-divider"></li><li><a class="dropdown-item py-2 fw-medium text-danger" href="#" onclick="event.preventDefault(); cancelDemo(${shop.id})"><i class="bi bi-x-circle me-2"></i>Cancel Demo</a></li>` : ''}
+                    </ul>
+                </div>`;
+
+                html += `<tr id="shop-row-${shop.id}">
+                    <td class="px-4 py-3">
+                        <div class="fw-bold text-dark">${shop.name || '—'}</div>
+                        <div class="small text-muted">${shop.area_name || ''}</div>
+                    </td>
+                    <td class="px-3 py-3">
+                        <div class="fw-semibold">${shop.contact_person || '—'}</div>
+                        <div class="small text-muted"><i class="bi bi-telephone me-1"></i>${shop.phone || '—'}</div>
+                    </td>
+                    <td class="px-3 py-3">${demoProgressCell}</td>
+                    <td class="px-3 py-3">
+                        <div class="fw-semibold" style="font-size:0.82rem;">${shop.owner_name || '—'}</div>
+                        <div class="small text-muted" style="font-size:0.72rem;">Sales Agent</div>
+                    </td>
+                    <td class="px-3 py-3 text-center">${statusBadge}</td>
+                    <td class="px-4 py-3 text-end">
+                        ${dropdownHtml}
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            wrapper.innerHTML = html;
+        }
+
+        // ── Load demo queue from API ──
+        async function loadDemoQueue() {
+            const wrapper = document.getElementById('demo-table-wrapper');
+            wrapper.innerHTML = `<div class="empty-state"><div class="spinner-border text-primary" role="status"></div><div class="mt-2 text-muted">Loading...</div></div>`;
+            try {
+                const shops = await window.ApiClient.request('/shops/demo-queue');
+                // Exclude shops that have already been converted (deal closed via billing)
+                const activeDemos = (shops || []).filter(shop => shop.status !== 'CONVERTED');
+                renderDemoTable(activeDemos);
+            } catch (err) {
+                console.error('Failed to load demo queue', err);
+                wrapper.innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-circle text-danger fs-2 d-block mb-2"></i><div>Failed to load demo queue</div></div>`;
+            }
+        }
+
+        // ── Open Schedule Demo Modal ──
+        window.openScheduleDemo = (shopId, shopName) => {
+            document.getElementById('sched-shop-id').value = shopId;
+            document.getElementById('sched-shop-name').value = shopName || '';
+            document.getElementById('sched-title').value = '';
+            document.getElementById('sched-notes').value = '';
+            document.getElementById('sched-type').value = 'Google Meet';
+            // Default to tomorrow 10am
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('sched-date').value = tomorrow.toISOString().split('T')[0];
+            document.getElementById('sched-time').value = '10:00';
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('scheduleDemoModal')).show();
+        };
+
+        // ── Save Demo (hits POST /shops/{id}/schedule-demo) ──
+        window.saveDemoMeeting = async () => {
+            const shopId = document.getElementById('sched-shop-id').value;
+            const title = document.getElementById('sched-title').value.trim();
+            const dateStr = document.getElementById('sched-date').value;
+            const timeStr = document.getElementById('sched-time').value;
+            const type = document.getElementById('sched-type').value;
+            const notes = document.getElementById('sched-notes').value.trim();
+            
+            const btn = document.getElementById('save-demo-btn');
+
+            if (!dateStr || !timeStr) { showToast('Please pick a date and time', 'error'); return; }
+            
+            const scheduledAt = new Date(`${dateStr}T${timeStr}:00`).toISOString();
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+            try {
+                await window.ApiClient.request(`/shops/${shopId}/schedule-demo`, {
+                    method: 'POST',
+                    body: {
+                        scheduled_at: scheduledAt,
+                        title: title || null,
+                        demo_type: type,
+                        notes: notes || null
+                    }
+                });
+                showToast('Demo scheduled!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('scheduleDemoModal')).hide();
+                await loadDemoQueue();
+            } catch (e) {
+                console.error('Schedule demo failed', e);
+                showToast(e?.data?.detail || 'Failed to schedule demo', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-calendar-check me-1"></i> Save Demo';
+            }
+        };
+
+        // ── Cancel Demo ──
+        window.cancelDemo = async (shopId) => {
+            if (!confirm("Are you sure you want to cancel the scheduled demo?")) return;
+            try {
+                await window.ApiClient.request(`/shops/${shopId}/cancel-demo`, { method: 'POST' });
+                showToast('Demo canceled successfully', 'success');
+                await loadDemoQueue();
+            } catch (e) {
+                console.error('Cancel demo failed', e);
+                showToast(e?.data?.detail || 'Failed to cancel demo', 'error');
+            }
+        };
+
+        // ── Mark Demo Complete ──
+        window.markDemoComplete = async (shopId) => {
+            // Note: because the button is now a dropdown item, we just show a toast state immediately instead of finding the btn
+            try {
+                const result = await window.ApiClient.request(`/shops/${shopId}/complete-demo`, { method: 'POST' });
+                const msg = result.demo_stage === 1
+                    ? '🎉 First demo done! Lead advanced to Meeting Set!'
+                    : `Demo ${result.demo_stage} marked complete.`;
+                showToast(msg, 'success');
+                await loadDemoQueue();
+            } catch (e) {
+                console.error('Mark demo done failed', e);
+                showToast(e?.data?.detail || 'Failed to mark demo complete', 'error');
+            }
+        };
+
+        // ── Init ──
+        document.addEventListener('DOMContentLoaded', () => loadDemoQueue());
     </script>
 </body>
 

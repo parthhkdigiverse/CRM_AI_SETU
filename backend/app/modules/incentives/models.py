@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float
+# backend/app/modules/incentives/models.py
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Boolean, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
@@ -32,10 +33,14 @@ class IncentiveSlip(Base):
     target = Column(Integer, nullable=False)
     achieved = Column(Integer, nullable=False)
     percentage = Column(Float, nullable=False)
-    applied_slab = Column(Float, nullable=True)
+    applied_slab = Column(String, nullable=True)
     amount_per_unit = Column(Float, default=0.0)
     total_incentive = Column(Float, nullable=False)
 
+    slab_bonus_amount = Column(Float, default=0.0)
+    is_visible_to_employee = Column(Boolean, nullable=False, default=False, server_default="false")
+    employee_remarks = Column(Text, nullable=True)
+    manager_remarks = Column(Text, nullable=True)
     generated_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", backref="incentive_slips")

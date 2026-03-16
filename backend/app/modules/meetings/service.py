@@ -1,3 +1,4 @@
+# backend/app/modules/meetings/service.py
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Request
@@ -15,10 +16,10 @@ class MeetingService:
         self.activity_logger = ActivityLogger(db)
 
     def get_meeting(self, meeting_id: int):
-        return self.db.query(MeetingSummary).filter(MeetingSummary.id == meeting_id).first()
+        return self.db.query(MeetingSummary).filter(MeetingSummary.id == meeting_id, MeetingSummary.is_deleted == False).first()
 
     def get_meetings(self, skip: int = 0, limit: int = 100):
-        return self.db.query(MeetingSummary).offset(skip).limit(limit).all()
+        return self.db.query(MeetingSummary).filter(MeetingSummary.is_deleted == False).offset(skip).limit(limit).all()
 
     async def create_meeting(self, meeting: MeetingSummaryCreate, client_id: int, current_user: User, request: Request):
         from app.modules.meetings.models import MeetingType
