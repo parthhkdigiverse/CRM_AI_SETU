@@ -27,7 +27,7 @@ class ProjectService:
         
         for p in projects:
             p.total_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.is_deleted == False).count()
-            p.resolved_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.status == IssueStatus.RESOLVED, Issue.is_deleted == False).count()
+            p.resolved_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.status == IssueStatus.SOLVED, Issue.is_deleted == False).count()
             p.progress_percentage = (p.resolved_issues / p.total_issues * 100) if p.total_issues > 0 else 0.0
             
             # --- Silent Self-Healing: Sync Project PM with Client PM ---
