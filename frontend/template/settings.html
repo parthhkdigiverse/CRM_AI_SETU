@@ -1145,6 +1145,12 @@
         }
         injectTopHeader('Settings');
 
+        // Initial load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            initSystem();
+        });
+
         // ── Load saved settings
         async function loadSettings() {
             let backendPrefs = {};
@@ -1298,9 +1304,6 @@
                     document.getElementById('api-status-chip').style.borderColor = '#fca5a5';
                 });
 
-                loadSlabsSettings();
-                loadAdminTargets();
-                
                 // Fetch Global System Settings
                 ApiClient.request('/settings/')
                     .then(res => {
