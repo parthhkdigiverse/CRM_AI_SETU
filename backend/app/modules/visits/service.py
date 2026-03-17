@@ -135,27 +135,27 @@ class VisitService:
             .first()
         )
 
-        # --- Auto-transition Shop status based on visit outcome ---
-        from app.modules.shops.models import ShopStatus
+        # --- Auto-transition Shop pipeline_stage based on visit outcome ---
+        from app.core.enums import MasterPipelineStage
         shop = self.db.query(Shop).filter(Shop.id == visit_in.shop_id).first()
         if shop:
-            current = shop.status
-            new_status = None
+            current = shop.pipeline_stage
+            new_stage = None
 
-            # Any visit: move NEW → CONTACTED
-            if current == ShopStatus.NEW:
-                new_status = ShopStatus.CONTACTED
+            # Any visit: move LEAD → PITCHING
+            if current == MasterPipelineStage.LEAD:
+                new_stage = MasterPipelineStage.PITCHING
 
-            # Visit outcome: ACCEPT → MEETING_SET
-            if visit.status == VisitStatus.ACCEPT and current == ShopStatus.CONTACTED:
-                new_status = ShopStatus.MEETING_SET
+            # Visit outcome: ACCEPT → PITCHING (if still LEAD somehow)
+            if visit.status == VisitStatus.ACCEPT and current == MasterPipelineStage.LEAD:
+                new_stage = MasterPipelineStage.PITCHING
 
-            # Visit outcome: SATISFIED → CONVERTED (only from MEETING_SET)
-            if visit.status == VisitStatus.SATISFIED and current == ShopStatus.MEETING_SET:
-                new_status = ShopStatus.CONVERTED
+            # Visit outcome: SATISFIED → DELIVERY (only from PITCHING)
+            if visit.status == VisitStatus.SATISFIED and current == MasterPipelineStage.PITCHING:
+                new_stage = MasterPipelineStage.DELIVERY
 
-            if new_status and new_status != current:
-                shop.status = new_status
+            if new_stage and new_stage != current:
+                shop.pipeline_stage = new_stage
                 self.db.commit()
         # ----------------------------------------------------------
 

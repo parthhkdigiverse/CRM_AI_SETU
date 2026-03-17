@@ -1,7 +1,8 @@
 # backend/app/modules/shops/service.py
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from app.modules.shops.models import Shop, ShopStatus
+from app.modules.shops.models import Shop
+from app.core.enums import MasterPipelineStage, GlobalTaskStatus
 from app.modules.shops.schemas import ShopCreate, ShopUpdate
 from app.modules.clients.models import Client
 from app.modules.users.models import User
@@ -59,7 +60,7 @@ class ShopService:
         return shop
 
     @staticmethod
-    def list_shops(db: Session, current_user: User, skip: int = 0, limit: int = 100, status: ShopStatus = None, owner_id: int = None):
+    def list_shops(db: Session, current_user: User, skip: int = 0, limit: int = 100, pipeline_stage: MasterPipelineStage = None, owner_id: int = None):
         from sqlalchemy.orm import selectinload
         from app.modules.salary.models import AppSetting
         policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
@@ -185,7 +186,7 @@ class ShopService:
     def approve_pipeline_entry(db: Session, shop_id: int):
         db_shop = ShopService.get_shop(db, shop_id)
         
-        if db_shop.status == ShopStatus.CONVERTED:
+        if db_shop.pipeline_stage == MasterPipelineStage.DELIVERY:
             raise HTTPException(status_code=400, detail="Entry already approved and converted to project")
             
         # Check if client already exists with this email/phone
@@ -198,7 +199,7 @@ class ShopService:
         ).first()
         
         if existing_client:
-            db_shop.status = ShopStatus.CONVERTED
+            db_shop.pipeline_stage = MasterPipelineStage.DELIVERY
             db.commit()
             return existing_client
 
@@ -212,7 +213,7 @@ class ShopService:
         )
         
         db.add(db_client)
-        db_shop.status = ShopStatus.CONVERTED
+        db_shop.pipeline_stage = MasterPipelineStage.DELIVERY
         
         db.commit()
         db.refresh(db_client)
@@ -373,7 +374,7 @@ class ShopService:
             joinedload(Shop.assigned_by)
         ).filter(
             Shop.assignment_status == "ACCEPTED",
-            Shop.status == ShopStatus.NEW,   # progressed shops (CONTACTED+) are already visited
+            Shop.pipeline_stage == MasterPipelineStage.LEAD,   # progressed shops (PITCHING+) are already visited
             already_visited                  # belt-and-suspenders: no Visit record either
         )
 
@@ -432,7 +433,8 @@ class ShopService:
     @staticmethod
     def auto_assign_shop(db: Session, shop_id: int, current_user: User):
         from app.modules.users.models import UserRole
-        from app.modules.projects.models import Project, ProjectStatus
+        from app.modules.projects.models import Project
+        from app.core.enums import GlobalTaskStatus
         import random
         
         shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
@@ -453,12 +455,12 @@ class ShopService:
             active_shops_count = db.query(Shop).filter(
                 Shop.project_manager_id == pm.id,
                 Shop.is_archived == False,
-                Shop.status.in_([ShopStatus.NEW, ShopStatus.CONTACTED, ShopStatus.MEETING_SET])
+                Shop.pipeline_stage.in_([MasterPipelineStage.LEAD, MasterPipelineStage.PITCHING])
             ).count()
             
             active_projects_count = db.query(Project).filter(
                 Project.pm_id == pm.id,
-                Project.status.in_([ProjectStatus.PLANNING, ProjectStatus.IN_PROGRESS, ProjectStatus.ONGOING])
+                Project.status.in_([GlobalTaskStatus.OPEN, GlobalTaskStatus.IN_PROGRESS])
             ).count()
             
             pm_scores[pm.id] = active_shops_count + active_projects_count
@@ -491,7 +493,8 @@ class ShopService:
     @staticmethod
     def suggest_least_busy_pm(db: Session, current_user: User):
         from app.modules.users.models import UserRole
-        from app.modules.projects.models import Project, ProjectStatus
+        from app.modules.projects.models import Project
+        from app.core.enums import GlobalTaskStatus
         import random
 
         # Fetch active PMs
@@ -508,12 +511,12 @@ class ShopService:
             active_shops_count = db.query(Shop).filter(
                 Shop.project_manager_id == pm.id,
                 Shop.is_archived == False,
-                Shop.status.in_([ShopStatus.NEW, ShopStatus.CONTACTED, ShopStatus.MEETING_SET])
+                Shop.pipeline_stage.in_([MasterPipelineStage.LEAD, MasterPipelineStage.PITCHING])
             ).count()
             
             active_projects_count = db.query(Project).filter(
                 Project.pm_id == pm.id,
-                Project.status.in_([ProjectStatus.PLANNING, ProjectStatus.IN_PROGRESS, ProjectStatus.ONGOING])
+                Project.status.in_([GlobalTaskStatus.OPEN, GlobalTaskStatus.IN_PROGRESS])
             ).count()
             
             pm_scores[pm.id] = active_shops_count + active_projects_count
@@ -541,7 +544,7 @@ class ShopService:
 
         # First completed demo → advance status to MEETING_SET
         if shop.demo_stage == 1:
-            shop.status = ShopStatus.MEETING_SET
+            shop.pipeline_stage = MasterPipelineStage.PITCHING
 
         db.commit()
         db.refresh(shop)
@@ -679,7 +682,7 @@ class ShopService:
 
     @staticmethod
     def get_pm_pipeline_analytics(db: Session):
-        from app.modules.shops.models import Shop, ShopStatus
+        from app.core.enums import MasterPipelineStage
         from sqlalchemy.orm import selectinload
 
         query = db.query(Shop).options(selectinload(Shop.project_manager)).filter(
@@ -700,9 +703,9 @@ class ShopService:
                     "converted": 0
                 }
                 
-            if shop.status == ShopStatus.CONVERTED:
+            if shop.pipeline_stage == MasterPipelineStage.DELIVERY:
                 pm_stats[pm_name]["converted"] += 1
-            elif shop.status == ShopStatus.MEETING_SET:
+            elif shop.pipeline_stage == MasterPipelineStage.PITCHING:
                 pm_stats[pm_name]["meeting_set"] += 1
             else:
                 pm_stats[pm_name]["in_demo"] += 1

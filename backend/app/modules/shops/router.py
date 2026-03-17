@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker
 from app.modules.users.models import User, UserRole
-from app.modules.shops.schemas import ShopCreate, ShopRead, ShopUpdate, ShopStatus, AssignPMRequest
+from app.modules.shops.schemas import ShopCreate, ShopRead, ShopUpdate, AssignPMRequest
+from app.core.enums import MasterPipelineStage
 from app.modules.shops.service import ShopService
 from app.modules.clients.schemas import ClientRead
 
@@ -85,11 +86,11 @@ def read_shops(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    status: Optional[ShopStatus] = None,
+    pipeline_stage: Optional[MasterPipelineStage] = None,
     owner_id: Optional[int] = None,
     current_user: User = Depends(staff_checker)
 ) -> Any:
-    return ShopService.list_shops(db, current_user, skip, limit, status, owner_id)
+    return ShopService.list_shops(db, current_user, skip, limit, pipeline_stage, owner_id)
 
 @router.get("/suggest-pm")
 def suggest_pm(

@@ -4,11 +4,12 @@ from sqlalchemy import func, extract
 from datetime import datetime, timedelta
 import calendar
 from app.modules.clients.models import Client
-from app.modules.issues.models import Issue, IssueStatus, IssueSeverity
+from app.modules.issues.models import Issue, IssueSeverity
 from app.modules.visits.models import Visit, VisitStatus
 from app.modules.users.models import User
-from app.modules.projects.models import Project, ProjectStatus
+from app.modules.projects.models import Project
 from app.modules.shops.models import Shop
+from app.core.enums import GlobalTaskStatus
 from app.modules.payments.models import Payment, PaymentStatus
 from app.modules.salary.models import SalarySlip
 from app.modules.incentives.models import IncentiveSlip
@@ -86,7 +87,7 @@ class ReportService:
             clients_mom_pct = get_mom_pct(c_curr, c_prev)
 
             # Ongoing Projects
-            project_query = db.query(func.count(Project.id)).filter(Project.status == ProjectStatus.IN_PROGRESS)
+            project_query = db.query(func.count(Project.id)).filter(Project.status == GlobalTaskStatus.IN_PROGRESS)
             # Projects are linked to clients, clients to owners/areas
             if area_id or user_id:
                 project_query = project_query.join(Client, Project.client_id == Client.id)
@@ -115,7 +116,7 @@ class ReportService:
             revenue_prev = rev_prev_q.scalar() or 0.0
             revenue_mom_pct = get_mom_pct(revenue_mtd, revenue_prev)
 
-            open_issues_query = db.query(func.count(Issue.id)).filter(Issue.status.in_([IssueStatus.PENDING]))
+            open_issues_query = db.query(func.count(Issue.id)).filter(Issue.status.in_([GlobalTaskStatus.OPEN]))
             open_issues_query = apply_filters(open_issues_query, Issue, 'created_at', 'assigned_user_id')
             open_issues = open_issues_query.scalar() or 0
 
@@ -282,7 +283,7 @@ class ReportService:
 
             open_issues = db.query(func.count(Issue.id)).filter(
                 Issue.assigned_to_id == u.id,
-                Issue.status.notin_([IssueStatus.SOLVED, IssueStatus.RESOLVED, IssueStatus.COMPLETED, IssueStatus.CANCELLED])
+                Issue.status.notin_([GlobalTaskStatus.RESOLVED, GlobalTaskStatus.CANCELLED])
             ).scalar() or 0
             
             performance.append({

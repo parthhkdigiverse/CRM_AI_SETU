@@ -2,13 +2,8 @@
 from typing import Optional
 from pydantic import BaseModel
 from datetime import datetime
-from enum import Enum
+from app.core.enums import MasterPipelineStage
 
-class ShopStatus(str, Enum):
-    NEW = "NEW"
-    CONTACTED = "CONTACTED"
-    MEETING_SET = "MEETING_SET"
-    CONVERTED = "CONVERTED"
 
 class ShopBase(BaseModel):
     name: str
@@ -20,11 +15,13 @@ class ShopBase(BaseModel):
     project_type: Optional[str] = None
     requirements: Optional[str] = None
     area_id: Optional[int] = None
-    status: Optional[ShopStatus] = ShopStatus.NEW
+    pipeline_stage: Optional[MasterPipelineStage] = MasterPipelineStage.LEAD
     owner_id: Optional[int] = None
+
 
 class ShopCreate(ShopBase):
     pass
+
 
 class ShopUpdate(BaseModel):
     name: Optional[str] = None
@@ -36,19 +33,22 @@ class ShopUpdate(BaseModel):
     project_type: Optional[str] = None
     requirements: Optional[str] = None
     area_id: Optional[int] = None
-    status: Optional[ShopStatus] = None
+    pipeline_stage: Optional[MasterPipelineStage] = None
     owner_id: Optional[int] = None
     project_manager_id: Optional[int] = None
     demo_stage: Optional[int] = None
     demo_scheduled_at: Optional[datetime] = None
 
+
 class AssignPMRequest(BaseModel):
     pm_id: int
+
 
 class AssignedUser(BaseModel):
     id: int
     name: Optional[str] = None
     role: Optional[str] = None
+
 
 class ShopRead(ShopBase):
     id: int

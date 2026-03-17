@@ -2,12 +2,14 @@
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel
-from app.modules.issues.models import IssueStatus, IssueSeverity
+from app.core.enums import GlobalTaskStatus
+from app.modules.issues.models import IssueSeverity
+
 
 class IssueBase(BaseModel):
     title: str
     description: Optional[str] = None
-    status: IssueStatus = IssueStatus.PENDING
+    status: GlobalTaskStatus = GlobalTaskStatus.OPEN
     severity: IssueSeverity = IssueSeverity.MEDIUM
     client_id: int
     project_id: Optional[int] = None
@@ -15,24 +17,28 @@ class IssueBase(BaseModel):
     remarks: Optional[str] = None
     opened_at: Optional[datetime] = None
 
+
 class IssueCreate(BaseModel):
     title: str
     description: Optional[str] = None
-    status: IssueStatus = IssueStatus.PENDING
+    status: GlobalTaskStatus = GlobalTaskStatus.OPEN
     severity: IssueSeverity = IssueSeverity.MEDIUM
     project_id: Optional[int] = None
     assigned_to_id: Optional[int] = None
     remarks: Optional[str] = None
 
+
 class IssueUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    status: Optional[IssueStatus] = None
+    status: Optional[GlobalTaskStatus] = None
     severity: Optional[IssueSeverity] = None
     remarks: Optional[str] = None
 
+
 class IssueAssign(BaseModel):
     assigned_to_id: int
+
 
 class IssueRead(IssueBase):
     id: int
