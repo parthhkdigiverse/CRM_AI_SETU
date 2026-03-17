@@ -1,5 +1,5 @@
 # backend/app/modules/shops/router.py
-from typing import List, Any, Dict, Optional
+from typing import List, Any, Dict, Optional, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, status, Query, HTTPException
 from pydantic import BaseModel
@@ -85,8 +85,8 @@ def read_shops(
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    status: Optional[ShopStatus] = None,
-    owner_id: Optional[int] = None,
+    status: Optional[Optional[ShopStatus]] = None,
+    owner_id: Optional[Optional[int]] = None,
     current_user: User = Depends(staff_checker)
 ) -> Any:
     return ShopService.list_shops(db, current_user, skip, limit, status, owner_id)
@@ -100,6 +100,16 @@ def suggest_pm(
     Suggest a Project Manager with the lowest workload.
     """
     return ShopService.suggest_least_busy_pm(db, current_user)
+
+@router.get("/analytics/pm-pipeline")
+def read_pm_pipeline_analytics(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_checker)
+) -> Any:
+    """
+    Get pipeline status counts grouped by PM.
+    """
+    return ShopService.get_pm_pipeline_analytics(db)
 
 @router.get("/{shop_id}", response_model=ShopRead)
 def read_shop(
@@ -258,13 +268,3 @@ def read_accepted_leads_history(
     Get history of accepted leads. Scoped by role.
     """
     return ShopService.get_accepted_leads(db, current_user)
-
-@router.get("/analytics/pm-pipeline")
-def read_pm_pipeline_analytics(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(staff_checker)
-) -> Any:
-    """
-    Get pipeline status counts grouped by PM.
-    """
-    return ShopService.get_pm_pipeline_analytics(db)

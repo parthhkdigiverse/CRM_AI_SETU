@@ -215,6 +215,14 @@ class ApiClient {
         return this.request(`/attendance/summary${query}`);
     }
 
+    static async getAttendanceSettings() {
+        return this.request('/attendance/settings');
+    }
+
+    static async updateAttendanceSettings(data) {
+        return this.request('/attendance/settings', { method: 'PUT', body: data });
+    }
+
     // ─── Clients ─────────────────────────────────────────────
     static async getClients(params = '') {
         return this.request(`/clients/${params}`);

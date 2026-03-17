@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- frontend/template/timetable.html -->
 <html lang="en">
 
 <head>
@@ -1119,10 +1118,6 @@
             const defaultInitials = (ev.user || '?').substring(0, 2).toUpperCase();
             const baseUser = USERS[ev.user] || { color: '#6b7280', bg: 'rgba(107,114,128,0.13)', initials: defaultInitials };
 
-            if (ev.event_type === 'DEMO') {
-                return { color: '#4f46e5', bg: '#e0e7ff', initials: baseUser.initials };
-            }
-
             // Priority for Meetings or if status is explicitly actionable (Done/Cancelled)
             if (ev.event_type === 'MEETING' || status === 'COMPLETED' || status === 'CANCELLED' || status === 'DONE' || status === 'CANCEL') {
                 if (STATUS_COLORS[status]) {
@@ -1169,23 +1164,7 @@
             try {
                 const data = await ApiClient.getTimetable(startStr, endStr);
                 const evts = data.events || [];
-                evts.forEach(e => { 
-                    e._uid = e.event_type + '_' + e.id; 
-                    
-                    // Support generic events (like DEMOs) returning ISO strings instead of decomposed times
-                    if (e.start && !e.date) {
-                        const sDt = new Date(e.start);
-                        e.date = dStr(sDt);
-                        e.sh = sDt.getHours();
-                        e.sm = sDt.getMinutes();
-                    }
-                    if (e.end && e.eh == null) {
-                        const eDt = new Date(e.end);
-                        e.eh = eDt.getHours();
-                        e.em = eDt.getMinutes();
-                    }
-                    if (!e.user) e.user = 'System';
-                });
+                evts.forEach(e => { e._uid = e.event_type + '_' + e.id; });
                 return evts;
             } catch (error) {
                 console.error("Failed to load timetable events:", error);
@@ -1326,9 +1305,6 @@
                     </label>
                     <label class="check-item">
                         <input type="checkbox" ${selectedCalendars.has('Tasks') ? 'checked' : ''} onchange="toggleCalendar('Tasks', this.checked)" class="accent-checkbox" style="--c:#8b5cf6"> Tasks
-                    </label>
-                    <label class="check-item">
-                        <input type="checkbox" ${selectedCalendars.has('Demos') ? 'checked' : ''} onchange="toggleCalendar('Demos', this.checked)" class="accent-checkbox" style="--c:#4f46e5"> Demos
                     </label>
                 </div>
             </div>`;
@@ -1505,9 +1481,6 @@
             const todayStr = dStr(today);
 
             const filteredEvents = events.filter(ev => {
-                if (ev.event_type === 'DEMO') {
-                    return selectedCalendars.has('Demos'); 
-                }
                 const user = ev.user || ev.assignee_name;
                 if (!user) return true;
                 return selectedCalendars.has(user);
@@ -2027,54 +2000,8 @@
             const ev = events.find(e => e._uid === eventUid);
             if (!ev) return;
 
-            if (ev.event_type === 'DEMO' || ev.event_type === 'VISIT' || ev.event_type === 'MEETING') {
-                document.getElementById('view-title').innerText = ev.title;
-                document.getElementById('view-time').innerText = `${fmtH(ev.sh, ev.sm)} – ${fmtH(ev.eh, ev.em)}`;
-                document.getElementById('view-date').innerText = new Date(ev.date).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                document.getElementById('view-loc').innerText = ev.loc || 'No location specified';
-
-                if (ev.description) {
-                    document.getElementById('view-desc').innerText = ev.description;
-                    document.getElementById('view-desc-label').innerText = ev.event_type === 'DEMO' ? 'Contact Details' : 'Notes';
-                    document.getElementById('view-desc-container').style.display = 'flex';
-                } else {
-                    document.getElementById('view-desc-container').style.display = 'none';
-                }
-
-                const actionBtn = document.getElementById('view-action-btn');
-                if (ev.event_type === 'DEMO') {
-                    actionBtn.innerHTML = '<i class="bi bi-arrow-up-right-square me-2"></i>Reschedule / Manage Demo';
-                    actionBtn.onclick = () => window.location.href = 'projects_demo.html';
-                    actionBtn.style.display = 'block';
-
-                    // Authorization Check: Only show Meet link to the assigned PM
-                    const currUserName = currentUser ? (currentUser.name || currentUser.email) : '';
-                    const isOwner = (ev.user === currUserName);
-
-                    if (ev.meet_url && isOwner) {
-                        const meetBtn = document.createElement('button');
-                        meetBtn.id = 'view-meet-btn';
-                        meetBtn.className = "btn btn-success w-100 fw-bold rounded-pill mt-2";
-                        meetBtn.innerHTML = '<i class="bi bi-camera-video me-2"></i>Join Google Meet';
-                        meetBtn.onclick = () => window.open(ev.meet_url, '_blank');
-
-                        // Ensure we don't stack duplicate buttons if modal is opened multiple times
-                        const existingBtn = document.getElementById('view-meet-btn');
-                        if (existingBtn) existingBtn.remove();
-
-                        document.querySelector('#viewEventModal .modal-footer').appendChild(meetBtn);
-                    } else {
-                        // Ensure button is hidden for non-owners opening other peoples' demos
-                        const existingBtn = document.getElementById('view-meet-btn');
-                        if (existingBtn) existingBtn.remove();
-                    }
-                } else {
-                    actionBtn.style.display = 'none'; // Hide action button for generic visits
-                    const existingBtn = document.getElementById('view-meet-btn');
-                    if (existingBtn) existingBtn.remove();
-                }
-
-                new bootstrap.Modal(document.getElementById('viewEventModal')).show();
+            if (ev.event_type === 'VISIT' || ev.event_type === 'MEETING') {
+                showToastMsg(`Cannot edit synced ${ev.event_type.toLowerCase()}s from the calendar.`);
                 return;
             }
 
@@ -2458,13 +2385,6 @@
                     if (currUserName) selectedCalendars.add(currUserName);
                     selectedCalendars.add('Tasks');
                     selectedCalendars.add('Birthdays');
-                    selectedCalendars.add('Demos');
-                    saveSelectedCalendars();
-                }
-
-                if (!localStorage.getItem('demo_toggle_migrated')) {
-                    selectedCalendars.add('Demos');
-                    localStorage.setItem('demo_toggle_migrated', '1');
                     saveSelectedCalendars();
                 }
 
@@ -2487,45 +2407,6 @@
 
         initApp();
     </script>
-
-<!-- Read-Only View Modal for synced events (DEMO, VISIT, MEETING) -->
-<div class="modal fade" id="viewEventModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
-        <div class="modal-content shadow" style="border-radius:20px; border:none;">
-            <div class="modal-header border-0 pb-0 px-4 pt-4">
-                <h5 class="modal-title fw-bold text-dark" id="view-title"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body px-4 pb-3 pt-3">
-                <div class="d-flex align-items-start mb-3">
-                    <i class="bi bi-clock text-primary me-3 mt-1 fs-5"></i>
-                    <div>
-                        <div class="fw-semibold text-dark" id="view-time"></div>
-                        <div class="text-muted small" id="view-date"></div>
-                    </div>
-                </div>
-                <div class="d-flex align-items-start mb-3">
-                    <i class="bi bi-geo-alt text-primary me-3 mt-1 fs-5"></i>
-                    <div>
-                        <div class="fw-semibold text-dark">Location</div>
-                        <div class="text-muted small" id="view-loc"></div>
-                    </div>
-                </div>
-                <div class="d-flex align-items-start mb-3" id="view-desc-container">
-                    <i class="bi bi-person-badge text-primary me-3 mt-1 fs-5"></i>
-                    <div>
-                        <div class="fw-semibold text-dark" id="view-desc-label">Details</div>
-                        <div class="text-muted small" id="view-desc"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer border-0 px-4 pb-4 pt-0">
-                <button class="btn btn-primary w-100 fw-bold rounded-pill" id="view-action-btn" style="display:none;"></button>
-            </div>
-        </div>
-    </div>
-</div>
-
 </body>
 
 </html>
