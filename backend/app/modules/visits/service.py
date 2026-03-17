@@ -31,11 +31,11 @@ class VisitService:
             from sqlalchemy import or_
             from app.modules.users.models import UserRole
 
-            query = self.db.query(Visit).join(ShopModel, ShopModel.id == Visit.shop_id).options(
+            query = self.db.query(Visit).outerjoin(ShopModel, ShopModel.id == Visit.shop_id).options(
                 joinedload(Visit.shop).joinedload(ShopModel.area),
                 joinedload(Visit.shop).joinedload(ShopModel.project_manager),
                 joinedload(Visit.user)
-            ).filter(Visit.is_deleted == False, ShopModel.is_deleted == False)
+            ).filter(Visit.is_deleted == False)
             if shop_id:
                 query = query.filter(Visit.shop_id == shop_id)
             
@@ -45,20 +45,32 @@ class VisitService:
             # Admins see everything; staff see visits they authored OR
             # visits logged on any shop they own (directly or via assignment)
             if current_user and current_user.role not in [UserRole.ADMIN]:
-                query = (
-                    query
-                    .filter(
-                        or_(
-                            Visit.user_id == current_user.id,
-                            ShopModel.owner_id == current_user.id,
-                            ShopModel.assigned_owners_list.any(id=current_user.id)
+                try:
+                    query = (
+                        query
+                        .filter(
+                            or_(
+                                Visit.user_id == current_user.id,
+                                ShopModel.owner_id == current_user.id,
+                                ShopModel.assigned_owners_list.any(id=current_user.id)
+                            )
                         )
                     )
-                )
+                except Exception as scope_err:
+                    # Fallback: if the assigned_owners_list relationship fails,
+                    # at least scope to visits the user authored or owns
+                    print(f"[visits] scope filter warning: {scope_err}")
+                    query = query.filter(
+                        or_(
+                            Visit.user_id == current_user.id,
+                            ShopModel.owner_id == current_user.id
+                        )
+                    )
 
             return query.order_by(Visit.visit_date.desc()).offset(skip).limit(limit).all()
         except Exception as e:
             print(f"Error fetching visits: {e}")
+            import traceback; traceback.print_exc()
             return []
 
     async def create_visit(self, visit_in: VisitCreate, current_user: User, request: Request, photo: UploadFile = None):

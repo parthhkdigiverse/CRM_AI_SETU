@@ -1,6 +1,6 @@
 # backend/app/modules/visits/models.py
 import enum
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum, Text, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 
@@ -34,6 +34,7 @@ class Visit(Base):
 
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    is_deleted = Column(Boolean, default=False)
 
     shop = relationship("app.modules.shops.models.Shop", backref="visits")
     user = relationship("app.modules.users.models.User", backref="visits")
