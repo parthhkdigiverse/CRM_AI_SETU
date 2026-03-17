@@ -1190,11 +1190,12 @@ class BillingService:
 
         # Auto-convert linked shop to CONVERTED once invoice is dispatched
         if bill.shop_id:
-            from app.modules.shops.models import Shop, ShopStatus
-            from app.modules.projects.models import Project, ProjectStatus
+            from app.modules.shops.models import Shop
+            from app.modules.projects.models import Project
+            from app.core.enums import GlobalTaskStatus
             shop = self.db.query(Shop).filter(Shop.id == bill.shop_id).first()
-            if shop and shop.status != ShopStatus.CONVERTED:
-                shop.status = ShopStatus.CONVERTED
+            if shop and shop.status != GlobalTaskStatus.CONVERTED:
+                shop.status = GlobalTaskStatus.CONVERTED
                 self.db.commit()
 
                 # Auto-create a Project record for this newly converted shop
@@ -1209,7 +1210,7 @@ class BillingService:
                         description=f"Project auto-created on deal close. Invoice: {bill.invoice_number}.",
                         client_id=bill.client_id,
                         pm_id=resolved_pm_id,
-                        status=ProjectStatus.IN_PROGRESS,
+                        status=GlobalTaskStatus.IN_PROGRESS,
                     )
                     self.db.add(new_project)
                     self.db.commit()

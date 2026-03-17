@@ -1414,8 +1414,8 @@
         async function loadOpenIssues() {
             const el = document.getElementById('open-issues-list');
             try {
-                const issues = await apiGet('/issues/?status=PENDING,SOLVED,RESOLVED&limit=20');
-                const filtered = issues.filter(i => ['PENDING', 'SOLVED', 'RESOLVED'].includes(i.status)).slice(0, 5);
+                const issues = await apiGet('/issues/?status=OPEN,RESOLVED&limit=20');
+                const filtered = issues.filter(i => ['OPEN', 'RESOLVED'].includes(i.status)).slice(0, 5);
                 if (!filtered.length) {
                     el.innerHTML = `<div class="empty-state"><i class="bi bi-check-circle text-success"></i><p class="text-success fw-semibold">No open issues — great work!</p></div>`;
                     return;

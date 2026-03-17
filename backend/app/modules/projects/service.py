@@ -22,12 +22,13 @@ class ProjectService:
         projects = query.order_by(Project.created_at.desc()).offset(skip).limit(limit).all()
         
         # Calculate progress for each project
-        from app.modules.issues.models import Issue, IssueStatus
+        from app.modules.issues.models import Issue
+        from app.core.enums import GlobalTaskStatus
         made_changes = False
         
         for p in projects:
             p.total_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.is_deleted == False).count()
-            p.resolved_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.status == IssueStatus.SOLVED, Issue.is_deleted == False).count()
+            p.resolved_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.status == GlobalTaskStatus.RESOLVED, Issue.is_deleted == False).count()
             p.progress_percentage = (p.resolved_issues / p.total_issues * 100) if p.total_issues > 0 else 0.0
             
             # --- Silent Self-Healing: Sync Project PM with Client PM ---
@@ -54,9 +55,10 @@ class ProjectService:
         query = self.db.query(Project).filter(Project.id == project_id, Project.is_deleted == False)
         project = query.first()
         if project:
-            from app.modules.issues.models import Issue, IssueStatus
+            from app.modules.issues.models import Issue
+            from app.core.enums import GlobalTaskStatus
             project.total_issues = self.db.query(Issue).filter(Issue.project_id == project_id, Issue.is_deleted == False).count()
-            project.resolved_issues = self.db.query(Issue).filter(Issue.project_id == project_id, Issue.status == IssueStatus.RESOLVED, Issue.is_deleted == False).count()
+            project.resolved_issues = self.db.query(Issue).filter(Issue.project_id == project_id, Issue.status == GlobalTaskStatus.RESOLVED, Issue.is_deleted == False).count()
             project.progress_percentage = (project.resolved_issues / project.total_issues * 100) if project.total_issues > 0 else 0.0
             
             # Populate names and contact info

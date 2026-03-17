@@ -319,37 +319,37 @@
                         <div class="kanban-column column-new">
                             <div class="kanban-header">
                                 <div class="column-dot"></div>
-                                <span class="kanban-title">New</span>
-                                <span class="kanban-count" id="count-NEW">0</span>
+                                <span class="kanban-title">Lead</span>
+                                <span class="kanban-count" id="count-LEAD">0</span>
                             </div>
-                            <div class="kanban-cards" id="cards-NEW"></div>
+                            <div class="kanban-cards" id="cards-LEAD"></div>
                         </div>
 
                         <div class="kanban-column column-contacted">
                             <div class="kanban-header">
                                 <div class="column-dot"></div>
-                                <span class="kanban-title">Contacted</span>
-                                <span class="kanban-count" id="count-CONTACTED">0</span>
+                                <span class="kanban-title">Pitching</span>
+                                <span class="kanban-count" id="count-PITCHING">0</span>
                             </div>
-                            <div class="kanban-cards" id="cards-CONTACTED"></div>
+                            <div class="kanban-cards" id="cards-PITCHING"></div>
                         </div>
 
                         <div class="kanban-column column-meeting">
                             <div class="kanban-header">
                                 <div class="column-dot"></div>
-                                <span class="kanban-title">Meeting Set</span>
-                                <span class="kanban-count" id="count-MEETING_SET">0</span>
+                                <span class="kanban-title">Negotiation</span>
+                                <span class="kanban-count" id="count-NEGOTIATION">0</span>
                             </div>
-                            <div class="kanban-cards" id="cards-MEETING_SET"></div>
+                            <div class="kanban-cards" id="cards-NEGOTIATION"></div>
                         </div>
 
                         <div class="kanban-column column-converted">
                             <div class="kanban-header">
                                 <div class="column-dot"></div>
-                                <span class="kanban-title">Converted</span>
-                                <span class="kanban-count" id="count-CONVERTED">0</span>
+                                <span class="kanban-title">Delivery</span>
+                                <span class="kanban-count" id="count-DELIVERY">0</span>
                             </div>
-                            <div class="kanban-cards" id="cards-CONVERTED"></div>
+                            <div class="kanban-cards" id="cards-DELIVERY"></div>
                         </div>
                     </div>
                 </div>
@@ -489,9 +489,9 @@
 
         const getNextActionText = (status) => {
             switch(status) {
-                case 'NEW': return 'Visit Shop';
-                case 'CONTACTED': return 'Assign PM & Schedule Demo';
-                case 'MEETING_SET': return 'Close Deal';
+                case 'LEAD': return 'Visit Shop';
+                case 'PITCHING': return 'Assign PM & Schedule Demo';
+                case 'NEGOTIATION': return 'Close Deal';
                 default: return 'View Details';
             }
         };
@@ -524,7 +524,7 @@
                 const kanbanData = await window.ApiClient.request(`/shops/kanban?${params.toString()}`);
                 let totalCount = 0;
 
-                ['NEW', 'CONTACTED', 'MEETING_SET', 'CONVERTED'].forEach(status => {
+                ['LEAD', 'PITCHING', 'NEGOTIATION', 'DELIVERY'].forEach(status => {
                     const container = document.getElementById(`cards-${status}`);
                     const countEl = document.getElementById(`count-${status}`);
                     const leads = kanbanData[status] || [];
@@ -540,7 +540,7 @@
                         // Stale detection (3 days)
                         const updatedAt = l.updated_at ? new Date(l.updated_at) : null;
                         const daysSince = updatedAt ? Math.floor((Date.now() - updatedAt) / 86400000) : null;
-                        const isStale = daysSince !== null && daysSince >= 3 && status !== 'CONVERTED';
+                        const isStale = daysSince !== null && daysSince >= 3 && status !== 'DELIVERY';
 
                         return `
                             <div class="lead-card ${isStale ? 'stale' : ''}" onclick="openDetail(${l.id})">
@@ -594,7 +594,7 @@
                                         <i class="bi bi-person-gear me-1"></i>PM: ${l.project_manager_name}
                                     </span>
                                 </div>` : ''}
-                                ${status === 'MEETING_SET' ? `
+                                ${status === 'NEGOTIATION' ? `
                                 <div class="mt-2">
                                     <button class="btn btn-sm btn-success w-100 fw-bold"
                                         onclick="event.stopPropagation(); window.location.href='billing.html?close_shop_id=${l.id}'">
@@ -650,10 +650,11 @@
                 const assigneeName = (l.assigned_to_user && l.assigned_to_user.name) || (l.assigned_to_name) || l.owner_name || 'Unassigned';
                 
                 let badgeClass = 'bg-secondary';
-                if (l.status === 'NEW') badgeClass = 'bg-primary';
-                else if (l.status === 'CONTACTED') badgeClass = 'bg-warning text-dark';
-                else if (l.status === 'MEETING_SET') badgeClass = 'bg-info text-dark';
-                else if (l.status === 'CONVERTED') badgeClass = 'bg-success';
+                if (l.pipeline_stage === 'LEAD') badgeClass = 'bg-primary';
+                else if (l.pipeline_stage === 'PITCHING') badgeClass = 'bg-warning text-dark';
+                else if (l.pipeline_stage === 'NEGOTIATION') badgeClass = 'bg-info text-dark';
+                else if (l.pipeline_stage === 'DELIVERY') badgeClass = 'bg-success';
+                else if (l.pipeline_stage === 'MAINTENANCE') badgeClass = 'bg-secondary';
 
                 html += `
                     <tr style="cursor: pointer;" onclick="openDetail(${l.id})">
@@ -706,16 +707,16 @@
                         </td>
                         <td class="px-3 py-3">
                             <span class="badge rounded-pill ${badgeClass}" style="font-size: 0.7rem; padding: 4px 10px;">
-                                ${(l.status || 'NEW').replace(/_/g, ' ')}
+                                ${(l.pipeline_stage || 'LEAD').replace(/_/g, ' ')}
                             </span>
                         </td>
                         <td class="px-4 py-3 text-end">
                             <button class="btn btn-sm btn-light border border-2 text-primary fw-bold rounded-pill px-3 shadow-sm" 
                                     onclick="event.stopPropagation(); window.openDetail(${l.id});"
                                     style="font-size: 0.75rem; transition: all 0.2s;">
-                                ${l.status === 'CONTACTED' && l.project_manager_id
+                                ${l.pipeline_stage === 'PITCHING' && l.project_manager_id
                                     ? 'Re-assign PM'
-                                    : getNextActionText(l.status)} <i class="bi bi-arrow-right-short ms-1" style="font-size: 0.9rem;"></i>
+                                    : getNextActionText(l.pipeline_stage)} <i class="bi bi-arrow-right-short ms-1" style="font-size: 0.9rem;"></i>
                             </button>
                         </td>
                     </tr>
@@ -730,8 +731,8 @@
             if (!l) return;
 
             // Define pipeline logic based on shop status
-            const pipelineStatuses = ['NEW', 'CONTACTED', 'MEETING_SET', 'CONVERTED'];
-            const currentStatusIndex = pipelineStatuses.indexOf(l.status || 'NEW');
+            const pipelineStatuses = ['LEAD', 'PITCHING', 'NEGOTIATION', 'DELIVERY'];
+            const currentStatusIndex = pipelineStatuses.indexOf(l.pipeline_stage || 'LEAD');
             const steps = [
                 { label: 'Assign the Shop', index: 0 },
                 { label: 'Visit & Explain the Product', index: 1 },
@@ -778,13 +779,13 @@
             timelineHtml += `</div></div>`;
 
             const pmBtnLabel = l.project_manager_id ? 'Re-assign PM' : 'Assign PM &amp; Schedule Demo';
-            const pmAssignBtnHtml = (l.status === 'CONTACTED') ? `
+            const pmAssignBtnHtml = (l.pipeline_stage === 'PITCHING') ? `
                 <button class="btn btn-warning w-100 mb-2 d-flex align-items-center gap-2 justify-content-center"
                     onclick="openAssignPmModal(${l.id})">
                     <i class="bi bi-person-badge"></i> ${pmBtnLabel}
                 </button>` : '';
 
-            const closeDealBtnHtml = (l.status === 'MEETING_SET') ? `
+            const closeDealBtnHtml = (l.pipeline_stage === 'NEGOTIATION') ? `
                 <button class="btn btn-success w-100 mb-2 d-flex align-items-center gap-2 justify-content-center"
                     onclick="window.location.href='billing.html?close_shop_id=${l.id}'">
                     <i class="bi bi-check2-circle"></i> Close Deal &#10140;

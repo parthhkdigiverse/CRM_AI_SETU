@@ -69,16 +69,15 @@ class ShopService:
             selectinload(Shop.owner),
             selectinload(Shop.area),
             selectinload(Shop.assigned_owners_list),
-            selectinload(Shop.archived_by),
             selectinload(Shop.creator),
             selectinload(Shop.project_manager)
-        ).filter(Shop.is_archived == False)
+        ).filter(Shop.is_deleted == False)
         
         if not policy or policy.value == "SOFT":
             query = query.filter(Shop.is_deleted == False)
         
-        if status:
-            query = query.filter(Shop.status == status)
+        if pipeline_stage:
+            query = query.filter(Shop.pipeline_stage == pipeline_stage)
             
         # If Admin, return all shops
         if current_user.role != "ADMIN":
@@ -96,7 +95,7 @@ class ShopService:
             shop_data = shop.__dict__.copy()
             shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
             shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
-            shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
+            shop_data["archived_by_name"] = None
             shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
             shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
             shop_data.pop("_sa_instance_state", None)
@@ -120,10 +119,9 @@ class ShopService:
             selectinload(Shop.owner),
             selectinload(Shop.area),
             selectinload(Shop.assigned_owners_list),
-            selectinload(Shop.archived_by),
             selectinload(Shop.visits).selectinload(VisitModel.user),  # for last_visitor_name
             selectinload(Shop.project_manager)
-        ).filter(Shop.is_archived == False)
+        ).filter(Shop.is_deleted == False)
         
         if not policy or policy.value == "SOFT":
             query = query.filter(Shop.is_deleted == False)
@@ -136,17 +134,18 @@ class ShopService:
         results = query.all()
         
         kanban = {
-            "NEW": [],
-            "CONTACTED": [],
-            "MEETING_SET": [],
-            "CONVERTED": [],
+            "LEAD": [],
+            "PITCHING": [],
+            "NEGOTIATION": [],
+            "DELIVERY": [],
+            "MAINTENANCE": []
         }
         
         for shop in results:
             shop_data = shop.__dict__.copy()
             shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
             shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
-            shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
+            shop_data["archived_by_name"] = None
             shop_data["last_visitor_name"] = shop.last_visitor_name  # @property — must be copied explicitly
             shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
 
@@ -164,9 +163,9 @@ class ShopService:
                 for u in getattr(shop, 'assigned_owners_list', [])
             ]
             
-            status_val = str(shop.status.value) if hasattr(shop.status, "value") else str(shop.status)
-            if status_val in kanban:
-                kanban[status_val].append(shop_data)
+            stage_val = str(shop.pipeline_stage.value) if hasattr(shop.pipeline_stage, "value") else str(shop.pipeline_stage)
+            if stage_val in kanban:
+                kanban[stage_val].append(shop_data)
                 
         return kanban
 
@@ -229,8 +228,7 @@ class ShopService:
             if not any(u.id == current_user.id for u in db_shop.assigned_owners_list):
                  raise HTTPException(status_code=403, detail="Not authorized to archive this shop")
 
-        db_shop.is_archived = True
-        db_shop.archived_by_id = current_user.id
+        db_shop.is_deleted = True
         db.commit()
         return {"detail": f"Shop \"{db_shop.name}\" has been archived"}
 
@@ -243,13 +241,12 @@ class ShopService:
             selectinload(Shop.owner),
             selectinload(Shop.area),
             selectinload(Shop.assigned_owners_list),
-            selectinload(Shop.archived_by),
             selectinload(Shop.creator)
-        ).filter(Shop.is_archived == True)
+        ).filter(Shop.is_deleted == True)
 
         if current_user.role != "ADMIN":
             query = query.filter(
-                (Shop.archived_by_id == current_user.id) | (Shop.assigned_owners_list.any(User.id == current_user.id))
+                Shop.assigned_owners_list.any(User.id == current_user.id)
             )
 
         results = query.all()
@@ -259,7 +256,7 @@ class ShopService:
             shop_data = shop.__dict__.copy()
             shop_data["owner_name"] = shop.owner.name if shop.owner else None
             shop_data["area_name"] = shop.area.name if shop.area else None
-            shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
+            shop_data["archived_by_name"] = None
             shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
             shop_data.pop("_sa_instance_state", None)
             shop_data["assigned_users"] = [
@@ -272,15 +269,16 @@ class ShopService:
     # ── Unarchive ──
     @staticmethod
     def unarchive_shop(db: Session, shop_id: int, current_user: User):
-        db_shop = ShopService.get_shop(db, shop_id)
+        db_shop = db.query(Shop).filter(Shop.id == shop_id).first()
+        if not db_shop:
+            raise HTTPException(status_code=404, detail="Shop not found")
 
         # Check permissions
         if current_user.role != "ADMIN":
-            if db_shop.archived_by_id != current_user.id and not any(u.id == current_user.id for u in db_shop.assigned_owners_list):
+            if not any(u.id == current_user.id for u in getattr(db_shop, 'assigned_owners_list', [])):
                  raise HTTPException(status_code=403, detail="Not authorized to unarchive this shop")
 
-        db_shop.is_archived = False
-        db_shop.archived_by_id = None
+        db_shop.is_deleted = False
         db.commit()
         db.refresh(db_shop)
         return db_shop
@@ -340,7 +338,7 @@ class ShopService:
         shop_data = shop.__dict__.copy()
         shop_data["owner_name"] = shop.owner.name if getattr(shop, 'owner', None) else None
         shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
-        shop_data["archived_by_name"] = shop.archived_by.name if getattr(shop, 'archived_by', None) else None
+        shop_data["archived_by_name"] = None
         shop_data.pop("_sa_instance_state", None)
         
         shop_data["assigned_users"] = [
@@ -401,7 +399,7 @@ class ShopService:
     @staticmethod
     def assign_pm(db: Session, shop_id: int, pm_id: int, current_user: User):
         from app.modules.users.models import UserRole
-        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_deleted == False).first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
 
@@ -437,7 +435,7 @@ class ShopService:
         from app.core.enums import GlobalTaskStatus
         import random
         
-        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_deleted == False).first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
 
@@ -454,7 +452,7 @@ class ShopService:
         for pm in pms:
             active_shops_count = db.query(Shop).filter(
                 Shop.project_manager_id == pm.id,
-                Shop.is_archived == False,
+                Shop.is_deleted == False,
                 Shop.pipeline_stage.in_([MasterPipelineStage.LEAD, MasterPipelineStage.PITCHING])
             ).count()
             
@@ -535,7 +533,7 @@ class ShopService:
     # ── Mark a demo as completed, auto-advance to MEETING_SET on first completion ──
     @staticmethod
     def complete_demo(db: Session, shop_id: int, current_user: User):
-        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_deleted == False).first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
 
@@ -567,7 +565,7 @@ class ShopService:
     # ── Cancel a scheduled demo on the shop ──
     @staticmethod
     def cancel_demo(db: Session, shop_id: int, current_user: User):
-        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_deleted == False).first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
 
@@ -599,7 +597,7 @@ class ShopService:
     # ── Schedule a demo on the shop ──
     @staticmethod
     def schedule_demo(db: Session, shop_id: int, payload, current_user: User):
-        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_archived == False).first()
+        shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_deleted == False).first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
 
@@ -654,7 +652,7 @@ class ShopService:
             selectinload(Shop.creator),
             selectinload(Shop.project_manager)
         ).filter(
-            Shop.is_archived == False,
+            Shop.is_deleted == False,
             Shop.project_manager_id != None
         )
 
@@ -686,7 +684,7 @@ class ShopService:
         from sqlalchemy.orm import selectinload
 
         query = db.query(Shop).options(selectinload(Shop.project_manager)).filter(
-            Shop.is_archived == False,
+            Shop.is_deleted == False,
             Shop.project_manager_id != None
         )
         
