@@ -1,4 +1,3 @@
-from typing import Optional
 # backend/app/modules/projects/service.py
 from typing import Optional
 from sqlalchemy.orm import Session
@@ -28,7 +27,7 @@ class ProjectService:
         
         for p in projects:
             p.total_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.is_deleted == False).count()
-            p.resolved_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.status == IssueStatus.RESOLVED, Issue.is_deleted == False).count()
+            p.resolved_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.status == IssueStatus.SOLVED, Issue.is_deleted == False).count()
             p.progress_percentage = (p.resolved_issues / p.total_issues * 100) if p.total_issues > 0 else 0.0
             
             # --- Silent Self-Healing: Sync Project PM with Client PM ---
@@ -57,7 +56,7 @@ class ProjectService:
         if project:
             from app.modules.issues.models import Issue, IssueStatus
             project.total_issues = self.db.query(Issue).filter(Issue.project_id == project_id, Issue.is_deleted == False).count()
-            project.resolved_issues = self.db.query(Issue).filter(Issue.project_id == project_id, Issue.status == IssueStatus.RESOLVED, Issue.is_deleted == False).count()
+            project.resolved_issues = self.db.query(Issue).filter(Issue.project_id == project_id, Issue.status == IssueStatus.SOLVED, Issue.is_deleted == False).count()
             project.progress_percentage = (project.resolved_issues / project.total_issues * 100) if project.total_issues > 0 else 0.0
             
             # Populate names and contact info

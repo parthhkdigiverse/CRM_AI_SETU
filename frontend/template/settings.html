@@ -1131,11 +1131,11 @@
         <span id="toast-text">Saved!</span>
     </div>
 
-    <script src="../js/utils.js?v=2.3"></script>
-    <script src="../js/api.js?v=2.3"></script>
-    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/utils.js?v=2.5"></script>
+    <script src="../js/api.js?v=2.5"></script>
+    <script src="../js/auth.js?v=2.5"></script>
     <script src="../js/ui_components.js?v=20260312"></script>
-    <script src="../js/app.js?v=2.3"></script>
+    <script src="../js/app.js?v=2.5"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
@@ -1223,11 +1223,24 @@
 
         // ── Scroll nav
         function scrollTo(id, el) {
+            // Remove active class from all sidebar links
             document.querySelectorAll('.settings-nav a').forEach(a => a.classList.remove('active'));
             el.classList.add('active');
-            document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Hide all settings sections
+            document.querySelectorAll('.settings-section').forEach(sec => sec.style.display = 'none');
+
+            // Show the selected section
+            const section = document.getElementById(id);
+            if (section) {
+                section.style.display = 'block';
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
             return false;
         }
+
+
+
 
         // ── Clear all settings
         async function clearAllSettings() {
@@ -1294,7 +1307,7 @@
 
         async function loadAttendanceSettings() {
             try {
-                const settings = await ApiClient.getAttendanceSettings();
+                const settings = await window.ApiClient.getAttendanceSettings();
                 document.getElementById('att-absent-threshold').value = settings.absent_hours_threshold ?? 0;
                 document.getElementById('att-halfday-threshold').value = settings.half_day_hours_threshold ?? 4;
                 document.getElementById('att-saturday').value = (settings.weekly_off_saturday || 'FULL').toUpperCase();
@@ -1320,7 +1333,7 @@
             const holidays = holidayRaw.split(',').map(h => h.trim()).filter(Boolean);
 
             try {
-                await ApiClient.updateAttendanceSettings({
+                await window.ApiClient.updateAttendanceSettings({
                     absent_hours_threshold: absent,
                     half_day_hours_threshold: half,
                     weekly_off_saturday: saturday,
@@ -1839,7 +1852,7 @@
                 // I should add a specific GET/PUT for this in a generic settings router or specific one.
                 // For now, I'll assume a new endpoint /settings/delete-policy or similar.
                 // RE-READING: I added it to AppSetting. I'll add the endpoint to salary router.
-                const res = await apiGet('/salary/delete-policy');
+                const res = await apiGet('/hrm/delete-policy');
                 document.getElementById('global-delete-policy').value = res.policy || 'SOFT';
             } catch (e) {
                 console.warn('Failed to load delete policy');
@@ -1851,7 +1864,7 @@
             const msg = document.getElementById('delete-policy-save-msg');
             if (!confirm(`Are you sure you want to switch to ${policy} delete? This affects all future deletions.`)) return;
             try {
-                await apiPut('/salary/delete-policy', { policy });
+                await apiPut('/hrm/delete-policy', { policy });
                 msg.classList.remove('d-none');
                 setTimeout(() => msg.classList.add('d-none'), 2500);
                 showToast('Global delete policy updated');

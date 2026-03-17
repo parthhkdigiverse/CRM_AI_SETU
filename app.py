@@ -1,7 +1,6 @@
 import uvicorn
 import sys
 import os
-import socket
 import signal
 
 # -- Windows signal blocking -------------------------------------------------
@@ -27,12 +26,12 @@ if os.name == "nt":
 def _sig_debug(sig, frame):
     print(f"[DEBUG] Signal received: {sig}", flush=True)
 
-
 signal.signal(signal.SIGTERM, _sig_debug)
 try:
     signal.signal(signal.SIGBREAK, _sig_debug)  # Windows Ctrl+Break
 except (OSError, AttributeError):
     pass
+
 
 root_dir = os.path.dirname(os.path.abspath(__file__))
 backend_dir = os.path.join(root_dir, "backend")
@@ -44,37 +43,7 @@ if backend_dir not in sys.path:
 
 if __name__ == "__main__":
     host = os.getenv("SRM_HOST", "127.0.0.1")
-    port = 8000
-
-
-    def _port_free(h, p):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(0.3)
-            return s.connect_ex((h, p)) != 0
-
-    if not _port_free(host, port):
-        print(f"[Startup] Port {port} is busy — killing existing process...", flush=True)
-        if os.name == "nt":
-            import subprocess
-            try:
-                out = subprocess.check_output(
-                    f'netstat -ano | findstr ":{port} "',
-                    shell=True
-                ).decode()
-                for line in out.strip().splitlines():
-                    if "LISTENING" in line:
-                        pid = line.strip().split()[-1]
-                        if pid not in ("0", str(os.getpid())):
-                            subprocess.run(f"taskkill /PID {pid} /F", shell=True, capture_output=True)
-                            print(f"[Startup] Killed PID {pid} on port {port}.", flush=True)
-                import time
-                time.sleep(1)  # Wait for port to be released
-            except Exception as e:
-                print(f"[Startup] Could not auto-kill: {e}", flush=True)
-                sys.exit(1)
-        else:
-            print(f"[Startup] Port {port} is busy. Stop the existing process and retry.", flush=True)
-            sys.exit(1)
+    port = int(os.getenv("SRM_PORT", 8000))
 
     print("=" * 50)
     print("  SRM AI SETU")
