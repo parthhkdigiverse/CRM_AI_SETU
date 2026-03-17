@@ -304,8 +304,8 @@
                     <!-- Right Column -->
                     <div class="col-md-7">
                         <!-- Edit Profile -->
-                        <div class="info-card mb-4">
-                            <div class="info-card-title"><i class="bi bi-pencil-square text-primary"></i> Edit Profile
+                        <div class="info-card mb-4 shadow-sm border-0">
+                            <div class="info-card-title text-primary"><i class="bi bi-pencil-square"></i> Edit Profile
                             </div>
                             <form id="edit-profile-form">
                                 <div class="row g-3">
@@ -318,7 +318,7 @@
                                         <label class="form-label-sm">Email Address</label>
                                         <input type="email" id="edit-email"
                                             class="form-control form-control-clean w-100" placeholder="your@email.com"
-                                            disabled style="background:#f8fafc; color:#94a3b8;">
+                                            disabled style="background:#f8fafc; color:#94a3b8; border-style: dashed;">
                                         <div class="text-muted mt-1" style="font-size:0.75rem;"><i
                                                 class="bi bi-info-circle me-1"></i>Email cannot be changed here. Contact
                                             admin.</div>
@@ -332,14 +332,13 @@
                                         <label class="form-label-sm">Department / Designation</label>
                                         <input type="text" id="edit-dept" class="form-control form-control-clean w-100"
                                             placeholder="e.g. Sales, Operations" disabled
-                                            style="background:#f8fafc; color:#94a3b8;">
+                                            style="background:#f8fafc; color:#94a3b8; border-style: dashed;">
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-center gap-3 mt-4">
-                                    <button type="submit" class="btn-save"><i class="bi bi-check2 me-1"></i> Save
-                                        Changes</button>
-                                    <span id="profile-save-msg" class="text-success small d-none"><i
-                                            class="bi bi-check-circle me-1"></i>Saved!</span>
+                                    <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold" style="border-radius: 10px;">
+                                        <i class="bi bi-check2-circle me-2"></i>Save Profile
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -406,11 +405,7 @@
         </div>
     </div>
 
-    <!-- Toast -->
-    <div class="toast-msg" id="toast-msg">
-        <i class="bi bi-check-circle-fill text-success"></i>
-        <span id="toast-text">Done!</span>
-    </div>
+    <!-- Toast Container handled by auth.js -->
 
     <script src="../js/utils.js?v=2.3"></script>
     <script src="../js/api.js?v=2.3"></script>
@@ -426,15 +421,7 @@
         }
         injectTopHeader('Profile');
 
-        // ── Toast helper
-        function showToast(msg, isError = false) {
-            const toast = document.getElementById('toast-msg');
-            const txt = document.getElementById('toast-text');
-            toast.querySelector('i').className = isError ? 'bi bi-x-circle-fill text-danger' : 'bi bi-check-circle-fill text-success';
-            txt.textContent = msg;
-            toast.style.display = 'flex';
-            setTimeout(() => { toast.style.display = 'none'; }, 3000);
-        }
+        // Use global showToast from auth.js
 
         // ── Load profile data
         async function loadProfile() {
@@ -494,48 +481,46 @@
                 ? 'Rs ' + Number(baseSalary || 0).toLocaleString('en-IN')
                 : '—';
 
-            document.getElementById('account-info-rows').innerHTML = `
-                <div class="info-row">
-                    <span class="info-label"><i class="bi bi-person me-2 text-muted"></i>Full Name</span>
-                    <span class="info-value">${name}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label"><i class="bi bi-envelope me-2 text-muted"></i>Email</span>
-                    <span class="info-value">${u?.email || '—'}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label"><i class="bi bi-briefcase me-2 text-muted"></i>Role</span>
-                    <span class="info-value"><span class="role-badge" style="font-size:0.7rem;">${role}</span></span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label"><i class="bi bi-building me-2 text-muted"></i>Department</span>
-                    <span class="info-value">${department || '—'}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label"><i class="bi bi-upc-scan me-2 text-muted"></i>Employee Code</span>
-                    <span class="info-value">${employeeCode || '—'}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label"><i class="bi bi-calendar3 me-2 text-muted"></i>Joined</span>
-                    <span class="info-value">${joinedDate}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label"><i class="bi bi-bullseye me-2 text-muted"></i>Target</span>
-                    <span class="info-value">${target ?? '—'}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label"><i class="bi bi-cash-stack me-2 text-muted"></i>Base Salary</span>
-                    <span class="info-value">${salaryText}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label"><i class="bi bi-telephone me-2 text-muted"></i>Phone</span>
-                    <span class="info-value">${phone || '—'}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label"><i class="bi bi-clock me-2 text-muted"></i>User ID</span>
-                    <span class="info-value text-muted">#${u?.id || '—'}</span>
-                </div>
-            `;
+            const rows = [
+                { label: 'Full Name', value: name, icon: 'bi-person' },
+                { label: 'Email', value: u?.email, icon: 'bi-envelope' },
+                { label: 'Role', value: `<span class="role-badge" style="font-size:0.7rem;">${role}</span>`, icon: 'bi-briefcase' },
+                { label: 'Department', value: department, icon: 'bi-building' },
+                { label: 'Employee Code', value: employeeCode, icon: 'bi-upc-scan' },
+                { label: 'Joined', value: joinedDate, icon: 'bi-calendar3' },
+                { label: 'Target', value: target, icon: 'bi-bullseye' },
+                { label: 'Base Salary', value: salaryText, icon: 'bi-cash-stack' },
+                { label: 'Phone', value: phone, icon: 'bi-telephone' },
+                { label: 'User ID', value: `<span class="text-muted">#${u?.id || '—'}</span>`, icon: 'bi-clock' }
+            ];
+
+            document.getElementById('account-info-rows').innerHTML = rows
+                .filter(row => {
+                    if (!row || !row.value) return false;
+                    let v = String(row.value).replace(/<\/?[^>]+(>|$)/g, "").trim();
+                    
+                    // Fail-safe check for empty/null placeholders
+                    if (!v || v === "" || v.toLowerCase() === "null" || v.toLowerCase() === "undefined" || v === "0") return false;
+                    
+                    // Aggressive placeholder detection (em-dash, en-dash, hyphen-minus)
+                    // Char codes: em-dash(8212), en-dash(8211), hyphen-minus(45)
+                    const isPlaceholder = /^([—\-\–\s]|&mdash;|&ndash;|&#8212;|&#8211;)+$/.test(v) || 
+                                        v.charCodeAt(0) === 8212 || 
+                                        v.charCodeAt(0) === 8211 || 
+                                        v === "—" || v === "-" || v === "–";
+                    
+                    if (isPlaceholder) {
+                        console.log(`[ProfileFilter] Hiding placeholder row: ${row.label} (value: "${v}", charCode: ${v.charCodeAt(0)})`);
+                        return false;
+                    }
+                    return true;
+                })
+                .map(row => `
+                    <div class="info-row">
+                        <span class="info-label"><i class="bi ${row.icon} me-2 text-muted"></i>${row.label}</span>
+                        <span class="info-value">${row.value}</span>
+                    </div>
+                `).join('');
 
             // Load role-aware stats from API
             try {
@@ -642,16 +627,19 @@
                 if (phone) u.phone = phone;
                 localStorage.setItem('crm_user', JSON.stringify(u));
 
-                const msgEl = document.getElementById('profile-save-msg');
-                msgEl.classList.remove('d-none');
-                setTimeout(() => msgEl.classList.add('d-none'), 2500);
+                // Global Sync (Top Header)
+                if (window.updateTopHeaderProfile) {
+                    window.updateTopHeaderProfile(newName, u.role);
+                }
+
                 showToast('Profile updated successfully!');
 
-                // Refresh hero
+                // Refresh hero & Local UI
                 document.getElementById('hero-name').textContent = newName;
-                document.getElementById('hero-avatar').textContent = newName.slice(0, 2).toUpperCase();
+                document.getElementById('hero-avatar').textContent = window.getInitials(newName);
+                loadProfile(); // Re-load to sync account info card
             } catch (err) {
-                showToast('Failed to save changes.', true);
+                showToast(err?.message || 'Failed to save changes.', 'error');
             }
         });
 
@@ -674,7 +662,7 @@
                 document.getElementById('pwd-strength-text').textContent = '';
                 showToast('Password changed successfully!');
             } catch (err) {
-                showToast(err?.message || 'Incorrect current password.', true);
+                showToast(err?.message || 'Incorrect current password.', 'error');
             }
         });
 
