@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- frontend/template/employees.html -->
 <html lang="en">
 
 <head>
@@ -10,8 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
-    <link rel="stylesheet" href="../css/components.css?v=1772780187">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
+    <link rel="stylesheet" href="../css/components.css?v=1772780188">
     <style>
         .employee-avatar {
             width: 40px;
@@ -109,11 +110,16 @@
                 <!-- Employees Table -->
                 <div class="grid-card">
                     <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
-                        <h6 class="fw-bold mb-0" style="color:#334155;">All Employees</h6>
-                        <span class="badge bg-primary rounded-pill px-3 py-2" id="employee-count-badge">0
-                            Employees</span>
+                        <div class="d-flex align-items-center gap-3">
+                            <h6 class="fw-bold mb-0" style="color:#334155;">All Employees</h6>
+                            <span class="badge bg-primary rounded-pill px-3 py-2" id="employee-count-badge">0
+                                Employees</span>
+                        </div>
+                        <button class="btn btn-sm btn-light border" id="employees-toggle-btn" title="Collapse">
+                            <i class="bi bi-chevron-up"></i>
+                        </button>
                     </div>
-                    <div class="table-responsive">
+                    <div class="table-responsive" id="employees-table-container">
                         <table class="table mb-0 align-middle">
                             <thead class="bg-light">
                                 <tr>
@@ -137,6 +143,136 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <div class="grid-card mt-4" id="attendance-admin-card" style="display:none;">
+                    <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="fw-bold mb-0" style="color:#334155;">Attendance Summary</h6>
+                            <div class="text-muted small">Daily punch in/out and total hours</div>
+                        </div>
+                        <button class="btn btn-sm btn-light border" id="attendance-toggle-btn" title="Collapse">
+                            <i class="bi bi-chevron-up"></i>
+                        </button>
+                    </div>
+                    <div class="p-4" id="attendance-admin-body">
+                        <div class="row g-3 align-items-end mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold small">Employee</label>
+                                <select id="attendance-emp-filter" class="form-select">
+                                    <option value="">All Employees</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold small">Quick Filters</label>
+                                <select id="attendance-quick-filter" class="form-select">
+                                    <option value="custom">Custom Range</option>
+                                    <option value="today">Today</option>
+                                    <option value="yesterday">Yesterday</option>
+                                    <option value="this_week">This Week</option>
+                                    <option value="last_week">Last Week</option>
+                                    <option value="this_month">This Month</option>
+                                    <option value="last_month">Last Month</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold small">From</label>
+                                <input type="date" id="attendance-start" class="form-control">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold small">To</label>
+                                <input type="date" id="attendance-end" class="form-control">
+                            </div>
+                            <div class="col-md-3 d-flex gap-2">
+                                <button class="btn btn-primary flex-grow-1" id="attendance-apply">Apply</button>
+                                <button class="btn btn-outline-secondary" id="attendance-reset">Reset</button>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="text-muted small" id="attendance-count">0 record(s)</div>
+                            <div class="fw-semibold" id="attendance-total-hours">Total: 0.00 hrs</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th style="white-space:nowrap;">Date</th>
+                                        <th style="white-space:nowrap;">Employee</th>
+                                        <th style="white-space:nowrap;">Punch In</th>
+                                        <th style="white-space:nowrap;">Punch Out</th>
+                                        <th style="white-space:nowrap;">Hours</th>
+                                        <th style="white-space:nowrap;">Status</th>
+                                        <th style="white-space:nowrap;">Leave</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendance-admin-tbody">
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4 text-muted">No data loaded.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-card mt-4" id="employee-self-card" style="display:none;">
+                    <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="fw-bold mb-0" style="color:#334155;">My Attendance & Punch</h6>
+                            <div class="text-muted small">Your own punch timing and daily attendance status</div>
+                        </div>
+                    </div>
+                    <div class="p-4" id="employee-self-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-6 col-md-3">
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="text-muted small">Punch Status</div>
+                                    <div class="fw-bold" id="self-punch-status">--</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="text-muted small">Last Punch</div>
+                                    <div class="fw-bold" id="self-last-punch">--</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="text-muted small">Today Hours</div>
+                                    <div class="fw-bold" id="self-today-hours">0.00</div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="text-muted small">This Week</div>
+                                    <div class="fw-bold" id="self-week-hours">0.00</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="text-muted small" id="self-attendance-count">0 record(s)</div>
+                            <div class="fw-semibold" id="self-attendance-total-hours">Total: 0.00 hrs</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th style="white-space:nowrap;">Date</th>
+                                        <th style="white-space:nowrap;">Punch In</th>
+                                        <th style="white-space:nowrap;">Punch Out</th>
+                                        <th style="white-space:nowrap;">Hours</th>
+                                        <th style="white-space:nowrap;">Status</th>
+                                        <th style="white-space:nowrap;">Leave</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="self-attendance-tbody">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">No data loaded.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -241,6 +377,7 @@
 
         const currentUser = getUser();
         const isAdmin = currentUser?.role === 'ADMIN';
+        const canManageEmployees = window.hasFeatureAccess ? window.hasFeatureAccess('employee_manage_roles') : isAdmin;
         let employeesData = [];
 
         // Modals
@@ -272,7 +409,7 @@
 
         async function loadEmployees() {
             const tbody = document.getElementById('employees-tbody');
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading employees...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading employees...</td></tr>';
             
             const department = document.getElementById('filter-department').value;
             const role = document.getElementById('filter-role').value;
@@ -295,12 +432,13 @@
                 document.getElementById('employee-count-badge').innerText = `${employeesData.length} Employee${employeesData.length !== 1 ? 's' : ''}`;
 
                 if (employeesData.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No employees found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">No employees found.</td></tr>';
                     return;
                 }
 
                 // Populate Department dropdown if not already set or filtering
                 populateDepartmentFilter();
+                populateAttendanceEmployeeFilter();
 
                 tbody.innerHTML = employeesData.map(emp => {
                     const avatarLetter = (emp.name || emp.email || 'U')[0].toUpperCase();
@@ -308,8 +446,8 @@
                     const statusText = emp.is_active ? '<i class="bi bi-check-circle-fill"></i> Active' : '<i class="bi bi-x-circle-fill"></i> Inactive';
                     const roleClass = (emp.role || 'CLIENT').toUpperCase();
 
-                    let actions = `<span class="text-muted small">Not Admin</span>`;
-                    if (isAdmin) {
+                    let actions = `<span class="text-muted small">Viewer</span>`;
+                    if (canManageEmployees) {
                         actions = `
                             <button class="btn btn-sm btn-light border-secondary text-secondary me-1" onclick="openEditModal(${emp.id})" title="Edit"><i class="bi bi-pencil"></i></button>
                             <button class="btn btn-sm btn-light border-danger text-danger" onclick="deleteEmployee(${emp.id})" title="Delete"><i class="bi bi-trash"></i></button>
@@ -351,7 +489,139 @@
                 }).join('');
             } catch (err) {
                 console.error("Error loading employees", err);
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Failed to load employees (${err.message || 'Unknown error'})</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Failed to load employees (${err.message || 'Unknown error'})</td></tr>`;
+            }
+        }
+
+        async function loadMyEmployeeInsights() {
+            if (canManageEmployees) return;
+            const selfCard = document.getElementById('employee-self-card');
+            if (selfCard) selfCard.style.display = 'block';
+
+            try {
+                const status = await ApiClient.getPunchStatus();
+                document.getElementById('self-punch-status').textContent = status.is_punched_in ? 'Punched In' : 'Punched Out';
+                document.getElementById('self-last-punch').textContent = status.last_punch ? formatTimeCell(status.last_punch) : '--';
+                document.getElementById('self-today-hours').textContent = Number(status.today_hours || 0).toFixed(2);
+                document.getElementById('self-week-hours').textContent = Number(status.week_hours || 0).toFixed(2);
+            } catch (err) {
+                console.warn('Punch status load failed', err);
+            }
+
+            const tbody = document.getElementById('self-attendance-tbody');
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+            try {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(end.getDate() - 6);
+                const data = await ApiClient.getAttendanceSummary({
+                    start_date: start.toISOString().slice(0, 10),
+                    end_date: end.toISOString().slice(0, 10),
+                    reconcile: true
+                });
+                const records = data.records || [];
+                document.getElementById('self-attendance-count').textContent = `${records.length} record(s)`;
+                document.getElementById('self-attendance-total-hours').textContent = `Total: ${(data.total_hours || 0).toFixed(2)} hrs`;
+
+                if (!records.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No attendance records found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = records.map(r => {
+                    const day = new Date(r.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                    return `<tr>
+                        <td style="white-space:nowrap;">${day}</td>
+                        <td>${formatTimeCell(r.first_punch_in)}</td>
+                        <td>${formatTimeCell(r.last_punch_out)}</td>
+                        <td>${(r.total_hours || 0).toFixed(2)}</td>
+                        <td>${statusBadge(r.day_status)}</td>
+                        <td>${leaveBadge(r.leave_status)}</td>
+                    </tr>`;
+                }).join('');
+            } catch (err) {
+                console.error('Self attendance load failed', err);
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Failed to load attendance.</td></tr>';
+            }
+        }
+
+        function populateAttendanceEmployeeFilter() {
+            const sel = document.getElementById('attendance-emp-filter');
+            if (!sel) return;
+            const current = sel.value;
+            const options = employeesData.map(emp => `<option value="${emp.id}">${emp.name || emp.email}</option>`).join('');
+            sel.innerHTML = '<option value="">All Employees</option>' + options;
+            sel.value = current;
+        }
+
+        function formatTimeCell(value) {
+            if (!value) return '--';
+            const dt = new Date(value);
+            if (Number.isNaN(dt.getTime())) return '--';
+            return dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function statusBadge(status) {
+            const map = {
+                PRESENT: 'bg-success-subtle text-success border',
+                HALF: 'bg-warning-subtle text-warning border',
+                ABSENT: 'bg-danger-subtle text-danger border',
+                OFF: 'bg-light text-muted border'
+            };
+            const cls = map[status] || 'bg-light text-muted border';
+            return `<span class="badge ${cls}" style="font-weight:500;">${status}</span>`;
+        }
+
+        function leaveBadge(status) {
+            if (!status) return '--';
+            const map = {
+                PENDING: 'badge-yellow-light',
+                APPROVED: 'badge-green-light',
+                REJECTED: 'badge-red-light'
+            };
+            const cls = map[status] || 'bg-secondary text-white border';
+            return `<span class="status-pill ${cls}">${status}</span>`;
+        }
+
+        async function loadAttendanceSummary() {
+            if (!isAdmin) return;
+            const tbody = document.getElementById('attendance-admin-tbody');
+            const start = document.getElementById('attendance-start').value;
+            const end = document.getElementById('attendance-end').value;
+            const userId = document.getElementById('attendance-emp-filter').value;
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+
+            try {
+                const data = await ApiClient.getAttendanceSummary({
+                    start_date: start,
+                    end_date: end,
+                    user_id: userId || null,
+                    reconcile: true
+                });
+                const records = data.records || [];
+                document.getElementById('attendance-count').textContent = `${records.length} record(s)`;
+                document.getElementById('attendance-total-hours').textContent = `Total: ${(data.total_hours || 0).toFixed(2)} hrs`;
+
+                if (!records.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No attendance records found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = records.map(r => {
+                    const day = new Date(r.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                    return `<tr>
+                        <td style="white-space:nowrap;">${day}</td>
+                        <td style="white-space:nowrap;">${r.user_name || 'User #' + r.user_id}</td>
+                        <td>${formatTimeCell(r.first_punch_in)}</td>
+                        <td>${formatTimeCell(r.last_punch_out)}</td>
+                        <td>${(r.total_hours || 0).toFixed(2)}</td>
+                        <td>${statusBadge(r.day_status)}</td>
+                        <td>${leaveBadge(r.leave_status)}</td>
+                    </tr>`;
+                }).join('');
+            } catch (err) {
+                console.error('Attendance summary error', err);
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Failed to load attendance.</td></tr>';
             }
         }
 
@@ -429,7 +699,7 @@
             const selectedIds = Array.from(document.querySelectorAll('.emp-checkbox:checked')).map(cb => parseInt(cb.value));
             if (!selectedIds.length) return;
 
-            if (getUser().role !== 'ADMIN') {
+            if (!canManageEmployees) {
                 showToast('Only Admins can perform bulk delete', 'error');
                 return;
             }
@@ -482,7 +752,107 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             initFilters();
-            loadEmployees();
+            loadEmployees().then(() => {
+                if (isAdmin) loadAttendanceSummary();
+            });
+
+            if (!canManageEmployees) {
+                document.getElementById('filter-wrapper').style.display = 'none';
+                loadMyEmployeeInsights();
+            }
+
+            const empToggleBtn = document.getElementById('employees-toggle-btn');
+            const empTableContainer = document.getElementById('employees-table-container');
+            if (empToggleBtn && empTableContainer) {
+                empToggleBtn.addEventListener('click', () => {
+                    const collapsed = empTableContainer.style.display === 'none';
+                    empTableContainer.style.display = collapsed ? 'block' : 'none';
+                    empToggleBtn.innerHTML = collapsed ? '<i class="bi bi-chevron-up"></i>' : '<i class="bi bi-chevron-down"></i>';
+                });
+            }
+
+            if (isAdmin) {
+                document.getElementById('attendance-admin-card').style.display = 'block';
+                
+                const startInput = document.getElementById('attendance-start');
+                const endInput = document.getElementById('attendance-end');
+                const quickFilter = document.getElementById('attendance-quick-filter');
+                const empFilter = document.getElementById('attendance-emp-filter');
+                
+                function setDateRange(daysBack, daysForward = 0) {
+                    const end = new Date();
+                    end.setDate(end.getDate() + daysForward);
+                    const start = new Date();
+                    start.setDate(end.getDate() - daysBack);
+                    startInput.value = start.toISOString().slice(0, 10);
+                    endInput.value = end.toISOString().slice(0, 10);
+                }
+                
+                // Default to last 7 days
+                setDateRange(6);
+                
+                quickFilter.addEventListener('change', (e) => {
+                    const today = new Date();
+                    const val = e.target.value;
+                    
+                    if (val === 'today') {
+                        startInput.value = today.toISOString().slice(0, 10);
+                        endInput.value = today.toISOString().slice(0, 10);
+                    } else if (val === 'yesterday') {
+                        const yesterday = new Date(today);
+                        yesterday.setDate(yesterday.getDate() - 1);
+                        startInput.value = yesterday.toISOString().slice(0, 10);
+                        endInput.value = yesterday.toISOString().slice(0, 10);
+                    } else if (val === 'this_week') {
+                        const first = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1); // Monday
+                        const start = new Date(today.setDate(first));
+                        const end = new Date(start);
+                        end.setDate(start.getDate() + 6);
+                        startInput.value = start.toISOString().slice(0, 10);
+                        endInput.value = end.toISOString().slice(0, 10);
+                    } else if (val === 'last_week') {
+                        const first = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1) - 7;
+                        const start = new Date(today.setDate(first));
+                        const end = new Date(start);
+                        end.setDate(start.getDate() + 6);
+                        startInput.value = start.toISOString().slice(0, 10);
+                        endInput.value = end.toISOString().slice(0, 10);
+                    } else if (val === 'this_month') {
+                        const start = new Date(today.getFullYear(), today.getMonth(), 1);
+                        const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                        startInput.value = start.toISOString().slice(0, 10);
+                        endInput.value = end.toISOString().slice(0, 10);
+                    } else if (val === 'last_month') {
+                        const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                        const end = new Date(today.getFullYear(), today.getMonth(), 0);
+                        startInput.value = start.toISOString().slice(0, 10);
+                        endInput.value = end.toISOString().slice(0, 10);
+                    }
+                    if (val !== 'custom') {
+                        loadAttendanceSummary();
+                    }
+                });
+
+                // Clear constraints when user manually types
+                startInput.addEventListener('change', () => quickFilter.value = 'custom');
+                endInput.addEventListener('change', () => quickFilter.value = 'custom');
+
+                document.getElementById('attendance-apply').addEventListener('click', loadAttendanceSummary);
+                document.getElementById('attendance-reset').addEventListener('click', () => {
+                    empFilter.value = '';
+                    quickFilter.value = 'custom';
+                    setDateRange(6);
+                    loadAttendanceSummary();
+                });
+
+                const toggleBtn = document.getElementById('attendance-toggle-btn');
+                const body = document.getElementById('attendance-admin-body');
+                toggleBtn.addEventListener('click', () => {
+                    const collapsed = body.style.display === 'none';
+                    body.style.display = collapsed ? 'block' : 'none';
+                    toggleBtn.innerHTML = collapsed ? '<i class="bi bi-chevron-up"></i>' : '<i class="bi bi-chevron-down"></i>';
+                });
+            }
         });
 
 

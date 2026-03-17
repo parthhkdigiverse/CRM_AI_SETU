@@ -1,3 +1,4 @@
+# backend/app/modules/users/service.py
 from sqlalchemy.orm import Session
 from app.modules.users.models import User
 import uuid

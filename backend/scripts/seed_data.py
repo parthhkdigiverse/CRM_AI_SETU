@@ -1,3 +1,4 @@
+# backend/scripts/seed_data.py
 """
 seed_data.py — Run from the backend/ directory:
     python seed_data.py
@@ -25,8 +26,9 @@ from app.modules.users.models      import User, UserRole
 from app.modules.clients.models    import Client
 from app.modules.shops.models      import Shop
 from app.modules.visits.models     import Visit, VisitStatus
-from app.modules.projects.models   import Project, ProjectStatus
-from app.modules.issues.models     import Issue, IssueStatus, IssueSeverity
+from app.modules.projects.models   import Project
+from app.modules.issues.models     import Issue, IssueSeverity
+from app.core.enums                import GlobalTaskStatus
 from app.modules.todos.models      import Todo
 from app.modules.notifications.models import Notification
 

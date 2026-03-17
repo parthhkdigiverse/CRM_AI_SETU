@@ -1,3 +1,4 @@
+# backend/alembic/versions/161f1bb97c1f_add_preferences_column_to_users.py
 """Add preferences column to users
 
 Revision ID: 161f1bb97c1f

@@ -1,3 +1,4 @@
+# backend/app/modules/activity_logs/service.py
 from sqlalchemy.orm import Session
 from app.modules.activity_logs.models import ActivityLog, ActionType, EntityType
 from app.modules.users.models import UserRole

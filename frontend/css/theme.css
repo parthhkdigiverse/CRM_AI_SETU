@@ -1,3 +1,4 @@
+/* frontend/css/theme.css */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&display=swap');
 
 /* ═══════════════════════════════════════════════════════════════
@@ -257,32 +258,86 @@ a:hover {
     padding: 1.25rem 1.5rem;
 }
 
-/* Buttons */
-.btn {
-    font-weight: 600;
-    font-size: 0.875rem;
-    border-radius: 9px;
-    padding: 0.5rem 1.1rem;
-    transition: all 0.18s ease;
-    letter-spacing: 0.01em;
-    display: inline-flex;
+/* ─── SIDEBAR — Premium Light Design ─────────────────────── */
+#sidebar-container {
+    background: #ffffff;
+    border-right: 1px solid #E2E8F0;
+    width: 260px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
+    position: relative;
+    z-index: 20;
+
+    /* Optional faint watermark (circuit/geometric pattern placeholder using simple linear gradients) */
+    background-image:
+        linear-gradient(rgba(79, 70, 229, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79, 70, 229, 0.02) 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-position: center center;
+}
+
+.sidebar-brand {
+    padding: 22px 20px 18px;
+    display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 12px;
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: #111827;
+    letter-spacing: -0.3px;
+    border-bottom: 1px solid #F1F5F9;
+    margin-bottom: 4px;
 }
 
-.btn-primary {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #fff;
-    box-shadow: 0 1px 3px rgba(79, 70, 229, 0.25);
+/* Dual-tone brand text: black + vibrant blue */
+.sidebar-brand span {
+    background: linear-gradient(135deg, #111827 40%, #4F46E5 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
-.btn-primary:hover,
-.btn-primary:focus {
-    background: var(--primary-hover);
-    border-color: var(--primary-hover);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.30);
-    transform: translateY(-1px);
+.sidebar-brand-icon {
+    width: 34px;
+    height: 34px;
+    background: linear-gradient(135deg, #4F46E5, #4338CA);
+    border-radius: 9px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+    flex-shrink: 0;
+}
+
+/* ── Sidebar User Identity Card ─────────────────────────────── */
+.sidebar-user-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px 12px;
+    margin: 8px 10px 4px;
+    border-radius: 10px;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.sidebar-user-card:hover {
+    background: #EEF2FF;
+    border-color: #c7d2fe;
+}
+
+.sidebar-user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #818cf8, #6366f1);
     color: #fff;
 }
 
@@ -342,16 +397,15 @@ a:hover {
     border-radius: 11px;
 }
 
-/* Form controls */
-.form-control,
-.form-select {
-    border: 1.5px solid var(--border);
-    border-radius: 9px;
-    background: var(--surface);
+.search-bar {
+    background: #f1f5f9;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 10px 16px 10px 42px;
+    width: 100%;
+    font-size: 0.9rem;
     color: var(--text-main);
-    font-size: 0.875rem;
-    padding: 0.5rem 0.85rem;
-    transition: border-color 0.18s, box-shadow 0.18s;
+    transition: all 0.2s;
 }
 
 .form-control:focus,
@@ -850,54 +904,103 @@ a:hover {
     background: transparent;
 }
 
-/* Collapsible section groups */
+/* ── Section group header (collapsible) */
+.sb-section {
+    margin-bottom: 6px;
+}
+
 .sb-section-header {
     display: flex;
     align-items: center;
-    gap: 7px;
-    padding: 9px 16px 5px;
+    gap: 8px;
+    padding: 14px 18px 8px;
     cursor: pointer;
-    font-size: 0.64rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.9px;
-    color: var(--text-muted);
+    text-transform: none;
+    /* Title Case */
+    letter-spacing: 0.3px;
+    color: #111827;
+    /* Dark black/gray */
     user-select: none;
-    transition: color 0.18s;
+    transition: color 0.2s ease-in-out;
 }
 
 .sb-section-header:hover {
-    color: var(--text-secondary);
+    color: #4b5563;
 }
 
 .sb-section-header.open {
-    color: var(--primary);
+    color: #4F46E5;
 }
 
 .sb-sec-icon {
     font-size: 0.85rem;
     flex-shrink: 0;
+    color: #6b7280;
+    transition: color 0.2s ease-in-out;
+}
+
+.sb-section-header.open .sb-sec-icon {
+    color: #4F46E5;
 }
 
 .sb-arrow {
     margin-left: auto;
-    font-size: 0.6rem;
-    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.65rem;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
     opacity: 0.5;
+    color: #6b7280;
 }
 
 .sb-section-header.open .sb-arrow {
     transform: rotate(90deg);
     opacity: 1;
+    color: #4F46E5;
 }
 
+/* ── Sub-items list with tree lines ── */
 .sb-section-items {
     list-style: none;
     padding: 0;
     margin: 0;
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.sb-section-items.open {
+    max-height: 500px;
+}
+
+/* Vertical tree line dropping down from the parent item */
+.sb-section-items.open::before {
+    content: '';
+    position: absolute;
+    left: 28px;
+    top: 4px;
+    bottom: 16px;
+    width: 1px;
+    background: #e5e7eb;
+    z-index: 1;
+}
+
+/* Horizontal connector tick pointing to children */
+.sb-section-items li {
+    position: relative;
+}
+
+.sb-section-items li::before {
+    content: '';
+    position: absolute;
+    left: 28px;
+    top: 50%;
+    width: 12px;
+    height: 1px;
+    background: #e5e7eb;
+    z-index: 1;
 }
 
 .sb-section-items.open {
@@ -907,43 +1010,74 @@ a:hover {
 .sb-link {
     display: flex;
     align-items: center;
-    gap: 9px;
-    padding: 7px 10px 7px 26px;
-    font-size: 0.82rem;
+    gap: 10px;
+    padding: 9px 14px 9px 44px;
+    /* Increased left padding to clear tree line */
+    font-size: 0.83rem;
     font-weight: 500;
-    color: var(--text-secondary);
+    color: #4b5563;
+    /* Dark gray */
     text-decoration: none;
-    transition: all 0.16s;
-    border-left: 2px solid transparent;
-    border-radius: 0 8px 8px 0;
-    margin-right: 8px;
+    transition: all 0.2s ease;
+    border-radius: 12px;
+    margin: 2px 12px 2px 12px;
+    border: 1px solid transparent;
+    position: relative;
+    z-index: 2;
+    /* Sit above tree lines */
 }
 
 .sb-link i {
-    font-size: 0.88rem;
-    color: var(--text-muted);
-    transition: color 0.16s;
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+    color: #6b7280;
+    transition: color 0.2s ease;
+    line-height: 1;
+}
+
+.sb-link span {
+    line-height: 1;
 }
 
 .sb-link:hover {
-    color: var(--text-main);
-    background: var(--bg-app);
-    border-left-color: #c7d2fe;
+    color: #111827;
+    background: #f9fafb;
+    /* Soft gray hover */
+    border-color: transparent;
 }
 
 .sb-link:hover i {
-    color: var(--primary);
+    color: #4b5563;
+    /* Deepen icon color on hover */
 }
 
+/* ── Premium Light Active State (The Blue Pill) ── */
 .sb-link.active {
-    color: var(--primary);
-    background: var(--primary-light);
+    color: #ffffff !important;
+    background: #4F46E5;
+    /* Solid vibrant blue */
     font-weight: 600;
-    border-left-color: var(--primary);
+    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -1px rgba(79, 70, 229, 0.1);
 }
 
 .sb-link.active i {
-    color: var(--primary);
+    color: #ffffff;
+}
+
+/* Thick vertical blue indicator on absolute left */
+.sb-link.active::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    /* Pulls it completely out of the link, touching the sidebar extreme left */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 20px;
+    border-radius: 4px;
+    background: #4F46E5;
 }
 
 /* Sidebar bottom links */
@@ -959,25 +1093,28 @@ a:hover {
 .sb-bottom-link {
     display: flex;
     align-items: center;
-    gap: 9px;
-    padding: 8px 12px;
-    font-size: 0.83rem;
+    gap: 10px;
+    padding: 9px 14px;
+    font-size: 0.84rem;
     font-weight: 500;
     color: var(--text-secondary);
     text-decoration: none;
     border-radius: 8px;
-    transition: all 0.16s;
+    margin: 0 4px;
+    transition: all 0.2s ease-in-out;
 }
 
 .sb-bottom-link i {
-    font-size: 0.98rem;
-    color: var(--text-muted);
-    transition: color 0.14s;
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+    color: #94a3b8;
+    transition: color 0.2s ease-in-out;
 }
 
 .sb-bottom-link:hover {
-    background: var(--bg-app);
-    color: var(--text-main);
+    background: #F1F5F9;
+    color: #0f172a;
 }
 
 .sb-bottom-link:hover i {
@@ -1275,60 +1412,4 @@ a:hover {
     border: 1px solid var(--border);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   GLASS UTILITIES
-   ═══════════════════════════════════════════════════════════════ */
-
-.glass-panel {
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.35);
-}
-
-.glass-card {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   ACTIVITY TIMELINE
-   ═══════════════════════════════════════════════════════════════ */
-
-.activity-item {
-    position: relative;
-    padding-left: 22px;
-    padding-bottom: 18px;
-}
-
-.activity-item::before {
-    content: '';
-    position: absolute;
-    left: 4px;
-    top: 6px;
-    bottom: 0;
-    width: 1.5px;
-    background: var(--border);
-}
-
-.activity-item:last-child::before {
-    display: none;
-}
-
-.activity-dot {
-    position: absolute;
-    left: 0;
-    top: 6px;
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--primary);
-    border: 2px solid var(--surface);
-    z-index: 1;
 }

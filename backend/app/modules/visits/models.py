@@ -1,5 +1,6 @@
+# backend/app/modules/visits/models.py
 import enum
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum, Text, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 
@@ -33,6 +34,7 @@ class Visit(Base):
 
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    is_deleted = Column(Boolean, default=False)
 
     shop = relationship("app.modules.shops.models.Shop", backref="visits")
     user = relationship("app.modules.users.models.User", backref="visits")
@@ -48,4 +50,16 @@ class Visit(Base):
     @property
     def area_name(self) -> str:
         return self.shop.area.name if self.shop and self.shop.area else None
+
+    @property
+    def project_manager_name(self) -> str:
+        return self.shop.project_manager.name if self.shop and getattr(self.shop, 'project_manager', None) else None
+
+    @property
+    def shop_status(self) -> str:
+        return self.shop.status.value if self.shop and self.shop.status else None
+
+    @property
+    def shop_demo_stage(self) -> int:
+        return getattr(self.shop, 'demo_stage', 0) if self.shop else 0
 

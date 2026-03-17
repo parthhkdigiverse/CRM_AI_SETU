@@ -1,3 +1,4 @@
+# backend/app/modules/users/router.py
 from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -11,6 +12,8 @@ from fastapi import Request
 from pydantic import BaseModel
 import uuid
 from datetime import date as dt_date
+import json
+from app.modules.salary.models import AppSetting
 
 class UserStatusUpdate(BaseModel):
     is_active: bool
@@ -25,9 +28,181 @@ class RoleIncentiveEligibilityUpdate(BaseModel):
     role: UserRole
     enabled: bool
 
+
+DEFAULT_ACCESS_POLICY = {
+    "page_access": {
+        "ADMIN": ["*"],
+        "SALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "areas.html", "clients.html", "billing.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "issues.html", "incentives.html"],
+        "TELESALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "clients.html", "billing.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "issues.html", "incentives.html"],
+        "PROJECT_MANAGER": ["dashboard.html", "timetable.html", "todo.html", "projects.html", "projects_demo.html", "meetings.html", "issues.html", "clients.html", "billing.html", "feedback.html", "reports.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "incentives.html"],
+        "PROJECT_MANAGER_AND_SALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "areas.html", "projects.html", "projects_demo.html", "meetings.html", "issues.html", "clients.html", "billing.html", "feedback.html", "reports.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "incentives.html"],
+        "CLIENT": ["dashboard.html"]
+    },
+    "feature_access": {
+        "issue_create_roles": ["ADMIN", "SALES", "TELESALES", "PROJECT_MANAGER", "PROJECT_MANAGER_AND_SALES"],
+        "issue_manage_roles": ["ADMIN", "PROJECT_MANAGER", "PROJECT_MANAGER_AND_SALES", "SALES", "TELESALES"],
+        "invoice_creator_roles": ["ADMIN", "SALES", "TELESALES", "PROJECT_MANAGER_AND_SALES"],
+        "invoice_verifier_roles": ["ADMIN"],
+        "leave_apply_roles": ["SALES", "TELESALES", "PROJECT_MANAGER", "PROJECT_MANAGER_AND_SALES"],
+        "leave_edit_own_roles": ["SALES", "TELESALES", "PROJECT_MANAGER", "PROJECT_MANAGER_AND_SALES"],
+        "leave_cancel_own_roles": ["SALES", "TELESALES", "PROJECT_MANAGER", "PROJECT_MANAGER_AND_SALES"],
+        "leave_manage_roles": ["ADMIN"],
+        "salary_manage_roles": ["ADMIN"],
+        "salary_view_all_roles": ["ADMIN"],
+        "incentive_manage_roles": ["ADMIN"],
+        "incentive_view_all_roles": ["ADMIN"],
+        "employee_manage_roles": ["ADMIN"]
+    }
+}
+
+
+def _normalize_role_list(roles: Any, fallback: list[str]) -> list[str]:
+    valid_roles = {r.value for r in UserRole}
+    if not isinstance(roles, list):
+        roles = fallback
+    normalized = []
+    for role in roles:
+        role_name = str(role).upper().strip()
+        if role_name in valid_roles and role_name not in normalized:
+            normalized.append(role_name)
+    return normalized or fallback
+
+
+def _load_access_policy(db: Session) -> dict:
+    row = db.query(AppSetting).filter(AppSetting.key == "ui_access_policy").first()
+    if not row or not row.value:
+        return DEFAULT_ACCESS_POLICY
+    try:
+        data = json.loads(row.value)
+        if not isinstance(data, dict):
+            return DEFAULT_ACCESS_POLICY
+        page_access = data.get("page_access") or {}
+        feature_access = data.get("feature_access") or {}
+
+        merged_page_access = {}
+        for role, pages in DEFAULT_ACCESS_POLICY["page_access"].items():
+            custom_pages = page_access.get(role)
+            if isinstance(custom_pages, list) and custom_pages:
+                merged_page_access[role] = [str(p).strip() for p in custom_pages if str(p).strip()]
+            else:
+                merged_page_access[role] = pages
+
+        merged_feature_access = {}
+        for key, roles in DEFAULT_ACCESS_POLICY["feature_access"].items():
+            merged_feature_access[key] = _normalize_role_list(feature_access.get(key), roles)
+
+        if "ADMIN" not in merged_feature_access["invoice_verifier_roles"]:
+            merged_feature_access["invoice_verifier_roles"].append("ADMIN")
+        if "ADMIN" not in merged_feature_access["invoice_creator_roles"]:
+            merged_feature_access["invoice_creator_roles"].append("ADMIN")
+
+        return {
+            "page_access": merged_page_access,
+            "feature_access": merged_feature_access,
+        }
+    except Exception:
+        return DEFAULT_ACCESS_POLICY
+
+
+def _save_access_policy(db: Session, policy: dict) -> None:
+    row = db.query(AppSetting).filter(AppSetting.key == "ui_access_policy").first()
+    payload = json.dumps(policy)
+    if row:
+        row.value = payload
+    else:
+        db.add(AppSetting(key="ui_access_policy", value=payload))
+    db.commit()
+
+
+def _sync_billing_role_settings(db: Session, policy: dict) -> None:
+    feature_access = policy.get("feature_access") or {}
+    creator_roles = feature_access.get("invoice_creator_roles") or ["ADMIN", "SALES", "TELESALES", "PROJECT_MANAGER_AND_SALES"]
+    verifier_roles = feature_access.get("invoice_verifier_roles") or ["ADMIN"]
+
+    for key, roles in [
+        ("invoice_creator_roles", creator_roles),
+        ("invoice_verifier_roles", verifier_roles),
+    ]:
+        row = db.query(AppSetting).filter(AppSetting.key == key).first()
+        value = ",".join(sorted({str(r).upper() for r in roles if str(r).strip()}))
+        if not value:
+            value = "ADMIN"
+        if row:
+            row.value = value
+        else:
+            db.add(AppSetting(key=key, value=value))
+    db.commit()
+
 router = APIRouter()
 
 admin_checker = RoleChecker([UserRole.ADMIN])
+
+
+@router.get("/access-policy")
+def get_access_policy(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+) -> Any:
+    return _load_access_policy(db)
+
+
+@router.put("/access-policy")
+def update_access_policy(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_checker)
+) -> Any:
+    page_access = payload.get("page_access")
+    feature_access = payload.get("feature_access")
+
+    if not isinstance(page_access, dict) or not isinstance(feature_access, dict):
+        raise HTTPException(status_code=400, detail="page_access and feature_access are required")
+
+    normalized_page_access = {}
+    valid_roles = {r.value for r in UserRole}
+    for role, pages in page_access.items():
+        role_name = str(role).upper()
+        if role_name not in valid_roles:
+            continue
+        if not isinstance(pages, list):
+            continue
+        normalized_page_access[role_name] = [str(p).strip() for p in pages if str(p).strip()]
+
+    normalized_feature_access = {
+        key: _normalize_role_list(feature_access.get(key), roles)
+        for key, roles in DEFAULT_ACCESS_POLICY["feature_access"].items()
+    }
+    if "ADMIN" not in normalized_feature_access["invoice_verifier_roles"]:
+        normalized_feature_access["invoice_verifier_roles"].append("ADMIN")
+    if "ADMIN" not in normalized_feature_access["invoice_creator_roles"]:
+        normalized_feature_access["invoice_creator_roles"].append("ADMIN")
+
+    new_policy = {
+        "page_access": normalized_page_access or DEFAULT_ACCESS_POLICY["page_access"],
+        "feature_access": normalized_feature_access,
+    }
+    _save_access_policy(db, new_policy)
+    _sync_billing_role_settings(db, new_policy)
+    return new_policy
+
+
+@router.get("/access-policy/effective")
+def get_effective_access_policy(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+) -> Any:
+    policy = _load_access_policy(db)
+    role = current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)
+    allowed_pages = (policy.get("page_access") or {}).get(role, [])
+    if role == "ADMIN" and "*" not in allowed_pages:
+        allowed_pages = ["*"]
+    feature_access = policy.get("feature_access") or {}
+    return {
+        "role": role,
+        "allowed_pages": allowed_pages,
+        "feature_access": feature_access,
+        "policy": policy,
+    }
 
 @router.get("/", response_model=List[UserRead])
 async def list_users(
@@ -37,6 +212,17 @@ async def list_users(
     if current_user.role != UserRole.ADMIN:
         return [current_user]
     return db.query(User).filter(User.is_deleted != True).all()
+
+@router.get("/project-managers", response_model=List[UserRead])
+async def list_project_managers(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+) -> Any:
+    pm_roles = [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES, UserRole.ADMIN]
+    return db.query(User).filter(
+        User.is_deleted != True,
+        User.role.in_(pm_roles)
+    ).all()
 
 @router.patch("/incentive-eligibility/by-role")
 async def update_role_incentive_eligibility(

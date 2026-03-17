@@ -1,3 +1,4 @@
+# backend/alembic/versions/ad906d96669b_add_area_project_type_and_requirements_.py
 """add area project_type and requirements to shop
 
 Revision ID: ad906d96669b

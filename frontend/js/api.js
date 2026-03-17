@@ -1,8 +1,7 @@
-const host = window.location.origin;
-let API_BASE_URL = `${host}/api`;
-
-// Try to load dynamically from the backend Python config endpoint for overrides if any
-fetch(`${host}/api/config`)
+// frontend/js/api.js
+let API_BASE_URL = window.location.origin + '/api'; // Fallback
+// Try to load dynamically from the backend Python config endpoint
+fetch(window.location.origin + '/api/config')
     .then(r => r.json())
     .then(data => {
         if (data.API_BASE_URL && !data.API_BASE_URL.includes('127.0.0.1')) {
@@ -97,9 +96,7 @@ class ApiClient {
             const data = isJson ? await response.json() : await response.text();
 
             if (!response.ok) {
-                if (!options.quiet) {
-                    console.error(`API Error [${response.status}] ${path}:`, data);
-                }
+                console.error(`API Error [${response.status}] ${path}:`, data);
                 throw { status: response.status, data };
             }
 
@@ -213,12 +210,14 @@ class ApiClient {
     static async updateUserStatus(userId, isActive) {
         return this.request(`/users/${userId}/status`, { method: 'PATCH', body: { is_active: isActive } });
     }
-
-    static async getEmployeeCodeSettings() {
-        return this.request('/users/config/employee-code');
+    static async getAccessPolicy() {
+        return this.request('/users/access-policy');
     }
-    static async updateEmployeeCodeSettings(data) {
-        return this.request('/users/config/employee-code', { method: 'PUT', body: data });
+    static async updateAccessPolicy(data) {
+        return this.request('/users/access-policy', { method: 'PUT', body: data });
+    }
+    static async getEffectiveAccessPolicy() {
+        return this.request('/users/access-policy/effective');
     }
 
     // ─── Dashboard ───────────────────────────────────────────
@@ -232,6 +231,29 @@ class ApiClient {
     }
     static async punch() {
         return this.request('/attendance/punch', { method: 'POST' });
+    }
+    static async getAttendanceSummary(params = {}) {
+        let query = '';
+        if (typeof params === 'object') {
+            const queryParams = new URLSearchParams();
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== undefined && value !== null) {
+                    queryParams.append(key, value);
+                }
+            }
+            query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+        } else if (typeof params === 'string' && params) {
+            query = params.startsWith('?') ? params : `?${params}`;
+        }
+        return this.request(`/attendance/summary${query}`);
+    }
+
+    static async getAttendanceSettings() {
+        return this.request('/attendance/settings');
+    }
+
+    static async updateAttendanceSettings(data) {
+        return this.request('/attendance/settings', { method: 'PUT', body: data });
     }
 
     // ─── Clients ─────────────────────────────────────────────
@@ -270,13 +292,26 @@ class ApiClient {
     static async deleteArea(areaId) {
         return this.request(`/areas/${areaId}`, { method: 'DELETE' });
     }
-    static async assignArea(areaId, userId, shopIds = []) {
-        return this.request(`/areas/${areaId}/assign`, { method: 'PATCH', body: { assigned_user_id: userId, shop_ids: shopIds } });
+    static async getArchivedAreas() {
+        return this.request('/areas/archived');
+    }
+    static async unarchiveArea(areaId) {
+        return this.request(`/areas/${areaId}/unarchive`, { method: 'PATCH' });
+    }
+    static async hardDeleteArea(areaId) {
+        return this.request(`/areas/${areaId}/hard-delete`, { method: 'DELETE' });
+    }
+    static async assignArea(areaId, userIds, shopIds = []) {
+        // userIds should be an array of IDs
+        return this.request(`/areas/${areaId}/assign`, { method: 'PATCH', body: { user_ids: userIds, shop_ids: shopIds } });
     }
 
     // ─── Shops ───────────────────────────────────────────────
     static async getShops(params = '') {
         return this.request(`/shops/${params}`);
+    }
+    static async getShop(shopId) {
+        return this.request(`/shops/${shopId}`);
     }
     static async createShop(data) {
         return this.request('/shops/', { method: 'POST', body: data });
@@ -286,6 +321,15 @@ class ApiClient {
     }
     static async deleteShop(shopId) {
         return this.request(`/shops/${shopId}`, { method: 'DELETE' });
+    }
+    static async getArchivedShops() {
+        return this.request('/shops/archived');
+    }
+    static async unarchiveShop(shopId) {
+        return this.request(`/shops/${shopId}/unarchive`, { method: 'PATCH' });
+    }
+    static async hardDeleteShop(shopId) {
+        return this.request(`/shops/${shopId}/hard-delete`, { method: 'DELETE' });
     }
     static async approvePipelineEntry(shopId) {
         return this.request(`/shops/${shopId}/approve`, { method: 'POST' });
@@ -344,30 +388,18 @@ class ApiClient {
     static async getClientFeedback(clientId) {
         return this.request(`/clients/${clientId}/feedback`);
     }
+    static async getAllClientFeedbacks() {
+        return this.request('/clients/feedbacks/all');
+    }
+    static async getClientFeedbacks(clientId) {
+        return this.request(`/clients/${clientId}/feedback`);
+    }
     static async createFeedback(clientId, data) {
         return this.request(`/clients/${clientId}/feedback`, { method: 'POST', body: data });
     }
     static async deleteFeedback(feedbackId) {
         return this.request(`/feedback/${feedbackId}`, { method: 'DELETE' });
     }   
-    static async getAllClientFeedbacks() {
-        const candidates = [
-            '/clients/feedbacks/all',
-            '/feedbacks/all',
-            '/clients/feedback/all',
-        ];
-
-        let lastError = null;
-        for (const path of candidates) {
-            try {
-                return await this.request(path, { quiet: true });
-            } catch (err) {
-                lastError = err;
-                if (err?.status !== 404) break;
-            }
-        }
-        throw lastError || new Error('Failed to load feedback list');
-    }
     static async createUserFeedback(data) {
         return this.request('/clients/user', { method: 'POST', body: data });
     }
@@ -419,6 +451,12 @@ class ApiClient {
     static async confirmSalarySlip(slipId) {
         return this.request(`/hrm/salary/confirm/${slipId}`, { method: 'PATCH' });
     }
+    static async updateSalarySlipRemarks(slipId, data) {
+        return this.request(`/hrm/salary/slip/${slipId}/remarks`, { method: 'PATCH', body: data });
+    }
+    static async updateSalarySlipVisibility(slipId, data) {
+        return this.request(`/hrm/salary/slip/${slipId}/visibility`, { method: 'PATCH', body: data });
+    }
     static async getPayslipSettings() {
         return this.request('/hrm/payslip-settings');
     }
@@ -435,6 +473,12 @@ class ApiClient {
     }
     static async applyLeave(data) {
         return this.request('/hrm/leave', { method: 'POST', body: data });
+    }
+    static async updateLeave(leaveId, data) {
+        return this.request(`/hrm/leave/${leaveId}`, { method: 'PATCH', body: data });
+    }
+    static async deleteLeave(leaveId) {
+        return this.request(`/hrm/leave/${leaveId}`, { method: 'DELETE' });
     }
     static async approveRejectLeave(leaveId, status, remarks = null) {
         const body = { status };
@@ -468,21 +512,7 @@ class ApiClient {
         return this.request('/incentives/calculate', { method: 'POST', body: { ...data, force_recalculate: true } });
     }
     static async calculateIncentiveBulk(data) {
-        try {
-            return await this.request('/incentives/calculate/bulk', { method: 'POST', body: data });
-        } catch (err) {
-            if (err && err.status === 404) {
-                try {
-                    return await this.request('/incentives/calculate_bulk', { method: 'POST', body: data });
-                } catch (legacyErr) {
-                    if (legacyErr && legacyErr.status === 404) {
-                        return this.request('/incentives/bulk-calculate', { method: 'POST', body: data });
-                    }
-                    throw legacyErr;
-                }
-            }
-            throw err;
-        }
+        return this.request('/incentives/calculate/bulk', { method: 'POST', body: data });
     }
     static async getAllIncentiveSlips() {
         return this.request('/incentives/slips');
@@ -492,6 +522,12 @@ class ApiClient {
     }
     static async getUserIncentiveSlips(userId) {
         return this.request(`/incentives/slips/${userId}`);
+    }
+    static async updateIncentiveSlipRemarks(slipId, data) {
+        return this.request(`/incentives/slips/${slipId}/remarks`, { method: 'PATCH', body: data });
+    }
+    static async updateIncentiveSlipVisibility(slipId, data) {
+        return this.request(`/incentives/slips/${slipId}/visibility`, { method: 'PATCH', body: data });
     }
 
     // ─── Payments ────────────────────────────────────────────
@@ -530,8 +566,26 @@ class ApiClient {
     static async verifyInvoice(billId) {
         return this.request(`/billing/${billId}/verify`, { method: 'PATCH' });
     }
+    static async archiveInvoice(billId) {
+        return this.request(`/billing/${billId}/archive`, { method: 'PATCH' });
+    }
+    static async unarchiveInvoice(billId) {
+        return this.request(`/billing/${billId}/unarchive`, { method: 'PATCH' });
+    }
+    static async archiveInvoicesBulk(ids = []) {
+        return this.request('/billing/archive/bulk', { method: 'PATCH', body: { ids } });
+    }
+    static async deleteArchivedInvoice(billId) {
+        return this.request(`/billing/${billId}/archive-delete`, { method: 'DELETE' });
+    }
+    static async deleteArchivedInvoicesBulk(ids = []) {
+        return this.request('/billing/archive/delete-bulk', { method: 'POST', body: { ids } });
+    }
     static async sendInvoiceWhatsApp(billId) {
         return this.request(`/billing/${billId}/send-whatsapp`, { method: 'POST' });
+    }
+    static async getWhatsAppHealth() {
+        return this.request('/billing/whatsapp-health');
     }
     static async getInvoiceSettings() {
         return this.request('/billing/settings');
@@ -542,9 +596,16 @@ class ApiClient {
     static async getInvoiceWorkflowOptions() {
         return this.request('/billing/workflow/options');
     }
+    static async getBillingAutofillSource(source) {
+        return this.request(`/billing/autofill-sources?source=${encodeURIComponent(source)}`);
+    }
     static async resolveInvoiceWorkflow(data) {
         return this.request('/billing/workflow/resolve', { method: 'POST', body: data });
     }
+    static async generateInvoicePaymentQR(data) {
+        return this.request('/billing/generate-qr', { method: 'POST', body: data });
+    }
+
 
     // ─── Projects ────────────────────────────────────────────
     static async getProjects(params = '') {
@@ -610,6 +671,28 @@ class ApiClient {
     // ─── Reports ─────────────────────────────────────────────
     static async getReportsDashboard() {
         return this.request('/reports/dashboard');
+    }
+
+    // ─── Generic Soft Delete (Archive) ───────────────────────
+    static async fetchArchived(moduleName) {
+        return this.request(`/${moduleName}/archived`);
+    }
+    static async archiveItem(moduleName, id) {
+        return this.request(`/${moduleName}/${id}`, { method: 'DELETE' });
+    }
+    static async unarchiveItem(moduleName, id) {
+        return this.request(`/${moduleName}/${id}/unarchive`, { method: 'PATCH' });
+    }
+    static async hardDeleteItem(moduleName, id) {
+        return this.request(`/${moduleName}/${id}/hard-delete`, { method: 'DELETE' });
+    }
+
+    // ─── Generic Accept Assignment ───────────────────────────
+    static async acceptItem(moduleName, id) {
+        return this.request(`/${moduleName}/${id}/accept`, { method: 'POST' });
+    }
+    static async getAcceptedLeads() {
+        return this.request('/shops/accepted/history');
     }
 }
 

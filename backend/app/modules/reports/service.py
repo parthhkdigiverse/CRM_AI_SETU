@@ -1,13 +1,15 @@
+# backend/app/modules/reports/service.py
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, extract
 from datetime import datetime, timedelta
 import calendar
 from app.modules.clients.models import Client
-from app.modules.issues.models import Issue, IssueStatus, IssueSeverity
+from app.modules.issues.models import Issue, IssueSeverity
 from app.modules.visits.models import Visit, VisitStatus
 from app.modules.users.models import User, UserRole
-from app.modules.projects.models import Project, ProjectStatus
+from app.modules.projects.models import Project
 from app.modules.shops.models import Shop
+from app.core.enums import GlobalTaskStatus
 from app.modules.payments.models import Payment, PaymentStatus
 from app.modules.salary.models import SalarySlip
 from app.modules.incentives.models import IncentiveSlip
@@ -90,7 +92,7 @@ class ReportService:
             clients_mom_pct = get_mom_pct(c_curr, c_prev)
 
             # Ongoing Projects
-            project_query = db.query(func.count(Project.id)).filter(Project.status == ProjectStatus.IN_PROGRESS)
+            project_query = db.query(func.count(Project.id)).filter(Project.status == GlobalTaskStatus.IN_PROGRESS)
             # Projects are linked to clients, clients to owners/areas
             if area_id or user_id:
                 project_query = project_query.join(Client, Project.client_id == Client.id)
@@ -155,18 +157,63 @@ class ReportService:
             revenue_prev = rev_prev_q.scalar() or 0.0
             revenue_mom_pct = get_mom_pct(revenue_mtd, revenue_prev)
 
-            # Open Issues
-            open_issues_query = db.query(func.count(Issue.id)).filter(Issue.status.in_([IssueStatus.PENDING]))
+            open_issues_query = db.query(func.count(Issue.id)).filter(Issue.status.in_([GlobalTaskStatus.OPEN]))
             open_issues_query = apply_filters(open_issues_query, Issue, 'created_at', 'assigned_user_id')
             open_issues = open_issues_query.scalar() or 0
 
-            # Charts logic
-            month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            from collections import defaultdict
             
-            mv_query = db.query(extract('month', Visit.visit_date).label('month'), func.count(Visit.id).label('count'))
-            mv_query = apply_filters(mv_query, Visit, 'visit_date', 'user_id').group_by('month').order_by('month')
-            monthly_visits = mv_query.all()
-            visits_by_month = {month_names[int(m)-1]: c for m, c in monthly_visits if m and 1 <= int(m) <= 12}
+            chart_title = "Visits by Month"
+            visits_chart_data = {}
+            
+            td_days = 180
+            if start_date and end_date:
+                try:
+                    s_dt = datetime.fromisoformat(start_date[:10])
+                    e_dt = datetime.fromisoformat(end_date[:10])
+                    td_days = (e_dt - s_dt).days
+                except:
+                    pass
+            elif start_date:
+                try:
+                    s_dt = datetime.fromisoformat(start_date[:10])
+                    td_days = (now - s_dt).days
+                except:
+                    pass
+
+            if td_days <= 14:
+                chart_title = "Visits by Day"
+                v_records = apply_filters(db.query(Visit.visit_date), Visit, 'visit_date', 'user_id').order_by(Visit.visit_date).all()
+                counts = defaultdict(int)
+                for (v_date,) in v_records:
+                    if v_date:
+                        fmt = v_date.strftime('%d %b')
+                        counts[fmt] += 1
+                for (v_date,) in v_records:
+                    if v_date:
+                        fmt = v_date.strftime('%d %b')
+                        if fmt not in visits_chart_data:
+                            visits_chart_data[fmt] = counts[fmt]
+                            
+            elif td_days <= 31:
+                chart_title = "Visits by Week"
+                v_records = apply_filters(db.query(Visit.visit_date), Visit, 'visit_date', 'user_id').order_by(Visit.visit_date).all()
+                counts = defaultdict(int)
+                for (v_date,) in v_records:
+                    if v_date:
+                        week_idx = (v_date.day - 1) // 7 + 1
+                        fmt = f"Week {week_idx}"
+                        counts[fmt] += 1
+                for w in [f"Week {i}" for i in range(1, 6)]:
+                    if w in counts:
+                        visits_chart_data[w] = counts[w]
+            else:
+                chart_title = "Visits by Month"
+                month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+                mv_query = db.query(extract('month', Visit.visit_date).label('month'), func.count(Visit.id).label('count'))
+                mv_query = apply_filters(mv_query, Visit, 'visit_date', 'user_id').group_by('month').order_by('month')
+                monthly_visits = mv_query.all()
+                visits_chart_data = {month_names[int(m)-1]: c for m, c in monthly_visits if m is not None and 1 <= int(m) <= 12}
 
             mr_query = db.query(extract('month', Payment.verified_at).label('month'), func.sum(Payment.amount).label('total')).filter(Payment.status == PaymentStatus.VERIFIED)
             if requesting_user.role != UserRole.ADMIN:
@@ -188,11 +235,10 @@ class ReportService:
             severity_data = is_query.all()
             issue_severity_breakdown = {str(s.value if hasattr(s, 'value') else s): c for s, c in severity_data if s is not None}
 
-            ss_query = db.query(Shop.source, func.count(Shop.id))
-            if user_id: ss_query = ss_query.filter(Shop.owner_id == user_id)
-            if area_id: ss_query = ss_query.filter(Shop.area_id == area_id)
-            source_data = ss_query.group_by(Shop.source).all()
-            shop_sources_breakdown = {str(s or 'Other'): c for s, c in source_data}
+            vo_query = db.query(Visit.status, func.count(Visit.id))
+            vo_query = apply_filters(vo_query, Visit, 'visit_date', 'user_id').group_by(Visit.status)
+            outcome_data = vo_query.all()
+            visit_outcomes_breakdown = {str(s.value if hasattr(s, 'value') else s): c for s, c in outcome_data if s is not None}
 
             return {
                 "total_visits": total_visits,
@@ -204,11 +250,12 @@ class ReportService:
                 "projects_mom_pct": projects_mom_pct,
                 "revenue_mom_pct": revenue_mom_pct,
                 "open_issues": open_issues,
-                "visits_by_month": visits_by_month,
+                "visits_chart_title": chart_title,
+                "visits_chart_data": visits_chart_data,
                 "revenue_by_month": revenue_by_month,
                 "visit_status_breakdown": visit_status_breakdown,
                 "issue_severity_breakdown": issue_severity_breakdown,
-                "shop_sources_breakdown": shop_sources_breakdown
+                "visit_outcomes_breakdown": visit_outcomes_breakdown
             }
 
         except Exception as e:
@@ -217,8 +264,19 @@ class ReportService:
             return {
                 "total_visits": 0, "active_clients": 0, "ongoing_projects": 0, "revenue_mtd": 0.0,
                 "visits_mom_pct": 0.0, "clients_mom_pct": 0.0, "projects_mom_pct": 0.0, "revenue_mom_pct": 0.0,
-                "open_issues": 0, "visits_by_month": {}, "revenue_by_month": {}, 
-                "visit_status_breakdown": {}, "issue_severity_breakdown": {}, "shop_sources_breakdown": {}
+                "open_issues": 0, "visits_chart_title": "Visits by Month", "visits_chart_data": {}, "revenue_by_month": {}, 
+                "visit_status_breakdown": {}, "issue_severity_breakdown": {}, "visit_outcomes_breakdown": {}
+            }
+
+        except Exception as e:
+            print(f"Dashboard Stats Error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return {
+                "total_leads": 0, "active_clients": 0, "ongoing_projects": 0, "revenue_mtd": 0.0,
+                "leads_mom_pct": 0.0, "clients_mom_pct": 0.0, "projects_mom_pct": 0.0, "revenue_mom_pct": 0.0,
+                "open_issues": 0, "visits_chart_title": "Visits by Month", "visits_chart_data": {}, "revenue_by_month": {}, 
+                "visit_status_breakdown": {}, "issue_severity_breakdown": {}, "visit_outcomes_breakdown": {}
             }
 
     @staticmethod
@@ -298,7 +356,7 @@ class ReportService:
 
             open_issues = db.query(func.count(Issue.id)).filter(
                 Issue.assigned_to_id == u.id,
-                Issue.status.notin_([IssueStatus.SOLVED, IssueStatus.RESOLVED, IssueStatus.COMPLETED, IssueStatus.CANCELLED])
+                Issue.status.notin_([GlobalTaskStatus.RESOLVED, GlobalTaskStatus.CANCELLED])
             ).scalar() or 0
             
             # Calculate Success Rate: (Leads / Visits) * 100

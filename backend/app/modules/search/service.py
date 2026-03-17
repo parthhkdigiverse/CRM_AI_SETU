@@ -1,3 +1,4 @@
+# backend/app/modules/search/service.py
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, cast, String, desc, case
 from typing import List, Dict, Any

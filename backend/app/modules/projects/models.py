@@ -1,23 +1,10 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum, Float
-
+# backend/app/modules/projects/models.py
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum, Float, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
-import enum
 from app.core.database import Base
+from app.core.enums import GlobalTaskStatus
 
-class ProjectStatus(str, enum.Enum):
-    PLANNING    = "PLANNING"
-    IN_PROGRESS = "IN_PROGRESS"
-    ONGOING     = "ONGOING"     # legacy alias — map to IN_PROGRESS in UI
-    COMPLETED   = "COMPLETED"
-    ON_HOLD     = "ON_HOLD"
-    CANCELLED   = "CANCELLED"
-    NEGOTIATION = "NEGOTIATION"
-
-class ProjectPriority(str, enum.Enum):
-    LOW    = "LOW"
-    MEDIUM = "MEDIUM"
-    HIGH   = "HIGH"
 
 class Project(Base):
     __tablename__ = "projects"
@@ -25,18 +12,17 @@ class Project(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
     description = Column(Text, nullable=True)
-    
+
     client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
     pm_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    
-    status = Column(Enum(ProjectStatus), default=ProjectStatus.PLANNING)
-    priority = Column(Enum(ProjectPriority), default=ProjectPriority.MEDIUM)
-    
+
+    status = Column(Enum(GlobalTaskStatus), default=GlobalTaskStatus.OPEN)
+
     start_date = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
     budget = Column(Float, default=0.0)
+    is_deleted = Column(Boolean, default=False, index=True)
 
-    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

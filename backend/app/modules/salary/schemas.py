@@ -1,3 +1,4 @@
+# backend/app/modules/salary/schemas.py
 from typing import Optional, List, Any
 from pydantic import BaseModel, field_validator
 from datetime import date
@@ -99,6 +100,9 @@ class SalarySlipRead(BaseModel):
     final_salary: float
     status: str = "CONFIRMED"
     confirmed_by: Optional[int] = None
+    is_visible_to_employee: bool = True
+    employee_remarks: Optional[str] = None
+    manager_remarks: Optional[str] = None
     user_name: Optional[str] = None
     confirmer_name: Optional[str] = None
     generated_at: date

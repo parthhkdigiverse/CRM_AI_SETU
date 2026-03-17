@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- frontend/template/areas.html -->
 <html lang="en">
 
 <head>
@@ -307,54 +308,73 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
-    <link rel="stylesheet" href="../css/components.css?v=1772780187">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
+    <link rel="stylesheet" href="../css/components.css?v=1772780188">
 </head>
 
 <body>
-    <div class="d-flex">
+    <div class="d-flex" style="height: 100vh; overflow: hidden; background: #f8fafc;">
         <div id="sidebar"></div>
-        <div class="flex-grow-1">
-            <div class="page-content">
-                <div class="px-0">
-                    <div class="d-flex justify-content-between align-items-center mb-4 pt-0">
+        <div class="flex-grow-1 d-flex flex-column" style="height: 100vh; overflow: hidden;">
+            <div class="page-content d-flex flex-column flex-grow-1" style="padding: 1.5rem; overflow: hidden;">
+                <div class="px-0 d-flex flex-column flex-grow-1" style="min-height: 0;">
+                    <div class="d-flex justify-content-between align-items-center mb-4 pt-0 flex-shrink-0">
                         <div>
-                            <h2 class="page-section-title">Areas &amp; Shops</h2>
+                            <h2 class="page-section-title mb-1" style="font-weight: 800; color: #0f172a;">Areas &amp; Shops</h2>
                             <span class="text-muted small" id="area-count-label">Loading areas...</span>
                         </div>
-                        <button class="btn btn-primary d-flex align-items-center gap-2 px-3 shadow-sm" type="button"
-                            onclick="new bootstrap.Modal(document.getElementById('addModal')).show()"
-                            style="font-size:0.875rem; border-radius: 8px; height: 40px;">
-                            <i class="bi bi-plus-lg"></i> Add Area/Shop
-                        </button>
+                        <div class="d-flex gap-2">
+                            <div class="dropdown" id="btn-view-archive-container" style="display: none;">
+                                <button class="btn btn-light border d-flex align-items-center gap-2 px-3 shadow-sm dropdown-toggle" type="button"
+                                    id="btn-view-archive" data-bs-toggle="dropdown" aria-expanded="false"
+                                    style="font-size:0.875rem; border-radius: 8px; height: 40px;">
+                                    <i class="bi bi-archive text-secondary"></i> <span class="fw-semibold text-secondary">View Archive</span>
+                                </button>
+                                <ul class="dropdown-menu shadow border-0" aria-labelledby="btn-view-archive">
+                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="areasArchiveOffcanvas.open()">Archived Areas</a></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="shopsArchiveOffcanvas.open()">Archived Shops</a></li>
+                                </ul>
+                            </div>
+                            <button class="btn btn-primary d-flex align-items-center gap-2 px-3 shadow-sm" type="button"
+                                onclick="new bootstrap.Modal(document.getElementById('addModal')).show()"
+                                style="font-size:0.875rem; border-radius: 8px; height: 40px;">
+                                <i class="bi bi-plus-lg"></i> Add Area/Shop
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Main Content Card -->
-                    <div class="card shadow-sm border-0 mb-5" style="border-radius: 12px; overflow: hidden;">
-                        <div class="card-body p-0">
-                            <div class="split-panel">
+                    <div class="card shadow-sm border-0 flex-grow-1 d-flex flex-column mb-0" style="border-radius: 12px; overflow: hidden; min-height: 0;">
+                        <div class="card-body p-0 d-flex flex-column h-100">
+                            <div class="split-panel flex-grow-1 d-flex h-100" style="min-height: 0;">
                                 <!-- Left: Area Sidebar -->
-                                <div class="panel-sidebar">
-                                    <div class="area-search-container"
+                                <div class="panel-sidebar d-flex flex-column" style="width: 320px; border-right: 1px solid var(--border); background: #fff; flex-shrink: 0;">
+                                    <div class="area-search-container flex-shrink-0"
                                         style="padding: 1.25rem; border-bottom: 1px solid var(--border);">
                                         <input type="text" id="area-search" placeholder="Search areas..."
                                             style="width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px 9px 38px; font-size: 0.875rem; font-weight: 500; outline: none; background: var(--bg-app) url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E&quot;) no-repeat 14px center;">
+                                        <select id="sourceFilter" class="form-select form-select-sm mt-2"
+                                            style="font-size: 0.8rem; border-radius: 8px; border: 1px solid var(--border);">
+                                            <option value="ALL">All Leads</option>
+                                            <option value="ADMIN">Admin Assigned</option>
+                                            <option value="SELF">Self-Sourced</option>
+                                        </select>
                                     </div>
-                                    <ul class="area-list" id="area-list"
-                                        style="list-style: none; padding: 10px; margin: 0;">
+                                    <ul class="area-list flex-grow-1" id="area-list"
+                                        style="list-style: none; padding: 10px; margin: 0; overflow-y: auto;">
                                         <li class="area-list-empty p-4 text-center text-muted">Loading areas...</li>
                                     </ul>
                                 </div>
 
                                 <!-- Right: Shops Area -->
-                                <div class="panel-content d-flex flex-column">
-                                    <div class="shops-header"
+                                <div class="panel-content d-flex flex-column flex-grow-1" style="min-width: 0;">
+                                    <div class="shops-header flex-shrink-0"
                                         style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: #fff;">
                                         <h3 id="shops-panel-title" class="mb-0 fs-5"><i
                                                 class="bi bi-shop text-muted me-2"></i> Select an area</h3>
                                         <span id="shops-panel-count" class="text-muted small"></span>
                                     </div>
-                                    <div id="shops-panel-body" class="flex-grow-1">
+                                    <div id="shops-panel-body" class="flex-grow-1" style="overflow-y: auto;">
                                         <div
                                             class="h-100 d-flex flex-column align-items-center justify-content-center p-5 text-muted opacity-50">
                                             <i class="bi bi-geo-alt"
@@ -367,7 +387,11 @@
                         </div>
                     </div>
                 </div>
+                </div>
             </div><!-- /page-content -->
+
+            <!-- Archived Data Offcanvas Removed in favor of generic ArchivedDataOffcanvas component -->
+
         </div>
     </div>
     <!-- Toast Container -->
@@ -399,7 +423,7 @@
                         <div id="area-step-1">
                             <div class="row g-3">
                                 <!-- Left: form fields -->
-                                <div class="col-md-5">
+                                <div class="col-md-5" style="max-height: 350px; overflow-y: auto; padding-right: 8px;">
                                     <div class="mb-3">
                                         <label class="form-label fw-semibold">Area Name *</label>
                                         <input id="a-name" class="form-control" placeholder="e.g. North District">
@@ -419,7 +443,77 @@
                                     <input type="hidden" id="a-lng">
                                     <input type="hidden" id="a-id" value="">
                                     <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i>Pin a
-                                        location to auto-discover nearby shops after saving.</p>
+                                        location to base auto-discovery on.</p>
+
+                                    <hr class="my-4">
+                                    <h6 class="fw-bold mb-3" style="color:#0f172a;"><i
+                                            class="bi bi-crosshair me-2 text-primary"></i>Advanced Targeting</h6>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold d-flex justify-content-between">
+                                            <span>Precision Targeting (Radius)</span>
+                                            <span id="radius-val" class="text-primary fw-bold">500m</span>
+                                        </label>
+                                        <input type="range" class="form-range" id="a-radius" min="250" max="2000"
+                                            step="250" value="500"
+                                            oninput="document.getElementById('radius-val').textContent = this.value + 'm'; if(window.updateRadiusCircle) window.updateRadiusCircle(this.value);">
+                                    </div>
+
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label fw-semibold">Max Shops</label>
+                                            <select id="a-shop-limit" class="form-select form-select-sm">
+                                                <option value="20" selected>20</option>
+                                                <option value="50">50</option>
+                                                <option value="100">100</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label fw-semibold">Priority Level</label>
+                                            <select id="a-priority" class="form-select form-select-sm">
+                                                <option value="HIGH">High</option>
+                                                <option value="MEDIUM" selected>Medium</option>
+                                                <option value="LOW">Low</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Target Categories</label>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <div class="form-check form-check-inline m-0">
+                                                <input class="form-check-input tgt-category" type="checkbox"
+                                                    id="cat-retail" value="Retailers">
+                                                <label class="form-check-label small" for="cat-retail">Retailers</label>
+                                            </div>
+                                            <div class="form-check form-check-inline m-0">
+                                                <input class="form-check-input tgt-category" type="checkbox"
+                                                    id="cat-wholesale" value="Wholesalers">
+                                                <label class="form-check-label small"
+                                                    for="cat-wholesale">Wholesalers</label>
+                                            </div>
+                                            <div class="form-check form-check-inline m-0">
+                                                <input class="form-check-input tgt-category" type="checkbox"
+                                                    id="cat-corp" value="Corporate">
+                                                <label class="form-check-label small" for="cat-corp">Corporate</label>
+                                            </div>
+                                            <div class="form-check form-check-inline m-0">
+                                                <input class="form-check-input tgt-category" type="checkbox"
+                                                    id="cat-health" value="Healthcare">
+                                                <label class="form-check-label small"
+                                                    for="cat-health">Healthcare</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-check form-switch mt-4 mb-2 border rounded p-3 bg-light">
+                                        <input class="form-check-input ms-0 me-2 mt-1" type="checkbox"
+                                            id="a-auto-discovery" style="cursor:pointer;" checked>
+                                        <label class="form-check-label fw-bold text-dark" for="a-auto-discovery"
+                                            style="cursor:pointer;">Enable Auto-Discovery</label>
+                                        <div class="small text-muted mt-1 lh-sm">Automatically fetch nearby shops
+                                            bridging these categories within the radius when creating area.</div>
+                                    </div>
                                 </div>
                                 <!-- Right: Google Map -->
                                 <div class="col-md-7">
@@ -543,12 +637,32 @@
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small mb-3">Select a user to assign this area or specific shops to.</p>
+                    <p class="text-muted small mb-3">Select users to assign this area or specific shops to. The first
+                        user selected will be the Primary Owner.</p>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Select User</label>
-                        <select id="assign-user-select" class="form-select">
-                            <option value="">— Select User —</option>
-                        </select>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label fw-semibold mb-0">Select Users *</label>
+                            <div class="d-flex gap-2">
+                                <span class="badge bg-primary bg-opacity-10 text-primary" style="cursor:pointer;"
+                                    onclick="window.selectTeam('SALES')"><i class="bi bi-people-fill me-1"></i>Sales
+                                    Team</span>
+                                <span class="badge bg-info bg-opacity-10 text-info" style="cursor:pointer;"
+                                    onclick="window.selectTeam('TELESALES')"><i class="bi bi-headset me-1"></i>Telesales
+                                    Team</span>
+                            </div>
+                        </div>
+                        <div class="dropdown w-100">
+                            <button class="form-select text-start d-flex justify-content-between align-items-center"
+                                type="button" id="assign-user-dropdown" data-bs-toggle="dropdown" aria-expanded="false"
+                                data-bs-auto-close="outside">
+                                <span>— Select Users —</span>
+                            </button>
+                            <ul class="dropdown-menu w-100 p-2 shadow-sm border-0"
+                                style="max-height: 250px; overflow-y: auto;" id="assign-user-list">
+                                <li><span class="dropdown-item text-muted small">Loading users...</span></li>
+                            </ul>
+                        </div>
+                        <div id="selected-users-tags" class="mt-2 d-flex flex-wrap gap-2"></div>
                     </div>
 
                     <div class="mt-3">
@@ -561,9 +675,11 @@
                                     All</label>
                             </div>
                         </div>
-                        <div id="assign-shops-list" class="border rounded p-2"
-                            style="max-height: 200px; overflow-y: auto; background: #f8fafc;">
-                            <!-- Dynamically populated -->
+                        <input type="text" id="assign-shop-search" class="form-control form-control-sm mb-2"
+                            placeholder="Search shops..." oninput="window.filterAssignShops(this.value)">
+                        <div id="assign-shops-list" class="border rounded p-2 d-flex flex-column gap-2"
+                            style="max-height: 250px; overflow-y: auto; background: #f8fafc;">
+                            <!-- Dynamically populated styled cards -->
                         </div>
                         <p class="text-muted small mt-2"><i class="bi bi-info-circle"></i> Uncheck shops to assign them
                             individually. Leave all checked to assign the entire area.</p>
@@ -590,6 +706,35 @@
         if (sidebarElement) {
             sidebarElement.innerHTML = renderSidebar('areas');
         }
+
+        // ── Instantiate Generic Archive Component ──
+        const areasArchiveOffcanvas = new ArchivedDataOffcanvas({
+            moduleName: 'areas',
+            title: 'Archived Areas',
+            columns: [
+                { key: 'name', label: 'Name' },
+                { key: 'description', label: 'Description' }
+            ],
+            onRestore: async () => {
+                await loadAll();
+            }
+        });
+
+        const shopsArchiveOffcanvas = new ArchivedDataOffcanvas({
+            moduleName: 'shops',
+            title: 'Archived Shops',
+            columns: [
+                { key: 'name', label: 'Name' },
+                { key: 'address', label: 'Address' }
+            ],
+            onRestore: async () => {
+                await loadAll();
+                if (selectedAreaId) {
+                    const a = allAreas.find(x => x.id === selectedAreaId);
+                    if (a) selectArea(a.id, a.name);
+                }
+            }
+        });
 
         let allAreas = [];
         let allShops = [];
@@ -629,21 +774,34 @@
         });
 
         // ── Load Data ──
+        let globalSettings = { feature_flags: { enable_soft_delete: true } };
+
         async function loadAll() {
             try {
-                const [areasRes, shopsRes, usersRes] = await Promise.all([
+                const [areasRes, shopsRes, usersRes, settingsRes] = await Promise.all([
                     ApiClient.getAreas(),
                     ApiClient.getShops('?limit=1000'),
-                    ApiClient.getUsers()
+                    ApiClient.getUsers(),
+                    ApiClient.request('/settings/').catch(() => null)
                 ]);
                 allAreas = areasRes;
                 allShops = shopsRes;
+                if (settingsRes && settingsRes.feature_flags) {
+                    globalSettings.feature_flags = settingsRes.feature_flags;
+                }
 
                 // Defensively extract user array from common response wrappers
                 allUsers = Array.isArray(usersRes) ? usersRes : (usersRes.data || usersRes.items || usersRes.users || []);
-                console.log("Defensively loaded users:", allUsers);
+                
+                const viewArchiveContainer = document.getElementById('btn-view-archive-container');
+                const user = ApiClient.getCurrentUser();
+                const isAdmin = user && user.role && user.role.toUpperCase() === 'ADMIN';
+                const isStaff = user && ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'].includes(user.role?.toUpperCase());
+                if(viewArchiveContainer) { 
+                    viewArchiveContainer.style.display = (globalSettings.feature_flags.enable_soft_delete && isStaff) ? 'inline-block' : 'none'; 
+                }
             } catch (e) {
-                console.error("Error loading data:", e);
+                console.error(e); // exact API error
                 allUsers = allUsers || [];
             }
             renderAreaList();
@@ -653,7 +811,24 @@
         // ── Render Area List ──
         function renderAreaList(filter = '') {
             const ul = document.getElementById('area-list');
-            const filtered = allAreas.filter(a => a.name.toLowerCase().includes(filter.toLowerCase()));
+            const currentUser = ApiClient.getCurrentUser();
+            const sourceFilter = document.getElementById('sourceFilter')?.value || 'ALL';
+
+            const filtered = allAreas.filter(a => {
+                // Text search
+                if (!a.name.toLowerCase().includes(filter.toLowerCase())) return false;
+
+                // Source filter
+                if (sourceFilter === 'ADMIN') {
+                    // Admin-assigned: no creator OR creator is the current admin user
+                    return !a.created_by_id || (currentUser && a.created_by_id === currentUser.id && currentUser.role?.toUpperCase() === 'ADMIN');
+                } else if (sourceFilter === 'SELF') {
+                    // Self-sourced: has a creator who is NOT the current user (or any staff-sourced lead)
+                    return !!a.created_by_id && !(currentUser && a.created_by_id === currentUser.id && currentUser.role?.toUpperCase() === 'ADMIN');
+                }
+                return true; // ALL
+            });
+
             if (!filtered.length) {
                 ul.innerHTML = '<li class="p-4 text-center text-muted small">No areas found</li>';
                 return;
@@ -661,9 +836,13 @@
             ul.innerHTML = filtered.map(a => {
                 const shopCount = allShops.filter(s => s.area_id === a.id).length;
                 const isActive = a.id === selectedAreaId;
+                // Only show Sourced badge if created by someone OTHER than the current user
+                const sourcedBadge = a.created_by_name && a.created_by_id && (!currentUser || a.created_by_id !== currentUser.id)
+                    ? `<span class="badge bg-info-subtle text-info border-info-subtle ms-1" style="font-size:0.6rem;padding:1px 4px;">Sourced</span>`
+                    : '';
                 return `<li class="area-item ${isActive ? 'active' : ''}" onclick="selectArea(${a.id}, '${a.name.replace(/'/g, "\\'")}')"
                         ondblclick="openEditAreaModal(${a.id})" title="Double-click to edit">
-                    <span class="area-info"><i class="bi bi-geo-alt-fill"></i>${a.name}</span>
+                    <span class="area-info"><i class="bi bi-geo-alt-fill"></i>${a.name}${sourcedBadge}</span>
                     <span class="area-count-pill">${shopCount} shops</span>
                 </li>`;
             }).join('');
@@ -677,23 +856,74 @@
             const user = ApiClient.getCurrentUser();
             const isAdmin = user && user.role && user.role.toUpperCase() === 'ADMIN';
 
+            const area = allAreas.find(a => a.id === areaId);
+            let badgeHtml = '';
+            if (area && area.priority_level) {
+                const p = area.priority_level.toUpperCase();
+                if (p === 'HIGH') {
+                    badgeHtml = `<span class="badge bg-danger-subtle text-danger ms-2 d-flex align-items-center" style="font-size:0.75rem;padding:4px 8px;"><i class="bi bi-flag-fill me-1"></i> High Priority</span>`;
+                } else if (p === 'MEDIUM') {
+                    badgeHtml = `<span class="badge bg-warning-subtle text-warning-emphasis ms-2 d-flex align-items-center" style="font-size:0.75rem;padding:4px 8px;"><i class="bi bi-flag-fill me-1"></i> Medium Priority</span>`;
+                } else if (p === 'LOW') {
+                    badgeHtml = `<span class="badge bg-secondary-subtle text-secondary ms-2 d-flex align-items-center" style="font-size:0.75rem;padding:4px 8px;"><i class="bi bi-flag-fill me-1"></i> Low Priority</span>`;
+                }
+            }
+
+            const isPendingArea = area && area.assignment_status === 'PENDING';
+            const isAcceptedArea = area && area.assignment_status === 'ACCEPTED';
+            let statusBadge = '';
+            // Only show 'Sourced by' badge when the creator is a different person from the viewer
+            let sourcedByBadge = area && area.created_by_name && area.created_by_id && (!user || area.created_by_id !== user.id)
+                ? `<span class="badge bg-info text-dark ms-2 align-self-center" style="font-size:0.75rem;"><i class="bi bi-person-plus"></i> Sourced by: ${area.created_by_name}</span>`
+                : "";
+            
+            if (isPendingArea) {
+                if (isAdmin) {
+                    statusBadge = `<span class="badge bg-warning text-dark ms-2 align-self-center">Pending Staff Acceptance</span>`;
+                } else {
+                    statusBadge = `<span class="badge rounded-pill bg-warning text-dark placeholder-glow ms-2 align-self-center">Pending Acceptance</span>`;
+                }
+            } else if (isAcceptedArea) {
+                if (isAdmin) {
+                    statusBadge = `<span class="badge bg-success ms-2 align-self-center">Claimed / Accepted</span>`;
+                }
+            }
+
             document.getElementById('shops-panel-title').innerHTML =
                 `<div class="d-flex align-items-center gap-2" style="flex-wrap:wrap;">
                     <i class="bi bi-shop"></i> Shops in ${areaName}
-                    ${isAdmin ? `
-                        <button class="btn btn-sm btn-outline-info ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
-                            onclick="openAssignModal(${areaId})" title="Assign area to user">
-                            <i class="bi bi-person-plus-fill"></i> Assign
+                    ${statusBadge}
+                    ${sourcedByBadge}
+                    ${isPendingArea && !isAdmin ? `
+                        <button class="btn btn-sm btn-success ms-2" style="font-size:0.75rem;padding:4px 12px;border-radius:6px;" onclick="acceptAssignment('areas', ${areaId})">
+                            <i class="bi bi-check-circle"></i> Accept Lead
                         </button>
-                    ` : ''}
-                    <button class="btn btn-sm btn-outline-secondary ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
-                        onclick="openEditAreaModal(${areaId})" title="Edit area">
-                        <i class="bi bi-pencil-fill"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
-                        onclick="deleteArea(${areaId})" title="Delete area">
-                        <i class="bi bi-trash"></i> Delete
-                    </button>
+                    ` : `
+                        ${isAdmin ? `
+                            <button class="btn btn-sm btn-outline-info ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                                onclick="openAssignModal(${areaId})" title="Assign area to user">
+                                <i class="bi bi-person-plus-fill"></i> Assign
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-sm btn-outline-secondary ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                            onclick="openEditAreaModal(${areaId})" title="Edit area">
+                            <i class="bi bi-pencil-fill"></i> Edit
+                        </button>
+                        ${(isAdmin || (area && area.assigned_users && area.assigned_users.some(u => u.id === user?.id))) ? 
+                            (globalSettings.feature_flags.enable_soft_delete ? `
+                            <button class="btn btn-sm btn-outline-danger ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                                onclick="archiveArea(${areaId}, '${areaName.replace(/'/g, "\\'")}')" title="Archive area">
+                                <i class="bi bi-archive"></i> Archive
+                            </button>
+                            ` : (isAdmin ? `
+                            <button class="btn btn-sm btn-outline-danger ms-2" style="font-size:0.7rem;padding:2px 8px;border-radius:6px;"
+                                onclick="hardDeleteArea(${areaId}, '${areaName.replace(/'/g, "\\'")}')" title="Permanently delete area">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                            ` : ''))
+                        : ''}
+                    `}
+                    ${badgeHtml}
                  </div>`;
             document.getElementById('shops-panel-count').textContent = `${shops.length} shop${shops.length !== 1 ? 's' : ''}`;
             const body = document.getElementById('shops-panel-body');
@@ -707,10 +937,56 @@
                 const lastVisit = s.last_visit_date
                     ? new Date(s.last_visit_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
                     : 'Not visited';
-                const ownerInit = (s.owner_name || s.contact_person || 'U')[0].toUpperCase();
+                let assignedHtml = '';
+                if (s.assigned_users && s.assigned_users.length > 0) {
+                    const primaryUser = s.assigned_users[0].name;
+                    const allNames = s.assigned_users.map(u => u.name).join(', ');
+                    const ownerInit = (primaryUser || 'U')[0].toUpperCase();
+
+                    if (s.assigned_users.length === 1) {
+                        assignedHtml = `<div class="d-flex align-items-center gap-2"><div class="avatar-owner">${ownerInit}</div><span class="fw-medium">${primaryUser}</span></div>`;
+                    } else {
+                        const othersCount = s.assigned_users.length - 1;
+                        assignedHtml = `
+                            <div class="d-flex align-items-center gap-2 flex-wrap" title="${allNames}">
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill d-flex align-items-center gap-1 p-1 pe-2">
+                                    <div class="avatar-owner" style="width:20px;height:20px;font-size:0.7rem;">${ownerInit}</div>
+                                    <span style="font-size: 0.85rem; font-weight: 500;">${primaryUser}</span>
+                                </span>
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                                    +${othersCount} others
+                                </span>
+                            </div>
+                        `;
+                    }
+                } else {
+                    assignedHtml = `<div class="d-flex align-items-center gap-2"><span class="text-muted"><i class="bi bi-person-dash me-1"></i>Unassigned</span></div>`;
+                }
+
+                let shopStatusBadge = '';
+                const isPendingShop = s.assignment_status === 'PENDING';
+                const isAcceptedShop = s.assignment_status === 'ACCEPTED';
+                if (isPendingShop) {
+                    shopStatusBadge = isAdmin 
+                        ? `<br><span class="badge bg-warning text-dark mt-1">Pending Staff Acceptance</span>`
+                        : `<br><span class="badge rounded-pill bg-warning text-dark placeholder-glow mt-1">Pending Acceptance</span>`;
+                } else if (isAcceptedShop && isAdmin) {
+                    shopStatusBadge = `<br><span class="badge bg-success mt-1">Claimed / Accepted</span>`;
+                }
+
+                // Hide 'Sourced by' badge for the user who created the shop themselves
+                const sourcedByShop = s.created_by_name && s.created_by_id && (!user || s.created_by_id !== user.id)
+                    ? `<div class="mt-1"><span class="badge bg-info text-dark" style="font-size:0.7rem;"><i class="bi bi-person-plus"></i> Sourced by: ${s.created_by_name}</span></div>`
+                    : "";
+
                 return `<tr>
-                        <td><span class="shop-name-primary">${s.name}</span><span class="shop-name-sub">${s.address || 'No address set'}</span></td>
-                        <td><div class="d-flex align-items-center gap-2"><div class="avatar-owner">${ownerInit}</div><span class="fw-medium">${s.owner_name || 'Unassigned'}</span></div></td>
+                        <td>
+                            <span class="shop-name-primary">${s.name}</span>
+                            <span class="shop-name-sub">${s.address || 'No address set'}</span>
+                            ${sourcedByShop}
+                            ${shopStatusBadge}
+                        </td>
+                        <td>${assignedHtml}</td>
                         <td>
                             <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.name + ' ' + (s.address || ''))}" 
                                target="_blank" 
@@ -722,8 +998,18 @@
                         <td class="text-muted small">${lastVisit}</td>
                         <td>
                             <div class="d-flex justify-content-end gap-2">
-                                <button class="btn-action text-primary" onclick="editShop(${s.id})" title="Edit shop"><i class="bi bi-pencil"></i></button>
-                                <button class="btn-action" onclick="deleteShop(${s.id}, '${s.name.replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i></button>
+                                ${isPendingShop && !isAdmin ? `
+                                    <button class="btn btn-success btn-sm" onclick="acceptAssignment('shops', ${s.id})"><i class="bi bi-check-circle"></i> Accept</button>
+                                ` : `
+                                    <button class="btn-action text-primary" onclick="editShop(${s.id})" title="Edit shop"><i class="bi bi-pencil"></i></button>
+                                    ${(isAdmin || (s.assigned_users && s.assigned_users.some(u => u.id === user?.id))) ? 
+                                        (globalSettings.feature_flags.enable_soft_delete ? `
+                                        <button class="btn-action text-danger" onclick="archiveShop(${s.id}, '${s.name.replace(/'/g, "\\'")}')" title="Archive shop"><i class="bi bi-archive"></i></button>
+                                        ` : (isAdmin ? `
+                                        <button class="btn-action text-danger" onclick="hardDeleteShop(${s.id}, '${s.name.replace(/'/g, "\\'")}')" title="Permanently delete shop"><i class="bi bi-trash"></i></button>
+                                        ` : ''))
+                                    : ''}
+                                `}
                             </div>
                         </td>
                     </tr>`;
@@ -731,8 +1017,9 @@
             </table>`;
         }
 
-        // ── Search ──
+        // ── Search & Source Filter ──
         document.getElementById('area-search').addEventListener('input', e => renderAreaList(e.target.value));
+        document.getElementById('sourceFilter').addEventListener('change', () => renderAreaList(document.getElementById('area-search').value));
 
         // ── Modal Tab Switch ──
         function switchModalTab(tab) {
@@ -941,28 +1228,32 @@
             bootstrap.Modal.getOrCreateInstance(document.getElementById('addModal')).show();
         }
 
-        // ── Delete Shop ──
-        async function deleteShop(id, name) {
-            if (!confirm(`Delete shop "${name}"? This cannot be undone.`)) return;
+        // ── Archive Shop ──
+        async function archiveShop(id, name) {
+            if (!confirm(`Archive shop "${name}"? It will be hidden from normal views.`)) return;
             try {
-                await ApiClient.deleteShop(id);
-                toast('Shop deleted');
+                await ApiClient.deleteShop(id); // backend uses delete router for soft delete
+                toast('Shop archived');
                 await loadAll();
                 if (selectedAreaId) {
                     const a = allAreas.find(x => x.id === selectedAreaId);
                     if (a) selectArea(a.id, a.name);
                 }
+                
+                if (shopsArchiveOffcanvas.offcanvasEl && shopsArchiveOffcanvas.offcanvasEl.classList.contains('show')) {
+                    shopsArchiveOffcanvas.loadData();
+                }
             } catch (e) {
-                toast(e?.data?.detail || 'Failed to delete', 'error');
+                toast(e?.data?.detail || 'Failed to archive', 'error');
             }
         }
 
-        // ── Delete Area ──
-        async function deleteArea(id, name) {
-            if (!confirm(`Are you sure you want to delete the area "${name}"?\nThis action cannot be undone and will delete all associated shops.`)) return;
+        // ── Archive Area ──
+        async function archiveArea(id, name) {
+            if (!confirm(`Archive area "${name}"? This will also archive all associated shops.`)) return;
             try {
-                await ApiClient.deleteArea(id);
-                toast(`Area "${name}" deleted`);
+                await ApiClient.deleteArea(id); // backend uses delete router for soft delete
+                toast(`Area "${name}" archived`);
                 selectedAreaId = null;
                 // Reset right-hand panel to empty default
                 document.getElementById('shops-panel-title').innerHTML = '<i class="bi bi-shop text-muted"></i> Select an area';
@@ -973,49 +1264,167 @@
                         <p>Click an area on the left to view its shops</p>
                     </div>`;
                 await loadAll();
+                
+                if (areasArchiveOffcanvas.offcanvasEl && areasArchiveOffcanvas.offcanvasEl.classList.contains('show')) {
+                    areasArchiveOffcanvas.loadData();
+                }
             } catch (e) {
-                toast(e?.data?.detail || e?.message || 'Failed to delete area', 'error');
+                toast(e?.data?.detail || e?.message || 'Failed to archive area', 'error');
             }
         }
 
-        // ── Assign Area ──
+        // ── Archived Data Logic (Handled By Generic Offcanvas Now) ──
+
+        window.selectedAssignUsers = [];
+
+        window.renderAssignUserDropdown = function () {
+            const list = document.getElementById('assign-user-list');
+            const tags = document.getElementById('selected-users-tags');
+
+            list.innerHTML = '';
+            tags.innerHTML = '';
+
+            if (!allUsers || allUsers.length === 0) {
+                list.innerHTML = '<li><span class="dropdown-item text-muted small">No users available</span></li>';
+                return;
+            }
+
+            allUsers.forEach(u => {
+                const userId = u.user_id || u.id;
+                const isSelected = window.selectedAssignUsers.includes(userId);
+
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="dropdown-item d-flex align-items-center gap-2" onclick="window.toggleUserSelection(${userId}, event)" style="cursor:pointer;">
+                        <input class="form-check-input mt-0" type="checkbox" ${isSelected ? 'checked' : ''} style="pointer-events: none;">
+                        <div class="d-flex flex-column lh-1">
+                            <span class="fw-medium" style="font-size: 0.9rem;">${u.name || u.email || 'Unknown User'}</span>
+                            <span class="text-muted" style="font-size: 0.75rem;">${u.role || 'No Role'}</span>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(li);
+
+                if (isSelected) {
+                    const isPrimary = window.selectedAssignUsers[0] === userId;
+                    const badgeClass = isPrimary ? 'bg-primary' : 'bg-secondary';
+                    const badgeEl = document.createElement('span');
+                    badgeEl.className = `badge ${badgeClass} d-flex align-items-center gap-1`;
+                    badgeEl.style.fontSize = '0.8rem';
+                    badgeEl.style.padding = '6px 10px';
+                    badgeEl.innerHTML = `
+                        ${u.name || u.email} ${isPrimary ? '<i class="bi bi-star-fill text-warning ms-1" style="font-size:0.7rem;" title="Primary Owner"></i>' : ''}
+                        <i class="bi bi-x-circle-fill ms-1" style="cursor:pointer;" onclick="window.toggleUserSelection(${userId}, event)"></i>
+                    `;
+                    tags.appendChild(badgeEl);
+                }
+            });
+
+            const btnText = window.selectedAssignUsers.length === 0
+                ? '— Select Users —'
+                : `${window.selectedAssignUsers.length} user${window.selectedAssignUsers.length > 1 ? 's' : ''} selected`;
+
+            document.getElementById('assign-user-dropdown').querySelector('span').textContent = btnText;
+        };
+
+        window.toggleUserSelection = function (userId, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const idx = window.selectedAssignUsers.indexOf(userId);
+            if (idx === -1) {
+                window.selectedAssignUsers.push(userId);
+            } else {
+                window.selectedAssignUsers.splice(idx, 1);
+            }
+            window.renderAssignUserDropdown();
+        };
+
+        window.selectTeam = function (role) {
+            if (!allUsers) return;
+            const teamUsers = allUsers.filter(u => u.role && u.role.toUpperCase() === role);
+            teamUsers.forEach(u => {
+                const id = u.user_id || u.id;
+                if (!window.selectedAssignUsers.includes(id)) {
+                    window.selectedAssignUsers.push(id);
+                }
+            });
+            window.renderAssignUserDropdown();
+        };
+
         window.toggleAllAssignShops = function (masterCb) {
             const list = document.getElementById('assign-shops-list');
             const cbs = list.querySelectorAll('input[type="checkbox"]');
-            cbs.forEach(cb => cb.checked = masterCb.checked);
+            cbs.forEach(cb => {
+                // Only toggle visible shops
+                if (cb.closest('.shop-card').style.display !== 'none') {
+                    cb.checked = masterCb.checked;
+                }
+            });
+        };
+
+        window.filterAssignShops = function (query) {
+            query = query.toLowerCase();
+            const list = document.getElementById('assign-shops-list');
+            const cards = list.querySelectorAll('.shop-card');
+            cards.forEach(card => {
+                const name = card.getAttribute('data-name');
+                if (name.includes(query)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
         };
 
         window.openAssignModal = function (areaId) {
             assigningAreaId = areaId;
-            const select = document.getElementById('assign-user-select');
-            if (!select) return;
-
-            // Reset user dropdown
-            select.innerHTML = '<option value="">— Select User —</option>';
-            if (Array.isArray(allUsers) && allUsers.length > 0) {
-                allUsers.forEach(u => {
-                    const option = document.createElement('option');
-                    option.value = u.user_id || u.id;
-                    option.textContent = `${u.name || u.email || 'Unknown User'} (${u.role || 'No Role'})`;
-                    select.appendChild(option);
-                });
-            }
+            window.selectedAssignUsers = [];
+            window.renderAssignUserDropdown();
 
             // Populate Shops List for this area
             const shopsList = document.getElementById('assign-shops-list');
             const areaShops = allShops.filter(s => s.area_id === areaId);
             document.getElementById('assign-select-all').checked = true;
+            document.getElementById('assign-shop-search').value = '';
 
             if (areaShops.length > 0) {
-                shopsList.innerHTML = areaShops.map(s => `
-                    <div class="form-check mb-1">
-                        <input class="form-check-input assign-shop-cb" type="checkbox" value="${s.id}" id="chk-shop-${s.id}" checked>
-                        <label class="form-check-label small d-flex justify-content-between" for="chk-shop-${s.id}">
-                            <span>${s.name}</span>
-                            <span class="text-muted opacity-75">${s.owner_name ? `(Assigned to: ${s.owner_name})` : ''}</span>
-                        </label>
-                    </div>
-                `).join('');
+                shopsList.innerHTML = areaShops.map(s => {
+                    let assignedHtml = '';
+                    if (s.assigned_users && s.assigned_users.length > 0) {
+                        const primaryUser = s.assigned_users[0].name;
+                        const allNames = s.assigned_users.map(u => u.name).join(', ');
+
+                        if (s.assigned_users.length === 1) {
+                            assignedHtml = `<span class="text-muted small"><i class="bi bi-person-check-fill me-1 text-primary"></i>Assigned to: ${primaryUser}</span>`;
+                        } else {
+                            const othersCount = s.assigned_users.length - 1;
+                            assignedHtml = `
+                                <div class="d-flex align-items-center gap-1 mt-1 flex-wrap" title="${allNames}">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill px-2 py-0" style="font-size: 0.7rem;">
+                                        ${primaryUser}
+                                    </span>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle rounded-pill px-2 py-0" style="font-size: 0.7rem;">
+                                        +${othersCount} others
+                                    </span>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        assignedHtml = `<span class="text-muted small"><i class="bi bi-person-dash me-1"></i>Unassigned</span>`;
+                    }
+
+                    return `
+                        <div class="shop-card border p-2 rounded d-flex align-items-center gap-3" data-name="${s.name.toLowerCase()}" style="background:#fff;">
+                            <input class="form-check-input assign-shop-cb m-0" type="checkbox" value="${s.id}" id="chk-shop-${s.id}" checked style="width: 1.25rem; height: 1.25rem;">
+                            <label class="d-flex flex-column mb-0 w-100" for="chk-shop-${s.id}" style="cursor:pointer;">
+                                <span class="fw-bold lh-1 mb-1" style="color:#0f172a;">${s.name}</span>
+                                ${assignedHtml}
+                            </label>
+                        </div>
+                    `;
+                }).join('');
             } else {
                 shopsList.innerHTML = '<p class="text-center text-muted small my-3">No shops in this area</p>';
             }
@@ -1025,9 +1434,8 @@
         };
 
         window.saveAreaAssignment = async function () {
-            const userId = document.getElementById('assign-user-select').value;
-            if (!userId) {
-                toast('Please select a user', 'warning');
+            if (window.selectedAssignUsers.length === 0) {
+                toast('Please select at least one user', 'warning');
                 return;
             }
 
@@ -1047,7 +1455,8 @@
             const shopIds = (selectAll && checkedCbs.length === allCbs.length) ? null : Array.from(checkedCbs).map(cb => parseInt(cb.value));
 
             try {
-                await ApiClient.assignArea(assigningAreaId, userId, shopIds);
+                // Pass array of userIds instead of single userId
+                await ApiClient.assignArea(assigningAreaId, window.selectedAssignUsers, shopIds);
                 toast(shopIds ? 'Specific shops successfully assigned' : 'Area and all shops successfully assigned');
 
                 const modalEl = document.getElementById('assignModal');
@@ -1059,6 +1468,26 @@
                 if (area) selectArea(area.id, area.name);
             } catch (e) {
                 toast(e?.data?.detail || e?.message || 'Failed to assign', 'error');
+            }
+        };
+
+        window.acceptAssignment = async function (moduleName, id) {
+            if (!confirm(`Are you sure you want to accept this ${moduleName.slice(0, -1)}? All other assigned staff will be removed.`)) return;
+            try {
+                await ApiClient.acceptItem(moduleName, id);
+                toast(`Successfully accepted the ${moduleName.slice(0, -1)}!`, 'success');
+                await loadAll();
+                
+                // Re-render the side panel if appropriate
+                if (moduleName === 'areas') {
+                    const area = allAreas.find(a => a.id === id);
+                    if (area) selectArea(area.id, area.name);
+                } else if (moduleName === 'shops' && selectedAreaId) {
+                    const area = allAreas.find(a => a.id === selectedAreaId);
+                    if (area) selectArea(area.id, area.name);
+                }
+            } catch (e) {
+                toast(e?.data?.detail || e?.message || 'Failed to accept', 'error');
             }
         };
 

@@ -1,7 +1,8 @@
+# backend/app/modules/visits/service.py
 import os
 import shutil
 from pathlib import Path
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, UploadFile, Request
 from datetime import date as dt_date, datetime, UTC, time, timedelta
 
@@ -22,26 +23,54 @@ class VisitService:
         self.activity_logger = ActivityLogger(db)
 
     def get_visit(self, visit_id: int):
-        return self.db.query(Visit).filter(Visit.id == visit_id).first()
+        return self.db.query(Visit).filter(Visit.id == visit_id, Visit.is_deleted == False).first()
 
-    def get_visits(self, skip: int = 0, limit: int = 100, user_id: int = None, shop_id: int = None, area_id: int = None, status: str = None, start_date: dt_date = None, end_date: dt_date = None):
+    def get_visits(self, skip: int = 0, limit: int = 100, current_user: User = None, shop_id: int = None, user_id: int | None = None):
         try:
-            query = self.db.query(Visit).join(Shop)
-            if user_id:
-                query = query.filter(Visit.user_id == user_id)
+            from app.modules.shops.models import Shop as ShopModel
+            from sqlalchemy import or_
+            from app.modules.users.models import UserRole
+
+            query = self.db.query(Visit).outerjoin(ShopModel, ShopModel.id == Visit.shop_id).options(
+                joinedload(Visit.shop).joinedload(ShopModel.area),
+                joinedload(Visit.shop).joinedload(ShopModel.project_manager),
+                joinedload(Visit.user)
+            ).filter(Visit.is_deleted == False)
             if shop_id:
                 query = query.filter(Visit.shop_id == shop_id)
-            if area_id:
-                query = query.filter(Shop.area_id == area_id)
-            if status and status not in {"ALL", "all"}:
-                query = query.filter(Visit.status == status)
-            if start_date:
-                query = query.filter(Visit.visit_date >= datetime.combine(start_date, time.min))
-            if end_date:
-                query = query.filter(Visit.visit_date < datetime.combine(end_date + timedelta(days=1), time.min))
+            
+            if user_id is not None:
+                query = query.filter(Visit.user_id == user_id)
+
+            # Admins see everything; staff see visits they authored OR
+            # visits logged on any shop they own (directly or via assignment)
+            if current_user and current_user.role not in [UserRole.ADMIN]:
+                try:
+                    query = (
+                        query
+                        .filter(
+                            or_(
+                                Visit.user_id == current_user.id,
+                                ShopModel.owner_id == current_user.id,
+                                ShopModel.assigned_owners_list.any(id=current_user.id)
+                            )
+                        )
+                    )
+                except Exception as scope_err:
+                    # Fallback: if the assigned_owners_list relationship fails,
+                    # at least scope to visits the user authored or owns
+                    print(f"[visits] scope filter warning: {scope_err}")
+                    query = query.filter(
+                        or_(
+                            Visit.user_id == current_user.id,
+                            ShopModel.owner_id == current_user.id
+                        )
+                    )
+
             return query.order_by(Visit.visit_date.desc()).offset(skip).limit(limit).all()
         except Exception as e:
             print(f"Error fetching visits: {e}")
+            import traceback; traceback.print_exc()
             return []
 
     async def create_visit(self, visit_in: VisitCreate, current_user: User, request: Request, photo: UploadFile = None):
@@ -92,29 +121,41 @@ class VisitService:
 
         self.db.add(visit)
         self.db.commit()
-        self.db.refresh(visit)
 
-        # --- Auto-transition Shop status based on visit outcome ---
-        from app.modules.shops.models import ShopStatus
+        # Re-fetch with eager-loaded relationships so @property fields
+        # (shop_name, area_name, user_name) resolve during response serialization
+        from app.modules.shops.models import Shop as ShopModel
+        visit = (
+            self.db.query(Visit)
+            .options(
+                joinedload(Visit.shop).joinedload(ShopModel.area),
+                joinedload(Visit.user)
+            )
+            .filter(Visit.id == visit.id)
+            .first()
+        )
+
+        # --- Auto-transition Shop pipeline_stage based on visit outcome ---
+        from app.core.enums import MasterPipelineStage
         shop = self.db.query(Shop).filter(Shop.id == visit_in.shop_id).first()
         if shop:
-            current = shop.status
-            new_status = None
+            current = shop.pipeline_stage
+            new_stage = None
 
-            # Any visit: move NEW → CONTACTED
-            if current == ShopStatus.NEW:
-                new_status = ShopStatus.CONTACTED
+            # Any visit: move LEAD → PITCHING
+            if current == MasterPipelineStage.LEAD:
+                new_stage = MasterPipelineStage.PITCHING
 
-            # Visit outcome: ACCEPT → MEETING_SET
-            if visit.status == VisitStatus.ACCEPT and current == ShopStatus.CONTACTED:
-                new_status = ShopStatus.MEETING_SET
+            # Visit outcome: ACCEPT → PITCHING (if still LEAD somehow)
+            if visit.status == VisitStatus.ACCEPT and current == MasterPipelineStage.LEAD:
+                new_stage = MasterPipelineStage.PITCHING
 
-            # Visit outcome: SATISFIED → CONVERTED (only from MEETING_SET)
-            if visit.status == VisitStatus.SATISFIED and current == ShopStatus.MEETING_SET:
-                new_status = ShopStatus.CONVERTED
+            # Visit outcome: SATISFIED → DELIVERY (only from PITCHING)
+            if visit.status == VisitStatus.SATISFIED and current == MasterPipelineStage.PITCHING:
+                new_stage = MasterPipelineStage.DELIVERY
 
-            if new_status and new_status != current:
-                shop.status = new_status
+            if new_stage and new_stage != current:
+                shop.pipeline_stage = new_stage
                 self.db.commit()
         # ----------------------------------------------------------
 

@@ -1,3 +1,4 @@
+# backend/app/modules/reports/schemas.py
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
@@ -14,11 +15,12 @@ class DashboardStats(BaseModel):
     revenue_mom_pct: float
     
     open_issues: int
-    visits_by_month: dict
+    visits_chart_title: str
+    visits_chart_data: dict
     revenue_by_month: dict
     visit_status_breakdown: dict
     issue_severity_breakdown: dict
-    shop_sources_breakdown: dict
+    visit_outcomes_breakdown: dict
 
     class Config:
         from_attributes = True

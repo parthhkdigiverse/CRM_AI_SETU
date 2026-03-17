@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- frontend/template/leaves.html -->
 <html lang="en">
 
 <head>
@@ -9,8 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
-    <link rel="stylesheet" href="../css/components.css?v=1772780187">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
+    <link rel="stylesheet" href="../css/components.css?v=1772780188">
 </head>
 
 <body class="bg-app">
@@ -26,7 +27,7 @@
                             approvals.</p>
                     </div>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-primary fw-semibold" style="border-radius:10px;"
+                        <button id="apply-leave-btn" class="btn btn-primary fw-semibold" style="border-radius:10px;"
                             onclick="openLeaveModal()">
                             <i class="bi bi-calendar-plus me-2"></i>Apply Leave
                         </button>
@@ -152,6 +153,53 @@
                                     <i class="bi bi-check2"></i>Apply Filters
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-card mb-4" id="my-attendance-card" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                        <div>
+                            <h6 class="fw-bold mb-0" style="color:#334155;"><i class="bi bi-clock-history me-2 text-primary"></i>My Attendance</h6>
+                            <div class="text-muted small">Daily punch in/out and total hours</div>
+                        </div>
+                    </div>
+                    <div class="p-3">
+                        <div class="row g-3 align-items-end mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small">From</label>
+                                <input type="date" id="my-att-start" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold small">To</label>
+                                <input type="date" id="my-att-end" class="form-control">
+                            </div>
+                            <div class="col-md-4 d-grid">
+                                <button class="btn btn-primary" id="my-att-apply">Apply</button>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="text-muted small" id="my-att-count">0 record(s)</div>
+                            <div class="fw-semibold" id="my-att-total">Total: 0.00 hrs</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead style="background:#f8fafc;">
+                                    <tr>
+                                        <th style="white-space:nowrap;">Date</th>
+                                        <th style="white-space:nowrap;">Punch In</th>
+                                        <th style="white-space:nowrap;">Punch Out</th>
+                                        <th style="white-space:nowrap;">Hours</th>
+                                        <th style="white-space:nowrap;">Status</th>
+                                        <th style="white-space:nowrap;">Leave</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="my-attendance-tbody">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">No data loaded.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -288,8 +336,19 @@
 
         const user = getUser();
         const isAdmin = user?.role === 'ADMIN';
+        const canApplyLeave = !isAdmin && (window.hasFeatureAccess ? window.hasFeatureAccess('leave_apply_roles') : true);
+        const canEditOwnLeave = window.hasFeatureAccess ? window.hasFeatureAccess('leave_edit_own_roles') : !isAdmin;
+        const canManageLeave = window.hasFeatureAccess ? window.hasFeatureAccess('leave_manage_roles') : isAdmin;
+        let leaveEditMode = false;
+        let editingLeaveId = null;
+        let currentLeaveRows = [];
 
-        if (isAdmin) {
+        const applyBtn = document.getElementById('apply-leave-btn');
+        if (applyBtn && !canApplyLeave) {
+            applyBtn.style.display = 'none';
+        }
+
+        if (canManageLeave) {
             document.getElementById('leave-summary-bar').style.display = 'flex';
             document.getElementById('admin-filter-toolbar').style.display = 'block';
             // Populate employee dropdown
@@ -367,17 +426,63 @@
 
         // Modal controls
         function openLeaveModal() {
+            leaveEditMode = false;
+            editingLeaveId = null;
             document.getElementById('leaveModal').classList.add('show');
             document.getElementById('leave-day-preview').style.display = 'none';
             document.getElementById('l-start').value = '';
             document.getElementById('l-end').value = '';
             document.getElementById('l-reason').value = '';
             document.getElementById('l-type').value = 'CASUAL';
+            document.getElementById('leave-submit-btn').textContent = 'Submit Request';
             document.getElementById('dt-full').checked = true;
             document.getElementById('dt-full-lbl').style.borderColor = '#4F46E5';
             document.getElementById('dt-full-lbl').style.background = '#EEF2FF';
             document.getElementById('dt-half-lbl').style.borderColor = '';
             document.getElementById('dt-half-lbl').style.background = '';
+        }
+
+        function openEditLeave(leaveId) {
+            const leave = (currentLeaveRows || []).find(l => l.id === leaveId);
+            if (!leave) return;
+            if (!canEditOwnLeave) return;
+            leaveEditMode = true;
+            editingLeaveId = leave.id;
+            document.getElementById('leaveModal').classList.add('show');
+            document.getElementById('l-start').value = leave.start_date;
+            document.getElementById('l-end').value = leave.end_date;
+            document.getElementById('l-reason').value = leave.reason || '';
+            document.getElementById('l-type').value = leave.leave_type || 'CASUAL';
+            if ((leave.day_type || 'FULL') === 'HALF') {
+                document.getElementById('dt-half').checked = true;
+                document.getElementById('dt-full-lbl').style.borderColor = '';
+                document.getElementById('dt-full-lbl').style.background = '';
+                document.getElementById('dt-half-lbl').style.borderColor = '#4F46E5';
+                document.getElementById('dt-half-lbl').style.background = '#EEF2FF';
+            } else {
+                document.getElementById('dt-full').checked = true;
+                document.getElementById('dt-full-lbl').style.borderColor = '#4F46E5';
+                document.getElementById('dt-full-lbl').style.background = '#EEF2FF';
+                document.getElementById('dt-half-lbl').style.borderColor = '';
+                document.getElementById('dt-half-lbl').style.background = '';
+            }
+            document.getElementById('leave-submit-btn').textContent = 'Update Request';
+            updateDayPreview();
+        }
+
+        async function cancelLeave(leaveId) {
+            if (!canEditOwnLeave) {
+                showToast('You do not have permission to cancel leave', 'error');
+                return;
+            }
+            if (!confirm('Cancel this leave request?')) return;
+            try {
+                await ApiClient.deleteLeave(leaveId);
+                showToast('Leave request cancelled.', 'success');
+                loadLeaves();
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to cancel leave', 'error');
+            }
         }
         function closeLeaveModal() { document.getElementById('leaveModal').classList.remove('show'); }
         document.getElementById('leaveModal').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
@@ -427,6 +532,74 @@
             OTHER: 'Other',
         };
 
+        function formatTimeCell(value) {
+            if (!value) return '--';
+            const dt = new Date(value);
+            if (Number.isNaN(dt.getTime())) return '--';
+            return dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function attendanceStatusBadge(status) {
+            const map = {
+                PRESENT: 'bg-success-subtle text-success border',
+                HALF: 'bg-warning-subtle text-warning border',
+                ABSENT: 'bg-danger-subtle text-danger border',
+                OFF: 'bg-light text-muted border'
+            };
+            const cls = map[status] || 'bg-light text-muted border';
+            return `<span class="badge ${cls}" style="font-weight:500;">${status}</span>`;
+        }
+
+        function leaveBadge(status) {
+            if (!status) return '--';
+            const map = {
+                PENDING: 'badge-yellow-light',
+                APPROVED: 'badge-green-light',
+                REJECTED: 'badge-red-light'
+            };
+            const cls = map[status] || 'bg-secondary text-white border';
+            return `<span class="status-pill ${cls}">${status}</span>`;
+        }
+
+        async function loadMyAttendanceSummary() {
+            if (canManageLeave) return;
+
+            const tbody = document.getElementById('my-attendance-tbody');
+            const start = document.getElementById('my-att-start').value;
+            const end = document.getElementById('my-att-end').value;
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+
+            try {
+                const data = await ApiClient.getAttendanceSummary({
+                    start_date: start,
+                    end_date: end,
+                    reconcile: true
+                });
+                const records = data.records || [];
+                document.getElementById('my-att-count').textContent = `${records.length} record(s)`;
+                document.getElementById('my-att-total').textContent = `Total: ${(data.total_hours || 0).toFixed(2)} hrs`;
+
+                if (!records.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No attendance records found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = records.map(r => {
+                    const day = new Date(r.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                    return `<tr>
+                        <td style="white-space:nowrap;">${day}</td>
+                        <td>${formatTimeCell(r.first_punch_in)}</td>
+                        <td>${formatTimeCell(r.last_punch_out)}</td>
+                        <td>${(r.total_hours || 0).toFixed(2)}</td>
+                        <td>${attendanceStatusBadge(r.day_status)}</td>
+                        <td>${leaveBadge(r.leave_status)}</td>
+                    </tr>`;
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Failed to load attendance.</td></tr>';
+            }
+        }
+
         // Load leaves
         async function loadLeaves() {
             const tbody = document.getElementById('leaves-tbody');
@@ -434,19 +607,20 @@
             try {
                 let allLeaves = null;
                 let leaves;
-                if (isAdmin) {
+                if (canManageLeave) {
                     allLeaves = await ApiClient.getAllLeaves();
                     leaves = [...allLeaves];
                 } else {
                     leaves = await ApiClient.getMyLeaves();
                 }
+                currentLeaveRows = leaves;
 
                 // Apply filters (admin only)
-                const userF = isAdmin ? document.getElementById('leave-user-filter')?.value : '';
-                const statusF = isAdmin ? document.getElementById('leave-status-filter').value : '';
-                const typeF = isAdmin ? document.getElementById('leave-type-filter').value : '';
-                const fromF = isAdmin ? document.getElementById('leave-from-filter')?.value : '';
-                const toF = isAdmin ? document.getElementById('leave-to-filter')?.value : '';
+                const userF = canManageLeave ? document.getElementById('leave-user-filter')?.value : '';
+                const statusF = canManageLeave ? document.getElementById('leave-status-filter').value : '';
+                const typeF = canManageLeave ? document.getElementById('leave-type-filter').value : '';
+                const fromF = canManageLeave ? document.getElementById('leave-from-filter')?.value : '';
+                const toF = canManageLeave ? document.getElementById('leave-to-filter')?.value : '';
                 if (userF) leaves = leaves.filter(l => String(l.user_id) === String(userF));
                 if (statusF) leaves = leaves.filter(l => l.status === statusF);
                 if (typeF) leaves = leaves.filter(l => (l.leave_type || 'CASUAL') === typeF);
@@ -454,7 +628,7 @@
                 if (toF) leaves = leaves.filter(l => l.end_date <= toF);
 
                 // Summary counts (admin) — uses unfiltered allLeaves saved before filter was applied
-                if (isAdmin) {
+                if (canManageLeave) {
                     let pending = 0, approved = 0, rejected = 0, totalDays = 0;
                     allLeaves.forEach(l => {
                         const d = Math.ceil((new Date(l.end_date) - new Date(l.start_date)) / 86400000) + 1;
@@ -473,7 +647,7 @@
                 const countEl = document.getElementById('leave-count');
                 const countNonAdmin = document.getElementById('leave-count-non-admin');
                 if (countEl) countEl.textContent = countStr;
-                if (countNonAdmin) countNonAdmin.textContent = isAdmin ? '' : countStr;
+                if (countNonAdmin) countNonAdmin.textContent = canManageLeave ? '' : countStr;
 
                 if (!leaves.length) {
                     tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted">No leave requests found.</td></tr>';
@@ -492,11 +666,16 @@
                     const typeCls = l.leave_type === 'UNPAID' ? 'bg-danger-subtle text-danger border' : 'bg-light text-dark border';
 
                     let lastCol;
-                    if (isAdmin && l.status === 'PENDING') {
+                    if (canManageLeave && l.status === 'PENDING') {
                         lastCol = `<div class="d-flex gap-1 flex-wrap">
                            <button class="btn btn-sm btn-outline-success" title="Approve" onclick="approveLeaveWithRemarks(${l.id}, 'APPROVED')"><i class="bi bi-check-lg"></i> Approve</button>
                            <button class="btn btn-sm btn-outline-danger" title="Reject" onclick="approveLeaveWithRemarks(${l.id}, 'REJECTED')"><i class="bi bi-x-lg"></i> Reject</button>
                          </div>`;
+                    } else if (!canManageLeave && canEditOwnLeave && l.status === 'PENDING' && String(l.user_id) === String(user?.id)) {
+                        lastCol = `<div class="d-flex gap-1 flex-wrap">
+                            <button class="btn btn-sm btn-outline-primary" title="Edit" onclick="openEditLeave(${l.id})"><i class="bi bi-pencil"></i> Edit</button>
+                            <button class="btn btn-sm btn-outline-danger" title="Cancel" onclick="cancelLeave(${l.id})"><i class="bi bi-x-circle"></i> Cancel</button>
+                        </div>`;
                     } else if (l.remarks) {
                         const remarksEsc = (l.remarks || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                         lastCol = `<span class="text-muted small d-block text-truncate" style="max-width:160px;" title="${remarksEsc}"><i class="bi bi-chat-left-text me-1"></i>${remarksEsc}</span>`;
@@ -535,20 +714,25 @@
             if (!reason) { showToast('Reason is mandatory. Please provide a justification.', 'error'); return; }
 
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>' + (leaveEditMode ? 'Updating...' : 'Submitting...');
             try {
-                await ApiClient.applyLeave({
+                const payload = {
                     start_date: start,
                     end_date: end,
                     leave_type: leaveType,
                     day_type: document.querySelector('input[name="day-type"]:checked').value,
                     reason: reason,
-                });
+                };
+                if (leaveEditMode && editingLeaveId) {
+                    await ApiClient.updateLeave(editingLeaveId, payload);
+                } else {
+                    await ApiClient.applyLeave(payload);
+                }
                 closeLeaveModal();
-                showToast('Leave request submitted successfully.', 'success');
+                showToast(leaveEditMode ? 'Leave request updated successfully.' : 'Leave request submitted successfully.', 'success');
                 loadLeaves();
             } catch (e) { showToast(e.data?.detail || e.message || 'Failed to apply leave', 'error'); }
-            finally { btn.disabled = false; btn.innerHTML = 'Submit Request'; }
+            finally { btn.disabled = false; btn.textContent = leaveEditMode ? 'Update Request' : 'Submit Request'; }
         }
 
         // Approve / Reject — with optional remarks modal
@@ -605,7 +789,28 @@
             approveLeaveWithRemarks(id, status);
         }
 
-        loadLeaves();
+        const end = new Date();
+        const start = new Date();
+        start.setDate(end.getDate() - 6);
+
+        if (!canManageLeave) {
+            document.getElementById('my-attendance-card').style.display = 'block';
+            document.getElementById('my-att-start').value = start.toISOString().slice(0, 10);
+            document.getElementById('my-att-end').value = end.toISOString().slice(0, 10);
+            document.getElementById('my-att-apply').addEventListener('click', async () => {
+                await loadMyAttendanceSummary();
+                loadLeaves();
+            });
+            loadMyAttendanceSummary().then(() => loadLeaves());
+        } else {
+            const reconStart = new Date();
+            reconStart.setDate(end.getDate() - 30);
+            ApiClient.getAttendanceSummary({
+                start_date: reconStart.toISOString().slice(0, 10),
+                end_date: end.toISOString().slice(0, 10),
+                reconcile: true
+            }).finally(loadLeaves);
+        }
     </script>
 </body>
 

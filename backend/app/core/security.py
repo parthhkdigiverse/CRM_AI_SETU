@@ -1,3 +1,4 @@
+# backend/app/core/security.py
 import jwt
 import bcrypt
 from datetime import datetime, timedelta, timezone

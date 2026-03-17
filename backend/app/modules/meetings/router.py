@@ -1,3 +1,4 @@
+# backend/app/modules/meetings/router.py
 from datetime import date as dt_date, datetime, time, timedelta
 from typing import List, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
@@ -9,7 +10,7 @@ from app.modules.clients.models import Client
 from app.modules.meetings.models import MeetingSummary
 from app.modules.meetings.service import MeetingService
 from app.modules.meetings.schemas import MeetingSummaryCreate, MeetingSummaryRead, MeetingSummaryUpdate, MeetingCancel, MeetingReschedule
-from app.modules.meetings.models import MeetingStatus
+from app.core.enums import GlobalTaskStatus
 
 router = APIRouter()
 
@@ -132,7 +133,7 @@ def update_meeting(
         setattr(db_meeting, field, value)
     
     # If the user is manually marking the meeting done, kill any lingering notifications
-    if update_data.get("status") in [MeetingStatus.COMPLETED, MeetingStatus.DONE, MeetingStatus.CANCELLED]:
+    if update_data.get("status") in [GlobalTaskStatus.COMPLETED, GlobalTaskStatus.DONE, GlobalTaskStatus.CANCELLED]:
         if db_meeting.meet_link:
             from app.modules.notifications.models import Notification
             notifs = (
@@ -197,13 +198,13 @@ def cancel_meeting(
         raise HTTPException(status_code=403, detail="Access denied")
 
     # Business Logic: Cannot cancel a finished meeting
-    if db_meeting.status in [MeetingStatus.COMPLETED, MeetingStatus.DONE]:
+    if db_meeting.status in [GlobalTaskStatus.COMPLETED, GlobalTaskStatus.DONE]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
             detail="Cannot cancel a completed meeting."
         )
 
-    db_meeting.status = MeetingStatus.CANCELLED
+    db_meeting.status = GlobalTaskStatus.CANCELLED
     db_meeting.cancellation_reason = cancel_in.reason
     db.commit()
     db.refresh(db_meeting)

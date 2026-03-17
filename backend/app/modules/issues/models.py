@@ -1,22 +1,17 @@
-import enum
+# backend/app/modules/issues/models.py
 from datetime import datetime, UTC
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum, Text, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum, Text, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+from app.core.enums import GlobalTaskStatus
+import enum
 
-class IssueStatus(str, enum.Enum):
-    PENDING     = "PENDING"
-    OPEN        = "OPEN"
-    IN_PROGRESS = "IN_PROGRESS"
-    SOLVED      = "SOLVED"
-    RESOLVED    = "RESOLVED"
-    COMPLETED   = "COMPLETED"
-    CANCELLED   = "CANCEL"
 
 class IssueSeverity(str, enum.Enum):
-    HIGH = "HIGH"
+    HIGH   = "HIGH"
     MEDIUM = "MEDIUM"
-    LOW = "LOW"
+    LOW    = "LOW"
+
 
 class Issue(Base):
     __tablename__ = "issues"
@@ -24,9 +19,10 @@ class Issue(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True, nullable=False)
     description = Column(Text)
-    status = Column(String, default=IssueStatus.PENDING, nullable=False)
+    status = Column(Enum(GlobalTaskStatus), default=GlobalTaskStatus.OPEN, nullable=False)
     severity = Column(String, default=IssueSeverity.MEDIUM, nullable=False)
     remarks = Column(Text, nullable=True)
+    is_deleted = Column(Boolean, default=False, index=True)
     opened_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
@@ -38,8 +34,8 @@ class Issue(Base):
     client = relationship("Client", backref="issues")
     project = relationship("Project", backref="issues")
     reporter = relationship("User", foreign_keys=[reporter_id], backref="reported_issues")
-
     assigned_to = relationship("User", foreign_keys=[assigned_to_id], backref="assigned_issues")
+
 
 # Import models at the end to ensure they are registered without circular dependency issues
 from app.modules.clients.models import Client

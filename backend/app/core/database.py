@@ -1,3 +1,4 @@
+# backend/app/core/database.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from urllib.parse import urlparse, unquote
@@ -59,6 +60,27 @@ def init_db():
                 conn.execute(text("ALTER TABLE bills ADD COLUMN invoice_sequence INTEGER DEFAULT 1"))
             if 'requires_qr' not in cols:
                 conn.execute(text("ALTER TABLE bills ADD COLUMN requires_qr BOOLEAN DEFAULT TRUE"))
+        
+        # 4. Global Deletion Policy & Soft Delete Column Checks
+        tables_to_check = [
+            "clients", "projects", "issues", "areas", "shops", "todos", 
+            "meeting_summaries", "bills", "attendance", "feedbacks", 
+            "user_feedbacks", "payments", "incentive_slabs", 
+            "employee_performances", "incentive_slips", "notifications", 
+            "timetable_events", "salary_slips", "leave_records", "visits"
+        ]
+        
+        for table_name in tables_to_check:
+            if inspector.has_table(table_name):
+                cols = [c['name'] for c in inspector.get_columns(table_name)]
+                if 'is_deleted' not in cols:
+                    conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE"))
+        
+        # 5. Initialize Delete Policy if missing
+        res = conn.execute(text("SELECT key FROM app_settings WHERE key = 'delete_policy'")).first()
+        if not res:
+            conn.execute(text("INSERT INTO app_settings (key, value) VALUES ('delete_policy', 'SOFT')"))
+
         
         # 3. feedbacks
         if inspector.has_table("feedbacks"):

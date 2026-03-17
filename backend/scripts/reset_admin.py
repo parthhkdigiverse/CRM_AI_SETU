@@ -1,3 +1,4 @@
+# backend/scripts/reset_admin.py
 import sys
 import os
 

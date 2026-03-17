@@ -1,3 +1,4 @@
+// frontend/js/utils.js
 /**
  * Shared utilities for SRM AI SETU Frontend
  */
@@ -190,3 +191,138 @@ function showToast(msg, type = 'success') {
     return toast(msg, type);
 }
 window.showToast = showToast;
+
+// ── Shared Archive UI Component ──
+class ArchivedDataOffcanvas {
+    constructor(options) {
+        this.moduleName = options.moduleName;
+        this.title = options.title || `Archived ${this.moduleName}`;
+        this.columns = options.columns || [{ key: 'name', label: 'Name' }];
+        this.onRestore = options.onRestore || null;
+        this.offcanvasId = `archived-offcanvas-${this.moduleName}`;
+        
+        this._injectHtml();
+        this.offcanvasEl = document.getElementById(this.offcanvasId);
+        this.bsOffcanvas = new bootstrap.Offcanvas(this.offcanvasEl);
+        window.ArchivedDataOffcanvas.instances[this.offcanvasId] = this;
+    }
+
+    _injectHtml() {
+        if (!document.getElementById(this.offcanvasId)) {
+            const html = `
+            <div class="offcanvas offcanvas-end" tabindex="-1" id="${this.offcanvasId}" style="width: 500px; z-index: 1055;">
+                <div class="offcanvas-header bg-light border-bottom">
+                    <h5 class="offcanvas-title fw-bold">
+                        <i class="bi bi-archive text-muted me-2"></i>${this.title}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body p-0">
+                    <div class="p-3">
+                        <p class="text-muted small mb-0">Restore items previously removed. They will reappear in your active lists.</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="${this.offcanvasId}-table">
+                            <thead class="bg-light">
+                                <tr class="x-small text-uppercase text-muted fw-bold">
+                                    ${this.columns.map(c => `<th>${c.label}</th>`).join('')}
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="${this.offcanvasId}-body">
+                                <tr>
+                                    <td colspan="${this.columns.length + 1}" class="text-center py-4 text-muted">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                        <span class="ms-2">Loading...</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+    }
+
+    async open() {
+        this.bsOffcanvas.show();
+        await this.loadData();
+    }
+
+    async loadData() {
+        const tbody = document.getElementById(`${this.offcanvasId}-body`);
+        tbody.innerHTML = `<tr><td colspan="${this.columns.length + 1}" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>`;
+        
+        try {
+            const data = await ApiClient.fetchArchived(this.moduleName);
+            this.renderTable(data || []);
+        } catch (err) {
+            console.error('Failed to fetch archived data', err);
+            tbody.innerHTML = `<tr><td colspan="${this.columns.length + 1}" class="text-center py-4 text-danger">Error loading data</td></tr>`;
+        }
+    }
+
+    renderTable(data) {
+        const tbody = document.getElementById(`${this.offcanvasId}-body`);
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="${this.columns.length + 1}" class="text-center py-5">
+                <i class="bi bi-inbox text-muted" style="font-size:2rem;"></i>
+                <p class="text-muted mt-2 mb-0">No archived items found</p>
+            </td></tr>`;
+            return;
+        }
+
+        const user = ApiClient.getCurrentUser();
+        const isAdmin = user && user.role && user.role.toUpperCase() === 'ADMIN';
+
+        tbody.innerHTML = data.map(item => {
+            const colsHtml = this.columns.map(col => {
+                const val = col.render ? col.render(item) : (item[col.key] || '—');
+                return `<td>${val}</td>`;
+            }).join('');
+            
+            return `
+            <tr>
+                ${colsHtml}
+                <td class="text-end pe-4 text-nowrap">
+                    <button class="btn btn-sm btn-outline-primary rounded-3 me-1" onclick="window.ArchivedDataOffcanvas.instances['${this.offcanvasId}'].restoreItem(${item.id})">
+                        <i class="bi bi-arrow-90deg-up"></i> Restore
+                    </button>
+                    ${isAdmin ? `
+                    <button class="btn btn-sm btn-outline-danger rounded-3" onclick="window.ArchivedDataOffcanvas.instances['${this.offcanvasId}'].hardDeleteItem(${item.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    ` : ''}
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    async restoreItem(id) {
+        try {
+            await ApiClient.unarchiveItem(this.moduleName, id);
+            toast('Item restored successfully');
+            await this.loadData();
+            if (this.onRestore) this.onRestore();
+        } catch (err) {
+            console.error('Error restoring item', err);
+            toast(err?.data?.detail || 'Failed to restore item', 'error');
+        }
+    }
+
+    async hardDeleteItem(id) {
+        if (!confirm("Are you sure? This cannot be undone.")) return;
+        try {
+            await ApiClient.hardDeleteItem(this.moduleName, id);
+            toast('Item permanently deleted');
+            await this.loadData();
+            if (this.onRestore) this.onRestore();
+        } catch (err) {
+            console.error('Error permanently deleting item', err);
+            toast(err?.data?.detail || 'Failed to permanently delete item', 'error');
+        }
+    }
+}
+window.ArchivedDataOffcanvas = ArchivedDataOffcanvas;
+window.ArchivedDataOffcanvas.instances = {};

@@ -1,3 +1,4 @@
+# backend/app/utils/scheduler.py
 """
 scheduler.py — Background task runner using APScheduler.
 
@@ -8,7 +9,8 @@ from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.core.database import SessionLocal
-from app.modules.meetings.models import MeetingSummary, MeetingStatus
+from app.modules.meetings.models import MeetingSummary, MeetingType
+from app.core.enums import GlobalTaskStatus
 from app.modules.clients.models import Client
 from app.modules.notifications.models import Notification
 
@@ -34,7 +36,7 @@ def check_upcoming_meetings():
             db.query(MeetingSummary)
             .join(Client, MeetingSummary.client_id == Client.id)
             .filter(
-                MeetingSummary.status == MeetingStatus.SCHEDULED,
+                MeetingSummary.status == GlobalTaskStatus.OPEN,
                 MeetingSummary.reminder_sent == False,          # noqa: E712
                 MeetingSummary.date >= window_start,
                 MeetingSummary.date <= window_end,
@@ -119,14 +121,14 @@ def close_finished_meetings():
         expired_meetings = (
             db.query(MeetingSummary)
             .filter(
-                MeetingSummary.status == MeetingStatus.SCHEDULED,
+                MeetingSummary.status == GlobalTaskStatus.OPEN,
                 MeetingSummary.date <= one_hour_ago
             )
             .all()
         )
 
         for meeting in expired_meetings:
-            meeting.status = MeetingStatus.COMPLETED
+            meeting.status = GlobalTaskStatus.RESOLVED
             print(f"[Scheduler] Auto-completed expired meeting {meeting.id} ({meeting.title}).")
 
             if meeting.meet_link:

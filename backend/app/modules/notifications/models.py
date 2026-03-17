@@ -1,3 +1,4 @@
+# backend/app/modules/notifications/models.py
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -14,6 +15,7 @@ class Notification(Base):
     message = Column(Text, nullable=False)
     
     is_read = Column(Boolean, default=False)
+    is_deleted = Column(Boolean, default=False, index=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

@@ -1,3 +1,4 @@
+# backend/alembic/versions/2a03d8db8870_add_status_and_owner_to_shop.py
 """add status and owner to shop
 
 Revision ID: 2a03d8db8870

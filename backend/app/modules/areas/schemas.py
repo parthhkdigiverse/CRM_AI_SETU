@@ -1,3 +1,4 @@
+# backend/app/modules/areas/schemas.py
 from typing import Optional, List
 from pydantic import BaseModel, ConfigDict
 
@@ -8,6 +9,11 @@ class AreaBase(BaseModel):
     city: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None
+    radius_meters: Optional[int] = 500
+    shop_limit: Optional[int] = 20
+    priority_level: Optional[str] = "MEDIUM"
+    auto_discovery_enabled: Optional[bool] = False
+    target_categories: Optional[List[str]] = None
 
 class AreaCreate(AreaBase):
     pass
@@ -19,14 +25,31 @@ class AreaUpdate(BaseModel):
     city: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None
+    radius_meters: Optional[int] = None
+    shop_limit: Optional[int] = None
+    priority_level: Optional[str] = None
+    auto_discovery_enabled: Optional[bool] = None
+    target_categories: Optional[List[str]] = None
 
 class AreaAssign(BaseModel):
-    assigned_user_id: int
+    user_ids: List[int]
     shop_ids: Optional[List[int]] = None
+
+class AssignedUser(BaseModel):
+    id: int
+    name: Optional[str] = None
+    role: Optional[str] = None
 
 class AreaRead(AreaBase):
     id: int
     assigned_user_id: Optional[int] = None
     shops_count: Optional[int] = 0
+    is_archived: Optional[bool] = False
+    archived_by_id: Optional[int] = None
+    archived_by_name: Optional[str] = None
+    created_by_id: Optional[int] = None
+    created_by_name: Optional[str] = None
+    assignment_status: Optional[str] = "UNASSIGNED"
+    assigned_users: List[AssignedUser] = []
     
     model_config = ConfigDict(from_attributes=True)

@@ -1,4 +1,5 @@
-from typing import Optional
+# backend/app/modules/clients/schemas.py
+from typing import Optional, List
 from pydantic import BaseModel, EmailStr, field_validator
 from datetime import datetime
 import re

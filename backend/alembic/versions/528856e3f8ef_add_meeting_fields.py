@@ -1,3 +1,4 @@
+# backend/alembic/versions/528856e3f8ef_add_meeting_fields.py
 """Add meeting fields
 
 Revision ID: 528856e3f8ef

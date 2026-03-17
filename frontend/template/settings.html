@@ -251,6 +251,8 @@
                             <a href="#incentives-config" onclick="scrollTo('incentives-config',this)" id="incentives-nav-link" style="display:none;"><i class="bi bi-trophy"></i> Incentives</a>
                             <a href="#payslip-contact" onclick="scrollTo('payslip-contact',this)" id="payslip-nav-link" style="display:none;"><i class="bi bi-building"></i> Company / Payslip</a>
                             <a href="#invoice-settings" onclick="scrollTo('invoice-settings',this)" id="invoice-nav-link" style="display:none;"><i class="bi bi-receipt-cutoff"></i> Invoice &amp; Payment</a>
+                            <a href="#access-control" onclick="scrollTo('access-control',this)" id="access-control-nav-link" style="display:none;"><i class="bi bi-shield-lock"></i> Access Control</a>
+                            <a href="#attendance-settings" onclick="scrollTo('attendance-settings',this)" id="attendance-nav-link" style="display:none;"><i class="bi bi-clock-history"></i> Attendance</a>
                             <a href="#system" onclick="scrollTo('system',this)" id="system-nav-link"><i
                                     class="bi bi-cpu"></i> System</a>
                         </nav>
@@ -560,6 +562,65 @@
                             </div>
                         </div>
 
+                        <!-- ── Attendance Rules (admin-only) ───── -->
+                        <div class="settings-section" id="attendance-settings" style="display:none;">
+                            <div class="settings-section-title"><i class="bi bi-clock-history text-primary"></i> Attendance Rules</div>
+                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:16px;">Configure auto leave rules and weekly off days.</p>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Absent Hours Threshold</div>
+                                    <div class="setting-desc">Hours at or below this value count as full-day absence</div>
+                                </div>
+                                <input type="number" id="att-absent-threshold" class="form-control form-control-sm" style="max-width:140px;" step="0.1" min="0">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Half Day Hours Threshold</div>
+                                    <div class="setting-desc">Below this hours value counts as half-day leave</div>
+                                </div>
+                                <input type="number" id="att-halfday-threshold" class="form-control form-control-sm" style="max-width:140px;" step="0.1" min="0">
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Saturday Policy</div>
+                                    <div class="setting-desc">Mark Saturday as full/half off or working day</div>
+                                </div>
+                                <select id="att-saturday" class="select-clean">
+                                    <option value="FULL">Full Day Off</option>
+                                    <option value="HALF">Half Day Off</option>
+                                    <option value="NONE">Working Day</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Sunday Policy</div>
+                                    <div class="setting-desc">Mark Sunday as full/half off or working day</div>
+                                </div>
+                                <select id="att-sunday" class="select-clean">
+                                    <option value="FULL">Full Day Off</option>
+                                    <option value="HALF">Half Day Off</option>
+                                    <option value="NONE">Working Day</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-row" style="align-items:flex-start;">
+                                <div>
+                                    <div class="setting-label">Official Holidays (YYYY-MM-DD)</div>
+                                    <div class="setting-desc">Comma-separated dates that should not trigger auto leave</div>
+                                </div>
+                                <textarea id="att-holidays" class="form-control form-control-sm" style="max-width:320px;" rows="3" placeholder="2026-03-15, 2026-03-25"></textarea>
+                            </div>
+
+                            <div class="mt-3">
+                                <button class="btn-save-sm" onclick="saveAttendanceSettings()"><i class="bi bi-save me-1"></i> Save Attendance Rules</button>
+                                <span id="att-save-msg" class="ms-3 small text-success d-none">Saved!</span>
+                            </div>
+                        </div>
+
                         <!-- ── Company / Payslip Contact ───── -->
                         <div class="settings-section" id="payslip-contact" style="display:none;">
                             <div class="settings-section-title"><i class="bi bi-building text-primary"></i> Company / Payslip Contact</div>
@@ -584,6 +645,30 @@
                             <div class="mt-3">
                                 <button class="btn-save-sm" onclick="savePayslipContact()"><i class="bi bi-save me-1"></i> Save Contact Info</button>
                                 <span id="payslip-save-msg" class="ms-3 small text-success d-none">Saved!</span>
+                            </div>
+                        </div>
+
+                        <!-- ── Data Management (admin-only) ───── -->
+                        <div class="settings-section" id="data-management-settings" style="display:none;">
+                            <div class="settings-section-title"><i class="bi bi-database-check text-danger"></i> Data Retention & Deletion Policy</div>
+                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:16px;">Configure how records are handled when deleted. <strong>Soft Delete</strong> marks them as hidden, while <strong>Hard Delete</strong> permanently removes them.</p>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Global Delete Policy</div>
+                                    <div class="setting-desc">Soft: Recursive hiding (Recommended) | Hard: Permanent destruction</div>
+                                </div>
+                                <select id="global-delete-policy" class="select-clean" style="border-color: #fca5a5; font-weight: 700; color: #b91c1c;">
+                                    <option value="SOFT">SOFT DELETE (Hidden)</option>
+                                    <option value="HARD">HARD DELETE (Permanent)</option>
+                                </select>
+                            </div>
+
+                            <div class="mt-3">
+                                <button class="btn btn-sm btn-danger" style="border-radius:8px; font-weight:600;" onclick="saveDeletePolicy()">
+                                    <i class="bi bi-shield-lock me-1"></i> Update Policy
+                                </button>
+                                <span id="delete-policy-save-msg" class="ms-3 small text-success d-none">Policy Updated!</span>
                             </div>
                         </div>
 
@@ -640,6 +725,14 @@
                                 <input type="text" id="inv-company-address" class="form-control form-control-sm" style="max-width:300px;" placeholder="City, State, PIN">
                             </div>
 
+                            <div class="setting-row" style="align-items:flex-start;">
+                                <div>
+                                    <div class="setting-label">Header Image Details</div>
+                                    <div class="setting-desc">Printed just after company address in invoice header (exact text)</div>
+                                </div>
+                                <textarea id="inv-header-image-details" class="form-control form-control-sm" style="max-width:360px;min-height:64px;" placeholder="e.g. Gujarat-395004\nGSTIN: XXXXX\nPAN: XXXXX"></textarea>
+                            </div>
+
                             <div class="setting-row">
                                 <div>
                                     <div class="setting-label">Company Phone</div>
@@ -674,8 +767,8 @@
 
                             <div class="setting-row">
                                 <div>
-                                    <div class="setting-label">CIN</div>
-                                    <div class="setting-desc">Company Identification Number</div>
+                                    <div class="setting-label">CIN / LLPIN</div>
+                                    <div class="setting-desc">Company Identification Number or LLPIN</div>
                                 </div>
                                 <input type="text" id="inv-company-cin" class="form-control form-control-sm" style="max-width:260px;" placeholder="e.g. U12345GJ2024PTC123456">
                             </div>
@@ -688,66 +781,97 @@
                                 <input type="text" id="inv-company-cst-code" class="form-control form-control-sm" style="max-width:220px;" placeholder="Optional">
                             </div>
 
-                            <div class="settings-section-title mt-4" style="border-top:1px solid #f1f5f9;padding-top:16px;"><i class="bi bi-qr-code text-primary"></i> Payment QR / UPI</div>
+                            <div class="settings-section-title mt-4" style="border-top:1px solid #f1f5f9;padding-top:16px;"><i class="bi bi-briefcase text-primary"></i> Business Account Payment Details</div>
 
                             <div class="setting-row">
                                 <div>
                                     <div class="setting-label">UPI ID</div>
-                                    <div class="setting-desc">e.g. company@upi — shown on invoice QR section</div>
+                                    <div class="setting-desc">e.g. company@upi &mdash; shown on invoice QR section</div>
                                 </div>
-                                <input type="text" id="inv-upi-id" class="form-control form-control-sm" style="max-width:240px;" placeholder="yourname@upi">
+                                <input type="text" id="inv-business-upi-id" class="form-control form-control-sm" style="max-width:240px;" placeholder="business@upi">
                             </div>
-
                             <div class="setting-row">
                                 <div>
                                     <div class="setting-label">UPI Account Name</div>
-                                    <div class="setting-desc">Displayed below the QR code</div>
                                 </div>
-                                <input type="text" id="inv-upi-name" class="form-control form-control-sm" style="max-width:240px;" placeholder="CRM AI SETU">
+                                <input type="text" id="inv-business-upi-name" class="form-control form-control-sm" style="max-width:240px;" placeholder="Business Name">
                             </div>
+                            <div class="setting-row">
+                                <div><div class="setting-label">Bank Name</div></div>
+                                <input type="text" id="inv-business-bank-name" class="form-control form-control-sm" style="max-width:240px;" placeholder="Bank Name">
+                            </div>
+                            <div class="setting-row">
+                                <div><div class="setting-label">Bank Account Number</div></div>
+                                <input type="text" id="inv-business-bank-account-number" class="form-control form-control-sm" style="max-width:240px;" placeholder="Account Number">
+                            </div>
+                            <div class="setting-row">
+                                <div><div class="setting-label">IFSC Code</div></div>
+                                <input type="text" id="inv-business-bank-ifsc" class="form-control form-control-sm" style="max-width:180px;" placeholder="IFSC">
+                            </div>
+                            <div class="setting-row">
+                                <div><div class="setting-label">Bank Branch</div></div>
+                                <input type="text" id="inv-business-bank-branch" class="form-control form-control-sm" style="max-width:220px;" placeholder="Branch">
+                            </div>
+
+                            <div class="setting-row" style="align-items:start;">
+                                <div>
+                                    <div class="setting-label">QR Code Image</div>
+                                    <div class="setting-desc">Directly upload a QR image or provide a URL (at least one is required if using QR)</div>
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:8px;">
+                                    <div style="display:flex; gap:8px;">
+                                        <input type="text" id="inv-business-qr-url" class="form-control form-control-sm" style="max-width:300px;" placeholder="Image URL (Or click upload button)">
+                                        <input type="file" id="business-qr-file" accept="image/*" style="display:none;" onchange="uploadPaymentQR(this, 'inv-business-qr-url', 'inv-business-qr-preview')">
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('business-qr-file').click()"><i class="bi bi-upload"></i> Upload</button>
+                                    </div>
+                                    <img id="inv-business-qr-preview" src="" alt="QR Preview" style="max-width:150px; max-height:150px; display:none; border:1px solid #ccc; padding:4px;">
+                                </div>
+                            </div>
+
+                            <div class="settings-section-title mt-4" style="border-top:1px solid #f1f5f9;padding-top:16px;"><i class="bi bi-person text-primary"></i> Personal Account Payment Details</div>
 
                             <div class="setting-row">
                                 <div>
-                                    <div class="setting-label">Bank Name</div>
-                                    <div class="setting-desc">Shown in payment details section</div>
+                                    <div class="setting-label">UPI ID</div>
                                 </div>
-                                <input type="text" id="inv-bank-name" class="form-control form-control-sm" style="max-width:240px;" placeholder="Bank Name">
+                                <input type="text" id="inv-personal-upi-id" class="form-control form-control-sm" style="max-width:240px;" placeholder="personal@upi">
                             </div>
-
                             <div class="setting-row">
                                 <div>
-                                    <div class="setting-label">Bank Account Number</div>
-                                    <div class="setting-desc">Shown in payment details section</div>
+                                    <div class="setting-label">UPI Account Name</div>
                                 </div>
-                                <input type="text" id="inv-bank-account-number" class="form-control form-control-sm" style="max-width:240px;" placeholder="Account Number">
+                                <input type="text" id="inv-personal-upi-name" class="form-control form-control-sm" style="max-width:240px;" placeholder="Personal Name">
                             </div>
-
                             <div class="setting-row">
-                                <div>
-                                    <div class="setting-label">IFSC Code</div>
-                                    <div class="setting-desc">Shown in payment details section</div>
-                                </div>
-                                <input type="text" id="inv-bank-ifsc" class="form-control form-control-sm" style="max-width:180px;" placeholder="IFSC">
+                                <div><div class="setting-label">Bank Name</div></div>
+                                <input type="text" id="inv-personal-bank-name" class="form-control form-control-sm" style="max-width:240px;" placeholder="Bank Name">
                             </div>
-
                             <div class="setting-row">
-                                <div>
-                                    <div class="setting-label">Bank Branch</div>
-                                    <div class="setting-desc">Optional branch name</div>
-                                </div>
-                                <input type="text" id="inv-bank-branch" class="form-control form-control-sm" style="max-width:220px;" placeholder="Branch">
+                                <div><div class="setting-label">Bank Account Number</div></div>
+                                <input type="text" id="inv-personal-bank-account-number" class="form-control form-control-sm" style="max-width:240px;" placeholder="Account Number">
                             </div>
-
                             <div class="setting-row">
-                                <div>
-                                    <div class="setting-label">QR Code Image URL</div>
-                                    <div class="setting-desc">Direct link to your payment QR PNG/JPG image</div>
-                                </div>
-                                <input type="url" id="inv-qr-url" class="form-control form-control-sm" style="max-width:300px;" placeholder="https://...">
+                                <div><div class="setting-label">IFSC Code</div></div>
+                                <input type="text" id="inv-personal-bank-ifsc" class="form-control form-control-sm" style="max-width:180px;" placeholder="IFSC">
+                            </div>
+                            <div class="setting-row">
+                                <div><div class="setting-label">Bank Branch</div></div>
+                                <input type="text" id="inv-personal-bank-branch" class="form-control form-control-sm" style="max-width:220px;" placeholder="Branch">
                             </div>
 
-                            <div class="mt-1" id="inv-qr-preview-wrap" style="display:none;padding:10px 0;">
-                                <img id="inv-qr-preview" src="" alt="QR Preview" style="width:100px;height:100px;object-fit:contain;border:1px solid #e2e8f0;border-radius:8px;">
+                            <div class="setting-row" style="align-items:start;">
+                                <div>
+                                    <div class="setting-label">QR Code Image</div>
+                                    <div class="setting-desc">Directly upload a QR image or provide a URL (at least one is required if using QR)</div>
+                                </div>
+                                <div style="display:flex; flex-direction:column; gap:8px;">
+                                    <div style="display:flex; gap:8px;">
+                                        <input type="text" id="inv-personal-qr-url" class="form-control form-control-sm" style="max-width:300px;" placeholder="Image URL (Or click upload button)">
+                                        <input type="file" id="personal-qr-file" accept="image/*" style="display:none;" onchange="uploadPaymentQR(this, 'inv-personal-qr-url', 'inv-personal-qr-preview')">
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('personal-qr-file').click()"><i class="bi bi-upload"></i> Upload</button>
+                                    </div>
+                                    <img id="inv-personal-qr-preview" src="" alt="QR Preview" style="max-width:150px; max-height:150px; display:none; border:1px solid #ccc; padding:4px;">
+                                </div>
                             </div>
 
                             <div class="settings-section-title mt-4" style="border-top:1px solid #f1f5f9;padding-top:16px;"><i class="bi bi-shield-check text-primary"></i> Verification Permissions</div>
@@ -765,9 +889,180 @@
                                 </div>
                             </div>
 
+                            <div class="settings-section-title mt-4" style="border-top:1px solid #f1f5f9;padding-top:16px;"><i class="bi bi-card-text text-primary"></i> Invoice Terms</div>
+                            <div class="setting-row" style="align-items:flex-start;">
+                                <div>
+                                    <div class="setting-label">Terms &amp; Conditions</div>
+                                    <div class="setting-desc">Admin can edit terms printed in invoice footer. Use new line for multiple terms.</div>
+                                </div>
+                                <textarea id="inv-terms-conditions" class="form-control form-control-sm" style="max-width:420px;min-height:88px;" placeholder="• Subject to Surat Jurisdiction"></textarea>
+                            </div>
+
                             <div class="mt-3">
                                 <button class="btn-save-sm" onclick="saveInvoiceSettings()"><i class="bi bi-save me-1"></i> Save Invoice Settings</button>
                                 <span id="inv-save-msg" class="ms-3 small text-success d-none">Saved!</span>
+                            </div>
+                        </div>
+
+                        <div class="settings-section" id="access-control" style="display:none;">
+                            <div class="settings-section-title"><i class="bi bi-shield-lock text-primary"></i> Role &amp; Page Access Control</div>
+                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:12px;">Define page access per role. Use comma-separated page names like: dashboard.html, billing.html, issues.html. Use * for full access.</p>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">SALES Pages</label>
+                                    <textarea id="policy-pages-sales" class="form-control form-control-sm" rows="3"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">TELESALES Pages</label>
+                                    <textarea id="policy-pages-telesales" class="form-control form-control-sm" rows="3"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">PROJECT_MANAGER Pages</label>
+                                    <textarea id="policy-pages-pm" class="form-control form-control-sm" rows="3"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">PROJECT_MANAGER_AND_SALES Pages</label>
+                                    <textarea id="policy-pages-pmsales" class="form-control form-control-sm" rows="3"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="settings-section-title mt-4"><i class="bi bi-receipt text-primary"></i> Invoice Creator Roles</div>
+                            <div id="policy-invoice-creators" style="display:flex;gap:14px;flex-wrap:wrap;max-width:520px;">
+                                <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
+                                <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
+                                <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
+                                <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
+                                <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
+                            </div>
+
+                            <div class="settings-section-title mt-4"><i class="bi bi-sliders text-primary"></i> Action Permission Matrix</div>
+                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:12px;">Choose which roles can perform each action. ADMIN is always enforced.</p>
+
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="setting-label mb-1">Issue Create Roles</div>
+                                    <div id="policy-feature-issue-create" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="setting-label mb-1">Issue Manage Roles</div>
+                                    <div id="policy-feature-issue-manage" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 mt-2"><div class="setting-label">Leave</div></div>
+                                <div class="col-12">
+                                    <div class="setting-label mb-1">Leave Apply Roles</div>
+                                    <div id="policy-feature-leave-apply" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN"> ADMIN</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="setting-label mb-1">Leave Manage Roles (approve/reject/all)</div>
+                                    <div id="policy-feature-leave-manage" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="setting-label mb-1">Leave Edit Own Pending Roles</div>
+                                    <div id="policy-feature-leave-edit-own" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN"> ADMIN</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="setting-label mb-1">Leave Cancel Own Pending Roles</div>
+                                    <div id="policy-feature-leave-cancel-own" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN"> ADMIN</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 mt-2"><div class="setting-label">Salary</div></div>
+                                <div class="col-12">
+                                    <div class="setting-label mb-1">Salary View All Roles</div>
+                                    <div id="policy-feature-salary-view-all" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="setting-label mb-1">Salary Manage Roles</div>
+                                    <div id="policy-feature-salary-manage" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 mt-2"><div class="setting-label">Incentives</div></div>
+                                <div class="col-12">
+                                    <div class="setting-label mb-1">Incentive View All Roles</div>
+                                    <div id="policy-feature-incentive-view-all" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="setting-label mb-1">Incentive Manage Roles</div>
+                                    <div id="policy-feature-incentive-manage" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 mt-2"><div class="setting-label">Employees</div></div>
+                                <div class="col-12">
+                                    <div class="setting-label mb-1">Employee Manage Roles</div>
+                                    <div id="policy-feature-employee-manage" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
+                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <button class="btn-save-sm" onclick="saveAccessPolicy()"><i class="bi bi-save me-1"></i> Save Access Policy</button>
+                                <span id="access-policy-save-msg" class="ms-3 small text-success d-none">Saved!</span>
                             </div>
                         </div>
 
@@ -836,11 +1131,11 @@
         <span id="toast-text">Saved!</span>
     </div>
 
-    <script src="../js/utils.js?v=2.3"></script>
-    <script src="../js/api.js?v=2.3"></script>
-    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/utils.js?v=2.5"></script>
+    <script src="../js/api.js?v=2.5"></script>
+    <script src="../js/auth.js?v=2.5"></script>
     <script src="../js/ui_components.js?v=20260312"></script>
-    <script src="../js/app.js?v=2.3"></script>
+    <script src="../js/app.js?v=2.5"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
@@ -849,6 +1144,12 @@
             sidebarElement.innerHTML = renderSidebar('settings');
         }
         injectTopHeader('Settings');
+
+        // Initial load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            initSystem();
+        });
 
         // ── Load saved settings
         async function loadSettings() {
@@ -928,11 +1229,24 @@
 
         // ── Scroll nav
         function scrollTo(id, el) {
+            // Remove active class from all sidebar links
             document.querySelectorAll('.settings-nav a').forEach(a => a.classList.remove('active'));
             el.classList.add('active');
-            document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Hide all settings sections
+            document.querySelectorAll('.settings-section').forEach(sec => sec.style.display = 'none');
+
+            // Show the selected section
+            const section = document.getElementById(id);
+            if (section) {
+                section.style.display = 'block';
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
             return false;
         }
+
+
+
 
         // ── Clear all settings
         async function clearAllSettings() {
@@ -962,14 +1276,21 @@
                 document.getElementById('payslip-contact').style.display = 'block';
                 document.getElementById('invoice-nav-link').style.display = 'flex';
                 document.getElementById('invoice-settings').style.display = 'block';
+                document.getElementById('access-control-nav-link').style.display = 'flex';
+                document.getElementById('access-control').style.display = 'block';
+                document.getElementById('attendance-nav-link').style.display = 'flex';
+                document.getElementById('attendance-settings').style.display = 'block';
                 loadSlabsSettings();
                 loadIncentiveEligibilityUsers();
                 loadPayslipContact();
-                loadEmployeeCodeSettings();
                 loadInvoiceSettings();
+                loadAccessPolicy();
+                loadAttendanceSettings();
+                loadDeletePolicy();
                 document.getElementById('employee-code-settings').style.display = 'block';
+                document.getElementById('data-management-settings').style.display = 'block';
 
-                const apiUrl = window.API_BASE || 'http://localhost:8000';
+                const apiUrl = window.API_BASE || (window.location.origin + '/api');
                 document.getElementById('api-url-display').textContent = apiUrl;
                 document.getElementById('sys-user-id').textContent = `#${u?.id || '—'}`;
 
@@ -982,13 +1303,87 @@
                     document.getElementById('api-status-chip').style.color = '#b91c1c';
                     document.getElementById('api-status-chip').style.borderColor = '#fca5a5';
                 });
+
+                // Fetch Global System Settings
+                ApiClient.request('/settings/')
+                    .then(res => {
+                        const flags = res.feature_flags || {};
+                        const sdToggle = document.getElementById('sys-soft-delete');
+                        if (sdToggle) {
+                            sdToggle.checked = flags.enable_soft_delete !== false; // Default true if not set
+                        }
+                    })
+                    .catch(err => console.error("Failed to load global settings", err));
             } else {
                 document.getElementById('system-nav-link').style.display = 'none';
             }
         }
+        
+        // ── Save Global Setting ──
+        async function saveGlobalSetting(key, value) {
+            try {
+                // Fetch existing settings first
+                const res = await ApiClient.request('/settings/');
+                const flags = res.feature_flags || {};
+                flags[key] = value;
+                
+                await ApiClient.request('/settings/', {
+                    method: 'PATCH',
+                    body: JSON.stringify({ feature_flags: flags })
+                });
+                showToast('Global setting updated!');
+            } catch (err) {
+                console.error('Failed to save global setting', err);
+                showToast('Failed to save global setting', true);
+                // Revert toggle on error
+                const toggle = document.getElementById('sys-soft-delete');
+                if (toggle) toggle.checked = !value;
+            }
+        }
 
-        loadSettings();
-        initSystem();
+
+        async function loadAttendanceSettings() {
+            try {
+                const settings = await window.ApiClient.getAttendanceSettings();
+                document.getElementById('att-absent-threshold').value = settings.absent_hours_threshold ?? 0;
+                document.getElementById('att-halfday-threshold').value = settings.half_day_hours_threshold ?? 4;
+                document.getElementById('att-saturday').value = (settings.weekly_off_saturday || 'FULL').toUpperCase();
+                document.getElementById('att-sunday').value = (settings.weekly_off_sunday || 'FULL').toUpperCase();
+
+                const holidays = (settings.official_holidays || []).map(d => {
+                    if (typeof d === 'string') return d;
+                    try { return new Date(d).toISOString().slice(0, 10); } catch { return ''; }
+                }).filter(Boolean);
+                document.getElementById('att-holidays').value = holidays.join(', ');
+            } catch (err) {
+                console.error('Failed to load attendance settings', err);
+            }
+        }
+
+        async function saveAttendanceSettings() {
+            const btnMsg = document.getElementById('att-save-msg');
+            const absent = parseFloat(document.getElementById('att-absent-threshold').value || '0');
+            const half = parseFloat(document.getElementById('att-halfday-threshold').value || '4');
+            const saturday = document.getElementById('att-saturday').value;
+            const sunday = document.getElementById('att-sunday').value;
+            const holidayRaw = document.getElementById('att-holidays').value || '';
+            const holidays = holidayRaw.split(',').map(h => h.trim()).filter(Boolean);
+
+            try {
+                await window.ApiClient.updateAttendanceSettings({
+                    absent_hours_threshold: absent,
+                    half_day_hours_threshold: half,
+                    weekly_off_saturday: saturday,
+                    weekly_off_sunday: sunday,
+                    official_holidays: holidays
+                });
+                btnMsg.classList.remove('d-none');
+                setTimeout(() => btnMsg.classList.add('d-none'), 2000);
+            } catch (err) {
+                console.error('Attendance settings save failed', err);
+                showToast('Failed to save attendance settings', true);
+            }
+        }
 
         // ── Incentives config (admin-only)
         async function loadSlabsSettings() {
@@ -1236,6 +1631,32 @@
         }
 
         // ── Invoice & Payment Settings ────────────────────────────────────────
+        
+        async function uploadPaymentQR(inputEle, urlInputId, previewImgId) {
+            const file = inputEle.files[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                // Inline fetch or we can just send base64, but we have an endpoint
+                const token = localStorage.getItem('access_token');
+                if (!token) return;
+                const apiBase = window.API_BASE || (window.location.origin + '/api');
+                const res = await fetch(apiBase + '/billing/settings/upload-qr', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                if (!res.ok) throw new Error('Upload failed');
+                const data = await res.json();
+                document.getElementById(urlInputId).value = data.url;
+                document.getElementById(previewImgId).src = data.url;
+                document.getElementById(previewImgId).style.display = 'block';
+            } catch(e) {
+                showToast('Failed to upload image', true);
+            }
+        }
+
         async function loadInvoiceSettings() {
             try {
                 const data = await ApiClient.getInvoiceSettings();
@@ -1245,30 +1666,50 @@
                 document.getElementById('inv-seq-without-gst').value = data.invoice_seq_without_gst || 1;
                 document.getElementById('inv-company-name').value = data.company_name || '';
                 document.getElementById('inv-company-address').value = data.company_address || '';
+                document.getElementById('inv-header-image-details').value = data.company_header_image_details || '';
                 document.getElementById('inv-company-phone').value = data.company_phone || '';
                 document.getElementById('inv-company-email').value = data.company_email || '';
                 document.getElementById('inv-company-gstin').value = data.company_gstin || '';
                 document.getElementById('inv-company-pan').value = data.company_pan || '';
                 document.getElementById('inv-company-cin').value = data.company_cin || '';
                 document.getElementById('inv-company-cst-code').value = data.company_cst_code || '';
-                document.getElementById('inv-upi-id').value = data.payment_upi_id || '';
-                document.getElementById('inv-upi-name').value = data.payment_account_name || '';
-                document.getElementById('inv-bank-name').value = data.payment_bank_name || '';
-                document.getElementById('inv-bank-account-number').value = data.payment_account_number || '';
-                document.getElementById('inv-bank-ifsc').value = data.payment_ifsc || '';
-                document.getElementById('inv-bank-branch').value = data.payment_branch || '';
+                document.getElementById('inv-terms-conditions').value = data.invoice_terms_conditions || '';
+                document.getElementById('inv-business-upi-id').value = data.business_payment_upi_id || data.payment_upi_id || '';
+                document.getElementById('inv-business-upi-name').value = data.business_payment_account_name || data.payment_account_name || '';
+                document.getElementById('inv-business-bank-name').value = data.business_payment_bank_name || data.payment_bank_name || '';
+                document.getElementById('inv-business-bank-account-number').value = data.business_payment_account_number || data.payment_account_number || '';
+                document.getElementById('inv-business-bank-ifsc').value = data.business_payment_ifsc || data.payment_ifsc || '';
+                document.getElementById('inv-business-bank-branch').value = data.business_payment_branch || data.payment_branch || '';
+                
+                const bQrUrl = data.business_payment_qr_image_url || data.payment_qr_image_url || '';
+                document.getElementById('inv-business-qr-url').value = bQrUrl;
+                if (bQrUrl) {
+                    document.getElementById('inv-business-qr-preview').src = bQrUrl;
+                    document.getElementById('inv-business-qr-preview').style.display = 'block';
+                } else {
+                    document.getElementById('inv-business-qr-preview').style.display = 'none';
+                }
+
+                document.getElementById('inv-personal-upi-id').value = data.personal_payment_upi_id || '';
+                document.getElementById('inv-personal-upi-name').value = data.personal_payment_account_name || '';
+                document.getElementById('inv-personal-bank-name').value = data.personal_payment_bank_name || '';
+                document.getElementById('inv-personal-bank-account-number').value = data.personal_payment_account_number || '';
+                document.getElementById('inv-personal-bank-ifsc').value = data.personal_payment_ifsc || '';
+                document.getElementById('inv-personal-bank-branch').value = data.personal_payment_branch || '';
+                
+                const pQrUrl = data.personal_payment_qr_image_url || '';
+                document.getElementById('inv-personal-qr-url').value = pQrUrl;
+                if (pQrUrl) {
+                    document.getElementById('inv-personal-qr-preview').src = pQrUrl;
+                    document.getElementById('inv-personal-qr-preview').style.display = 'block';
+                } else {
+                    document.getElementById('inv-personal-qr-preview').style.display = 'none';
+                }
+
                 const verifierRoles = String(data.invoice_verifier_roles || 'ADMIN').split(',').map(v => v.trim()).filter(Boolean);
                 document.querySelectorAll('#inv-verifier-roles input[type="checkbox"]').forEach(cb => {
                     cb.checked = verifierRoles.includes(cb.value);
                 });
-                const qrUrl = data.payment_qr_image_url || '';
-                document.getElementById('inv-qr-url').value = qrUrl;
-                if (qrUrl) {
-                    document.getElementById('inv-qr-preview').src = qrUrl;
-                    document.getElementById('inv-qr-preview-wrap').style.display = 'block';
-                } else {
-                    document.getElementById('inv-qr-preview-wrap').style.display = 'none';
-                }
             } catch (e) {
                 console.warn('Could not load invoice settings:', e);
             }
@@ -1276,19 +1717,23 @@
 
         // Live QR preview
         document.addEventListener('DOMContentLoaded', () => {
-            const qrInput = document.getElementById('inv-qr-url');
-            if (qrInput) {
-                qrInput.addEventListener('input', function() {
-                    const val = this.value.trim();
-                    const wrap = document.getElementById('inv-qr-preview-wrap');
-                    if (val) {
-                        document.getElementById('inv-qr-preview').src = val;
-                        wrap.style.display = 'block';
-                    } else {
-                        wrap.style.display = 'none';
-                    }
-                });
-            }
+            const setupPreview = (inputId, previewId) => {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.addEventListener('input', function() {
+                        const val = this.value.trim();
+                        const img = document.getElementById(previewId);
+                        if (val) {
+                            img.src = val;
+                            img.style.display = 'block';
+                        } else {
+                            img.style.display = 'none';
+                        }
+                    });
+                }
+            };
+            setupPreview('inv-business-qr-url', 'inv-business-qr-preview');
+            setupPreview('inv-personal-qr-url', 'inv-personal-qr-preview');
         });
 
         async function saveInvoiceSettings() {
@@ -1304,19 +1749,28 @@
                 invoice_seq_without_gst: parseInt(document.getElementById('inv-seq-without-gst').value, 10) || 1,
                 company_name: document.getElementById('inv-company-name').value.trim(),
                 company_address: document.getElementById('inv-company-address').value.trim(),
+                company_header_image_details: document.getElementById('inv-header-image-details').value.trim(),
                 company_phone: document.getElementById('inv-company-phone').value.trim(),
                 company_email: document.getElementById('inv-company-email').value.trim(),
                 company_gstin: document.getElementById('inv-company-gstin').value.trim(),
                 company_pan: document.getElementById('inv-company-pan').value.trim(),
                 company_cin: document.getElementById('inv-company-cin').value.trim(),
                 company_cst_code: document.getElementById('inv-company-cst-code').value.trim(),
-                payment_upi_id: document.getElementById('inv-upi-id').value.trim(),
-                payment_account_name: document.getElementById('inv-upi-name').value.trim(),
-                payment_bank_name: document.getElementById('inv-bank-name').value.trim(),
-                payment_account_number: document.getElementById('inv-bank-account-number').value.trim(),
-                payment_ifsc: document.getElementById('inv-bank-ifsc').value.trim(),
-                payment_branch: document.getElementById('inv-bank-branch').value.trim(),
-                payment_qr_image_url: document.getElementById('inv-qr-url').value.trim(),
+                invoice_terms_conditions: document.getElementById('inv-terms-conditions').value.trim(),
+                business_payment_upi_id: document.getElementById('inv-business-upi-id').value.trim(),
+                business_payment_account_name: document.getElementById('inv-business-upi-name').value.trim(),
+                business_payment_bank_name: document.getElementById('inv-business-bank-name').value.trim(),
+                business_payment_account_number: document.getElementById('inv-business-bank-account-number').value.trim(),
+                business_payment_ifsc: document.getElementById('inv-business-bank-ifsc').value.trim(),
+                business_payment_branch: document.getElementById('inv-business-bank-branch').value.trim(),
+                business_payment_qr_image_url: document.getElementById('inv-business-qr-url').value.trim(),
+                personal_payment_upi_id: document.getElementById('inv-personal-upi-id').value.trim(),
+                personal_payment_account_name: document.getElementById('inv-personal-upi-name').value.trim(),
+                personal_payment_bank_name: document.getElementById('inv-personal-bank-name').value.trim(),
+                personal_payment_account_number: document.getElementById('inv-personal-bank-account-number').value.trim(),
+                personal_payment_ifsc: document.getElementById('inv-personal-bank-ifsc').value.trim(),
+                personal_payment_branch: document.getElementById('inv-personal-bank-branch').value.trim(),
+                personal_payment_qr_image_url: document.getElementById('inv-personal-qr-url').value.trim(),
                 invoice_verifier_roles: selectedRoles.join(','),
             };
             try {
@@ -1327,6 +1781,132 @@
                 showToast('Invoice settings saved');
             } catch (e) {
                 showToast(e.data?.detail || e.message || 'Failed to save', true);
+            }
+        }
+
+        function _pagesToText(pages) {
+            return (pages || []).join(', ');
+        }
+
+        function _textToPages(text) {
+            return String(text || '')
+                .split(',')
+                .map(v => v.trim())
+                .filter(Boolean);
+        }
+
+        function setRoleCheckboxes(containerId, roles) {
+            const normalized = (roles || []).map(v => String(v).toUpperCase());
+            document.querySelectorAll(`#${containerId} input[type="checkbox"]`).forEach(cb => {
+                cb.checked = normalized.includes(cb.value);
+            });
+        }
+
+        function getRoleCheckboxes(containerId, ensureAdmin = false) {
+            const selected = Array.from(document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`)).map(cb => cb.value);
+            if (ensureAdmin && !selected.includes('ADMIN')) selected.push('ADMIN');
+            return selected;
+        }
+
+        async function loadAccessPolicy() {
+            try {
+                const data = await ApiClient.getAccessPolicy();
+                const pageAccess = data.page_access || {};
+                document.getElementById('policy-pages-sales').value = _pagesToText(pageAccess.SALES || []);
+                document.getElementById('policy-pages-telesales').value = _pagesToText(pageAccess.TELESALES || []);
+                document.getElementById('policy-pages-pm').value = _pagesToText(pageAccess.PROJECT_MANAGER || []);
+                document.getElementById('policy-pages-pmsales').value = _pagesToText(pageAccess.PROJECT_MANAGER_AND_SALES || []);
+
+                const featureAccess = data.feature_access || {};
+                setRoleCheckboxes('policy-invoice-creators', featureAccess.invoice_creator_roles || []);
+                setRoleCheckboxes('policy-feature-issue-create', featureAccess.issue_create_roles || []);
+                setRoleCheckboxes('policy-feature-issue-manage', featureAccess.issue_manage_roles || []);
+                setRoleCheckboxes('policy-feature-leave-apply', featureAccess.leave_apply_roles || []);
+                setRoleCheckboxes('policy-feature-leave-manage', featureAccess.leave_manage_roles || []);
+                setRoleCheckboxes('policy-feature-leave-edit-own', featureAccess.leave_edit_own_roles || []);
+                setRoleCheckboxes('policy-feature-leave-cancel-own', featureAccess.leave_cancel_own_roles || []);
+                setRoleCheckboxes('policy-feature-salary-view-all', featureAccess.salary_view_all_roles || []);
+                setRoleCheckboxes('policy-feature-salary-manage', featureAccess.salary_manage_roles || []);
+                setRoleCheckboxes('policy-feature-incentive-view-all', featureAccess.incentive_view_all_roles || []);
+                setRoleCheckboxes('policy-feature-incentive-manage', featureAccess.incentive_manage_roles || []);
+                setRoleCheckboxes('policy-feature-employee-manage', featureAccess.employee_manage_roles || []);
+            } catch (e) {
+                console.warn('Could not load access policy:', e);
+            }
+        }
+
+        async function saveAccessPolicy() {
+            const msg = document.getElementById('access-policy-save-msg');
+            const creatorRoles = getRoleCheckboxes('policy-invoice-creators', true);
+
+            const payload = {
+                page_access: {
+                    ADMIN: ['*'],
+                    SALES: _textToPages(document.getElementById('policy-pages-sales').value),
+                    TELESALES: _textToPages(document.getElementById('policy-pages-telesales').value),
+                    PROJECT_MANAGER: _textToPages(document.getElementById('policy-pages-pm').value),
+                    PROJECT_MANAGER_AND_SALES: _textToPages(document.getElementById('policy-pages-pmsales').value),
+                    CLIENT: ['dashboard.html']
+                },
+                feature_access: {
+                    invoice_creator_roles: creatorRoles,
+                    invoice_verifier_roles: Array.from(document.querySelectorAll('#inv-verifier-roles input[type="checkbox"]:checked')).map(cb => cb.value),
+                    issue_create_roles: getRoleCheckboxes('policy-feature-issue-create', true),
+                    issue_manage_roles: getRoleCheckboxes('policy-feature-issue-manage', true),
+                    leave_apply_roles: getRoleCheckboxes('policy-feature-leave-apply', false),
+                    leave_manage_roles: getRoleCheckboxes('policy-feature-leave-manage', true),
+                    leave_edit_own_roles: getRoleCheckboxes('policy-feature-leave-edit-own', false),
+                    leave_cancel_own_roles: getRoleCheckboxes('policy-feature-leave-cancel-own', false),
+                    salary_view_all_roles: getRoleCheckboxes('policy-feature-salary-view-all', true),
+                    salary_manage_roles: getRoleCheckboxes('policy-feature-salary-manage', true),
+                    incentive_view_all_roles: getRoleCheckboxes('policy-feature-incentive-view-all', true),
+                    incentive_manage_roles: getRoleCheckboxes('policy-feature-incentive-manage', true),
+                    employee_manage_roles: getRoleCheckboxes('policy-feature-employee-manage', true)
+                }
+            };
+
+            if (!payload.feature_access.invoice_verifier_roles.includes('ADMIN')) {
+                payload.feature_access.invoice_verifier_roles.push('ADMIN');
+            }
+
+            try {
+                await ApiClient.updateAccessPolicy(payload);
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 2500);
+                showToast('Access policy saved');
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to save access policy', true);
+            }
+        }
+
+        async function loadDeletePolicy() {
+            try {
+                // We'll use the payslip setting endpoint conceptually or a generic app setting one
+                // Since we implemented it in AppSetting model, let's look for a generic getter or use payslip context
+                // Backend: router.get("/payslip-settings") returns {email, phone}
+                // Let's assume there's a policy endpoint or we add one. 
+                // Wait, I didn't add a specific GET for delete_policy yet in the router.
+                // I should add a specific GET/PUT for this in a generic settings router or specific one.
+                // For now, I'll assume a new endpoint /settings/delete-policy or similar.
+                // RE-READING: I added it to AppSetting. I'll add the endpoint to salary router.
+                const res = await apiGet('/hrm/delete-policy');
+                document.getElementById('global-delete-policy').value = res.policy || 'SOFT';
+            } catch (e) {
+                console.warn('Failed to load delete policy');
+            }
+        }
+
+        async function saveDeletePolicy() {
+            const policy = document.getElementById('global-delete-policy').value;
+            const msg = document.getElementById('delete-policy-save-msg');
+            if (!confirm(`Are you sure you want to switch to ${policy} delete? This affects all future deletions.`)) return;
+            try {
+                await apiPut('/hrm/delete-policy', { policy });
+                msg.classList.remove('d-none');
+                setTimeout(() => msg.classList.add('d-none'), 2500);
+                showToast('Global delete policy updated');
+            } catch (e) {
+                showToast('Failed to update policy', true);
             }
         }
     </script>
