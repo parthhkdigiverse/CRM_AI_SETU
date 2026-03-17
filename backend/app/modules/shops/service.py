@@ -413,6 +413,7 @@ class ShopService:
             raise HTTPException(status_code=400, detail="Selected user is not a Project Manager or Admin")
 
         shop.project_manager_id = pm_id
+        shop.pipeline_stage = MasterPipelineStage.NEGOTIATION
         db.commit()
         db.refresh(shop)
 
@@ -473,6 +474,7 @@ class ShopService:
         selected_pm = next((pm for pm in pms if pm.id == selected_pm_id), None)
         
         shop.project_manager_id = selected_pm_id
+        shop.pipeline_stage = MasterPipelineStage.NEGOTIATION
         db.commit()
         db.refresh(shop)
 
@@ -545,7 +547,7 @@ class ShopService:
 
         # First completed demo → advance status to MEETING_SET
         if shop.demo_stage == 1:
-            shop.pipeline_stage = MasterPipelineStage.PITCHING
+            shop.pipeline_stage = MasterPipelineStage.NEGOTIATION
 
         db.commit()
         db.refresh(shop)
