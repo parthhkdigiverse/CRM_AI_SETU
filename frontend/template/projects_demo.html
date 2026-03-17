@@ -263,8 +263,8 @@
             shops.forEach(shop => {
                 const demoStage = shop.demo_stage || 0;
                 const hasDemoScheduled = !!shop.demo_scheduled_at;
-                const shopStatus = shop.status || '';
-                const isMeetingSet = shopStatus === 'MEETING_SET';
+                const shopStatus = shop.pipeline_stage || '';
+                const isMeetingSet = shopStatus === 'NEGOTIATION' || shopStatus === 'PITCHING';
 
                 // Status badge
                 const statusBadge = isMeetingSet
@@ -328,7 +328,7 @@
             try {
                 const shops = await window.ApiClient.request('/shops/demo-queue');
                 // Exclude shops that have already been converted (deal closed via billing)
-                const activeDemos = (shops || []).filter(shop => shop.status !== 'CONVERTED');
+                const activeDemos = (shops || []).filter(shop => shop.pipeline_stage !== 'DELIVERY' && shop.pipeline_stage !== 'MAINTENANCE');
                 renderDemoTable(activeDemos);
             } catch (err) {
                 console.error('Failed to load demo queue', err);

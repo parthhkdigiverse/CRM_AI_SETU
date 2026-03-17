@@ -469,9 +469,9 @@
 
                     // Dynamic pipeline overrides: show the shop's current pipeline stage instead of raw visit outcome
                     let badgeHtml = null;
-                    if (v.shop_status === 'CONVERTED') {
-                        badgeHtml = `<span class="badge bg-success-subtle text-success rounded-pill"><i class="bi bi-trophy me-1"></i>Converted</span><div class="small text-muted mt-1"><i class="bi bi-person me-1"></i>PM: ${v.project_manager_name || 'Assigned'}</div>`;
-                    } else if (v.shop_status === 'MEETING_SET' || v.shop_demo_stage >= 1) {
+                    if (v.shop_status === 'DELIVERY' || v.shop_status === 'MAINTENANCE') {
+                        badgeHtml = `<span class="badge bg-success-subtle text-success rounded-pill"><i class="bi bi-trophy me-1"></i>Deal Closed</span><div class="small text-muted mt-1"><i class="bi bi-person me-1"></i>PM: ${v.project_manager_name || 'Assigned'}</div>`;
+                    } else if (v.shop_status === 'NEGOTIATION' || v.shop_status === 'PITCHING' || v.shop_demo_stage >= 1) {
                         badgeHtml = `<span class="badge" style="background:#d1fae5; color:#065f46; border-radius:50rem; padding: 4px 10px;"><i class="bi bi-check-circle-fill me-1"></i>Demo Completed</span><div class="small text-muted mt-1"><i class="bi bi-person me-1"></i>PM: ${v.project_manager_name || 'Assigned'}</div>`;
                     } else if (v.shop_status === 'IN_DEMO' || v.project_manager_name) {
                         badgeHtml = `<span class="badge bg-primary-subtle text-primary rounded-pill"><i class="bi bi-easel me-1"></i>In Demo</span><div class="small text-muted mt-1"><i class="bi bi-person me-1"></i>PM: ${v.project_manager_name || 'Assigned'}</div>`;

@@ -1102,13 +1102,12 @@
 
         // ── Status colour palette ───────────────────────────────
         const STATUS_COLORS = {
-            'PENDING': { color: '#007bff', bg: 'rgba(0,123,255,0.13)' },
-            'SCHEDULED': { color: '#007bff', bg: 'rgba(0,123,255,0.13)' },
-            'COMPLETED': { color: '#28a745', bg: 'rgba(40,167,69,0.13)' },
-            'DONE': { color: '#28a745', bg: 'rgba(40,167,69,0.13)' },
-            'CANCELLED': { color: '#dc3545', bg: 'rgba(220,53,69,0.13)' },
-            'CANCEL': { color: '#dc3545', bg: 'rgba(220,53,69,0.13)' },
-            'RESCHEDULE': { color: '#17a2b8', bg: 'rgba(23,162,184,0.13)' }
+            'OPEN':        { color: '#007bff', bg: 'rgba(0,123,255,0.13)' },
+            'IN_PROGRESS': { color: '#17a2b8', bg: 'rgba(23,162,184,0.13)' },
+            'RESOLVED':    { color: '#28a745', bg: 'rgba(40,167,69,0.13)' },
+            'BLOCKED':     { color: '#dc3545', bg: 'rgba(220,53,69,0.13)' },
+            'CANCELLED':   { color: '#dc3545', bg: 'rgba(220,53,69,0.13)' },
+            'CANCEL':      { color: '#dc3545', bg: 'rgba(220,53,69,0.13)' },
         };
 
         function getEventStyles(ev) {
@@ -1119,7 +1118,7 @@
             const baseUser = USERS[ev.user] || { color: '#6b7280', bg: 'rgba(107,114,128,0.13)', initials: defaultInitials };
 
             // Priority for Meetings or if status is explicitly actionable (Done/Cancelled)
-            if (ev.event_type === 'MEETING' || status === 'COMPLETED' || status === 'CANCELLED' || status === 'DONE' || status === 'CANCEL') {
+            if (ev.event_type === 'MEETING' || status === 'RESOLVED' || status === 'CANCELLED' || status === 'CANCEL') {
                 if (STATUS_COLORS[status]) {
                     return {
                         ...STATUS_COLORS[status],
@@ -1234,7 +1233,7 @@
 
             if (type === 'TODO') {
                 try {
-                    await ApiClient.updateTodo(id, { status: isDoneNow ? 'COMPLETED' : 'PENDING' });
+                    await ApiClient.updateTodo(id, { status: isDoneNow ? 'RESOLVED' : 'OPEN' });
                     // Refresh data from server to ensure consistency
                     await renderCalendar();
                 } catch (error) {
@@ -1493,7 +1492,7 @@
                 const grouped = {};
                 filteredEvents.forEach(ev => {
                     const s = (ev.status || '').toUpperCase();
-                    const isDone = (s === 'COMPLETED' || s === 'DONE' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
+                    const isDone = (s === 'RESOLVED' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
                     const isMyTask = (ev.user === currUserUnique || ev.assignee_name === currUserUnique);
 
                     if (taskFilter === 'pending' && isDone) return;
@@ -1528,7 +1527,7 @@
                             const u = getEventStyles(ev);
                             const timeLbl = `${fmtH(ev.sh, ev.sm)} – ${fmtH(ev.eh, ev.em)}`;
                             const s = (ev.status || '').toUpperCase();
-                            const isDone = (s === 'COMPLETED' || s === 'DONE' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
+                            const isDone = (s === 'RESOLVED' || s === 'CANCELLED' || s === 'CANCEL' || completedIds.has(ev._uid));
                             return `
                             <div class="task-row ${isDone ? 'done-row' : ''}" style="border-left-color:${u.color};">
                                 ${ev.event_type === 'TODO' ? `<div class="t-circle ${isDone ? 't-done' : ''}" style="color:${u.color};"

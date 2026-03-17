@@ -58,12 +58,13 @@ def create_todo(
 
     # --- Synchronization: Create Meeting if client_id is present and NOT already a meeting task ---
     if todo.client_id and not (todo.related_entity and todo.related_entity.startswith("MEETING:")):
-        from app.modules.meetings.models import MeetingSummary, MeetingStatus, MeetingType
+        from app.modules.meetings.models import MeetingSummary, MeetingType
+        from app.core.enums import GlobalTaskStatus
         meeting = MeetingSummary(
             title=todo.title,
             content=todo.description or "",
             date=todo.due_date or datetime.now(UTC).replace(tzinfo=None),
-            status=MeetingStatus.SCHEDULED,
+            status=GlobalTaskStatus.OPEN,
             meeting_type=MeetingType.IN_PERSON,
             client_id=todo.client_id,
             todo_id=todo.id
@@ -140,9 +141,9 @@ def update_todo(
         if "due_date" in update_data:
             meeting.date = todo.due_date
         if "status" in update_data:
-            from app.modules.meetings.models import MeetingStatus
+            from app.core.enums import GlobalTaskStatus
             if todo.status == TodoStatus.COMPLETED:
-                meeting.status = MeetingStatus.COMPLETED
+                meeting.status = GlobalTaskStatus.RESOLVED
         db.commit()
     # ----------------------------------------------
 

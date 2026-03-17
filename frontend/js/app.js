@@ -222,7 +222,7 @@ async function renderDashboard() {
         const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
         const todoRows = todos.length ? todos.slice(0, 5).map(t => {
-            const isDone = t.status === 'COMPLETED';
+            const isDone = t.status === 'RESOLVED';
             const dotColor = isDone ? 'dot-green' : 'dot-yellow';
             const badgeColor = isDone ? 'badge-green-light' : 'badge-purple-light';
             return `
@@ -567,23 +567,23 @@ async function renderDashboard() {
         } catch (e) { console.warn('Shops/Leads fetch failed', e); }
 
         const columns = [
-            { key: 'NEW', label: 'New', color: 'badge-purple-light', border: '' },
-            { key: 'CONTACTED', label: 'Contacted', color: 'badge-purple-light', border: '' },
-            { key: 'MEETING_SET', label: 'Meeting Set', color: 'badge-purple-light', border: '3px solid var(--warning)' },
-            { key: 'CONVERTED', label: 'Converted', color: 'badge-green-light', border: '3px solid var(--success)' },
+            { key: 'LEAD', label: 'Lead', color: 'badge-purple-light', border: '' },
+            { key: 'PITCHING', label: 'Pitching', color: 'badge-purple-light', border: '' },
+            { key: 'NEGOTIATION', label: 'Negotiation', color: 'badge-purple-light', border: '3px solid var(--warning)' },
+            { key: 'DELIVERY', label: 'Delivery', color: 'badge-green-light', border: '3px solid var(--success)' },
         ];
 
         const grouped = {};
         columns.forEach(c => { grouped[c.key] = []; });
         shops.forEach(s => {
-            const st = (s.status || 'NEW').toUpperCase();
+            const st = (s.pipeline_stage || 'LEAD').toUpperCase();
             if (grouped[st]) grouped[st].push(s);
-            else if (st === 'ACTIVE') grouped['NEW'].push(s); // Fallback for legacy data
+            else grouped['LEAD'].push(s); // Fallback for unrecognised stages
         });
 
         const makeCard = (s, border) => {
             const initials = (s.contact_person || s.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-            const isConverted = s.status === 'CONVERTED';
+            const isConverted = s.pipeline_stage === 'DELIVERY' || s.pipeline_stage === 'MAINTENANCE';
 
             return `
             <div class="card kanban-card" style="margin-bottom:12px;padding:16px;${border ? 'border-left:' + border + ';' : ''}">
@@ -604,7 +604,7 @@ async function renderDashboard() {
                 
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                     <select class="form-control" style="height:28px;font-size:11px;width:110px;padding:2px 5px;" onchange="updateShopStatus(${s.id}, this.value)">
-                        ${columns.map(c => `<option value="${c.key}" ${s.status === c.key ? 'selected' : ''}>${c.label}</option>`).join('')}
+                        ${columns.map(c => `<option value="${c.key}" ${s.pipeline_stage === c.key ? 'selected' : ''}>${c.label}</option>`).join('')}
                     </select>
                     <div style="width:28px;height:28px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;" title="Assigned Agent">
                         ${initials}
@@ -643,7 +643,7 @@ async function renderDashboard() {
     // Shop Status Update
     window.updateShopStatus = async (shopId, newStatus) => {
         try {
-            await window.ApiClient.updateShop(shopId, { status: newStatus });
+            await window.ApiClient.updateShop(shopId, { pipeline_stage: newStatus });
             showToast(`Status updated to ${newStatus}`);
             renderLeads();
         } catch (e) {
@@ -734,7 +734,7 @@ async function renderDashboard() {
                     <td><div style="font-weight:500;">${s.name}</div><div style="font-size:12px;color:var(--text-muted);">${s.address || '\u2014'}</div></td>
                     <td>${s.owner_name || '\u2014'}</td>
                     <td>${s.phone || '\u2014'}</td>
-                    <td><span class="badge badge-purple-light">${s.status || 'active'}</span></td>
+                    <td><span class="badge badge-purple-light">${s.pipeline_stage || 'LEAD'}</span></td>
                     <td><button class="btn btn-ghost" style="padding:4px;"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
                 </tr>`).join('')
             : `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No shops in this area.</td></tr>`;
@@ -945,10 +945,11 @@ async function renderDashboard() {
         window._projectSearch = window._projectSearch || '';
 
         const statusBadge = (s) => ({
-            'PLANNING': '<span class="badge badge-warning">Planned</span>',
-            'IN_PROGRESS': '<span class="badge badge-primary">Ongoing</span>',
-            'COMPLETED': '<span class="badge badge-success">Completed</span>',
-            'ON_HOLD': '<span class="badge badge-danger">On Hold</span>',
+            'OPEN':        '<span class="badge badge-warning">Open</span>',
+            'IN_PROGRESS': '<span class="badge badge-primary">In Progress</span>',
+            'RESOLVED':    '<span class="badge badge-success">Resolved</span>',
+            'BLOCKED':     '<span class="badge badge-danger">Blocked</span>',
+            'CANCELLED':   '<span class="badge badge-secondary">Cancelled</span>',
         }[s] || `<span class="badge badge-primary">${s}</span>`);
 
         const pmanagerIcon = (pm_name) => pm_name ? `
@@ -1022,8 +1023,8 @@ async function renderDashboard() {
             
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px; gap: 16px;">
                 <div style="display:flex; gap:8px; flex-wrap: wrap;">
-                    ${['ALL', 'PLANNING', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD'].map(f => {
-            const labels = { ALL: 'All', PLANNING: 'Planned', IN_PROGRESS: 'Ongoing', COMPLETED: 'Completed', ON_HOLD: 'On Hold' };
+                    ${['ALL', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'BLOCKED'].map(f => {
+            const labels = { ALL: 'All', OPEN: 'Open', IN_PROGRESS: 'In Progress', RESOLVED: 'Resolved', BLOCKED: 'Blocked' };
             const active = window._projectFilter === f;
             return `<button class="btn ${active ? 'btn-primary' : 'btn-light'}" 
                                    onclick="window._projectFilter='${f}'; renderProjects();"
@@ -1382,7 +1383,7 @@ async function renderDashboard() {
         })[(s || '').toUpperCase()] || `<span class="badge">${s || '—'}</span>`;
         const statusBadge = s => ({
             PENDING: '<span class="badge badge-yellow-light">Pending</span>',
-            SOLVED: '<span class="badge badge-green-light">Solved</span>',
+            RESOLVED: '<span class="badge badge-green-light">Resolved</span>',
             COMPLETED: '<span class="badge badge-primary">Completed</span>',
             CANCEL: '<span class="badge badge-red-light">Cancelled</span>'
         })[(s || '').toUpperCase()] || `<span class="badge">${s || '—'}</span>`;
@@ -1398,8 +1399,7 @@ async function renderDashboard() {
                 <td>
                     <select class="form-control" style="height:28px;font-size:11px;width:120px;padding:2px 5px;" onchange="promptIssueStatusUpdate(${i.id}, this.value, '${i.status}')">
                         <option value="PENDING" ${i.status === 'PENDING' ? 'selected' : ''}>Pending</option>
-                        <option value="SOLVED" ${i.status === 'SOLVED' ? 'selected' : ''}>Solved</option>
-                        <option value="COMPLETED" ${i.status === 'COMPLETED' ? 'selected' : ''}>Completed</option>
+                        <option value="RESOLVED" ${i.status === 'RESOLVED' ? 'selected' : ''}>Resolved</option>
                         <option value="CANCEL" ${i.status === 'CANCEL' ? 'selected' : ''}>Cancel</option>
                     </select>
                 </td>
@@ -2221,10 +2221,10 @@ async function renderDashboard() {
         const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
         const mockTodos = [
-            { id: 1, title: 'Finalize Proposal - TechCorp', priority: 'HIGH', status: 'PENDING', assigned: 'Nency Savaliya', due: `${tomorrow}T14:30:00`, related: 'Project Alpha' },
+            { id: 1, title: 'Finalize Proposal - TechCorp', priority: 'HIGH', status: 'OPEN', assigned: 'Nency Savaliya', due: `${tomorrow}T14:30:00`, related: 'Project Alpha' },
             { id: 2, title: 'Follow-up with New Leads', priority: 'MEDIUM', status: 'IN_PROGRESS', assigned: 'Nency Savaliya', due: `${today}T10:00:00`, related: 'Tech Expo' },
-            { id: 3, title: 'Internal Security Audit', priority: 'LOW', status: 'PENDING', assigned: 'Admin', due: `${yesterday}T16:00:00`, related: 'System Admin' },
-            { id: 4, title: 'Client Feedback Analysis', priority: 'HIGH', status: 'COMPLETED', assigned: 'Nency Savaliya', due: '2026-02-26T12:00:00', related: 'CRM Feedback' },
+            { id: 3, title: 'Internal Security Audit', priority: 'LOW', status: 'OPEN', assigned: 'Admin', due: `${yesterday}T16:00:00`, related: 'System Admin' },
+            { id: 4, title: 'Client Feedback Analysis', priority: 'HIGH', status: 'RESOLVED', assigned: 'Nency Savaliya', due: '2026-02-26T12:00:00', related: 'CRM Feedback' },
         ];
 
         const formatRelativeDate = (dateStr) => {
@@ -2251,9 +2251,10 @@ async function renderDashboard() {
         })[s] || `<span class="badge bg-secondary">${s}</span>`;
 
         const statBadge = s => ({
-            PENDING: '<span class="badge badge-purple-light">Pending</span>',
+            OPEN:        '<span class="badge badge-purple-light">Open</span>',
             IN_PROGRESS: '<span class="badge bg-info-subtle text-info border border-info-subtle">In Progress</span>',
-            COMPLETED: '<span class="badge badge-green-light">Completed</span>'
+            RESOLVED:    '<span class="badge badge-green-light">Resolved</span>',
+            BLOCKED:     '<span class="badge bg-danger-subtle text-danger border border-danger-subtle">Blocked</span>'
         })[s] || `<span class="badge">${s}</span>`;
 
         const rows = mockTodos.map(t => {
@@ -2311,8 +2312,8 @@ async function renderDashboard() {
                 </div>
                 <div class="col-6 col-lg-3">
                     <div class="card border-0 shadow-sm p-3 text-center">
-                        <div class="text-muted smaller mb-1">Completed</div>
-                        <div class="h4 fw-bold mb-0 text-success">${mockTodos.filter(t => t.status === 'COMPLETED').length}</div>
+                        <div class="text-muted smaller mb-1">Resolved</div>
+                        <div class="h4 fw-bold mb-0 text-success">${mockTodos.filter(t => t.status === 'RESOLVED').length}</div>
                     </div>
                 </div>
             </div>
@@ -2343,7 +2344,7 @@ async function renderDashboard() {
             <div class="row g-3">
                 <div class="col-12"><label class="form-label fw-semibold">Task Title *</label><input type="text" id="td-title" class="form-control" placeholder="What needs to be done?"></div>
                 <div class="col-md-6"><label class="form-label fw-semibold">Priority Level</label><select id="td-priority" class="form-select"><option value="LOW">Low</option><option value="MEDIUM" selected>Medium</option><option value="HIGH">High</option></select></div>
-                <div class="col-md-6"><label class="form-label fw-semibold">Status</label><select id="td-status" class="form-select"><option value="PENDING">Pending</option><option value="IN_PROGRESS">In Progress</option><option value="COMPLETED">Completed</option></select></div>
+                <div class="col-md-6"><label class="form-label fw-semibold">Status</label><select id="td-status" class="form-select"><option value="OPEN">Open</option><option value="IN_PROGRESS">In Progress</option><option value="RESOLVED">Resolved</option><option value="BLOCKED">Blocked</option></select></div>
                 <div class="col-md-6"><label class="form-label fw-semibold">Assigned To</label><input type="text" id="td-assigned" class="form-control" placeholder="User Name"></div>
                 <div class="col-md-6"><label class="form-label fw-semibold">Due Date</label><input type="date" id="td-due" class="form-control"></div>
                 <div class="col-12"><label class="form-label fw-semibold">Related Entity</label><input type="text" id="td-related" class="form-control" placeholder="Project, Client or Lead name"></div>

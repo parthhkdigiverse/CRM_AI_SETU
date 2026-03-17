@@ -78,7 +78,7 @@ def read_visits(
         user_id = current_user.id
         
     service = VisitService(db)
-    return service.get_visits(skip, limit, user_id=user_id, shop_id=shop_id)
+    return service.get_visits(skip, limit, current_user=current_user, user_id=user_id, shop_id=shop_id)
 
 @router.patch("/{visit_id}", response_model=VisitRead)
 async def update_visit(

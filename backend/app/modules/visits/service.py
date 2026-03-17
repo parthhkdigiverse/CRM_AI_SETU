@@ -31,11 +31,11 @@ class VisitService:
             from sqlalchemy import or_
             from app.modules.users.models import UserRole
 
-            query = self.db.query(Visit).join(ShopModel, ShopModel.id == Visit.shop_id).options(
+            query = self.db.query(Visit).outerjoin(ShopModel, ShopModel.id == Visit.shop_id).options(
                 joinedload(Visit.shop).joinedload(ShopModel.area),
                 joinedload(Visit.shop).joinedload(ShopModel.project_manager),
                 joinedload(Visit.user)
-            ).filter(Visit.is_deleted == False, ShopModel.is_deleted == False)
+            ).filter(Visit.is_deleted == False)
             if shop_id:
                 query = query.filter(Visit.shop_id == shop_id)
             
@@ -45,20 +45,32 @@ class VisitService:
             # Admins see everything; staff see visits they authored OR
             # visits logged on any shop they own (directly or via assignment)
             if current_user and current_user.role not in [UserRole.ADMIN]:
-                query = (
-                    query
-                    .filter(
-                        or_(
-                            Visit.user_id == current_user.id,
-                            ShopModel.owner_id == current_user.id,
-                            ShopModel.assigned_owners_list.any(id=current_user.id)
+                try:
+                    query = (
+                        query
+                        .filter(
+                            or_(
+                                Visit.user_id == current_user.id,
+                                ShopModel.owner_id == current_user.id,
+                                ShopModel.assigned_owners_list.any(id=current_user.id)
+                            )
                         )
                     )
-                )
+                except Exception as scope_err:
+                    # Fallback: if the assigned_owners_list relationship fails,
+                    # at least scope to visits the user authored or owns
+                    print(f"[visits] scope filter warning: {scope_err}")
+                    query = query.filter(
+                        or_(
+                            Visit.user_id == current_user.id,
+                            ShopModel.owner_id == current_user.id
+                        )
+                    )
 
             return query.order_by(Visit.visit_date.desc()).offset(skip).limit(limit).all()
         except Exception as e:
             print(f"Error fetching visits: {e}")
+            import traceback; traceback.print_exc()
             return []
 
     async def create_visit(self, visit_in: VisitCreate, current_user: User, request: Request, photo: UploadFile = None):
@@ -123,27 +135,27 @@ class VisitService:
             .first()
         )
 
-        # --- Auto-transition Shop status based on visit outcome ---
-        from app.modules.shops.models import ShopStatus
+        # --- Auto-transition Shop pipeline_stage based on visit outcome ---
+        from app.core.enums import MasterPipelineStage
         shop = self.db.query(Shop).filter(Shop.id == visit_in.shop_id).first()
         if shop:
-            current = shop.status
-            new_status = None
+            current = shop.pipeline_stage
+            new_stage = None
 
-            # Any visit: move NEW → CONTACTED
-            if current == ShopStatus.NEW:
-                new_status = ShopStatus.CONTACTED
+            # Any visit: move LEAD → PITCHING
+            if current == MasterPipelineStage.LEAD:
+                new_stage = MasterPipelineStage.PITCHING
 
-            # Visit outcome: ACCEPT → MEETING_SET
-            if visit.status == VisitStatus.ACCEPT and current == ShopStatus.CONTACTED:
-                new_status = ShopStatus.MEETING_SET
+            # Visit outcome: ACCEPT → PITCHING (if still LEAD somehow)
+            if visit.status == VisitStatus.ACCEPT and current == MasterPipelineStage.LEAD:
+                new_stage = MasterPipelineStage.PITCHING
 
-            # Visit outcome: SATISFIED → CONVERTED (only from MEETING_SET)
-            if visit.status == VisitStatus.SATISFIED and current == ShopStatus.MEETING_SET:
-                new_status = ShopStatus.CONVERTED
+            # Visit outcome: SATISFIED → DELIVERY (only from PITCHING)
+            if visit.status == VisitStatus.SATISFIED and current == MasterPipelineStage.PITCHING:
+                new_stage = MasterPipelineStage.DELIVERY
 
-            if new_status and new_status != current:
-                shop.status = new_status
+            if new_stage and new_stage != current:
+                shop.pipeline_stage = new_stage
                 self.db.commit()
         # ----------------------------------------------------------
 

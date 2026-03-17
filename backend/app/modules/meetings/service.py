@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Request
 from fastapi.encoders import jsonable_encoder
-from app.modules.meetings.models import MeetingSummary, MeetingStatus
+from app.modules.meetings.models import MeetingSummary
+from app.core.enums import GlobalTaskStatus
 from app.modules.meetings.schemas import MeetingSummaryCreate, MeetingSummaryUpdateBase
 from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
@@ -110,9 +111,9 @@ class MeetingService:
                     db_todo.description = db_meeting.content
                 if "status" in update_data:
                     from app.modules.todos.models import TodoStatus
-                    if update_data["status"] == MeetingStatus.COMPLETED or update_data["status"] == MeetingStatus.DONE:
+                    if update_data["status"] == GlobalTaskStatus.COMPLETED or update_data["status"] == GlobalTaskStatus.DONE:
                         db_todo.status = TodoStatus.COMPLETED
-                    elif update_data["status"] == MeetingStatus.CANCELLED:
+                    elif update_data["status"] == GlobalTaskStatus.CANCELLED:
                         db_todo.status = TodoStatus.PENDING # Or maybe a CANCELLED status for todo if exists
                 self.db.commit()
         # ------------------------------------------
@@ -122,7 +123,7 @@ class MeetingService:
 
         # Determine action type if status changed to CANCEL
         action = ActionType.UPDATE
-        if "status" in update_data and update_data["status"] == MeetingStatus.CANCELLED:
+        if "status" in update_data and update_data["status"] == GlobalTaskStatus.CANCELLED:
              action = ActionType.CANCEL
 
         await self.activity_logger.log_activity(
@@ -166,7 +167,7 @@ class MeetingService:
 
         # Step 4: Persist everything and mark as COMPLETED
         db_meeting.ai_summary = ai_result
-        db_meeting.status = MeetingStatus.COMPLETED
+        db_meeting.status = GlobalTaskStatus.COMPLETED
         self.db.commit()
         self.db.refresh(db_meeting)
         return db_meeting
@@ -256,7 +257,7 @@ class MeetingService:
 
         # 1. Update Meeting in Local DB
         db_meeting.date = new_date
-        db_meeting.status = MeetingStatus.SCHEDULED
+        db_meeting.status = GlobalTaskStatus.SCHEDULED
         db_meeting.cancellation_reason = None
         self.db.commit()
         self.db.refresh(db_meeting)
@@ -285,7 +286,7 @@ class MeetingService:
             entity_type=EntityType.MEETING,
             entity_id=meeting_id,
             old_data=old_data,
-            new_data={"date": new_date.isoformat(), "status": MeetingStatus.SCHEDULED.value},
+            new_data={"date": new_date.isoformat(), "status": GlobalTaskStatus.SCHEDULED.value},
             request=request
         )
 

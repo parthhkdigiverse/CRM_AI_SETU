@@ -67,7 +67,7 @@ def init_db():
             "meeting_summaries", "bills", "attendance", "feedbacks", 
             "user_feedbacks", "payments", "incentive_slabs", 
             "employee_performances", "incentive_slips", "notifications", 
-            "timetable_events", "salary_slips", "leave_records"
+            "timetable_events", "salary_slips", "leave_records", "visits"
         ]
         
         for table_name in tables_to_check:
