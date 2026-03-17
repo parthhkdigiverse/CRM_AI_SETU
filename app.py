@@ -19,8 +19,8 @@ if __name__ == "__main__":
     print(f"Backend Directory: {backend_dir}")
     print(f"Python Version: {sys.version}")
     print("--------------------------------------------------")
-    print("-> Frontend UI : http://127.0.0.1:8000/frontend/template/index.html")
-    print("-> Backend API : http://127.0.0.1:8000/docs")
+    print("-> Frontend UI : http://127.0.0.1:8080/frontend/template/index.html")
+    print("-> Backend API : http://127.0.0.1:8080/docs")
     print("==================================================")
     
     print("Attempting to start uvicorn...")
@@ -29,7 +29,7 @@ if __name__ == "__main__":
         uvicorn.run(
             "app.main:app", 
             host="127.0.0.1", 
-            port=8000, 
+            port=8080,
             reload=True,
             reload_dirs=[backend_dir]
         )

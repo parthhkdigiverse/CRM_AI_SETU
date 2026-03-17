@@ -2,7 +2,8 @@
 from typing import Optional
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Request
-from app.modules.projects.models import Project, ProjectStatus
+from app.modules.projects.models import Project
+from app.core.enums import GlobalTaskStatus
 from app.modules.projects.schemas import ProjectCreate, ProjectUpdate
 from app.modules.users.models import User, UserRole
 from app.modules.activity_logs.service import ActivityLogger
@@ -88,7 +89,7 @@ class ProjectService:
         for pm in pm_users:
             workload = self.db.query(Project).filter(
                 Project.pm_id == pm.id,
-                Project.status.in_([ProjectStatus.PLANNING, ProjectStatus.IN_PROGRESS])
+                Project.status.in_([GlobalTaskStatus.OPEN, GlobalTaskStatus.IN_PROGRESS])
             ).count()
             pm_workloads.append((pm.id, workload))
 
