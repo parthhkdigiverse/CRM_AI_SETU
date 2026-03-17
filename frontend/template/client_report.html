@@ -18,68 +18,160 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
+        :root {
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475165;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --indigo-600: #4f46e5;
+            --indigo-700: #4338ca;
+        }
+
         .page-content {
             padding: 32px;
+            font-family: 'Inter', sans-serif;
         }
 
         .report-header {
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
         }
 
-        /* Hidden logo for PDF */
-        #pdf-logo { display: none; }
-
-        .client-card {
+        /* --- Modern Stats Cards --- */
+        .stat-card {
             background: #fff;
-            border-radius: 12px;
+            padding: 24px;
+            border-radius: 20px;
+            border: 1px solid var(--slate-100);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        .stat-label {
+            font-weight: 600;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--slate-800);
+        }
+        .stat-icon-wrapper {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        /* --- Custom Filters --- */
+        .filter-panel {
+            background: #fff;
+            padding: 24px;
+            border-radius: 20px;
+            border: 1px solid var(--slate-200);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-            margin-bottom: 1.5rem;
+            margin-bottom: 24px;
+        }
+
+        /* --- Premium Table Design --- */
+        .report-card {
+            background: #fff;
+            border-radius: 24px;
+            border: 1px solid var(--slate-200);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
         }
 
         .table thead th {
-            background-color: #f8fafc;
-            color: #64748b;
-            font-weight: 600;
+            background-color: #f1f5f9; /* Slate 100 */
+            color: var(--slate-800) !important;
+            font-weight: 700;
             text-transform: uppercase;
-            font-size: 0.65rem;
+            font-size: 0.7rem; /* Reduced from 0.75 */
             letter-spacing: 0.05em;
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid #e2e8f0;
+            padding: 14px 15px;
+            border: none;
         }
 
-        .table td {
-            padding: 1.25rem;
-            vertical-align: middle;
+        .table tbody tr {
+            border-bottom: 1px solid var(--slate-100);
+            transition: background 0.2s ease;
+        }
+        .table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .client-info-main {
+            font-weight: 700;
+            color: var(--slate-800);
+            font-size: 0.85rem; /* Reduced from 0.95 */
+        }
+        .client-sub-text {
+            color: var(--slate-500);
+            font-size: 0.7rem; /* Reduced from 0.75 */
+            margin-top: 2px;
         }
 
         .status-badge {
             font-size: 0.7rem;
-            font-weight: 700;
-            padding: 0.4rem 0.8rem;
-            border-radius: 50px;
-            text-transform: uppercase;
+            font-weight: 800;
+            padding: 6px 12px;
+            border-radius: 8px;
+            letter-spacing: 0.02em;
         }
+        .status-active { background: #e0e7ff; color: #4338ca; }
+        .status-completed { background: #dcfce7; color: #15803d; }
+        .status-hold { background: #fee2e2; color: #b91c1c; }
 
-        .progress-sm {
-            height: 6px;
+        .due-amount-pill {
+            background: #fff1f2;
+            color: #e11d48;
+            padding: 4px 12px;
             border-radius: 10px;
+            font-weight: 800;
+            font-family: 'Outfit';
+            font-size: 0.9rem; /* Reduced from 1rem */
+            display: inline-block;
         }
 
-        .x-small {
-            font-size: 0.7rem;
-        }
-        
         .priority-badge {
             font-size: 0.65rem;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 4px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 6px;
             text-transform: uppercase;
         }
-        
         .priority-high { background: #fee2e2; color: #dc2626; }
-        .priority-medium { background: #fef3c7; color: #d97706; }
-        .priority-low { background: #dcfce7; color: #16a34a; }
+        .priority-medium { background: #fef3c7; color: #b45309; }
+        .priority-low { background: #dcfce7; color: #15803d; }
+
+        .interaction-card {
+            background: #fafafa;
+            border-radius: 10px;
+            padding: 8px 12px;
+            border-left: 3px solid var(--slate-300);
+        }
+
+        #pdf-logo { display: none; }
     </style>
 </head>
 
@@ -98,10 +190,12 @@
                             financial standings.</p>
                     </div>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-outline-success btn-sm px-3 shadow-sm rounded-pill" onclick="exportData('csv')">
+                        <button class="btn btn-outline-success btn-sm px-3 shadow-sm rounded-pill"
+                            onclick="exportData('csv')">
                             <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export CSV
                         </button>
-                        <button class="btn btn-outline-danger btn-sm px-3 shadow-sm rounded-pill" onclick="exportData('pdf')">
+                        <button class="btn btn-outline-danger btn-sm px-3 shadow-sm rounded-pill"
+                            onclick="exportData('pdf')">
                             <i class="bi bi-file-earmark-pdf me-1"></i> Export PDF
                         </button>
                     </div>
@@ -156,29 +250,29 @@
                     </div>
                 </div>
 
-                <!-- Filter Bar (Dashboard Style) -->
-                <div class="d-flex flex-wrap align-items-center gap-3 mb-4 p-3 bg-white shadow-sm rounded-4">
-                    <div style="flex: 2; min-width: 250px;">
-                        <label class="small text-muted fw-bold mb-1 d-block">Search Client / Project</label>
+                <!-- Filter Bar (Modern Panel) -->
+                <div class="filter-panel d-flex flex-wrap align-items-center gap-4">
+                    <div style="flex: 2; min-width: 280px;">
+                        <label class="small text-muted fw-bold mb-2 d-block text-uppercase" style="letter-spacing: 0.05em;">Search Client / Project</label>
                         <select id="filter-client" class="form-select border-0 bg-light"
-                            style="height: 42px; border-radius: 10px;">
+                            style="height: 46px; border-radius: 12px; font-weight: 500;">
                             <option value="">All Registered Clients</option>
                         </select>
                     </div>
                     <div style="flex: 1; min-width: 150px;">
-                        <label class="small text-muted fw-bold mb-1 d-block">Duration</label>
+                        <label class="small text-muted fw-bold mb-2 d-block text-uppercase" style="letter-spacing: 0.05em;">Duration</label>
                         <select id="filter-duration" class="form-select border-0 bg-light"
-                            style="height: 42px; border-radius: 10px;">
+                            style="height: 46px; border-radius: 12px; font-weight: 500;">
                             <option value="all">All Time</option>
                             <option value="7">Last 7 Days</option>
                             <option value="15">Last 15 Days</option>
                             <option value="30">Last 30 Days</option>
                         </select>
                     </div>
-                    <div style="width: 200px;">
-                        <label class="small text-muted fw-bold mb-1 d-block">Project Status</label>
+                    <div style="width: 220px;">
+                        <label class="small text-muted fw-bold mb-2 d-block text-uppercase" style="letter-spacing: 0.05em;">Project Status</label>
                         <select id="filter-status" class="form-select border-0 bg-light"
-                            style="height: 42px; border-radius: 10px;">
+                            style="height: 46px; border-radius: 12px; font-weight: 500;">
                             <option value="">All Statuses</option>
                             <option value="ACTIVE">Active / Ongoing</option>
                             <option value="COMPLETED">Completed</option>
@@ -187,30 +281,34 @@
                         </select>
                     </div>
                     <div class="pt-4">
-                        <button class="btn btn-primary px-4 fw-bold" style="height: 42px; border-radius: 10px;"
+                        <button class="btn btn-primary px-4 fw-bold shadow-sm" style="height: 46px; border-radius: 12px; background: var(--indigo-600); border: none;"
                             onclick="fetchClientReport()">
-                            <i class="bi bi-binoculars me-2"></i>Filter
+                            <i class="bi bi-funnel-fill me-2"></i>Filter
                         </button>
                     </div>
                 </div>
 
-                <!-- Report Table -->
-                <div class="client-card overflow-hidden">
-                    <div class="card-header bg-white border-bottom p-4">
-                        <h5 class="fw-bold mb-0 text-dark">Client Portfolio Summary</h5>
+                <!-- Report Card -->
+                <div class="report-card">
+                    <div class="px-4 py-4 border-bottom d-flex justify-content-between align-items-center bg-white">
+                        <h5 class="fw-bold mb-0 text-dark d-flex align-items-center" style="font-size: 1.1rem;">
+                            <i class="bi bi-layers-half me-2 text-primary"></i> 
+                            Client Portfolio Intelligence
+                        </h5>
+                        <span class="badge" id="record-count" style="padding: 6px 14px; border-radius: 8px; background: var(--indigo-600); color: #ffffff; font-weight: 600; font-size: 0.75rem; border: none;">0 Records</span>
                     </div>
                     <div class="table-responsive">
-                        <table class="table table-hover mb-0">
+                        <table class="table align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th>Client Name</th>
+                                    <th style="padding-left: 20px;">Client Name</th>
                                     <th>Client Details</th>
                                     <th>Project Instance</th>
-                                    <th>Priority</th>
+                                    <th class="text-center">Priority</th>
                                     <th>Payment Progress</th>
-                                    <th style="min-width: 150px;">Project Status</th>
-                                    <th style="max-width: 250px;">Interaction Highlights</th>
-                                    <th class="text-end">Due Amount</th>
+                                    <th class="text-center">Status</th>
+                                    <th style="max-width: 200px;">Highlights</th>
+                                    <th class="text-end" style="padding-right: 20px;">Due Amount</th>
                                 </tr>
                             </thead>
                             <tbody id="client-report-tbody">
@@ -248,10 +346,10 @@
             try {
                 allClients = await apiGet('/clients/');
                 const sel = document.getElementById('filter-client');
-                
+
                 // Clear and repopulate based on what API returned (API is now RBAC aware)
                 sel.innerHTML = isAdmin ? '<option value="all">All Registered Clients</option>' : '<option value="">My Assigned Clients</option>';
-                
+
                 allClients.forEach(c => {
                     const opt = document.createElement('option');
                     opt.value = c.id;
@@ -293,62 +391,62 @@
 
         function renderReportTable(data) {
             const tbody = document.getElementById('client-report-tbody');
+            if (document.getElementById('record-count')) {
+                document.getElementById('record-count').textContent = `${data.length} Records`;
+            }
+
             if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5">Data is empty for the selected criteria.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-muted">No clients found matching the selected filters.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = data.map(d => {
-                const priorityClass = d.priority.toLowerCase();
-                const progressPercent = Math.round((d.paidAmount / d.totalAmount) * 100);
+                const pColor = d.priority.toLowerCase() === 'high' ? 'priority-high' : 
+                              (d.priority.toLowerCase() === 'low' ? 'priority-low' : 'priority-medium');
+                
+                const sClass = d.status.toUpperCase() === 'COMPLETED' ? 'status-completed' : 
+                              (d.status.toUpperCase() === 'ON_HOLD' ? 'status-hold' : 'status-active');
+                
+                const progressPercent = d.totalAmount > 0 ? Math.round((d.paidAmount / d.totalAmount) * 100) : 0;
                 
                 return `
                 <tr>
-                    <td>
-                        <div class="fw-bold text-dark">${d.fullName}</div>
-                        <div class="text-muted x-small">ID: #CL-${d.id}</div>
+                    <td style="padding-left: 20px;">
+                        <div class="client-info-main">${d.name}</div>
+                        <div class="client-sub-text">ID: #CL-${d.id}</div>
                     </td>
                     <td>
-                        <div class="fw-semibold">${d.org}</div>
-                        <div class="text-muted small">${d.name}</div>
+                        <div class="fw-bold text-dark" style="font-size: 0.8rem;">${d.org}</div>
                     </td>
                     <td>
-                        <div class="fw-semibold text-primary">${d.project}</div>
-                        <div class="progress progress-sm bg-light mt-1" style="width: 100px;">
-                            <div class="progress-bar bg-primary" style="width: ${Math.floor(Math.random() * 80) + 20}%"></div>
+                        <div class="fw-bold text-dark" style="font-size: 0.8rem;">${d.project}</div>
+                    </td>
+                    <td class="text-center">
+                        <span class="priority-badge ${pColor}">${d.priority}</span>
+                    </td>
+                    <td>
+                        <div class="x-small fw-bold mb-1 text-dark">
+                            <span>₹${d.paidAmount.toLocaleString()} / ₹${d.totalAmount.toLocaleString()}</span>
+                        </div>
+                        <div class="progress progress-sm" style="background: #f1f5f9; height: 5px; border-radius: 10px; width: 100px;">
+                            <div class="progress-bar ${progressPercent > 80 ? 'bg-success' : 'bg-primary'}" 
+                                 role="progressbar" style="width: ${progressPercent}%; border-radius: 10px;"></div>
                         </div>
                     </td>
-                    <td>
-                        <span class="priority-badge priority-${priorityClass}">${d.priority}</span>
+                    <td class="text-center">
+                        <span class="status-badge ${sClass}" style="font-size: 0.65rem;">${d.status.replace('_', ' ')}</span>
                     </td>
                     <td>
-                        <div class="small fw-bold">₹${d.paidAmount.toLocaleString()} / ₹${d.totalAmount.toLocaleString()}</div>
-                        <div class="progress progress-sm mt-1" style="width: 120px;">
-                            <div class="progress-bar bg-success" style="width: ${progressPercent}%"></div>
+                        <div class="interaction-card" style="max-width: 180px;">
+                            <div class="x-small text-dark fw-bold mb-1 text-truncate">${d.lastMeeting}</div>
+                            <div class="x-small text-muted"><i class="bi bi-calendar-event me-1"></i>${d.interactionDate ? d.interactionDate.toLocaleDateString('en-IN') : 'N/A'}</div>
                         </div>
                     </td>
-                    <td>
-                        <select class="form-select form-select-sm border-0 bg-light fw-bold" 
-                                style="border-radius: 8px; font-size: 0.75rem;"
-                                onchange="updateProjectStatus('${d.id}', this.value)">
-                            <option value="ACTIVE" ${d.status === 'ACTIVE' ? 'selected' : ''}>Active / Ongoing</option>
-                            <option value="COMPLETED" ${d.status === 'COMPLETED' ? 'selected' : ''}>Completed</option>
-                            <option value="ON_HOLD" ${d.status === 'ON_HOLD' ? 'selected' : ''}>On Hold</option>
-                            <option value="NEGOTIATION" ${d.status === 'NEGOTIATION' ? 'selected' : ''}>Negotiation</option>
-                        </select>
+                    <td class="text-end" style="padding-right: 20px;">
+                        <div class="due-amount-pill">₹${d.outstanding.toLocaleString()}</div>
                     </td>
-                    <td>
-                        <div class="p-2 rounded bg-light small" style="border-left: 3px solid #cbd5e1;">
-                            ${d.lastMeeting}
-                            <div class="text-muted x-small mt-1"><i class="bi bi-clock me-1"></i>${d.interactionDate.toLocaleDateString()}</div>
-                        </div>
-                    </td>
-                    <td class="text-end">
-                        <div class="fw-bold fs-5 ${d.outstanding > 0 ? 'text-danger' : 'text-success'}">₹${d.outstanding.toLocaleString()}</div>
-                        <small class="text-muted">${d.outstanding > 0 ? 'Pending Payment' : 'Settled'}</small>
-                    </td>
-                </tr>
-            `}).join('');
+                </tr>`;
+            }).join('');
         }
 
         function updateSummary(data) {
@@ -367,7 +465,7 @@
 
             const clientSearch = document.getElementById('filter-client').options[document.getElementById('filter-client').selectedIndex].text;
             const durationText = document.getElementById('filter-duration').options[document.getElementById('filter-duration').selectedIndex].text;
-            
+
             if (fmt === 'csv') {
                 exportCSV();
             } else {
@@ -394,17 +492,17 @@
             function exportPDF() {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
-                
+
                 // --- Premium Double-Shaded Dark Palette ---
                 const primaryDark = [30, 41, 59];    // Slate 800
                 const secondaryDark = [71, 85, 105]; // Slate 600
                 const primaryLight = [241, 245, 249]; // Slate 100
-                
+
                 // --- Background & Borders ---
                 doc.setDrawColor(...primaryDark);
                 doc.setLineWidth(0.5);
                 doc.line(10, 10, 200, 10); // Top line
-                
+
                 // --- Company Branding (Logo) ---
                 const logo = document.getElementById('pdf-logo');
                 if (logo && logo.complete && logo.naturalWidth !== 0) {
@@ -417,12 +515,12 @@
                     doc.setTextColor(...primaryDark);
                     doc.text("SRM AI SETU", 15, 25);
                 }
-                
+
                 // --- Meta Information ---
                 doc.setFont("helvetica", "normal");
                 doc.setTextColor(100);
                 doc.setFontSize(8);
-                doc.text(`Generated: ${new Date().toLocaleDateString('en-IN', {day: 'numeric', month: 'long', year: 'numeric'})}`, 15, 38);
+                doc.text(`Generated: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`, 15, 38);
                 const searchTxt = document.getElementById('filter-client') ? document.getElementById('filter-client').options[document.getElementById('filter-client').selectedIndex].text : 'All';
                 const durationTxt = document.getElementById('filter-duration') ? document.getElementById('filter-duration').options[document.getElementById('filter-duration').selectedIndex].text : 'All Time';
                 doc.text(`Client: ${searchTxt}`, 15, 43);
@@ -432,11 +530,11 @@
                 doc.setDrawColor(220);
                 doc.setLineWidth(0.1);
                 doc.line(15, 51, 195, 51);
-                
+
                 // Ensure we only export what is currently filtered on screen
                 const clientId = document.getElementById('filter-client').value;
                 const projectStatus = document.getElementById('filter-status').value;
-                
+
                 const dataToExport = filteredReportData.filter(d => {
                     const matchesClient = (clientId === 'all' || clientId === '') ? true : String(d.id) === String(clientId);
                     const matchesStatus = (projectStatus === 'all' || projectStatus === '') ? true : String(d.status) === String(projectStatus);
@@ -459,21 +557,21 @@
                     head: [["Client Name", "Project Name", "Last Interaction", "Outstanding", "Payment Progress"]],
                     body: tableData,
                     theme: 'striped',
-                    headStyles: { 
-                        fillColor: primaryDark, 
-                        textColor: 255, 
+                    headStyles: {
+                        fillColor: primaryDark,
+                        textColor: 255,
                         fontSize: 9,
                         fontStyle: 'bold'
                     },
                     alternateRowStyles: { fillColor: primaryLight },
-                    styles: { 
+                    styles: {
                         halign: 'left',
-                        fontSize: 8, 
+                        fontSize: 8,
                         cellPadding: 4,
                         font: "helvetica",
                         lineColor: [230, 230, 230]
                     },
-                    didDrawPage: function(data) {
+                    didDrawPage: function (data) {
                         // Footer
                         doc.setFontSize(7);
                         doc.setTextColor(150);
@@ -501,14 +599,14 @@
             try {
                 // In a real app, this would be an API call:
                 // await apiPost(`/projects/${clientId}/status`, { status: newStatus });
-                
+
                 showToast(`Status updated to ${newStatus.replace('_', ' ')}`, 'success');
                 console.log(`Updating status for ${clientId} to ${newStatus}`);
-                
+
                 // Update local data so exports reflect change
                 const index = filteredReportData.findIndex(d => d.id == clientId);
                 if (index !== -1) filteredReportData[index].status = newStatus;
-                
+
             } catch (err) {
                 showToast("Failed to update status", "danger");
             }
