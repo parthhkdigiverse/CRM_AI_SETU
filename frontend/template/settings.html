@@ -19,6 +19,10 @@
             padding: 24px;
             margin-bottom: 20px;
             box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05);
+            display: none; /* Hide all by default for tab system */
+        }
+        .settings-section.active-tab {
+            display: block;
         }
 
         .settings-section-title {
@@ -107,13 +111,12 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
-            background: #fff;
+            background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 14px;
             padding: 12px;
-            box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05);
             position: sticky;
-            top: 90px;
+            top: 24px;
         }
 
         .settings-nav a {
@@ -252,6 +255,7 @@
                             <a href="#payslip-contact" onclick="scrollTo('payslip-contact',this)" id="payslip-nav-link" style="display:none;"><i class="bi bi-building"></i> Company / Payslip</a>
                             <a href="#invoice-settings" onclick="scrollTo('invoice-settings',this)" id="invoice-nav-link" style="display:none;"><i class="bi bi-receipt-cutoff"></i> Invoice &amp; Payment</a>
                             <a href="#access-control" onclick="scrollTo('access-control',this)" id="access-control-nav-link" style="display:none;"><i class="bi bi-shield-lock"></i> Access Control</a>
+                            <a href="#data-management-settings" onclick="scrollTo('data-management-settings',this)" id="data-management-nav-link" style="display:none;"><i class="bi bi-database-check"></i> Data Management</a>
                             <a href="#attendance-settings" onclick="scrollTo('attendance-settings',this)" id="attendance-nav-link" style="display:none;"><i class="bi bi-clock-history"></i> Attendance</a>
                             <a href="#system" onclick="scrollTo('system',this)" id="system-nav-link"><i
                                     class="bi bi-cpu"></i> System</a>
@@ -386,15 +390,7 @@
                             <div class="settings-section-title"><i class="bi bi-person-gear text-primary"></i> Account
                             </div>
 
-                            <div class="setting-row">
-                                <div>
-                                    <div class="setting-label">Two-Factor Authentication</div>
-                                    <div class="setting-desc">Add extra security to your login</div>
-                                </div>
-                                <span class="version-chip"
-                                    style="background:#fffbeb;color:#d97706;border-color:#fcd34d;"><i
-                                        class="bi bi-clock"></i> Coming Soon</span>
-                            </div>
+
 
                             <div class="setting-row">
                                 <div>
@@ -437,10 +433,6 @@
                                 </select>
                             </div>
 
-                            <div class="mt-4">
-                                <a href="profile.html" class="btn-save-sm text-decoration-none"><i
-                                        class="bi bi-person me-1"></i> Manage Profile</a>
-                            </div>
                         </div>
 
                         <!-- ── Incentives Configuration ───── -->
@@ -1147,8 +1139,18 @@
 
         // Initial load
         window.addEventListener('DOMContentLoaded', () => {
+            console.trace('DOMContentLoaded triggered');
             loadSettings();
             initSystem();
+        });
+
+        // ── Prevents scroll/tab jump on hash change
+        window.addEventListener('hashchange', () => {
+             const id = window.location.hash.substring(1);
+             if (id) {
+                 const link = document.querySelector(`.settings-nav a[href="#${id}"]`);
+                 scrollTo(id, link);
+             }
         });
 
         // ── Load saved settings
@@ -1227,21 +1229,36 @@
             setTimeout(() => { toast.style.display = 'none'; }, 2200);
         }
 
-        // ── Scroll nav
+        // ── Tab Navigation
         function scrollTo(id, el) {
-            // Remove active class from all sidebar links
+            console.log('Switching to tab:', id);
+            // Update nav active state
             document.querySelectorAll('.settings-nav a').forEach(a => a.classList.remove('active'));
-            el.classList.add('active');
+            if (el) el.classList.add('active');
 
-            // Hide all settings sections
-            document.querySelectorAll('.settings-section').forEach(sec => sec.style.display = 'none');
+            // Toggle section visibility
+            document.querySelectorAll('.settings-section, .danger-zone').forEach(sec => {
+                sec.classList.remove('active-tab');
+                sec.style.display = 'none';
+            });
 
-            // Show the selected section
-            const section = document.getElementById(id);
-            if (section) {
-                section.style.display = 'block';
-                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const target = document.getElementById(id);
+            if (target) {
+                console.log('Showing section:', id);
+                target.classList.add('active-tab');
+                target.style.display = 'block';
+                
+                // Also show danger zone if it's the system tab and user is admin
+                if (id === 'system') {
+                   const dz = document.getElementById('danger-zone');
+                   if (dz) { dz.style.display = 'block'; dz.classList.add('active-tab'); }
+                }
+            } else {
+                console.error('Section not found:', id);
             }
+
+            // Update URL hash without jumping
+            history.pushState(null, null, '#' + id);
             return false;
         }
 
@@ -1267,19 +1284,15 @@
             const isAdmin = u?.role === 'ADMIN';
 
             if (isAdmin) {
-                document.getElementById('system').style.display = 'block';
-                document.getElementById('danger-zone').style.display = 'block';
+                // Admin sections are already shown by the loop above or by manual calls
                 document.getElementById('system-nav-link').style.display = 'flex';
                 document.getElementById('incentives-nav-link').style.display = 'flex';
-                document.getElementById('incentives-config').style.display = 'block';
                 document.getElementById('payslip-nav-link').style.display = 'flex';
-                document.getElementById('payslip-contact').style.display = 'block';
                 document.getElementById('invoice-nav-link').style.display = 'flex';
-                document.getElementById('invoice-settings').style.display = 'block';
                 document.getElementById('access-control-nav-link').style.display = 'flex';
-                document.getElementById('access-control').style.display = 'block';
+                document.getElementById('data-management-nav-link').style.display = 'flex';
                 document.getElementById('attendance-nav-link').style.display = 'flex';
-                document.getElementById('attendance-settings').style.display = 'block';
+                
                 loadSlabsSettings();
                 loadIncentiveEligibilityUsers();
                 loadPayslipContact();
@@ -1287,15 +1300,22 @@
                 loadAccessPolicy();
                 loadAttendanceSettings();
                 loadDeletePolicy();
-                document.getElementById('employee-code-settings').style.display = 'block';
-                document.getElementById('data-management-settings').style.display = 'block';
+                
+                // Note: The specific section display is handled by scrollTo/tab logic
+                // But we need to ensure they are available in the DOM
+                const adminSections = [
+                    'incentives-config', 'employee-code-settings', 'attendance-settings', 
+                    'payslip-contact', 'data-management-settings', 'invoice-settings', 
+                    'access-control', 'system'
+                ];
+                // They stay display:none until clicked in nav
 
                 const apiUrl = window.API_BASE || (window.location.origin + '/api');
                 document.getElementById('api-url-display').textContent = apiUrl;
                 document.getElementById('sys-user-id').textContent = `#${u?.id || '—'}`;
 
                 // Ping API
-                apiGet('/health').then(() => {
+                apiGet('/health', {}, { timeout: 3000 }).then(() => {
                     document.getElementById('api-status-chip').innerHTML = '<i class="bi bi-check-circle-fill"></i> Online';
                 }).catch(() => {
                     document.getElementById('api-status-chip').innerHTML = '<i class="bi bi-x-circle-fill"></i> Offline';
@@ -1303,19 +1323,17 @@
                     document.getElementById('api-status-chip').style.color = '#b91c1c';
                     document.getElementById('api-status-chip').style.borderColor = '#fca5a5';
                 });
-
-                // Fetch Global System Settings
-                ApiClient.request('/settings/')
-                    .then(res => {
-                        const flags = res.feature_flags || {};
-                        const sdToggle = document.getElementById('sys-soft-delete');
-                        if (sdToggle) {
-                            sdToggle.checked = flags.enable_soft_delete !== false; // Default true if not set
-                        }
-                    })
-                    .catch(err => console.error("Failed to load global settings", err));
             } else {
                 document.getElementById('system-nav-link').style.display = 'none';
+            }
+
+            // Default view: Show the first section if none in hash
+            const hash = window.location.hash.substring(1);
+            if (hash) {
+                const link = document.querySelector(`.settings-nav a[href="#${hash}"]`);
+                scrollTo(hash, link);
+            } else {
+                scrollTo('appearance', document.querySelector('.settings-nav a[href="#appearance"]'));
             }
         }
         

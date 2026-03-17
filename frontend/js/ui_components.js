@@ -391,6 +391,40 @@ window.injectTopHeader = function (pageTitle) {
     }, 500);
 }
 
+window.getInitials = function (name) {
+    if (!name) return '??';
+    const parts = name.split(' ').filter(p => p.trim() !== '');
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+window.updateTopHeaderProfile = function (name, role) {
+    const initials = window.getInitials(name || 'User');
+    const u = getUser() || {};
+    
+    // Update initials bubble
+    const profileBubble = document.getElementById('profileDropdown');
+    if (profileBubble) profileBubble.textContent = initials;
+
+    // Update name and role in the text display
+    const labelContainer = profileBubble?.nextElementSibling;
+    if (labelContainer) {
+        const nameEl = labelContainer.querySelector('.fw-bold');
+        if (nameEl) nameEl.textContent = name || 'Admin';
+        const roleEl = labelContainer.querySelector('.text-muted');
+        if (roleEl) roleEl.textContent = (role || u.role || 'User').replace(/_/g, ' ');
+    }
+
+    // Update dropdown header
+    const dropdownMenu = profileBubble?.parentElement?.querySelector('.dropdown-menu');
+    if (dropdownMenu) {
+        const dropName = dropdownMenu.querySelector('.fw-bold');
+        if (dropName) dropName.textContent = name || 'Admin';
+        const dropEmailRole = dropdownMenu.querySelector('.text-muted');
+        if (dropEmailRole) dropEmailRole.textContent = u.email || role || 'User';
+    }
+};
+
 
 
 // ─── GLOBAL QUICK ADD HANDLER ──────────────────────────────────────────
