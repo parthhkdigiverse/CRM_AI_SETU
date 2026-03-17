@@ -104,7 +104,6 @@ def read_clients(
         pm_id=pm_id,
         owner_id=owner_id,
         is_active=client_active_status,
-        pm_id=pm_filter_id,
         scoped_user_id=scoped_user_id,
         scoped_mode=scoped_mode,
     )
