@@ -19,9 +19,8 @@ class ShopService:
         db_shop = Shop(**shop_in.model_dump())
         db_shop.created_by_id = current_user.id
         
-        # Auto-assign the creator as the PM/Sales owner if no one else is assigned
-        pm_id = getattr(shop_in, 'project_manager_id', None) or current_user.id
-        db_shop.project_manager_id = pm_id
+        # Only assign a PM if explicitly provided during creation. Default to None.
+        db_shop.project_manager_id = getattr(shop_in, 'project_manager_id', None)
         
         # Auto-Assign if not Admin
         if current_user.role != UserRole.ADMIN:

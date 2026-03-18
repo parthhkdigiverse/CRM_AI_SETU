@@ -1,7 +1,5 @@
-<!-- frontend/template/projects.html -->
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <meta charset="UTF-8">
@@ -10,92 +8,83 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
+    <link rel="stylesheet" href="../css/theme.css">
     
     <style>
         body { font-family: 'Outfit', sans-serif; background: #f8fafc; margin: 0; overflow: hidden; }
 
         /* Split Pane Layout */
         .hub-container { display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Left Pane: Universal Queue */
-        .queue-pane {
-            width: 380px;
-            background: #ffffff;
-            border-right: 1px solid #e2e8f0;
-            display: flex;
-            flex-direction: column;
-            z-index: 10;
-        }
+        .queue-pane { width: 380px; background: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 10; }
         .queue-header { padding: 1.5rem; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
         .queue-list { overflow-y: auto; flex-grow: 1; padding: 1rem; }
         
-        .lead-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-        }
+        .lead-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; cursor: pointer; transition: all 0.2s ease; position: relative; }
         .lead-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-1px); }
         .lead-card.active { border-color: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15); }
-        .lead-card.active::before {
-            content: ''; position: absolute; left: -1px; top: 10%; height: 80%; width: 4px; background: #10b981; border-radius: 4px;
-        }
+        .lead-card.active::before { content: ''; position: absolute; left: -1px; top: 10%; height: 80%; width: 4px; background: #10b981; border-radius: 4px; }
 
-        /* Right Pane: Master Detail */
         .detail-pane { flex-grow: 1; display: flex; flex-direction: column; overflow-y: auto; background: #f1f5f9; }
         .detail-content { max-width: 900px; margin: 0 auto; padding: 2rem; width: 100%; }
 
-        /* Master Progress Bar */
         .progress-tracker { display: flex; justify-content: space-between; position: relative; margin-bottom: 2.5rem; }
-        .progress-tracker::before {
-            content: ''; position: absolute; top: 14px; left: 0; right: 0; height: 3px; background: #e2e8f0; z-index: 1;
-        }
+        .progress-tracker::before { content: ''; position: absolute; top: 14px; left: 0; right: 0; height: 3px; background: #e2e8f0; z-index: 1; }
         .step { position: relative; z-index: 2; text-align: center; flex: 1; }
-        .step-circle {
-            width: 32px; height: 32px; border-radius: 50%; background: #fff; border: 3px solid #e2e8f0;
-            display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 700; font-size: 0.8rem; color: #94a3b8;
-            transition: all 0.3s;
-        }
+        .step-circle { width: 32px; height: 32px; border-radius: 50%; background: #fff; border: 3px solid #e2e8f0; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 700; font-size: 0.8rem; color: #94a3b8; transition: all 0.3s; }
         .step.completed .step-circle { background: #10b981; border-color: #10b981; color: #fff; }
         .step.active .step-circle { border-color: #10b981; color: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,0.2); }
         .step-label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
         .step.active .step-label { color: #0f172a; font-weight: 700; }
 
-        /* Contextual Action Center */
         .action-center { background: #fff; border-radius: 16px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.04); margin-bottom: 2rem; border: 1px solid #e2e8f0; }
-        
         .timer-display { font-size: 3.5rem; font-weight: 300; letter-spacing: -2px; color: #0f172a; text-align: center; font-variant-numeric: tabular-nums; }
         .live-indicator { height: 10px; width: 10px; background: #ef4444; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; margin-right: 8px; }
         
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        /* History Timeline */
-        .timeline-section { background: #fff; border-radius: 16px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
-        .timeline { border-left: 2px solid #e2e8f0; padding-left: 1.5rem; margin-left: 1rem; position: relative; }
-        .timeline-item { position: relative; margin-bottom: 2rem; }
-        .timeline-item:last-child { margin-bottom: 0; }
-        .timeline-dot { position: absolute; left: -1.5rem; top: 0; transform: translateX(-50%); width: 16px; height: 16px; border-radius: 50%; background: #10b981; border: 3px solid #fff; box-shadow: 0 0 0 1px #e2e8f0; }
-        .timeline-date { font-size: 0.75rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px; display: block; }
-        .timeline-content { background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #f1f5f9; }
-        
+        /* Modern Outcome Selection Cards */
+        .outcome-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; transition: all 0.3s; }
+        .outcome-card { background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 16px 10px; text-align: center; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+        .outcome-card:hover { border-color: #cbd5e1; background: #f8fafc; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .outcome-card i { font-size: 1.8rem; line-height: 1; }
+        .outcome-card span { font-size: 0.75rem; font-weight: 700; color: #475569; }
+
+        .outcome-card.active-satisfied { border-color: #3b82f6; background: #eff6ff; } .outcome-card.active-satisfied span { color: #1d4ed8; }
+        .outcome-card.active-accept { border-color: #10b981; background: #ecfdf5; } .outcome-card.active-accept span { color: #047857; }
+        .outcome-card.active-thinking { border-color: #f59e0b; background: #fffbeb; } .outcome-card.active-thinking span { color: #b45309; }
+        .outcome-card.active-decline { border-color: #ef4444; background: #fef2f2; } .outcome-card.active-decline span { color: #b91c1c; }
+        .outcome-card.active-other { border-color: #64748b; background: #f8fafc; } .outcome-card.active-other span { color: #334155; }
+        .outcome-full-width { grid-column: span 2; padding: 12px; flex-direction: row; gap: 12px; } .outcome-full-width i { font-size: 1.4rem; }
     </style>
 </head>
 
 <body>
     <div class="hub-container">
         <div id="sidebar"></div>
-        <!-- Search Bar -->
+
         <div class="queue-pane">
             <div class="queue-header">
-                <h5 class="fw-bold mb-3">Performance Queue</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Performance Queue</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-light border dropdown-toggle fw-semibold" type="button" data-bs-toggle="dropdown" style="font-size: 0.75rem;">
+                            <i class="bi bi-sort-down me-1"></i> Sort
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="font-size: 0.82rem;">
+                            <li><h6 class="dropdown-header text-uppercase" style="font-size: 0.65rem;">Sort By ID</h6></li>
+                            <li><a class="dropdown-item sort-option active bg-light text-primary fw-bold" href="#" onclick="applySort('id', 'desc', this)">Newest First (Highest ID)</a></li>
+                            <li><a class="dropdown-item sort-option" href="#" onclick="applySort('id', 'asc', this)">Oldest First (Lowest ID)</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header text-uppercase" style="font-size: 0.65rem;">Sort By Pipeline</h6></li>
+                            <li><a class="dropdown-item sort-option" href="#" onclick="applySort('status', 'asc', this)">Stage: Lead ➔ Maint.</a></li>
+                            <li><a class="dropdown-item sort-option" href="#" onclick="applySort('status', 'desc', this)">Stage: Maint. ➔ Lead</a></li>
+                        </ul>
+                    </div>
+                </div>
+                
                 <div class="position-relative">
                     <i class="bi bi-search position-absolute" style="left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
-                    <input type="text" id="hub-search" class="form-control" placeholder="Search leads & projects..." style="padding-left:36px; border-radius:8px;" oninput="handleSearch(event)">
+                    <input type="text" id="hub-search" class="form-control" placeholder="Search leads..." style="padding-left:36px; border-radius:8px;" oninput="handleSearch(event)">
                 </div>
                 <div class="d-flex gap-2 mt-3 overflow-auto pb-1" style="white-space: nowrap;">
                     <span class="badge filter-pill bg-dark text-white rounded-pill px-3 py-2 cursor-pointer" onclick="setFilter('ALL', this)">All Active</span>
@@ -103,121 +92,39 @@
                     <span class="badge filter-pill bg-light text-dark border rounded-pill px-3 py-2 cursor-pointer" onclick="setFilter('DEMO_SET', this)">Demo Set</span>
                 </div>
             </div>
-            
-            <div class="queue-list" id="queue-list">
-                <div class="lead-card active" onclick="selectLead(1)">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <span class="badge bg-warning text-dark" style="font-size:0.65rem;">Visit In Progress</span>
-                        <span class="text-muted" style="font-size:0.7rem;">2m ago</span>
-                    </div>
-                    <div class="fw-bold text-dark">Surat Electronics Hub</div>
-                    <div class="small text-muted mb-2"><i class="bi bi-geo-alt me-1"></i>Adajan Area</div>
-                    <div class="d-flex align-items-center gap-2 mt-2">
-                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:24px;height:24px;font-size:0.6rem;">AM</div>
-                        <span class="small fw-semibold text-secondary">Assigned to You</span>
-                    </div>
-                </div>
-
-                <div class="lead-card" onclick="selectLead(2)">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <span class="badge bg-info text-dark" style="font-size:0.65rem;">Demo Set</span>
-                        <span class="text-muted" style="font-size:0.7rem;">Yesterday</span>
-                    </div>
-                    <div class="fw-bold text-dark">Vesu Digital Superstore</div>
-                    <div class="small text-muted mb-2"><i class="bi bi-geo-alt me-1"></i>Vesu Main Road</div>
-                </div>
-            </div>
+            <div class="queue-list" id="queue-list"></div>
         </div>
 
         <div class="detail-pane">
             <div class="detail-content">
-                <!-- Detail Header -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
                         <h2 class="fw-bold mb-1" id="detail-title">Select a Lead</h2>
                         <div class="text-muted fw-semibold" id="detail-contact">Contact: — • —</div>
                     </div>
-                    <div>
-                        <button class="btn btn-outline-danger btn-sm fw-semibold rounded-pill px-3">
-                            <i class="bi bi-exclamation-triangle me-1"></i> Raise Issue
-                        </button>
-                    </div>
                 </div>
 
                 <div class="progress-tracker">
-                    <div class="step completed">
-                        <div class="step-circle"><i class="bi bi-check-lg"></i></div>
-                        <div class="step-label">Lead</div>
-                    </div>
-                    <div class="step active">
-                        <div class="step-circle">2</div>
-                        <div class="step-label">First Visit</div>
-                    </div>
-                    <div class="step">
-                        <div class="step-circle">3</div>
-                        <div class="step-label">Demo</div>
-                    </div>
-                    <div class="step">
-                        <div class="step-circle">4</div>
-                        <div class="step-label">Negotiation</div>
-                    </div>
-                    <div class="step">
-                        <div class="step-circle">5</div>
-                        <div class="step-label">Delivery</div>
-                    </div>
+                    <div class="step active"><div class="step-circle">1</div><div class="step-label">Lead</div></div>
+                    <div class="step"><div class="step-circle">2</div><div class="step-label">Pitching</div></div>
+                    <div class="step"><div class="step-circle">3</div><div class="step-label">Negotiation</div></div>
+                    <div class="step"><div class="step-circle">4</div><div class="step-label">Delivery</div></div>
+                    <div class="step"><div class="step-circle">5</div><div class="step-label">Maintenance</div></div>
                 </div>
 
                 <div class="action-center text-center">
-                    <div class="mb-2"><span class="live-indicator"></span><span class="text-danger fw-bold text-uppercase" style="letter-spacing: 1px; font-size: 0.8rem;">Live Visit Active</span></div>
-                    <div class="timer-display" id="visit-timer">00:14:32</div>
-                    <p class="text-muted mb-4">You are currently conducting a visit at this location.</p>
-                    
-                    <div class="d-flex justify-content-center gap-3">
-                        <button class="btn btn-light border fw-semibold px-4 py-2 disabled">
-                            <i class="bi bi-camera me-2"></i>Storefront Photo Captured
-                        </button>
-                        <button class="btn btn-danger fw-bold px-4 py-2" onclick="alert('Phase 2: Opens front camera for selfie and prompts outcome dropdown.')">
-                            <i class="bi bi-stop-circle me-2"></i>End Visit & Selfie
-                        </button>
-                    </div>
+                    <h4 class="text-muted py-5">Please select a lead from the queue.</h4>
                 </div>
-
-                <div class="timeline-section">
-                    <h5 class="fw-bold mb-4"><i class="bi bi-clock-history me-2 text-muted"></i>Activity Timeline</h5>
-                    <div class="timeline">
-                        
-                        <div class="timeline-item">
-                            <div class="timeline-dot" style="background: #3b82f6;"></div>
-                            <span class="timeline-date">Today, 10:15 AM</span>
-                            <div class="timeline-content">
-                                <div class="fw-bold text-dark mb-1">Visit Started</div>
-                                <div class="small text-muted mb-2">Storefront photo captured successfully via Back Camera.</div>
-                                <div style="width: 80px; height: 60px; background: #cbd5e1; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="bi bi-image text-white fs-4"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="timeline-item">
-                            <div class="timeline-dot" style="background: #e2e8f0; border-color: #94a3b8;"></div>
-                            <span class="timeline-date">Yesterday, 04:30 PM</span>
-                            <div class="timeline-content">
-                                <div class="fw-bold text-dark mb-1">Lead Accepted</div>
-                                <div class="small text-muted">Lead moved to OPEN status by Arjun Mehta.</div>
-                            </div>
-                        </div>
-
-                    </div>
+                <div id="visit-history-section" class="mt-4">
                 </div>
-
             </div>
         </div>
     </div>
 
-    <script src="../js/api.js?v=2.4"></script>
-    <script src="../js/ui_components.js?v=1772780187"></script>
-    <script src="../js/auth.js?v=1772780187"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/ui_components.js"></script>
+    <script src="../js/auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/projects.js?v=1772780188"></script>
+    <script src="../js/projects.js"></script>
 </body>
 </html>

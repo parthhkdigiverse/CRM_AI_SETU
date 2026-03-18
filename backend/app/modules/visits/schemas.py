@@ -10,6 +10,7 @@ class VisitBase(BaseModel):
     remarks: Optional[str] = None
     decline_remarks: Optional[str] = None
     visit_date: Optional[datetime] = None
+    duration_seconds: Optional[int] = 0
 
 class VisitCreate(VisitBase):
     pass
@@ -27,7 +28,9 @@ class VisitRead(VisitBase):
     shop_name: Optional[str] = None
     area_name: Optional[str] = None
     user_name: Optional[str] = None
-    photo_url: Optional[str] = None
+    photo_url: Optional[str] = None  # Legacy/fallback
+    storefront_photo_url: Optional[str] = None
+    selfie_photo_url: Optional[str] = None
     project_manager_name: Optional[str] = None
     shop_status: Optional[str] = None
     shop_demo_stage: Optional[int] = 0

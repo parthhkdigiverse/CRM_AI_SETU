@@ -36,88 +36,79 @@ class VisitService:
                 joinedload(Visit.shop).joinedload(ShopModel.project_manager),
                 joinedload(Visit.user)
             ).filter(Visit.is_deleted == False)
+            
             if shop_id:
                 query = query.filter(Visit.shop_id == shop_id)
+                # CRITICAL OVERRIDE: If a specific shop is requested, force the backend 
+                # to ignore the router's hardcoded user_id filter so we can show all team visits.
+                if current_user and current_user.role not in [UserRole.ADMIN]:
+                    user_id = None 
             
             if user_id is not None:
                 query = query.filter(Visit.user_id == user_id)
 
-            # Admins see everything; staff see visits they authored OR
-            # visits logged on any shop they own (directly or via assignment)
+            # --- SECURITY ENFORCEMENT ---
             if current_user and current_user.role not in [UserRole.ADMIN]:
-                try:
-                    query = (
-                        query
-                        .filter(
+                if not shop_id:
+                    # Strict fallback for global lists
+                    try:
+                        query = query.filter(
                             or_(
                                 Visit.user_id == current_user.id,
                                 ShopModel.owner_id == current_user.id,
                                 ShopModel.assigned_owners_list.any(id=current_user.id)
                             )
                         )
-                    )
-                except Exception as scope_err:
-                    # Fallback: if the assigned_owners_list relationship fails,
-                    # at least scope to visits the user authored or owns
-                    print(f"[visits] scope filter warning: {scope_err}")
-                    query = query.filter(
-                        or_(
-                            Visit.user_id == current_user.id,
-                            ShopModel.owner_id == current_user.id
+                    except Exception:
+                        query = query.filter(
+                            or_(
+                                Visit.user_id == current_user.id,
+                                ShopModel.owner_id == current_user.id
+                            )
                         )
-                    )
 
             return query.order_by(Visit.visit_date.desc()).offset(skip).limit(limit).all()
         except Exception as e:
             print(f"Error fetching visits: {e}")
-            import traceback; traceback.print_exc()
             return []
 
-    async def create_visit(self, visit_in: VisitCreate, current_user: User, request: Request, photo: UploadFile = None):
+    async def create_visit(self, visit_in: VisitCreate, current_user: User, request: Request, storefront_photo: UploadFile = None, selfie_photo: UploadFile = None):
         # Validation: Check Shop Exists
         shop = self.db.query(Shop).filter(Shop.id == visit_in.shop_id).first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
             
         visit_data = visit_in.model_dump()
-        
-        # Validation: Duplicate Visit Protection (One per user, per lead, per day)
-        target_date = visit_data.get('visit_date') or datetime.now(UTC)
-
-        start_of_day = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_of_day = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
-        
-        existing_visit = self.db.query(Visit).filter(
-            Visit.shop_id == visit_in.shop_id,
-            Visit.user_id == current_user.id,
-            Visit.visit_date >= start_of_day,
-            Visit.visit_date <= end_of_day
-        ).first()
-        
-        if existing_visit:
-            raise HTTPException(status_code=400, detail="A visit has already been logged for this shop today by the current user.")
 
         visit = Visit(**visit_data, user_id=current_user.id)
 
-        # Handle Photo Upload
-        if photo:
+        # Handle Photo Uploads
+        timestamp = int(datetime.now(UTC).timestamp())
+        
+        if storefront_photo:
             try:
-                # Validate file extension if needed, for now accept images
-                file_ext = photo.filename.split(".")[-1]
-                filename = f"visit_{visit_in.shop_id}_{current_user.id}_{int(datetime.now(UTC).timestamp())}.{file_ext}"
-
+                file_ext = storefront_photo.filename.split(".")[-1]
+                filename = f"visit_{visit_in.shop_id}_{current_user.id}_storefront_{timestamp}.{file_ext}"
                 file_path = UPLOAD_DIR / filename
-                
                 with file_path.open("wb") as buffer:
-                    shutil.copyfileobj(photo.file, buffer)
-                
-                # Store relative path or URL
-                visit.photo_url = f"/static/uploads/visits/{filename}"
+                    shutil.copyfileobj(storefront_photo.file, buffer)
+                visit.storefront_photo_url = f"/static/uploads/visits/{filename}"
+                visit.photo_url = visit.storefront_photo_url # Backwards compatibility
             except Exception as e:
-                # Log error but maybe don't fail the visit creation? 
-                # Requirement: "file is actually written... invalid/missing rejected"
-                # If upload fails, we should probably fail the request or mark it.
-                raise HTTPException(status_code=500, detail=f"Failed to upload photo: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Failed to upload storefront photo: {str(e)}")
+
+        if selfie_photo:
+            try:
+                file_ext = selfie_photo.filename.split(".")[-1]
+                filename = f"visit_{visit_in.shop_id}_{current_user.id}_selfie_{timestamp}.{file_ext}"
+                file_path = UPLOAD_DIR / filename
+                with file_path.open("wb") as buffer:
+                    shutil.copyfileobj(selfie_photo.file, buffer)
+                visit.selfie_photo_url = f"/static/uploads/visits/{filename}"
+                if not visit.photo_url:
+                    visit.photo_url = visit.selfie_photo_url # Backwards compatibility if only selfie provided
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Failed to upload selfie photo: {str(e)}")
 
         self.db.add(visit)
         self.db.commit()
@@ -135,28 +126,33 @@ class VisitService:
             .first()
         )
 
-        # --- Auto-transition Shop pipeline_stage based on visit outcome ---
+        # --- Auto-transition Shop pipeline_stage (Bulletproof Version) ---
         from app.core.enums import MasterPipelineStage
         shop = self.db.query(Shop).filter(Shop.id == visit_in.shop_id).first()
+
         if shop:
-            current = shop.pipeline_stage
-            new_stage = None
+            # 1. Safely extract the visit status string
+            v_status = visit.status.name if hasattr(visit.status, 'name') else str(visit.status).replace('VisitStatus.', '')
 
-            # Any visit: move LEAD → PITCHING
-            if current == MasterPipelineStage.LEAD:
-                new_stage = MasterPipelineStage.PITCHING
+            # 2. Prevent the NULL Trap (Treat None as LEAD)
+            current_stage = shop.pipeline_stage
+            if current_stage is None:
+                current_stage = MasterPipelineStage.LEAD
 
-            # Visit outcome: ACCEPT → PITCHING (if still LEAD somehow)
-            if visit.status == VisitStatus.ACCEPT and current == MasterPipelineStage.LEAD:
-                new_stage = MasterPipelineStage.PITCHING
+            c_stage_str = current_stage.name if hasattr(current_stage, 'name') else str(current_stage).replace('MasterPipelineStage.', '')
 
-            # Visit outcome: SATISFIED → DELIVERY (only from PITCHING)
-            if visit.status == VisitStatus.SATISFIED and current == MasterPipelineStage.PITCHING:
-                new_stage = MasterPipelineStage.DELIVERY
+            # 3. State Machine using safe string comparisons, assigning proper Enum objects
+            if v_status == "ACCEPT":
+                shop.pipeline_stage = MasterPipelineStage.DELIVERY
+            elif v_status in ["SATISFIED", "TAKE_TIME_TO_THINK", "OTHER"]:
+                if c_stage_str == "LEAD":
+                    shop.pipeline_stage = MasterPipelineStage.PITCHING
+            elif v_status == "DECLINE":
+                shop.is_deleted = True
+                shop.assignment_status = "UNASSIGNED"
 
-            if new_stage and new_stage != current:
-                shop.pipeline_stage = new_stage
-                self.db.commit()
+            self.db.commit()
+            self.db.refresh(shop)
         # ----------------------------------------------------------
 
         # Helper for activity logging

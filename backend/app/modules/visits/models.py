@@ -30,7 +30,12 @@ class Visit(Base):
     visit_date = Column(DateTime, default=lambda: datetime.now(UTC))
     
     # Photo persistence
-    photo_url = Column(String, nullable=True)
+    photo_url = Column(String, nullable=True)  # Legacy/fallback
+    storefront_photo_url = Column(String, nullable=True)
+    selfie_photo_url = Column(String, nullable=True)
+
+    # Timer/Duration
+    duration_seconds = Column(Integer, default=0)
 
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
