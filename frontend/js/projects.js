@@ -12,8 +12,34 @@ let currentSearch = "";
 let currentFilter = "ALL";
 let currentSortBy = 'id';
 let currentSortOrder = 'desc';
+let currentPmFilter = "ALL";
 let storefrontBlob = null;
 let selfieBlob = null;
+
+// Smart PM Fatching from active Leads for sorting
+function populatePmFilterDropdown() {
+    const select = document.getElementById('pm-filter-select');
+    if (!select) return;
+
+    // Remember current selection
+    const currentVal = select.value;
+
+    // Extract unique PMs from the leads list
+    const pmSet = new Set();
+    allProjects.forEach(p => {
+        const pmName = p.project_manager_name || p.pm_name || (p.project_manager && (p.project_manager.name || p.project_manager.full_name || p.project_manager.email));
+        if (pmName) pmSet.add(pmName);
+    });
+
+    const uniquePMs = Array.from(pmSet).sort();
+
+    let html = '<option value="ALL">All Project Managers</option>';
+    html += '<option value="Unassigned">Unassigned Leads</option>';
+    uniquePMs.forEach(pm => { html += `<option value="${pm}">${pm}</option>`; });
+
+    select.innerHTML = html;
+    select.value = currentPmFilter; // Restore previous selection if any
+}
 
 // 1. Fetch
 async function loadHubData() {
@@ -29,6 +55,7 @@ async function loadHubData() {
             contact_person: p.contact_person || 'No Contact Person',
             phone: p.phone || 'No Phone'
         }));
+        populatePmFilterDropdown();
         filterQueue();
         if (allProjects.length > 0 && !currentProject) selectLead(allProjects[0].id);
     } catch (err) {
@@ -47,20 +74,55 @@ function setFilter(filterType, element) {
     filterQueue();
 }
 
-function applySort(by, order, element) {
-    currentSortBy = by; currentSortOrder = order;
-    document.querySelectorAll('.sort-option').forEach(el => el.classList.remove('bg-light', 'text-primary', 'fw-bold'));
-    if (element) element.classList.add('bg-light', 'text-primary', 'fw-bold');
+// 🚀 New PM Filter Apply logic
+window.applyPmFilter = (pmName) => {
+    currentPmFilter = pmName;
     filterQueue();
-}
+};
 
+// 🚀 Upgraded Sort function to handle the new button styles
+window.applySort = (by, order, element) => {
+    currentSortBy = by;
+    currentSortOrder = order;
+
+    // Reset all buttons to default grey state
+    document.querySelectorAll('.sort-option').forEach(el => {
+        el.classList.remove('shadow-sm');
+        el.style.background = '#f8fafc';
+        el.style.color = '#475569';
+        el.style.borderColor = '#e2e8f0';
+        el.style.fontWeight = '500';
+    });
+
+    // Highlight the clicked button in primary blue
+    if (element) {
+        element.classList.add('shadow-sm');
+        element.style.background = '#eff6ff';
+        element.style.color = '#1d4ed8';
+        element.style.borderColor = '#bfdbfe';
+        element.style.fontWeight = '600';
+    }
+
+    filterQueue();
+};
+
+// 🚀 Upgraded master filter loop
 function filterQueue() {
     let filtered = allProjects.filter(p => {
         const matchesSearch = p.name.toLowerCase().includes(currentSearch) || p.contact_person.toLowerCase().includes(currentSearch) || p.phone.includes(currentSearch);
+
         let matchesFilter = true;
         if (currentFilter === 'IN_PROGRESS') matchesFilter = (p.pipeline_stage === 'PITCHING');
         else if (currentFilter === 'DEMO_SET') matchesFilter = (p.demo_scheduled_at != null || p.pipeline_stage === 'NEGOTIATION');
-        return matchesSearch && matchesFilter && !p.is_deleted;
+
+        // NEW: Check the PM Filter
+        let matchesPm = true;
+        if (currentPmFilter !== "ALL") {
+            const pmName = p.project_manager_name || p.pm_name || (p.project_manager && (p.project_manager.name || p.project_manager.full_name || p.project_manager.email)) || 'Unassigned';
+            matchesPm = (pmName === currentPmFilter);
+        }
+
+        return matchesSearch && matchesFilter && matchesPm && !p.is_deleted;
     });
 
     const stageOrder = ["LEAD", "PITCHING", "NEGOTIATION", "DELIVERY", "MAINTENANCE"];
@@ -74,6 +136,7 @@ function filterQueue() {
 
     renderQueue(filtered);
 }
+
 
 function renderQueue(projects) {
     const queueEl = document.getElementById('queue-list');
@@ -163,10 +226,23 @@ function renderActionCenter(project) {
                         <div class="mb-3"><i class="bi bi-calendar-check text-warning" style="font-size: 3rem;"></i></div>
                         <h4 class="fw-bold">Pitching & Demo</h4>
                         <div class="d-flex justify-content-center gap-3 mt-4">
-                            <button class="btn btn-warning text-dark px-4 fw-bold"><i class="bi bi-calendar-plus me-2"></i>Schedule Demo</button>
+                            <button class="btn btn-warning text-dark px-4 fw-bold" onclick="window.openSmartScheduleModal(${project.id})"><i class="bi bi-calendar-plus me-2"></i>Schedule Demo</button>
                             <button class="btn btn-outline-dark px-4 fw-semibold" onclick="openCameraView('environment')"><i class="bi bi-person-walking me-2"></i>Log Follow-up Visit</button>
                         </div>
                     </div>`;
+        // 👇 NEW NEGOTIATION BLOCK 👇
+    } else if (project.pipeline_stage === "NEGOTIATION") {
+        actionContainer.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="mb-3"><i class="bi bi-display text-info" style="font-size: 3rem;"></i></div>
+                        <h4 class="fw-bold text-info">Demo & Negotiation</h4>
+                        <p class="text-muted mb-4 px-3">The PM is handling the demo. You can log field follow-ups or reschedule the demo if the client requested a time change.</p>
+                        <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
+                            <button class="btn btn-info text-dark px-4 fw-bold shadow-sm" onclick="window.openSmartScheduleModal(${project.id})"><i class="bi bi-calendar-event me-2"></i>Re-Schedule Demo</button>
+                            <button class="btn btn-outline-dark px-4 fw-semibold" onclick="openCameraView('environment')"><i class="bi bi-person-walking me-2"></i>Log Follow-up Visit</button>
+                        </div>
+                    </div>`;
+        // 👆 END NEW BLOCK 👆
     } else if (project.pipeline_stage === "DELIVERY") {
         actionContainer.innerHTML = `
                     <div class="text-center py-5">
@@ -184,132 +260,120 @@ async function loadVisitHistory(shopId) {
     const historyContainer = document.getElementById('visit-history-section');
     if (!historyContainer) return;
 
-    // Show loading state
     historyContainer.innerHTML = '<div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm me-2"></span>Loading visit history...</div>';
 
     try {
-        // Fetch visits for this specific shop from your FastAPI backend
         const visits = await window.ApiClient.request(`/visits/?shop_id=${shopId}`);
+        let totalInteractions = visits ? visits.length : 0;
+        let demoCardHtml = '';
 
-        if (!visits || visits.length === 0) {
+        // 1. Virtual Card for UPCOMING Demos only
+        if (currentProject && currentProject.demo_scheduled_at) {
+            totalInteractions += 1;
+            const demoDate = new Date(currentProject.demo_scheduled_at).toLocaleString('en-IN', {
+                day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            const pmName = currentProject.project_manager_name || currentProject.pm_name || (currentProject.project_manager && currentProject.project_manager.name) || 'Assigned PM';
+
+            demoCardHtml = `
+                <div class="card mb-3 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden; background: linear-gradient(to right, #f8fafc, #eef2ff); border-left: 4px solid #6366f1 !important;">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="fw-bold mb-1" style="color: #4f46e5;"><i class="bi bi-calendar-event me-1"></i> Upcoming Demo Session</h6>
+                                <div class="text-muted small mb-1"><i class="bi bi-clock me-1"></i>${demoDate}</div>
+                                <div class="text-muted mt-2" style="font-size: 0.8rem;"><i class="bi bi-person-badge text-secondary me-1"></i>Assigned PM: <span class="fw-bold text-dark">${pmName}</span></div>
+                            </div>
+                            <span class="badge bg-warning text-dark shadow-sm"><i class="bi bi-hourglass-split me-1"></i>Scheduled</span>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        // 2. Empty State
+        if (totalInteractions === 0) {
             historyContainer.innerHTML = `
                 <div class="text-center p-4 border rounded" style="background: #f8fafc; border-style: dashed !important;">
                     <i class="bi bi-clock-history text-muted mb-2" style="font-size: 1.5rem; display: block;"></i>
-                    <span class="text-muted small">No past visits recorded for this lead yet.</span>
+                    <span class="text-muted small">No past visits or demos recorded for this lead yet.</span>
                 </div>`;
             return;
         }
 
-        // Render the history cards with a dynamic Visit Count Badge
-        const visitCountText = visits.length > 1 ? `${visits.length} Visits` : `1 Visit`;
-        
+        const visitCountText = totalInteractions > 1 ? `${totalInteractions} Interactions` : `1 Interaction`;
         let html = `
             <div class="d-flex align-items-center mb-3">
                 <h6 class="fw-bold mb-0 text-uppercase" style="letter-spacing: 0.5px; font-size: 0.8rem; color: #64748b;">Past Interactions</h6>
-                <span class="badge bg-primary text-white rounded-pill ms-2 shadow-sm" style="font-size: 0.65rem; padding: 0.35em 0.65em;">
-                    ${visitCountText}
-                </span>
+                <span class="badge bg-primary text-white rounded-pill ms-2 shadow-sm" style="font-size: 0.65rem; padding: 0.35em 0.65em;">${visitCountText}</span>
             </div>`;
-        
-        visits.forEach(v => {
-            // Format the date safely
-            const visitDate = new Date(v.visit_date).toLocaleString('en-IN', {
-                day: 'numeric', month: 'short', year: 'numeric',
-                hour: '2-digit', minute: '2-digit'
-            });
 
-            // Format Duration (using your existing formatTime function)
-            const duration = v.duration_seconds ? formatTime(v.duration_seconds) : '00:00:00';
+        html += demoCardHtml; // Inject upcoming demo at the top
 
-            // Map status to a nice color
-            const statusColors = {
-                'SATISFIED': 'text-primary', 'ACCEPT': 'text-success',
-                'TAKE_TIME_TO_THINK': 'text-warning', 'DECLINE': 'text-danger', 'OTHER': 'text-secondary'
-            };
-            const statusColor = statusColors[v.status] || 'text-dark';
+        // 3. Render Historical Visits & Completed Demos
+        if (visits && visits.length > 0) {
+            visits.forEach(v => {
+                const visitDate = new Date(v.visit_date).toLocaleString('en-IN', {
+                    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                const repName = v.user_name || (v.user && (v.user.full_name || v.user.name)) || 'Unknown Rep';
 
-            // --- NEW: Smart Image URL Formatter ---
-            const formatImgUrl = (path) => {
-                if (!path) return '';
-                if (path.startsWith('http')) return path; // Already a full URL
-                // Strip out /api or /api/v1 from the base URL so it points directly to the root /static folder
-                const baseUrl = window.ApiClient.API_BASE_URL ? window.ApiClient.API_BASE_URL.split('/api')[0] : window.location.origin;
-                return baseUrl + path;
-            };
-
-            // Check for both new photo types (and fallback to the old one if needed)
-            let photosHtml = '<div class="mt-3 d-flex gap-2 flex-wrap">';
-
-            if (v.storefront_photo_url) {
-                photosHtml += `
-                    <div class="text-center">
-                        <img src="${formatImgUrl(v.storefront_photo_url)}" 
-                             alt="Storefront" class="img-thumbnail shadow-sm bg-white" 
-                             style="max-height: 120px; border-radius: 8px; cursor: pointer; object-fit: cover;"
-                             onclick="window.open(this.src, '_blank')">
-                        <div class="small text-muted mt-1 fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Storefront</div>
-                    </div>`;
-            }
-
-            if (v.selfie_photo_url) {
-                photosHtml += `
-                    <div class="text-center">
-                        <img src="${formatImgUrl(v.selfie_photo_url)}" 
-                             alt="Selfie" class="img-thumbnail shadow-sm bg-white" 
-                             style="max-height: 120px; border-radius: 8px; cursor: pointer; object-fit: cover;"
-                             onclick="window.open(this.src, '_blank')">
-                        <div class="small text-muted mt-1 fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Rep Selfie</div>
-                    </div>`;
-            }
-
-            // Legacy fallback for old records
-            if (!v.storefront_photo_url && !v.selfie_photo_url && v.photo_url) {
-                photosHtml += `
-                    <div class="text-center">
-                        <img src="${formatImgUrl(v.photo_url)}" 
-                             alt="Visit Photo" class="img-thumbnail shadow-sm bg-white" 
-                             style="max-height: 120px; border-radius: 8px; cursor: pointer; object-fit: cover;"
-                             onclick="window.open(this.src, '_blank')">
-                        <div class="small text-muted mt-1 fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Photo</div>
-                    </div>`;
-            }
-
-            photosHtml += '</div>';
-
-            // Extract the user's name safely from the backend data
-            const repName = v.user_name || (v.user && (v.user.full_name || v.user.name)) || 'Unknown Rep';
-
-            // Build the card with the Rep Name included
-            html += `
-                <div class="card mb-3 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div>
-                                <h6 class="fw-bold mb-1 ${statusColor}">
-                                    <i class="bi bi-record-circle me-1"></i>${v.status || 'VISIT'}
-                                </h6>
-                                <div class="text-muted small mb-1"><i class="bi bi-calendar3 me-1"></i>${visitDate}</div>
-                                
-                                <div class="text-muted" style="font-size: 0.75rem;">
-                                    <i class="bi bi-person-badge text-secondary me-1"></i>Visited by: <span class="fw-bold text-dark">${repName}</span>
+                // 🚀 NEW: Special green card for completed demos logged by the backend!
+                if (v.status === 'COMPLETED') {
+                    html += `
+                        <div class="card mb-3 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden; background: linear-gradient(to right, #f0fdf4, #dcfce7); border-left: 4px solid #10b981 !important;">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="fw-bold mb-1" style="color: #047857;"><i class="bi bi-display me-1"></i> Product Demo Completed</h6>
+                                        <div class="text-muted small mb-1"><i class="bi bi-calendar3 me-1"></i>${visitDate}</div>
+                                        <div class="text-muted mt-2" style="font-size: 0.8rem;"><i class="bi bi-person-check text-secondary me-1"></i>Hosted by PM: <span class="fw-bold text-dark">${repName}</span></div>
+                                    </div>
+                                    <span class="badge bg-success shadow-sm"><i class="bi bi-check-circle-fill me-1"></i>Done</span>
                                 </div>
-
                             </div>
-                            <span class="badge bg-light text-dark border"><i class="bi bi-stopwatch me-1"></i>${duration}</span>
-                        </div>
-                        
-                        <div class="mt-3 p-3 bg-light rounded text-dark" style="font-size: 0.9rem;">
-                            <strong>Remarks:</strong> ${v.remarks || '<span class="text-muted fst-italic">No remarks provided.</span>'}
-                            ${v.decline_remarks ? `<br><strong class="text-danger mt-1 d-block">Decline Reason:</strong> ${v.decline_remarks}` : ''}
-                        </div>
-                        
-                        ${photosHtml}
-                    </div>
-                </div>`;
-        });
+                        </div>`;
+                    return; // Skip drawing the regular visit layout
+                }
 
+                // Standard Field Visit Layout
+                const duration = v.duration_seconds ? formatTime(v.duration_seconds) : '00:00:00';
+                const statusColors = { 'SATISFIED': 'text-primary', 'ACCEPT': 'text-success', 'TAKE_TIME_TO_THINK': 'text-warning', 'DECLINE': 'text-danger', 'OTHER': 'text-secondary' };
+                const statusColor = statusColors[v.status] || 'text-dark';
+                
+                const formatImgUrl = (path) => {
+                    if (!path) return '';
+                    if (path.startsWith('http')) return path;
+                    const baseUrl = window.ApiClient.API_BASE_URL ? window.ApiClient.API_BASE_URL.split('/api')[0] : window.location.origin;
+                    return baseUrl + path;
+                };
+
+                let photosHtml = '<div class="mt-3 d-flex gap-2 flex-wrap">';
+                if (v.storefront_photo_url) photosHtml += `<div class="text-center"><img src="${formatImgUrl(v.storefront_photo_url)}" alt="Storefront" class="img-thumbnail shadow-sm bg-white" style="max-height: 120px; border-radius: 8px; cursor: pointer; object-fit: cover;" onclick="window.open(this.src, '_blank')"><div class="small text-muted mt-1 fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Storefront</div></div>`;
+                if (v.selfie_photo_url) photosHtml += `<div class="text-center"><img src="${formatImgUrl(v.selfie_photo_url)}" alt="Selfie" class="img-thumbnail shadow-sm bg-white" style="max-height: 120px; border-radius: 8px; cursor: pointer; object-fit: cover;" onclick="window.open(this.src, '_blank')"><div class="small text-muted mt-1 fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Rep Selfie</div></div>`;
+                if (!v.storefront_photo_url && !v.selfie_photo_url && v.photo_url) photosHtml += `<div class="text-center"><img src="${formatImgUrl(v.photo_url)}" alt="Visit Photo" class="img-thumbnail shadow-sm bg-white" style="max-height: 120px; border-radius: 8px; cursor: pointer; object-fit: cover;" onclick="window.open(this.src, '_blank')"><div class="small text-muted mt-1 fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Photo</div></div>`;
+                photosHtml += '</div>';
+
+                html += `
+                    <div class="card mb-3 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="fw-bold mb-1 ${statusColor}"><i class="bi bi-record-circle me-1"></i>${v.status || 'VISIT'}</h6>
+                                    <div class="text-muted small mb-1"><i class="bi bi-calendar3 me-1"></i>${visitDate}</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-person-badge text-secondary me-1"></i>Visited by: <span class="fw-bold text-dark">${repName}</span></div>
+                                </div>
+                                <span class="badge bg-light text-dark border"><i class="bi bi-stopwatch me-1"></i>${duration}</span>
+                            </div>
+                            <div class="mt-3 p-3 bg-light rounded text-dark" style="font-size: 0.9rem;">
+                                <strong>Remarks:</strong> ${v.remarks || '<span class="text-muted fst-italic">No remarks provided.</span>'}
+                                ${v.decline_remarks ? `<br><strong class="text-danger mt-1 d-block">Decline Reason:</strong> ${v.decline_remarks}` : ''}
+                            </div>
+                            ${photosHtml}
+                        </div>
+                    </div>`;
+            });
+        }
         historyContainer.innerHTML = html;
-
     } catch (error) {
         console.error("Failed to load history:", error);
         historyContainer.innerHTML = '<div class="text-center text-danger py-3 small"><i class="bi bi-exclamation-triangle me-1"></i> Could not load visit history.</div>';

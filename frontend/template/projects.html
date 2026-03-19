@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <meta charset="UTF-8">
@@ -9,52 +10,296 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/theme.css">
-    
+
     <style>
-        body { font-family: 'Outfit', sans-serif; background: #f8fafc; margin: 0; overflow: hidden; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #f8fafc;
+            margin: 0;
+            overflow: hidden;
+        }
 
         /* Split Pane Layout */
-        .hub-container { display: flex; height: 100vh; overflow: hidden; }
-        .queue-pane { width: 380px; background: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 10; }
-        .queue-header { padding: 1.5rem; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
-        .queue-list { overflow-y: auto; flex-grow: 1; padding: 1rem; }
-        
-        .lead-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; cursor: pointer; transition: all 0.2s ease; position: relative; }
-        .lead-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-1px); }
-        .lead-card.active { border-color: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15); }
-        .lead-card.active::before { content: ''; position: absolute; left: -1px; top: 10%; height: 80%; width: 4px; background: #10b981; border-radius: 4px; }
+        .hub-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-        .detail-pane { flex-grow: 1; display: flex; flex-direction: column; overflow-y: auto; background: #f1f5f9; }
-        .detail-content { max-width: 900px; margin: 0 auto; padding: 2rem; width: 100%; }
+        .queue-pane {
+            width: 380px;
+            background: #ffffff;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
 
-        .progress-tracker { display: flex; justify-content: space-between; position: relative; margin-bottom: 2.5rem; }
-        .progress-tracker::before { content: ''; position: absolute; top: 14px; left: 0; right: 0; height: 3px; background: #e2e8f0; z-index: 1; }
-        .step { position: relative; z-index: 2; text-align: center; flex: 1; }
-        .step-circle { width: 32px; height: 32px; border-radius: 50%; background: #fff; border: 3px solid #e2e8f0; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 700; font-size: 0.8rem; color: #94a3b8; transition: all 0.3s; }
-        .step.completed .step-circle { background: #10b981; border-color: #10b981; color: #fff; }
-        .step.active .step-circle { border-color: #10b981; color: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,0.2); }
-        .step-label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-        .step.active .step-label { color: #0f172a; font-weight: 700; }
+        .queue-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
 
-        .action-center { background: #fff; border-radius: 16px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.04); margin-bottom: 2rem; border: 1px solid #e2e8f0; }
-        .timer-display { font-size: 3.5rem; font-weight: 300; letter-spacing: -2px; color: #0f172a; text-align: center; font-variant-numeric: tabular-nums; }
-        .live-indicator { height: 10px; width: 10px; background: #ef4444; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; margin-right: 8px; }
-        
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .queue-list {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding: 1rem;
+        }
+
+        .lead-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .lead-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .lead-card.active {
+            border-color: #10b981;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+        }
+
+        .lead-card.active::before {
+            content: '';
+            position: absolute;
+            left: -1px;
+            top: 10%;
+            height: 80%;
+            width: 4px;
+            background: #10b981;
+            border-radius: 4px;
+        }
+
+        .detail-pane {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            background: #f1f5f9;
+        }
+
+        .detail-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            width: 100%;
+        }
+
+        .progress-tracker {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-bottom: 2.5rem;
+        }
+
+        .progress-tracker::before {
+            content: '';
+            position: absolute;
+            top: 14px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #e2e8f0;
+            z-index: 1;
+        }
+
+        .step {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            flex: 1;
+        }
+
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            transition: all 0.3s;
+        }
+
+        .step.completed .step-circle {
+            background: #10b981;
+            border-color: #10b981;
+            color: #fff;
+        }
+
+        .step.active .step-circle {
+            border-color: #10b981;
+            color: #10b981;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+        }
+
+        .step-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .step.active .step-label {
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+        .action-center {
+            background: #fff;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            margin-bottom: 2rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .timer-display {
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: -2px;
+            color: #0f172a;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .live-indicator {
+            height: 10px;
+            width: 10px;
+            background: #ef4444;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
 
         /* Modern Outcome Selection Cards */
-        .outcome-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; transition: all 0.3s; }
-        .outcome-card { background: #fff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 16px 10px; text-align: center; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
-        .outcome-card:hover { border-color: #cbd5e1; background: #f8fafc; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .outcome-card i { font-size: 1.8rem; line-height: 1; }
-        .outcome-card span { font-size: 0.75rem; font-weight: 700; color: #475569; }
+        .outcome-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s;
+        }
 
-        .outcome-card.active-satisfied { border-color: #3b82f6; background: #eff6ff; } .outcome-card.active-satisfied span { color: #1d4ed8; }
-        .outcome-card.active-accept { border-color: #10b981; background: #ecfdf5; } .outcome-card.active-accept span { color: #047857; }
-        .outcome-card.active-thinking { border-color: #f59e0b; background: #fffbeb; } .outcome-card.active-thinking span { color: #b45309; }
-        .outcome-card.active-decline { border-color: #ef4444; background: #fef2f2; } .outcome-card.active-decline span { color: #b91c1c; }
-        .outcome-card.active-other { border-color: #64748b; background: #f8fafc; } .outcome-card.active-other span { color: #334155; }
-        .outcome-full-width { grid-column: span 2; padding: 12px; flex-direction: row; gap: 12px; } .outcome-full-width i { font-size: 1.4rem; }
+        .outcome-card {
+            background: #fff;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .outcome-card:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .outcome-card i {
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+
+        .outcome-card span {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #475569;
+        }
+
+        .outcome-card.active-satisfied {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .outcome-card.active-satisfied span {
+            color: #1d4ed8;
+        }
+
+        .outcome-card.active-accept {
+            border-color: #10b981;
+            background: #ecfdf5;
+        }
+
+        .outcome-card.active-accept span {
+            color: #047857;
+        }
+
+        .outcome-card.active-thinking {
+            border-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        .outcome-card.active-thinking span {
+            color: #b45309;
+        }
+
+        .outcome-card.active-decline {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .outcome-card.active-decline span {
+            color: #b91c1c;
+        }
+
+        .outcome-card.active-other {
+            border-color: #64748b;
+            background: #f8fafc;
+        }
+
+        .outcome-card.active-other span {
+            color: #334155;
+        }
+
+        .outcome-full-width {
+            grid-column: span 2;
+            padding: 12px;
+            flex-direction: row;
+            gap: 12px;
+        }
+
+        .outcome-full-width i {
+            font-size: 1.4rem;
+        }
     </style>
 </head>
 
@@ -66,30 +311,53 @@
             <div class="queue-header">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-bold mb-0">Performance Queue</h5>
+                    <!-- Drop DOWN for sorting -->
                     <div class="dropdown">
-                        <button class="btn btn-sm btn-light border dropdown-toggle fw-semibold" type="button" data-bs-toggle="dropdown" style="font-size: 0.75rem;">
-                            <i class="bi bi-sort-down me-1"></i> Sort
+                        <button class="btn btn-sm shadow-sm d-flex align-items-center gap-2 fw-bold" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.8rem; color: #334155; padding: 6px 14px; transition: all 0.2s;">
+                            <i class="bi bi-sliders2 text-primary"></i> View Options
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="font-size: 0.82rem;">
-                            <li><h6 class="dropdown-header text-uppercase" style="font-size: 0.65rem;">Sort By ID</h6></li>
-                            <li><a class="dropdown-item sort-option active bg-light text-primary fw-bold" href="#" onclick="applySort('id', 'desc', this)">Newest First (Highest ID)</a></li>
-                            <li><a class="dropdown-item sort-option" href="#" onclick="applySort('id', 'asc', this)">Oldest First (Lowest ID)</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><h6 class="dropdown-header text-uppercase" style="font-size: 0.65rem;">Sort By Pipeline</h6></li>
-                            <li><a class="dropdown-item sort-option" href="#" onclick="applySort('status', 'asc', this)">Stage: Lead ➔ Maint.</a></li>
-                            <li><a class="dropdown-item sort-option" href="#" onclick="applySort('status', 'desc', this)">Stage: Maint. ➔ Lead</a></li>
-                        </ul>
+                        <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-3" style="width: 320px; border-radius: 16px; margin-top: 10px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+                            
+                            <h6 class="fw-bold text-uppercase mb-2" style="font-size: 0.65rem; letter-spacing: 1px; color: #94a3b8;">Sort Pipeline</h6>
+                            <div class="d-flex flex-column gap-2 mb-3">
+                                <button class="btn btn-sm w-100 text-start sort-option shadow-sm" onclick="applySort('id', 'desc', this)" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 8px; font-weight: 600;">
+                                    <i class="bi bi-sort-numeric-down me-2"></i>Newest First (Highest ID)
+                                </button>
+                                <button class="btn btn-sm w-100 text-start sort-option" onclick="applySort('id', 'asc', this)" style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 500;">
+                                    <i class="bi bi-sort-numeric-up me-2"></i>Oldest First (Lowest ID)
+                                </button>
+                                <button class="btn btn-sm w-100 text-start sort-option" onclick="applySort('status', 'asc', this)" style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 500;">
+                                    <i class="bi bi-funnel me-2"></i>Stage: Lead ➔ Maintenance
+                                </button>
+                                <button class="btn btn-sm w-100 text-start sort-option" onclick="applySort('status', 'desc', this)" style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 500;">
+                                    <i class="bi bi-funnel-fill me-2"></i>Stage: Maintenance ➔ Lead
+                                </button>
+                            </div>
+
+                            <hr class="border-light my-3">
+
+                            <h6 class="fw-bold text-uppercase mb-2" style="font-size: 0.65rem; letter-spacing: 1px; color: #94a3b8;">Filter By PM</h6>
+                            <select id="pm-filter-select" class="form-select form-select-sm shadow-sm" onchange="applyPmFilter(this.value)" style="border-radius: 8px; font-weight: 500; color: #334155; border-color: #cbd5e1; cursor: pointer;">
+                                <option value="ALL">All Project Managers</option>
+                                <option value="Unassigned">Unassigned Leads</option>
+                                </select>
+                        </div>
                     </div>
                 </div>
-                
+
                 <div class="position-relative">
-                    <i class="bi bi-search position-absolute" style="left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
-                    <input type="text" id="hub-search" class="form-control" placeholder="Search leads..." style="padding-left:36px; border-radius:8px;" oninput="handleSearch(event)">
+                    <i class="bi bi-search position-absolute"
+                        style="left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
+                    <input type="text" id="hub-search" class="form-control" placeholder="Search leads..."
+                        style="padding-left:36px; border-radius:8px;" oninput="handleSearch(event)">
                 </div>
                 <div class="d-flex gap-2 mt-3 overflow-auto pb-1" style="white-space: nowrap;">
-                    <span class="badge filter-pill bg-dark text-white rounded-pill px-3 py-2 cursor-pointer" onclick="setFilter('ALL', this)">All Active</span>
-                    <span class="badge filter-pill bg-light text-dark border rounded-pill px-3 py-2 cursor-pointer" onclick="setFilter('IN_PROGRESS', this)">In Progress</span>
-                    <span class="badge filter-pill bg-light text-dark border rounded-pill px-3 py-2 cursor-pointer" onclick="setFilter('DEMO_SET', this)">Demo Set</span>
+                    <span class="badge filter-pill bg-dark text-white rounded-pill px-3 py-2 cursor-pointer"
+                        onclick="setFilter('ALL', this)">All Active</span>
+                    <span class="badge filter-pill bg-light text-dark border rounded-pill px-3 py-2 cursor-pointer"
+                        onclick="setFilter('IN_PROGRESS', this)">In Progress</span>
+                    <span class="badge filter-pill bg-light text-dark border rounded-pill px-3 py-2 cursor-pointer"
+                        onclick="setFilter('DEMO_SET', this)">Demo Set</span>
                 </div>
             </div>
             <div class="queue-list" id="queue-list"></div>
@@ -105,11 +373,26 @@
                 </div>
 
                 <div class="progress-tracker">
-                    <div class="step active"><div class="step-circle">1</div><div class="step-label">Lead</div></div>
-                    <div class="step"><div class="step-circle">2</div><div class="step-label">Pitching</div></div>
-                    <div class="step"><div class="step-circle">3</div><div class="step-label">Negotiation</div></div>
-                    <div class="step"><div class="step-circle">4</div><div class="step-label">Delivery</div></div>
-                    <div class="step"><div class="step-circle">5</div><div class="step-label">Maintenance</div></div>
+                    <div class="step active">
+                        <div class="step-circle">1</div>
+                        <div class="step-label">Lead</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-circle">2</div>
+                        <div class="step-label">Pitching</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-circle">3</div>
+                        <div class="step-label">Negotiation</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-circle">4</div>
+                        <div class="step-label">Delivery</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-circle">5</div>
+                        <div class="step-label">Maintenance</div>
+                    </div>
                 </div>
 
                 <div class="action-center text-center">
@@ -120,11 +403,272 @@
             </div>
         </div>
     </div>
+    <!-- Schedule DEMO MOdel -->
+    <div class="modal fade" id="smartScheduleModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0"
+                style="border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden;">
+                <div class="modal-header border-0 pb-0 position-relative"
+                    style="background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%); padding: 32px 32px 16px;">
+                    <div class="position-absolute top-0 start-0 w-100"
+                        style="height: 4px; background: linear-gradient(90deg, #4f46e5, #ec4899, #4f46e5);"></div>
+                    <div class="d-flex align-items-center gap-3 w-100">
+                        <div class="bg-white p-3 rounded-circle shadow-sm" style="color: #4f46e5;">
+                            <i class="bi bi-cpu fs-3"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h4 class="fw-bold mb-1" style="color: #0f172a; letter-spacing: -0.5px;">Schedule Demo &
+                                Assign PM</h4>
+                            <p class="mb-0 text-muted small fw-medium">Smart workload distribution & availability</p>
+                        </div>
+                        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"
+                            style="margin-top: -20px;"></button>
+                    </div>
+                </div>
+
+                <div class="modal-body p-4 p-md-5 pt-4 bg-white">
+                    <input type="hidden" id="smart-sched-shop-id">
+
+                    <div class="mb-4 p-4 rounded-4"
+                        style="background: #f8fafc; border: 1px solid #e2e8f0; position: relative;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <label class="form-label fw-bold text-dark mb-0"><i
+                                    class="bi bi-person-badge me-2 text-primary"></i>Project Manager</label>
+
+                            <button class="btn btn-sm text-white fw-bold d-flex align-items-center gap-2"
+                                onclick="smartAutoSuggestPM()" id="smart-auto-suggest-btn"
+                                style="background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 10px; padding: 8px 16px; box-shadow: 0 4px 15px rgba(99,102,241,0.3); transition: all 0.2s; border: none;">
+                                <i class="bi bi-stars"></i> AI Auto Assign
+                            </button>
+                        </div>
+                        <select class="form-select form-select-lg border-0 shadow-sm fw-medium" id="smart-pm-select"
+                            onchange="smartFetchTimeSlots()"
+                            style="border-radius: 12px; font-size: 0.95rem; background-color: #fff; color: #334155;">
+                            <option value="" disabled selected>— Select PM manually —</option>
+                        </select>
+                        <div id="smart-pm-suggest-msg" class="text-success mt-2 d-none fw-bold"
+                            style="font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-check-circle-fill"></i> <span id="smart-pm-suggest-text">Optimal PM
+                                Selected</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-md-5">
+                            <label class="form-label fw-bold text-dark mb-2"><i
+                                    class="bi bi-calendar3 me-2 text-primary"></i>Demo Date</label>
+                            <input type="date" class="form-control form-control-lg border-0 shadow-sm fw-medium"
+                                id="smart-demo-date" onchange="smartFetchTimeSlots()"
+                                style="border-radius: 12px; font-size: 0.95rem; background-color: #f8fafc; color: #334155;">
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label fw-bold text-dark mb-2"><i
+                                    class="bi bi-clock-history me-2 text-primary"></i>Available Slots</label>
+                            <div id="smart-time-slots-container" class="d-flex flex-wrap gap-2">
+                                <div class="text-muted small w-100 text-center py-4 fw-medium"
+                                    style="background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
+                                    <i class="bi bi-calendar-x opacity-50 d-block fs-3 mb-1"></i>
+                                    Select PM and Date to unlock calendar
+                                </div>
+                            </div>
+                            <input type="hidden" id="smart-selected-time">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 p-4 p-md-5 pt-0 bg-white justify-content-between">
+                    <button type="button" class="btn btn-light fw-bold px-4 py-2 text-muted" data-bs-dismiss="modal"
+                        style="border-radius: 12px;">Cancel</button>
+                    <button type="button" class="btn fw-bold px-5 py-2 shadow-sm text-white" id="smart-submit-btn"
+                        onclick="smartSubmitSchedule()"
+                        style="border-radius: 12px; background: #0f172a; transition: all 0.2s;" disabled>
+                        <i class="bi bi-send-fill me-2 text-warning"></i> Confirm & Transfer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="../js/api.js"></script>
     <script src="../js/ui_components.js"></script>
     <script src="../js/auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../js/projects.js"></script>
+    <script>
+        // ========================================================
+        // 🚀 SMART SCHEDULING ENGINE (Performance Hub Edition)
+        // ========================================================
+
+        window.openSmartScheduleModal = async (shopId) => {
+            document.getElementById('smart-sched-shop-id').value = shopId;
+
+            // Reset UI
+            const pmSelect = document.getElementById('smart-pm-select');
+            pmSelect.innerHTML = '<option value="">— Loading PMs... —</option>';
+            document.getElementById('smart-pm-suggest-msg').classList.add('d-none');
+            document.getElementById('smart-selected-time').value = '';
+            document.getElementById('smart-submit-btn').disabled = true;
+
+            // Set date bounds
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('smart-demo-date');
+            dateInput.value = today;
+            dateInput.min = today;
+
+            document.getElementById('smart-time-slots-container').innerHTML = `
+                <div class="text-muted small w-100 text-center py-4 fw-medium" style="background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
+                    <i class="bi bi-calendar-x opacity-50 d-block fs-3 mb-1"></i>
+                    Select PM and Date to unlock calendar
+                </div>`;
+
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('smartScheduleModal')).show();
+
+            try {
+                const usersRes = await window.ApiClient.request('/users/project-managers', { method: 'GET' });
+                const pms = Array.isArray(usersRes) ? usersRes : (usersRes.items || []);
+                pmSelect.innerHTML = '<option value="" disabled selected>— Select PM manually —</option>' +
+                    pms.map(u => `<option value="${u.id}">${u.name || u.email} (${u.role.replace(/_/g, ' ')})</option>`).join('');
+            } catch (e) {
+                pmSelect.innerHTML = '<option value="">— Failed to load —</option>';
+            }
+        };
+
+        window.smartAutoSuggestPM = async () => {
+            const btn = document.getElementById('smart-auto-suggest-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Analyzing...';
+            btn.disabled = true;
+
+            try {
+                const response = await window.ApiClient.request('/users/suggest-pm', { method: 'GET' });
+                if (response && response.user_id) {
+                    document.getElementById('smart-pm-select').value = response.user_id;
+
+                    const msgEl = document.getElementById('smart-pm-suggest-msg');
+                    msgEl.classList.remove('d-none');
+                    document.getElementById('smart-pm-suggest-text').innerText = `${response.name} (Lowest Workload)`;
+
+                    smartFetchTimeSlots();
+                }
+            } catch (e) {
+                console.error("Auto suggest failed", e);
+                alert('Failed to suggest PM. Please select manually.');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        window.smartFetchTimeSlots = async () => {
+            const pmId = document.getElementById('smart-pm-select').value;
+            const date = document.getElementById('smart-demo-date').value;
+            const container = document.getElementById('smart-time-slots-container');
+
+            document.getElementById('smart-selected-time').value = '';
+            document.getElementById('smart-submit-btn').disabled = true;
+
+            if (!pmId || !date) return;
+
+            container.innerHTML = '<div class="w-100 text-center py-4"><div class="spinner-border text-primary"></div></div>';
+
+            try {
+                const response = await window.ApiClient.request(`/users/${pmId}/availability?date=${date}`, { method: 'GET' });
+                const slots = response.slots || [];
+
+                if (!slots || slots.length === 0) {
+                    container.innerHTML = '<div class="text-muted small w-100 text-center py-3">No working hours configured for this day.</div>';
+                    return;
+                }
+
+                const formatRange = (hour24) => {
+                    if (hour24 === 10) return "10 to 11 AM";
+                    if (hour24 === 11) return "11 to 12 PM";
+                    if (hour24 === 12) return "12 to 01 PM";
+                    if (hour24 === 13) return "01 to 02 PM (Lunch)";
+                    if (hour24 === 14) return "02 to 03 PM";
+                    if (hour24 === 15) return "03 to 04 PM";
+                    if (hour24 === 16) return "04 to 05 PM";
+                    if (hour24 === 17) return "05 to 06 PM";
+                    return `${hour24}:00`;
+                };
+
+                let html = '';
+                slots.forEach(slot => {
+                    if (slot.hour24 >= 18) return; // Prevent Overtime
+                    if (slot.hour24 === 13) slot.is_available = false; // Block Lunch
+
+                    const displayLabel = formatRange(slot.hour24);
+                    const timeValue24 = String(slot.hour24).padStart(2, '0') + ':00';
+
+                    // Futuristic pill styles
+                    if (slot.is_available) {
+                        html += `<button class="btn btn-outline-primary slot-btn fw-bold px-3 py-2" style="border-radius: 10px; font-size: 0.85rem; border-width: 2px; transition: all 0.2s;" onclick="smartSelectTimeSlot(this, '${timeValue24}')">${displayLabel}</button>`;
+                    } else {
+                        html += `<button class="btn btn-light text-muted fw-bold px-3 py-2" style="border-radius: 10px; font-size: 0.85rem; text-decoration: line-through; opacity: 0.5; border: 1px dashed #cbd5e1;" disabled>${displayLabel}</button>`;
+                    }
+                });
+                container.innerHTML = html;
+
+            } catch (err) {
+                container.innerHTML = '<div class="text-danger small w-100 text-center py-3">Failed to load calendar.</div>';
+            }
+        };
+
+        window.smartSelectTimeSlot = (btnEl, timeValue) => {
+            document.querySelectorAll('.slot-btn').forEach(b => {
+                b.classList.remove('btn-primary', 'text-white', 'shadow');
+                b.classList.add('btn-outline-primary');
+            });
+            btnEl.classList.remove('btn-outline-primary');
+            btnEl.classList.add('btn-primary', 'text-white', 'shadow');
+
+            document.getElementById('smart-selected-time').value = timeValue;
+            document.getElementById('smart-submit-btn').disabled = false;
+        };
+
+        window.smartSubmitSchedule = async () => {
+            // 🚀 CRITICAL FIX: Convert the string from the input into an actual Integer!
+            const shopId = parseInt(document.getElementById('smart-sched-shop-id').value, 10);
+            const pmId = document.getElementById('smart-pm-select').value;
+            const date = document.getElementById('smart-demo-date').value;
+            const time = document.getElementById('smart-selected-time').value;
+            const btn = document.getElementById('smart-submit-btn');
+
+            if (!pmId || !date || !time) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
+            
+            try {
+                const scheduledAt = new Date(`${date}T${time}:00`).toISOString();
+
+                await window.ApiClient.request(`/shops/${shopId}/assign-pm`, {
+                    method: 'POST',
+                    body: { pm_id: parseInt(pmId), demo_scheduled_at: scheduledAt }
+                });
+                
+                const modalEl = document.getElementById('smartScheduleModal');
+                const modalInst = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+                modalInst.hide();
+                
+                if (typeof loadHubData === 'function') {
+                    await loadHubData(); 
+                    if (typeof selectLead === 'function') {
+                        selectLead(shopId); // This will now perfectly match the integer!
+                    }
+                } else {
+                    window.location.reload(); 
+                }
+                
+            } catch (e) {
+                console.error("CRITICAL ERROR during scheduling:", e);
+                alert('Backend Error: ' + (e?.data?.detail || e?.message || JSON.stringify(e)));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-send-fill me-2 text-warning"></i> Confirm & Transfer';
+            }
+        };
+    </script>
 </body>
+
 </html>

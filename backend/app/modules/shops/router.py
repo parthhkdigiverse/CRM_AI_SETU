@@ -155,7 +155,7 @@ def assign_pm(
     """
     Assign a Project Manager to a CONTACTED lead.
     """
-    return ShopService.assign_pm(db, shop_id, body.pm_id, current_user)
+    return ShopService.assign_pm(db, shop_id, body, current_user)
 
 @router.post("/{shop_id}/auto-assign", response_model=ShopRead)
 def auto_assign_shop(

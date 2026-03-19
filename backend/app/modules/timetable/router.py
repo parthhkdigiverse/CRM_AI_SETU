@@ -270,7 +270,7 @@ def get_timetable(
             description=None
         ))
 
-    # 5. Fetch Scheduled Shop Demos (from SM demo pipeline)
+    # 5. Fetch Scheduled Shop Demos
     demo_query = db.query(Shop).filter(Shop.demo_scheduled_at.isnot(None))
     if not is_admin:
         demo_query = demo_query.filter(Shop.project_manager_id == user_id)
@@ -278,7 +278,7 @@ def get_timetable(
     demo_shops = demo_query.all()
     from datetime import timedelta, timezone
     
-    # Define IST explicitly to prevent double-shifting by JS
+    # Define IST explicitly to prevent double-shifting
     ist_tz = timezone(timedelta(hours=5, minutes=30))
 
     for shop in demo_shops:
@@ -291,37 +291,33 @@ def get_timetable(
         else:
             local_start = start_dt 
             
-        local_end = local_start + timedelta(minutes=45)
+        local_end = local_start + timedelta(hours=1)
         
-        # Resolve PM name so the UI doesn't hide the event
         pm_name = username
         try:
             if getattr(shop, 'project_manager', None):
                 pm_name = shop.project_manager.name or shop.project_manager.email
         except:
             pass
-        
-        # Map the new implementation plan fields safely
-        display_title = getattr(shop, 'demo_title', None) or f"Demo: {shop.name}"
-        display_loc = getattr(shop, 'demo_type', None) or (shop.area.name if getattr(shop, 'area', None) else "Online")
-        display_desc = getattr(shop, 'demo_notes', None)
+            
+        # UI expects exact parsing
+        status_val = "COMPLETED" if shop.demo_stage and shop.demo_stage > 0 else "OPEN"
+        loc_val = getattr(shop, 'demo_meet_link', None) or "Scheduled Demo"
         
         events.append(TimelineEvent(
-            id=f"demo_shop_{shop.id}",
-            title=display_title,
-            date=local_start.strftime("%Y-%m-%d"),
+            id=shop.id + 50000,
+            title=f"Demo: {shop.name}",
+            date=local_start.strftime('%Y-%m-%d'),
             user=pm_name,
             sh=local_start.hour,
             sm=local_start.minute,
             eh=local_end.hour,
             em=local_end.minute,
-            loc=display_loc,
-            event_type="DEMO",
-            status="SCHEDULED",
+            loc=loc_val,
+            event_type="MEETING",
+            status=status_val,
             reference_id=shop.id,
-            description=display_desc,
-            meet_url=getattr(shop, 'demo_meet_link', None),
-            backgroundColor="#4f46e5"
+            description="Demo session for new lead"
         ))
 
     return {"events": events}

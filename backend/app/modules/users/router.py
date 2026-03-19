@@ -498,11 +498,18 @@ def get_referral_code(
         raise HTTPException(status_code=404, detail="Referral code not set for this user")
     return {"user_id": user.id, "code": user.referral_code}
 
-# ── PM Availability endpoint (moved from employees router) ────────────────────
+# ── PM Workload and Availability endpoints (Demo Scheduling) ────────────────────
 
-from sqlalchemy import cast, Date
-from app.modules.meetings.models import MeetingSummary
-from app.modules.clients.models import Client
+@router.get("/suggest-pm")
+def suggest_pm(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+) -> Any:
+    from app.modules.users.service import UserService
+    result = UserService(db).suggest_pm()
+    if not result:
+        raise HTTPException(status_code=404, detail="No Project Managers found")
+    return result
 
 @router.get("/{pm_id}/availability")
 def get_pm_availability(
@@ -511,20 +518,8 @@ def get_pm_availability(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ) -> Any:
-    pm = db.query(User).filter(
-        User.id == pm_id,
-        User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES])
-    ).first()
-    if not pm:
+    from app.modules.users.service import UserService
+    result = UserService(db).get_pm_availability(pm_id, date)
+    if not result:
         raise HTTPException(status_code=404, detail="Project Manager not found")
-
-    meetings = db.query(MeetingSummary).join(Client).filter(
-        Client.pm_id == pm_id,
-        cast(MeetingSummary.date, Date) == date,
-        MeetingSummary.status != "CANCELLED"
-    ).all()
-
-    booked_hours = [m.date.hour for m in meetings]
-    free_slots = [f"{h:02d}:00" for h in range(9, 18) if h not in booked_hours]
-
-    return {"pm_id": pm_id, "date": date, "free_slots": free_slots}
+    return result
