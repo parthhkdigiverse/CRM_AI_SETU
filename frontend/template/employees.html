@@ -50,7 +50,7 @@
 
         .role-TELESALES {
             background: #e0e7ff;
-            color: #3730a3;
+            color: #1e40af;
         }
 
         .role-PROJECT_MANAGER {
@@ -101,227 +101,348 @@
             .border-md-start { border-left: 1px solid rgba(255,255,255,0.1) !important; }
         }
 
-        /* ── Attendance Widget V2 ── */
-        .attendance-card-v2 {
-            width: 216px;
-            background: rgba(8, 6, 24, 0.60);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.09);
+        /* ── Professional Attendance Widget ── */
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+        .pro-att-widget {
+            background: linear-gradient(135deg, #0d1f5c 0%, #102272 40%, #0f1e6a 70%, #0a1550 100%);
             border-radius: 16px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-            padding: 18px;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255,255,255,0.04) inset;
+            padding: 22px 24px;
             display: flex;
-            flex-direction: column;
-            gap: 12px;
+            align-items: center;
+            gap: 0;
             color: white;
             font-family: 'Inter', sans-serif;
-            margin: 0 auto 24px;
+            margin-bottom: 24px;
             position: relative;
+            overflow: hidden;
         }
 
-        .att-top-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+        /* Ambient glow blobs */
+        .pro-att-widget::before {
+            content: '';
+            position: absolute;
+            top: -40px; left: -40px;
+            width: 180px; height: 180px;
+            background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .pro-att-widget::after {
+            content: '';
+            position: absolute;
+            bottom: -40px; right: -40px;
+            width: 160px; height: 160px;
+            background: radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%);
+            pointer-events: none;
         }
 
-        .att-user-info {
-            display: flex;
-            gap: 8px;
-            align-items: center;
+        /* Left Zone */
+        .pro-att-left {
+            flex: 1;
+            padding-right: 24px;
+            min-width: 0;
         }
 
-        .att-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #6366f1, #4f46e5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 14px;
-            color: white;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .att-name-role {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .att-name {
-            font-weight: 700;
-            font-size: 11px;
-            line-height: 1.2;
-        }
-
-        .att-role {
-            font-weight: 400;
-            font-size: 9.5px;
-            color: rgba(255, 255, 255, 0.55);
-        }
-
-        .att-status-badge {
-            border-radius: 6px;
-            padding: 4px 8px;
-            font-size: 8px;
-            font-weight: 700;
+        .pro-att-date {
+            font-size: 10.5px;
+            font-weight: 600;
+            letter-spacing: 0.09em;
             text-transform: uppercase;
-            display: flex;
+            color: rgba(255,255,255,0.32);
+            margin-bottom: 6px;
+        }
+
+        .pro-att-greeting-line {
+            font-size: 13px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.70);
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .pro-att-name {
+            font-size: 22px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pro-att-name.punched-in {
+            background: linear-gradient(90deg, #c7d7ff, #a5b8ff, #e0e7ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .pro-att-name.punched-out {
+            color: rgba(255,255,255,0.42);
+            -webkit-text-fill-color: rgba(255,255,255,0.42);
+        }
+
+        .pro-att-live-badge {
+            display: inline-flex;
             align-items: center;
-            gap: 4px;
-        }
-
-        .att-status-badge::before {
-            content: '●';
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
             font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }
 
-        .att-status-active {
-            background: rgba(74, 222, 128, 0.10);
-            border: 1px solid rgba(74, 222, 128, 0.18);
+        .pro-att-live-badge.live {
+            background: rgba(74, 222, 128, 0.08);
+            border: 1px solid rgba(74, 222, 128, 0.22);
             color: #4ade80;
         }
 
-        .att-status-inactive {
-            background: rgba(248, 113, 113, 0.10);
-            border: 1px solid rgba(248, 113, 113, 0.18);
-            color: #f87171;
+        .pro-att-live-badge.offline {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.10);
+            color: rgba(255,255,255,0.35);
         }
 
-        .att-divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
-            margin: 2px 0;
-            width: 100%;
+        .pro-att-pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 0 0 rgba(74,222,128,0.5);
+            animation: attPulse 2s ease-in-out infinite;
+            flex-shrink: 0;
         }
 
-        .att-timer-section {
+        @keyframes attPulse {
+            0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.5); }
+            60%  { box-shadow: 0 0 0 5px rgba(74,222,128,0); }
+            100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+        }
+
+        /* Vertical Separator */
+        .pro-att-sep {
+            width: 1px;
+            align-self: stretch;
+            background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.10) 20%, rgba(255,255,255,0.10) 80%, transparent);
+            flex-shrink: 0;
+            margin: 0 4px;
+        }
+
+        /* Right Zone */
+        .pro-att-right {
+            padding-left: 24px;
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
-            gap: 2px;
+            gap: 12px;
+            min-width: 260px;
+            max-width: 300px;
         }
 
-        .att-timer-label {
-            font-weight: 600;
-            font-size: 9px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: rgba(255, 255, 255, 0.30);
-        }
-
-        .att-timer-digits {
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 700;
-            font-size: 30px;
-            color: #fff;
-            letter-spacing: 1px;
-            line-height: 1;
+        /* Row 1: Avatar + Name + Badge */
+        .pro-att-user-row {
             display: flex;
             align-items: center;
+            gap: 10px;
         }
 
-        .att-colon {
-            font-size: 26px;
-            color: rgba(255, 255, 255, 0.35);
-            animation: colonPulse 1s ease-in-out infinite;
-            margin: 0 1px;
+        .pro-att-avatar-wrap {
+            position: relative;
+            flex-shrink: 0;
         }
 
-        @keyframes colonPulse {
-            0%, 100% { opacity: 1; }
-            45%, 55% { opacity: 0.15; }
-        }
-
-        .att-stats-row {
-            display: flex;
-            background: rgba(255, 255, 255, 0.06);
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 4px;
-        }
-
-        .att-stat-cell {
-            flex: 1;
-            padding: 8px 6px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .att-stat-cell:first-child {
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .att-stat-label {
-            font-weight: 600;
-            font-size: 9px;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.35);
-        }
-
-        .att-stat-value {
-            font-weight: 600;
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.85);
-        }
-
-        .att-punch-btn {
-            width: 100%;
-            border-radius: 10px;
-            padding: 12px 0;
-            font-family: 'Inter', sans-serif;
-            font-weight: 700;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            border: none;
-            color: white;
-            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
-            margin-top: 2px;
+        .pro-att-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b5bdb, #6366f1);
+            border: 2px solid rgba(255,255,255,0.18);
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 14px;
+            font-weight: 800;
+            color: white;
+            overflow: hidden;
         }
 
-        .att-punch-btn.punch-in {
-            background: linear-gradient(135deg, #6366f1, #7c3aed);
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.45);
+        .pro-att-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
 
-        .att-punch-btn.punch-out {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
-            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.35);
+        .pro-att-status-dot {
+            position: absolute;
+            bottom: 1px; right: 1px;
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            border: 2px solid #102272;
         }
 
-        .att-punch-btn:hover {
+        .pro-att-status-dot.online  { background: #4ade80; }
+        .pro-att-status-dot.offline { background: rgba(255,255,255,0.25); }
+
+        .pro-att-user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pro-att-user-name {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: white;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pro-att-punch-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 3px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+
+        .pro-att-punch-badge.in {
+            background: rgba(74,222,128,0.10);
+            border: 1px solid rgba(74,222,128,0.20);
+            color: #4ade80;
+        }
+
+        .pro-att-punch-badge.out {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.10);
+            color: rgba(255,255,255,0.40);
+        }
+
+        /* Row 2: Info cells + Button */
+        .pro-att-bottom-row {
+            display: flex;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        .pro-att-info-cells {
+            display: flex;
+            flex: 1;
+            gap: 0;
+            background: rgba(0,0,0,0.25);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.06);
+            overflow: hidden;
+        }
+
+        .pro-att-info-cell {
+            flex: 1;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .pro-att-info-cell + .pro-att-info-cell {
+            border-left: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .pro-att-info-label {
+            font-size: 8.5px;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.30);
+        }
+
+        .pro-att-info-val {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.80);
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+        }
+
+        /* Timer value uses JetBrains Mono */
+        .pro-att-timer-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 400;
+            font-size: 17px;
+            color: #fff;
+            letter-spacing: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .pro-att-timer-val .att-sep {
+            opacity: 1;
+            animation: timerColonBlink 1s step-start infinite;
+        }
+
+        @keyframes timerColonBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.18; }
+        }
+
+        /* Punch Button */
+        .pro-att-btn {
+            width: 72px;
+            flex-shrink: 0;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.25;
+            text-align: center;
+            padding: 0;
+        }
+
+        .pro-att-btn.punch-in {
+            background: linear-gradient(150deg, #15803d, #22c55e);
+            box-shadow: 0 4px 14px rgba(34,197,94,0.35);
+        }
+
+        .pro-att-btn.punch-out {
+            background: linear-gradient(150deg, #b91c1c, #ef4444);
+            box-shadow: 0 4px 14px rgba(239,68,68,0.35);
+        }
+
+        .pro-att-btn:hover {
             transform: translateY(-1px);
         }
-        
-        .att-punch-btn.punch-in:hover {
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
-        }
 
-        .att-punch-btn.punch-out:hover {
-            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
-        }
+        .pro-att-btn.punch-in:hover  { box-shadow: 0 6px 18px rgba(34,197,94,0.50); }
+        .pro-att-btn.punch-out:hover { box-shadow: 0 6px 18px rgba(239,68,68,0.50); }
 
-        .att-punch-btn:active {
-            transform: scale(0.975);
-        }
+        .pro-att-btn:active { transform: scale(0.97); }
 
-        .att-punch-btn.loading {
-            opacity: 0.55;
+        .pro-att-btn.loading {
+            opacity: 0.50;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
-    </style>
+</style>
 </head>
 
 <body>
@@ -329,12 +450,11 @@
         <div id="sidebar"></div>
         <div class="flex-grow-1 main-wrapper">
             <div class="page-content mx-auto" style="max-width: 1400px;">
-                <!-- Header -->
+                <!-- Header Section -->
                 <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                     <div>
                         <h2 class="page-section-title">Employees Directory</h2>
-                        <p class="text-muted mb-0" style="font-size:0.93rem;">Manage your team members, roles, and
-                            profiles.</p>
+                        <p class="text-muted mb-0" style="font-size:0.93rem;">Directory, department management and attendance tracking.</p>
                     </div>
                 </div>
 
@@ -450,71 +570,91 @@
                     </div>
                 </div>
 
-                <div class="grid-card mt-4" id="employee-self-card" style="display:none;">
-                    <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="fw-bold mb-0" style="color:#334155;">My Attendance & Punch</h6>
-                            <div class="text-muted small">Your daily punch timing and attendance status</div>
+                <div class="mt-4" id="employee-self-card" style="display:none;">
+
+                    <!-- Professional Attendance Widget -->
+                    <div class="pro-att-widget">
+                        <!-- Left Zone: Date + Greeting -->
+                        <div class="pro-att-left">
+                            <div class="pro-att-date" id="pro-att-self-date">--</div>
+                            <div class="pro-att-greeting-line" id="pro-att-self-greeting-line">Good Evening,</div>
+                            <div class="pro-att-name punched-out" id="pro-att-self-name">User</div>
+                            <div class="pro-att-live-badge offline" id="pro-att-self-live-badge">
+                                <span class="pro-att-pulse-dot" id="pro-att-self-pulse" style="display:none;"></span>
+                                <span id="pro-att-self-live-text">Offline</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="p-4" id="employee-self-body">
-                        <!-- Attendance Widget V2 -->
-                        <div class="attendance-card-v2">
-                            <div class="att-top-row">
-                                <div class="att-user-info">
-                                    <div class="att-avatar" id="att-v2-self-avatar">U</div>
-                                    <div class="att-name-role">
-                                        <span class="att-name" id="att-v2-self-name">User</span>
-                                        <span class="att-role">Employee</span>
-                                    </div>
+
+                        <!-- Vertical Separator -->
+                        <div class="pro-att-sep"></div>
+
+                        <!-- Right Zone: Profile + Punch Info -->
+                        <div class="pro-att-right">
+                            <!-- Row 1: Avatar + Name + Punch Badge -->
+                            <div class="pro-att-user-row">
+                                <div class="pro-att-avatar-wrap">
+                                    <div class="pro-att-avatar" id="pro-att-self-avatar">--</div>
+                                    <div class="pro-att-status-dot offline" id="pro-att-self-dot"></div>
                                 </div>
-                                <div class="att-status-badge att-status-inactive" id="att-v2-self-badge">Not Punched</div>
-                            </div>
-                            
-                            <div class="att-divider"></div>
-                            
-                            <div class="att-timer-section">
-                                <div class="att-timer-label">Session Duration</div>
-                                <div class="att-timer-digits" id="att-v2-self-timer">
-                                    <span id="att-v2-self-hh">00</span><span class="att-colon">:</span><span id="att-v2-self-mm">00</span><span class="att-colon">:</span><span id="att-v2-self-ss">00</span>
-                                </div>
-                            </div>
-                            
-                            <div class="att-stats-row">
-                                <div class="att-stat-cell">
-                                    <span class="att-stat-label">First In</span>
-                                    <span class="att-stat-value" id="att-v2-self-first-in">--:--</span>
-                                </div>
-                                <div class="att-stat-cell">
-                                    <span class="att-stat-label">Expected Out</span>
-                                    <span class="att-stat-value" id="att-v2-self-expected-out">--:--</span>
+                                <div class="pro-att-user-info">
+                                    <div class="pro-att-user-name" id="pro-att-self-uname">User</div>
+                                    <div class="pro-att-punch-badge out" id="pro-att-self-punch-badge">Not Punched</div>
                                 </div>
                             </div>
 
-                            <button class="att-punch-btn punch-in" id="self-main-punch-btn">Punch In</button>
+                            <!-- Row 2: Info Cells + Button -->
+                            <div class="pro-att-bottom-row">
+                                <div class="pro-att-info-cells">
+                                    <div class="pro-att-info-cell">
+                                        <div class="pro-att-info-label">Punch In</div>
+                                        <div class="pro-att-info-val" id="pro-att-self-first-in">--:--</div>
+                                    </div>
+                                    <div class="pro-att-info-cell">
+                                        <div class="pro-att-info-label">Duration</div>
+                                        <div class="pro-att-timer-val">
+                                            <span id="att-v2-self-hh">--</span><span class="att-sep">:</span><span id="att-v2-self-mm">--</span><span class="att-sep">:</span><span id="att-v2-self-ss">--</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="pro-att-btn punch-in" id="self-main-punch-btn">
+                                    Punch<br>In
+                                </button>
+                            </div>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div class="text-muted small" id="self-attendance-count">0 record(s)</div>
-                            <div class="fw-semibold" id="self-attendance-total-hours">Total: 0.00 hrs</div>
+                    </div>
+
+                    <!-- Attendance History Card -->
+                    <div class="grid-card">
+                        <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-bold mb-0" style="color:#334155;">My Attendance History</h6>
+                                <div class="text-muted small">Your punch timing and attendance records</div>
+                            </div>
                         </div>
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle mb-0">
-                                <thead class="bg-light">
-                                    <tr>
-                                        <th style="white-space:nowrap;">Date</th>
-                                        <th style="white-space:nowrap;">Punch In</th>
-                                        <th style="white-space:nowrap;">Punch Out</th>
-                                        <th style="white-space:nowrap;">Hours</th>
-                                        <th style="white-space:nowrap;">Status</th>
-                                        <th style="white-space:nowrap;">Leave</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="self-attendance-tbody">
-                                    <tr>
-                                        <td colspan="6" class="text-center py-4 text-muted">No data loaded.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="p-4" id="employee-self-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="text-muted small" id="self-attendance-count">0 record(s)</div>
+                                <div class="fw-semibold" id="self-attendance-total-hours">Total: 0.00 hrs</div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th style="white-space:nowrap;">Date</th>
+                                            <th style="white-space:nowrap;">Punch In</th>
+                                            <th style="white-space:nowrap;">Punch Out</th>
+                                            <th style="white-space:nowrap;">Hours</th>
+                                            <th style="white-space:nowrap;">Status</th>
+                                            <th style="white-space:nowrap;">Leave</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="self-attendance-tbody">
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4 text-muted">No data loaded.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -708,8 +848,9 @@
                     let actions = `<span class="text-muted small">Viewer</span>`;
                     if (canManageEmployees) {
                         actions = `
+                            <button class="btn btn-sm btn-light border-primary text-primary me-1" onclick="viewEmployeeAttendance(${emp.id}, '${emp.name}')" title="Attendance History"><i class="bi bi-calendar-check"></i></button>
                             <button class="btn btn-sm btn-light border-secondary text-secondary me-1" onclick="openEditModal(${emp.id})" title="Edit"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-light border-danger text-danger" onclick="deleteEmployee(${emp.id})" title="Delete"><i class="bi bi-trash"></i></button>
+                            ${emp.role !== 'admin' ? `<button class="btn btn-sm btn-light border-danger text-danger" onclick="deleteEmployee(${emp.id})" title="Delete"><i class="bi bi-trash"></i></button>` : ''}
                         `;
                     }
 
@@ -764,18 +905,21 @@
         }
 
         function selfUpdateLiveTimer() {
-            if (!selfPunchStartTime) return;
-            const diff = (Date.now() - selfPunchStartTime) / 1000 + selfAccumulatedSeconds;
+            let totalSec = selfAccumulatedSeconds || 0;
+            if (selfPunchStartTime) {
+                const elapsed = Math.max(0, (Date.now() - selfPunchStartTime) / 1000);
+                totalSec += elapsed;
+            }
             
-            const h = Math.floor(diff / 3600);
-            const m = Math.floor((diff % 3600) / 60);
-            const s = Math.floor(diff % 60);
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = Math.floor(totalSec % 60);
 
             const hhEl = document.getElementById('att-v2-self-hh');
             const mmEl = document.getElementById('att-v2-self-mm');
             const ssEl = document.getElementById('att-v2-self-ss');
 
-            if (hhEl) hhEl.textContent = h < 10 ? '0' + h : h;
+            if (hhEl) hhEl.textContent = h < 10 ? '0' + h : Math.floor(h);
             if (mmEl) mmEl.textContent = m < 10 ? '0' + m : m;
             if (ssEl) ssEl.textContent = s < 10 ? '0' + s : s;
         }
@@ -785,84 +929,119 @@
             const selfCard = document.getElementById('employee-self-card');
             if (selfCard) selfCard.style.display = 'block';
 
-            // Set Name & Avatar Initials
+            // Populate Left Zone: Date + Greeting
             const u = getUser();
-            const v2NameEl = document.getElementById('att-v2-self-name');
-            const v2AvatarEl = document.getElementById('att-v2-self-avatar');
-            if (v2NameEl) v2NameEl.textContent = u.name || 'User';
-            if (v2AvatarEl) v2AvatarEl.textContent = window.getInitials ? window.getInitials(u.name || u.email) : (u.name || u.email || 'U').substring(0,2).toUpperCase();
+            const now = new Date();
+            const hours = now.getHours();
+            let greeting = 'Good Morning';
+            if (hours >= 12 && hours < 17) greeting = 'Good Afternoon';
+            else if (hours >= 17) greeting = 'Good Evening';
+
+            const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
+            const firstName = (u.name || 'User').split(' ')[0];
+
+            const dateEl = document.getElementById('pro-att-self-date');
+            const greetLineEl = document.getElementById('pro-att-self-greeting-line');
+            const nameEl = document.getElementById('pro-att-self-name');
+            if (dateEl) dateEl.textContent = dateStr;
+            if (greetLineEl) greetLineEl.textContent = greeting + ',';
+            if (nameEl) nameEl.textContent = firstName;
+
+            // Populate Right Zone: Avatar + Name
+            const avatarEl = document.getElementById('pro-att-self-avatar');
+            const unameEl  = document.getElementById('pro-att-self-uname');
+            if (unameEl) unameEl.textContent = u.name || 'User';
+
+            // Avatar: try profile photo, fallback to initials
+            if (avatarEl) {
+                const initials = window.getInitials ? window.getInitials(u.name || u.email) : (u.name || u.email || 'U').substring(0, 2).toUpperCase();
+                if (u.photo_url) {
+                    avatarEl.innerHTML = `<img src="${u.photo_url}" alt="${initials}" onerror="this.parentElement.innerHTML='${initials}'">`;
+                } else {
+                    avatarEl.textContent = initials;
+                }
+            }
 
             try {
                 const status = await ApiClient.getPunchStatus();
                 
-                const punchBtn = document.getElementById('self-main-punch-btn');
-                const badge = document.getElementById('att-v2-self-badge');
-                const firstInEl = document.getElementById('att-v2-self-first-in');
-                const expectedOutEl = document.getElementById('att-v2-self-expected-out');
+                const punchBtn    = document.getElementById('self-main-punch-btn');
+                const punchBadge  = document.getElementById('pro-att-self-punch-badge');
+                const liveBadge   = document.getElementById('pro-att-self-live-badge');
+                const livePulse   = document.getElementById('pro-att-self-pulse');
+                const liveText    = document.getElementById('pro-att-self-live-text');
+                const statusDot   = document.getElementById('pro-att-self-dot');
+                const leftName    = document.getElementById('pro-att-self-name');
+                const firstInEl   = document.getElementById('pro-att-self-first-in');
 
                 if (selfProductionInterval) clearInterval(selfProductionInterval);
-                selfAccumulatedSeconds = status.today_hours_secs || (status.today_hours || 0) * 3600;
+                selfAccumulatedSeconds = status.today_hours_secs || 0;
 
                 if (status.is_punched_in) {
+                    // Button
                     if (punchBtn) {
-                        punchBtn.textContent = 'Punch Out';
-                        punchBtn.className = 'att-punch-btn punch-out';
+                        punchBtn.innerHTML = 'Punch<br>Out';
+                        punchBtn.className = 'pro-att-btn punch-out';
                     }
-                    if (badge) {
-                        badge.textContent = 'Punched In';
-                        badge.className = 'att-status-badge att-status-active';
+                    // Punch badge
+                    if (punchBadge) {
+                        punchBadge.textContent = 'Punched In';
+                        punchBadge.className = 'pro-att-punch-badge in';
                     }
+                    // Live badge
+                    if (liveBadge) liveBadge.className = 'pro-att-live-badge live';
+                    if (livePulse) livePulse.style.display = '';
+                    if (liveText)  liveText.textContent = 'Live';
+                    // Status dot
+                    if (statusDot) { statusDot.className = 'pro-att-status-dot online'; }
+                    // Name gradient
+                    if (leftName) leftName.className = 'pro-att-name punched-in';
                     
-                    if (status.last_punch_ts) {
-                        selfPunchStartTime = status.last_punch_ts;
-                        selfUpdateLiveTimer();
-                        selfProductionInterval = setInterval(selfUpdateLiveTimer, 1000);
-                    }
+                    // Start/resume timer
+                    selfPunchStartTime = status.last_punch_ts || null;
+                    selfUpdateLiveTimer();
+                    selfProductionInterval = setInterval(selfUpdateLiveTimer, 1000);
                 } else {
+                    // Button
                     if (punchBtn) {
-                        punchBtn.textContent = 'Punch In';
-                        punchBtn.className = 'att-punch-btn punch-in';
+                        punchBtn.innerHTML = 'Punch<br>In';
+                        punchBtn.className = 'pro-att-btn punch-in';
                     }
-                    if (badge) {
-                        badge.textContent = 'Not Punched';
-                        badge.className = 'att-status-badge att-status-inactive';
+                    // Punch badge
+                    if (punchBadge) {
+                        punchBadge.textContent = 'Not Punched';
+                        punchBadge.className = 'pro-att-punch-badge out';
                     }
-                    selfPunchStartTime = null;
+                    // Live badge
+                    if (liveBadge) liveBadge.className = 'pro-att-live-badge offline';
+                    if (livePulse) livePulse.style.display = 'none';
+                    if (liveText)  liveText.textContent = 'Offline';
+                    // Status dot
+                    if (statusDot) { statusDot.className = 'pro-att-status-dot offline'; }
+                    // Name muted
+                    if (leftName) leftName.className = 'pro-att-name punched-out';
                     
-                    // Reset timer display
-                    const h = Math.floor(selfAccumulatedSeconds / 3600);
-                    const m = Math.floor((selfAccumulatedSeconds % 3600) / 60);
-                    const s = Math.floor(selfAccumulatedSeconds % 60);
-                    if (document.getElementById('att-v2-self-hh')) document.getElementById('att-v2-self-hh').textContent = h < 10 ? '0' + h : h;
-                    if (document.getElementById('att-v2-self-mm')) document.getElementById('att-v2-self-mm').textContent = m < 10 ? '0' + m : m;
-                    if (document.getElementById('att-v2-self-ss')) document.getElementById('att-v2-self-ss').textContent = s < 10 ? '0' + s : s;
+                    selfPunchStartTime = null;
+                    selfUpdateLiveTimer(); // Show accumulation even when out
                 }
 
-                // Update Stats (First In / Expected Out)
+                // Punch-in time
                 if (status.first_punch_in) {
                     const firstDate = new Date(status.first_punch_in);
                     const firstStr = firstDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
                     if (firstInEl) firstInEl.textContent = firstStr;
-                    
-                    // Expected = First In + 8 hours
-                    const expDate = new Date(firstDate.getTime() + (8 * 60 * 60 * 1000));
-                    const expStr = expDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-                    if (expectedOutEl) expectedOutEl.textContent = expStr;
                 } else {
                     if (firstInEl) firstInEl.textContent = '--:--';
-                    if (expectedOutEl) expectedOutEl.textContent = '--:--';
                 }
 
                 // Wire up punch button handler (avoiding duplicates)
                 if (punchBtn) {
                     punchBtn.onclick = async () => {
                         if (punchBtn.classList.contains('loading')) return;
-                        
                         punchBtn.classList.add('loading');
-                        const originalText = punchBtn.textContent;
-                        punchBtn.textContent = 'Processing...';
+                        const originalHTML = punchBtn.innerHTML;
+                        punchBtn.textContent = '...';
 
-                        // 1.2s delay
                         setTimeout(async () => {
                             try {
                                 await ApiClient.punch();
@@ -871,7 +1050,7 @@
                             } catch (e) {
                                 console.error(e);
                                 showToast('Failed to record punch', 'error');
-                                punchBtn.textContent = originalText;
+                                punchBtn.innerHTML = originalHTML;
                                 punchBtn.classList.remove('loading');
                             }
                         }, 1200);
@@ -957,6 +1136,53 @@
             };
             const cls = map[status] || 'bg-secondary text-white border';
             return `<span class="status-pill ${cls}">${status}</span>`;
+        }
+
+        async function viewEmployeeAttendance(userId, userName) {
+            const modalEl = document.getElementById('attendanceHistoryModal');
+            if (!modalEl) {
+                console.error("Attendance history modal not found");
+                return;
+            }
+            const modal = new bootstrap.Modal(modalEl);
+            document.getElementById('att-hist-user-name').textContent = userName;
+            const tbody = document.getElementById('att-hist-tbody');
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+            modal.show();
+
+            try {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(end.getDate() - 30); // Last 30 days
+                
+                const data = await ApiClient.getAttendanceSummary({
+                    user_id: userId,
+                    start_date: start.toISOString().slice(0, 10),
+                    end_date: end.toISOString().slice(0, 10),
+                    reconcile: true
+                });
+                
+                const records = data.records || [];
+                if (!records.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No attendance records found for the last 30 days.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = records.map(r => {
+                    const day = new Date(r.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                    return `<tr>
+                        <td style="white-space:nowrap;" class="ps-3">${day}</td>
+                        <td>${formatTimeCell(r.first_punch_in)}</td>
+                        <td>${formatTimeCell(r.last_punch_out)}</td>
+                        <td>${(r.total_hours || 0).toFixed(2)}</td>
+                        <td>${statusBadge(r.day_status)}</td>
+                        <td class="pe-3 text-end">${leaveBadge(r.leave_status)}</td>
+                    </tr>`;
+                }).join('');
+            } catch (err) {
+                console.error('Failed to load employee attendance history', err);
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Failed to load history.</td></tr>';
+            }
         }
 
         async function loadAttendanceSummary() {
@@ -1127,14 +1353,19 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            updateHeaderContext();
             initFilters();
             loadEmployees().then(() => {
-                if (isAdmin) loadAttendanceSummary();
+                if (isAdmin) {
+                    loadAttendanceSummary();
+                } else {
+                    if (typeof initAttendance === 'function') initAttendance();
+                    if (typeof loadMyEmployeeInsights === 'function') loadMyEmployeeInsights();
+                }
             });
 
             if (!canManageEmployees) {
                 document.getElementById('filter-wrapper').style.display = 'none';
-                loadMyEmployeeInsights();
             }
 
             const empToggleBtn = document.getElementById('employees-toggle-btn');
@@ -1256,6 +1487,43 @@
         }
 
     </script>
+    <!-- Attendance History Modal (Admin Only) -->
+    <div class="modal fade" id="attendanceHistoryModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark">Attendance History</h5>
+                        <p class="text-muted small mb-0" id="att-hist-user-name">Employee Name</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover table-sm mb-0 align-middle">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3 py-2">Date</th>
+                                    <th class="py-2">Punch In</th>
+                                    <th class="py-2">Punch Out</th>
+                                    <th class="py-2">Hours</th>
+                                    <th class="py-2">Status</th>
+                                    <th class="pe-3 py-2 text-end">Leave</th>
+                                </tr>
+                            </thead>
+                            <tbody id="att-hist-tbody" style="font-size:0.85rem;">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-light border fw-semibold" data-bs-dismiss="modal" style="border-radius:10px;">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>

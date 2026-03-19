@@ -1,226 +1,230 @@
-// Access Control UI/UX
-const ROLES = ['ADMIN','SALES','TELESALES','PROJECT_MANAGER','PROJECT_MANAGER_AND_SALES'];
-const rolePages = {
-  ADMIN: ['*'],
-  SALES: ['dashboard.html','leads.html','billing.html'],
-  TELESALES: ['dashboard.html','leads.html'],
-  PROJECT_MANAGER: ['dashboard.html','projects.html'],
-  PROJECT_MANAGER_AND_SALES: ['dashboard.html','leads.html','projects.html']
+// Access Control UI/UX - Refactored for CRM AI SETU
+const ROLES = ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'];
+
+// UI State
+let rolePages = {
+    ADMIN: ['*'],
+    SALES: [],
+    TELESALES: [],
+    PROJECT_MANAGER: [],
+    PROJECT_MANAGER_AND_SALES: []
 };
+
 const ACTIONS = [
-  { name: 'Issue Create', sub: 'Create new issues' },
-  { name: 'Issue Edit', sub: 'Modify existing issues' },
-  { name: 'Issue Delete', sub: 'Remove issues permanently' },
-  { name: 'Lead Create', sub: 'Add new leads' },
-  { name: 'Lead Edit', sub: 'Update lead details' },
-  { name: 'Invoice Generate', sub: 'Generate and send invoices' },
-  { name: 'Report Export', sub: 'Export data reports' }
+    { key: 'issue_create_roles', name: 'Issue Create', sub: 'Create new issues' },
+    { key: 'issue_manage_roles', name: 'Issue Manage', sub: 'View/Edit all issues' },
+    { key: 'invoice_creator_roles', name: 'Invoice Create', sub: 'Generate new invoices' },
+    { key: 'invoice_verifier_roles', name: 'Invoice Verify', sub: 'Verify/Send invoices' },
+    { key: 'leave_apply_roles', name: 'Leave Apply', sub: 'Apply for own leaves' },
+    { key: 'leave_manage_roles', name: 'Leave Manage', sub: 'Approve/Reject leaves' },
+    { key: 'salary_manage_roles', name: 'Salary Manage', sub: 'Manage employee salaries' },
+    { key: 'incentive_manage_roles', name: 'Incentive Manage', sub: 'Configure incentive slabs' },
+    { key: 'employee_manage_roles', name: 'Employee Manage', sub: 'Add/Edit/Delete employees' }
 ];
-const actionMatrix = {};
+
+let actionMatrix = {};
+
+// Initialize matrix
 ACTIONS.forEach(a => {
-  actionMatrix[a.name] = {
-    ADMIN: true,
-    SALES: true,
-    TELESALES: false,
-    PROJECT_MANAGER: false,
-    PROJECT_MANAGER_AND_SALES: true
-  };
+    actionMatrix[a.key] = {};
+    ROLES.forEach(r => {
+        actionMatrix[a.key][r] = (r === 'ADMIN');
+    });
 });
 
 function renderRoleChips() {
-  const container = document.querySelector('.role-list');
-  if (!container) return;
-  container.innerHTML = '';
-  ROLES.forEach(role => {
-    const chip = document.createElement('div');
-    chip.className = 'role-chip';
-    chip.textContent = role.replace(/_/g,' ');
-    chip.dataset.role = role;
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('.role-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      renderPageChips(role);
-      renderMatrix(role);
-      // Force UI update for ADMIN
-      const select = document.getElementById('add-page-select');
-      const addBtn = document.getElementById('btn-add-page');
-      if (role === 'ADMIN') {
-        if (select) select.disabled = true;
-        if (addBtn) addBtn.disabled = true;
-      } else {
-        if (select) select.disabled = false;
-        if (addBtn) addBtn.disabled = false;
-      }
+    const container = document.querySelector('.role-list');
+    if (!container) return;
+    container.innerHTML = '';
+    ROLES.forEach((role, idx) => {
+        const chip = document.createElement('div');
+        chip.className = 'role-chip' + (idx === 0 ? ' active' : '');
+        chip.textContent = role.replace(/_/g, ' ');
+        chip.dataset.role = role;
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('.role-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            renderPageChips(role);
+            renderMatrix(role);
+            
+            const select = document.getElementById('add-page-select');
+            const addBtn = document.getElementById('btn-add-page');
+            if (role === 'ADMIN') {
+                if (select) select.disabled = true;
+                if (addBtn) addBtn.disabled = true;
+            } else {
+                if (select) select.disabled = false;
+                if (addBtn) addBtn.disabled = false;
+            }
+        });
+        container.appendChild(chip);
     });
-    container.appendChild(chip);
-  });
-  container.firstChild.classList.add('active');
-  renderPageChips(ROLES[0]);
-  renderMatrix(ROLES[0]);
-  // Force UI update for ADMIN on initial load
-  const select = document.getElementById('add-page-select');
-  const addBtn = document.getElementById('btn-add-page');
-  if (ROLES[0] === 'ADMIN') {
-    if (select) select.disabled = true;
-    if (addBtn) addBtn.disabled = true;
-  } else {
-    if (select) select.disabled = false;
-    if (addBtn) addBtn.disabled = false;
-  }
+    
+    // Initial render for first role (ADMIN usually)
+    const firstRole = ROLES[0];
+    renderPageChips(firstRole);
+    renderMatrix(firstRole);
 }
 
 function renderPageChips(role) {
-  const list = document.getElementById('page-chip-list');
-  const select = document.getElementById('add-page-select');
-  const addBtn = document.getElementById('btn-add-page');
-  if (!list) return;
-  list.innerHTML = '';
-  if (role === 'ADMIN') {
-    // Always show * chip for ADMIN, disable dropdown and add button
-    const chip = document.createElement('div');
-    chip.className = 'page-chip';
-    chip.textContent = '*';
-    chip.title = 'Full access';
-    list.appendChild(chip);
-    if (select) select.disabled = true;
-    if (addBtn) addBtn.disabled = true;
-  } else {
-    if (select) select.disabled = false;
-    if (addBtn) addBtn.disabled = false;
-    (rolePages[role]||[]).forEach(page => {
-      const chip = document.createElement('div');
-      chip.className = 'page-chip';
-      chip.textContent = page;
-      chip.title = 'Click to remove';
-      chip.addEventListener('click', () => {
-        rolePages[role] = rolePages[role].filter(p => p !== page);
-        renderPageChips(role);
-      });
-      list.appendChild(chip);
-    });
-  }
+    const list = document.getElementById('page-chip-list');
+    if (!list) return;
+    list.innerHTML = '';
+    
+    if (role === 'ADMIN') {
+        const chip = document.createElement('div');
+        chip.className = 'page-chip';
+        chip.textContent = '*';
+        chip.title = 'Full access';
+        list.appendChild(chip);
+    } else {
+        (rolePages[role] || []).forEach(page => {
+            const chip = document.createElement('div');
+            chip.className = 'page-chip';
+            chip.textContent = page;
+            chip.title = 'Click to remove';
+            chip.addEventListener('click', () => {
+                rolePages[role] = rolePages[role].filter(p => p !== page);
+                renderPageChips(role);
+            });
+            list.appendChild(chip);
+        });
+    }
 }
 
-document.getElementById('btn-add-page').addEventListener('click', () => {
-  const role = document.querySelector('.role-chip.active').dataset.role;
-  const select = document.getElementById('add-page-select');
-  const val = select.value;
-  if (val && !rolePages[role].includes(val)) {
-    rolePages[role].push(val);
-    renderPageChips(role);
-  }
-  select.value = '';
-});
-
-function renderMatrix(role) {
-  const body = document.getElementById('matrix-body');
-  if (!body) return;
-  body.innerHTML = '';
-  ACTIONS.forEach(action => {
-    const row = document.createElement('tr');
-    const tdAction = document.createElement('td');
-    tdAction.innerHTML = `<div class="matrix-action-name">${action.name}</div><div class="matrix-action-sub">${action.sub}</div>`;
-    row.appendChild(tdAction);
-    ROLES.forEach(r => {
-      const td = document.createElement('td');
-      const cell = document.createElement('div');
-      cell.className = 'matrix-cell';
-      const toggle = document.createElement('div');
-      toggle.className = 'matrix-toggle';
-      if (r === 'ADMIN') {
-        toggle.classList.add('matrix-toggle--lock');
-        toggle.innerHTML = '<svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="7" width="8" height="6" rx="1.2"/><path d="M6 7V5a2 2 0 014 0v2"/></svg>';
-      } else {
-        if (actionMatrix[action.name][r]) {
-          toggle.classList.add('matrix-toggle--on');
-          toggle.innerHTML = '<svg width="10" height="10" viewBox="0 0 9 9" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M1.5 4.5l2 2 4-4"/></svg>';
-        }
-        toggle.addEventListener('click', () => {
-          actionMatrix[action.name][r] = !actionMatrix[action.name][r];
-          renderMatrix(role);
+function renderMatrix(activeRole) {
+    const body = document.getElementById('matrix-body');
+    if (!body) return;
+    body.innerHTML = '';
+    
+    ACTIONS.forEach(action => {
+        const row = document.createElement('tr');
+        const tdAction = document.createElement('td');
+        tdAction.innerHTML = `<div class="matrix-action-name">${action.name}</div><div class="matrix-action-sub">${action.sub}</div>`;
+        row.appendChild(tdAction);
+        
+        ROLES.forEach(role => {
+            const td = document.createElement('td');
+            const cell = document.createElement('div');
+            cell.className = 'matrix-cell';
+            const toggle = document.createElement('div');
+            toggle.className = 'matrix-toggle';
+            
+            if (role === 'ADMIN') {
+                toggle.classList.add('matrix-toggle--lock');
+                toggle.innerHTML = '<svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="7" width="8" height="6" rx="1.2"/><path d="M6 7V5a2 2 0 014 0v2"/></svg>';
+            } else {
+                if (actionMatrix[action.key][role]) {
+                    toggle.classList.add('matrix-toggle--on');
+                    toggle.innerHTML = '<svg width="10" height="10" viewBox="0 0 9 9" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M1.5 4.5l2 2 4-4"/></svg>';
+                }
+                toggle.addEventListener('click', () => {
+                    actionMatrix[action.key][role] = !actionMatrix[action.key][role];
+                    renderMatrix(activeRole);
+                });
+            }
+            cell.appendChild(toggle);
+            td.appendChild(cell);
+            row.appendChild(td);
         });
-      }
-      cell.appendChild(toggle);
-      td.appendChild(cell);
-      row.appendChild(td);
+        body.appendChild(row);
     });
-    body.appendChild(row);
-  });
 }
 
-document.getElementById('btn-save-access').addEventListener('click', () => {
-  const btn = document.getElementById('btn-save-access');
-  btn.textContent = 'Saving...';
-  btn.disabled = true;
-  fetch('/api/settings/access-control', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ rolePages, actionMatrix })
-  })
-  .then(r => r.json())
-  .then(() => {
-    btn.textContent = 'Saved!';
-    setTimeout(() => { btn.textContent = 'Save Access Policy'; btn.disabled = false; }, 1800);
-  })
-  .catch(() => {
-    btn.textContent = 'Error — try again';
-    btn.disabled = false;
-  });
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-  // Load from backend first
-  fetch('/api/settings/access-control')
-    .then(r => r.json())
-    .then(data => {
-      if (data && data.rolePages && data.actionMatrix) {
-        // Overwrite local data with backend data
-        Object.keys(rolePages).forEach(k => delete rolePages[k]);
-        Object.assign(rolePages, data.rolePages);
-        Object.keys(actionMatrix).forEach(k => delete actionMatrix[k]);
-        Object.assign(actionMatrix, data.actionMatrix);
-      }
-    })
-    .catch(() => {/* fallback to defaults */})
-    .finally(() => {
-      renderRoleChips();
-      // Remove all previous event listeners by replacing the elements
-      const addBtnOld = document.getElementById('btn-add-page');
-      const addBtnNew = addBtnOld.cloneNode(true);
-      addBtnOld.parentNode.replaceChild(addBtnNew, addBtnOld);
-      const saveBtnOld = document.getElementById('btn-save-access');
-      const saveBtnNew = saveBtnOld.cloneNode(true);
-      saveBtnOld.parentNode.replaceChild(saveBtnNew, saveBtnOld);
-
-      addBtnNew.addEventListener('click', () => {
-        const role = document.querySelector('.role-chip.active').dataset.role;
-        const select = document.getElementById('add-page-select');
-        const val = select.value;
-        if (val && !rolePages[role].includes(val)) {
-          rolePages[role].push(val);
-          renderPageChips(role);
-          renderMatrix(role);
+async function loadAccessConfig() {
+    try {
+        const data = await ApiClient.getAccessPolicy();
+        if (data && data.page_access) {
+            rolePages = data.page_access;
         }
-        select.value = '';
-      });
+        if (data && data.feature_access) {
+            // Convert backend feature_access (object of lists) to UI actionMatrix (object of objects)
+            ACTIONS.forEach(action => {
+                const rolesWithAccess = data.feature_access[action.key] || [];
+                ROLES.forEach(role => {
+                    actionMatrix[action.key][role] = rolesWithAccess.includes(role);
+                });
+            });
+        }
+    } catch (err) {
+        console.warn('Failed to load access policy, using defaults', err);
+    } finally {
+        renderRoleChips();
+    }
+}
 
-      saveBtnNew.addEventListener('click', () => {
-        saveBtnNew.textContent = 'Saving...';
-        saveBtnNew.disabled = true;
-        fetch('/api/settings/access-control', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rolePages, actionMatrix })
-        })
-        .then(r => r.json())
-        .then(() => {
-          saveBtnNew.textContent = 'Saved!';
-          setTimeout(() => { saveBtnNew.textContent = 'Save Access Policy'; saveBtnNew.disabled = false; }, 1800);
-        })
-        .catch(() => {
-          saveBtnNew.textContent = 'Error — try again';
-          saveBtnNew.disabled = false;
-        });
-      });
+async function saveAccessConfig() {
+    const btn = document.getElementById('btn-save-access');
+    const msg = document.getElementById('access-policy-save-msg');
+    
+    // Preparation: UI actionMatrix -> Backend feature_access
+    const featureAccess = {};
+    ACTIONS.forEach(action => {
+        featureAccess[action.key] = ROLES.filter(r => actionMatrix[action.key][r]);
     });
+
+    const payload = {
+        page_access: rolePages,
+        feature_access: featureAccess
+    };
+
+    try {
+        if (typeof toggleLoading === 'function') {
+            toggleLoading('btn-save-access', 'spn-save-access', 'icon-save-access', true);
+        } else {
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+        }
+
+        await ApiClient.updateAccessPolicy(payload);
+        
+        if (msg) {
+            msg.textContent = 'Saved!';
+            msg.classList.remove('d-none');
+            setTimeout(() => msg.classList.add('d-none'), 2500);
+        }
+        if (typeof showToast === 'function') showToast('Access policy saved');
+
+    } catch (err) {
+        console.error('Save failed', err);
+        if (typeof showToast === 'function') {
+            showToast(err.data?.detail || err.message || 'Failed to save access policy', true);
+        }
+    } finally {
+        if (typeof toggleLoading === 'function') {
+            toggleLoading('btn-save-access', 'spn-save-access', 'icon-save-access', false);
+        } else {
+            btn.disabled = false;
+            btn.textContent = 'Save Access Policy';
+        }
+    }
+}
+
+// Initial Wireup
+document.addEventListener('DOMContentLoaded', () => {
+    // Add page logic
+    const addBtn = document.getElementById('btn-add-page');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            const activeChip = document.querySelector('.role-chip.active');
+            if (!activeChip) return;
+            const role = activeChip.dataset.role;
+            const select = document.getElementById('add-page-select');
+            const val = select.value;
+            if (val && !rolePages[role].includes(val)) {
+                rolePages[role].push(val);
+                renderPageChips(role);
+            }
+            select.value = '';
+        });
+    }
+
+    // Save logic
+    const saveBtn = document.getElementById('btn-save-access');
+    if (saveBtn) {
+        // Remove direct onclick if any (we already did this in settings.html)
+        saveBtn.addEventListener('click', saveAccessConfig);
+    }
+
+    loadAccessConfig();
 });

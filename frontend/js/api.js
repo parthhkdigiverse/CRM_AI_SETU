@@ -23,32 +23,33 @@ class ApiClient {
     }
 
     static getAccessToken() {
-        return localStorage.getItem('access_token');
+        return sessionStorage.getItem('access_token');
     }
 
     static getRefreshToken() {
-        return localStorage.getItem('refresh_token');
+        return sessionStorage.getItem('refresh_token');
     }
 
     static setTokens(accessToken, refreshToken) {
-        localStorage.setItem('access_token', accessToken);
+        sessionStorage.setItem('access_token', accessToken);
         if (refreshToken) {
-            localStorage.setItem('refresh_token', refreshToken);
+            sessionStorage.setItem('refresh_token', refreshToken);
         }
     }
 
     static clearTokens() {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('current_user');
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('refresh_token');
+        sessionStorage.removeItem('srm_user');
+        sessionStorage.removeItem('current_user');
     }
 
     static setCurrentUser(user) {
-        localStorage.setItem('srm_user', JSON.stringify(user));
+        sessionStorage.setItem('srm_user', JSON.stringify(user));
     }
 
     static getCurrentUser() {
-        try { return JSON.parse(localStorage.getItem('srm_user')); } catch { return null; }
+        try { return JSON.parse(sessionStorage.getItem('srm_user')); } catch { return null; }
     }
 
     static async request(path, options = {}) {

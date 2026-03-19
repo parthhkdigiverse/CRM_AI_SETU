@@ -12,21 +12,22 @@ if (!isLoginPage) {
 }
 
 function getToken() {
-    const t = localStorage.getItem('access_token');
+    const t = sessionStorage.getItem('access_token');
     if (!t || t === 'null' || t === 'undefined' || t === '') return null;
     return t;
 }
 function setTokens(a, r) {
-    localStorage.setItem('access_token', a);
-    if (r) localStorage.setItem('refresh_token', r);
+    sessionStorage.setItem('access_token', a);
+    if (r) sessionStorage.setItem('refresh_token', r);
 }
 function clearTokens() {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('srm_user');
+    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('refresh_token');
+    sessionStorage.removeItem('srm_user');
+    sessionStorage.removeItem('current_user'); // Added based on snippet
 }
 function getUser() {
-    try { return JSON.parse(localStorage.getItem('srm_user')); } catch { return null; }
+    try { return JSON.parse(sessionStorage.getItem('srm_user')); } catch { return null; }
 }
 
 function showAccessDeniedState(role, path) {
@@ -71,6 +72,16 @@ function requireAuth() {
     const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
 
     if (params.get('dev') === 'true' && isLocal) {
+        // Mock an ADMIN user for testing dev mode features if no session exists or if explicitly requested via dev=admin
+        if (!sessionStorage.getItem('srm_user') || params.get('dev_role') === 'ADMIN') {
+            sessionStorage.setItem('access_token', 'dev-token');
+            sessionStorage.setItem('srm_user', JSON.stringify({
+                id: 1, 
+                name: 'System Administrator (Dev)', 
+                email: 'admin@crm.dev', 
+                role: 'ADMIN'
+            }));
+        }
         document.body.style.visibility = 'visible';
         let pageName = document.title.split('—')[0].trim();
         if (!pageName || pageName === 'SRM AI SETU') pageName = 'Dashboard';
@@ -151,16 +162,26 @@ function requireAuth() {
 
     // --- OPTIMISTIC UI ---
     // If we have a user in session, show the page IMMEDIATELY.
+    // Ensure background matches theme to avoid flash
+    const storedTheme = localStorage.getItem('theme') || 'light';
+    const bgColor = storedTheme === 'dark' ? '#0f172a' : '#f0f5fb';
+    document.body.style.backgroundColor = bgColor;
+
     if (user) {
         enforceRoleAccess(user.role);
         document.body.style.visibility = 'visible';
+        document.body.style.opacity = '1';
         const el = document.getElementById('username-display');
         if (el) el.textContent = user.name || 'User';
     } else {
         // Fallback: hide until we get a profile (rare)
         document.body.style.visibility = 'hidden';
-        // Emergency unhide after 3 seconds to prevent permanent black screen
-        setTimeout(() => { document.body.style.visibility = 'visible'; }, 3000);
+        document.body.style.opacity = '0';
+        // Emergency unhide after 2 seconds to prevent permanent black screen
+        setTimeout(() => { 
+            document.body.style.visibility = 'visible';
+            document.body.style.opacity = '1';
+        }, 2000);
     }
 
     // Background Verification
@@ -179,8 +200,8 @@ function requireAuth() {
         })
         .then(async profile => {
             if (!profile) return;
-            const userData = { id: profile.id, name: profile.name || profile.email, role: profile.role };
-            localStorage.setItem('srm_user', JSON.stringify(userData));
+            const userData = { id: profile.id, name: profile.name || profile.email, email: profile.email, role: profile.role };
+            sessionStorage.setItem('srm_user', JSON.stringify(userData));
 
             if (window.ApiClient && window.ApiClient.getEffectiveAccessPolicy) {
                 try {
@@ -193,11 +214,12 @@ function requireAuth() {
 
             enforceRoleAccess(userData.role);
             document.body.style.visibility = 'visible';
+            document.body.style.opacity = '1';
             const el = document.getElementById('username-display');
             if (el) el.textContent = profile.name || 'User';
 
             // Fetch and check for critical issues across the app
-            checkCriticalIssues();
+            if (typeof checkCriticalIssues === 'function') checkCriticalIssues();
         })
         .catch((err) => {
             console.warn('Background auth check failed:', err);
@@ -243,9 +265,9 @@ function logout() {
     if (window.ApiClient && typeof window.ApiClient.clearTokens === 'function') {
         window.ApiClient.clearTokens();
     } else {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('srm_user');
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('refresh_token');
+        sessionStorage.removeItem('srm_user');
     }
     window.location.href = 'index.html?msg=logged_out';
 }
@@ -345,63 +367,11 @@ if (typeof document !== 'undefined') {
 // Call initially
 resetInactivityTimer();
 
-// Generic authenticated fetch
-async function apiFetch(path, options = {}) {
-    const headers = { 'Content-Type': 'application/json', ...options.headers };
-    const token = getToken();
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(API + path, { ...options, headers });
-    if (res.status === 401) {
-        const params = new URLSearchParams(window.location.search);
-        const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
-        if (params.get('dev') === 'true' && isLocal) {
-            console.warn('API 401 suppressed in dev mode.');
-            return res;
-        }
-        clearTokens();
-        window.location.replace('index.html');
-        return;
-    }
-    return res;
-}
-
-// GET shorthand
-async function apiGet(path) {
-    const res = await apiFetch(path);
-    if (!res || !res.ok) throw new Error(`GET ${path} failed: ${res?.status}`);
-    return res.json();
-}
-
-// POST shorthand
-async function apiPost(path, body) {
-    const res = await apiFetch(path, { method: 'POST', body: JSON.stringify(body) });
-    if (!res || !res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `POST ${path} failed`);
-    }
-    return res.json();
-}
-
-// PATCH shorthand
-async function apiPatch(path, body) {
-    const res = await apiFetch(path, { method: 'PATCH', body: JSON.stringify(body) });
-    if (!res || !res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `PATCH ${path} failed`);
-    }
-    return res.json();
-}
-
-// DELETE shorthand
-async function apiDelete(path) {
-    const res = await apiFetch(path, { method: 'DELETE' });
-    if (!res || !res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `DELETE ${path} failed`);
-    }
-    // DELETE often returns 204 No Content, so we don't always expect JSON
-    return res.status === 204 ? null : res.json();
-}
+// Generic authenticated fetch (moved to utils.js)
+// GET shorthand (moved to utils.js)
+// POST shorthand (moved to utils.js)
+// PATCH shorthand (moved to utils.js)
+// DELETE shorthand (moved to utils.js)
 
 
 

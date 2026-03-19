@@ -248,7 +248,8 @@
         injectTopHeader('Reports');
 
         // Hide admin-only tabs from non-admins
-        const _userRole = (localStorage.getItem('role') || '').toUpperCase();
+        const _u = getUser();
+        const _userRole = (_u?.role || '').toUpperCase();
         if (_userRole !== 'ADMIN') {
             document.querySelectorAll('.admin-only-tab').forEach(el => el.style.display = 'none');
         }
@@ -330,7 +331,7 @@
                             {
                                 label: 'In Demo',
                                 data: inDemoData,
-                                backgroundColor: '#4f46e5',
+                                backgroundColor: '#2563eb',
                                 borderRadius: 4
                             },
                             {
@@ -433,7 +434,7 @@
             const url = `${CONFIG.API_BASE_URL}/reports/export?type=${type}&month=${month}`;
 
             fetch(url, {
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            headers: { 'Authorization': `Bearer ${sessionStorage.getItem('access_token')}` }
             })
                 .then(res => res.blob())
                 .then(blob => {

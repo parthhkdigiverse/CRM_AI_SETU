@@ -67,15 +67,7 @@
             white-space: nowrap;
         }
 
-        .emp-avatar {
-            width: 32px; height: 32px; flex-shrink: 0;
-            background: var(--primary-light);
-            color: var(--primary);
-            font-weight: 700; font-size: 0.8rem;
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: var(--shadow-xs);
-        }
+
 
         .pct-label {
             font-size: 0.75rem;
@@ -508,7 +500,7 @@
                     </div>
                     <div class="preview-row">
                         <span class="label">Slab Bonus</span>
-                        <span class="value" id="prev-slab-bonus" style="color:#7c3aed;">-</span>
+                        <span class="value" id="prev-slab-bonus" style="color:#2563eb;">-</span>
                     </div>
                 </div>
                 <div class="preview-total-row px-2">
@@ -859,8 +851,10 @@
                 }
 
                 tbody.innerHTML = slips.map(s => {
-                    const initials = (s.user_name || 'U').charAt(0).toUpperCase();
                     const name = s.user_name || ('Employee #' + s.user_id);
+                    const parts = name.split(' ');
+                    const firstName = parts[0];
+                    const lastName = parts.slice(1).join(' ');
                     const perTask = Number(s.amount_per_unit || 0);
                     const slabBonus = Number(s.slab_bonus_amount || 0);
                     const rawAppliedSlab = s.applied_slab == null ? '' : String(s.applied_slab).trim();
@@ -877,9 +871,9 @@
                         : '';
                     return `<tr>
                         <td class="ps-3 slip-employee-cell">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="emp-avatar">${initials}</div>
-                                <span class="fw-semibold text-dark slip-employee-name" style="font-size:0.82rem;">${name}</span>
+                            <div class="d-flex flex-column">
+                                <span class="fw-bold text-dark" style="font-size:0.82rem; line-height:1.2;">${firstName}</span>
+                                ${lastName ? `<span class="text-muted" style="font-size:0.75rem; line-height:1.1;">${lastName}</span>` : ''}
                             </div>
                         </td>
                         <td class="slip-period-cell" style="line-height:1.3;">

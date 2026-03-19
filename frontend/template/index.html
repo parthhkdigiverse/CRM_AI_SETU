@@ -28,7 +28,7 @@
         /* ── LEFT PANEL (Brand) ───────────────────────────────── */
         .login-left {
             width: 48%;
-            background: linear-gradient(145deg, #3730a3 0%, var(--primary) 45%, #7c3aed 100%);
+            background: linear-gradient(145deg, #1d4ed8 0%, #6366f1 45%, #8b5cf6 100%);
             position: relative;
             display: flex;
             flex-direction: column;
@@ -199,8 +199,8 @@
             position: absolute;
             inset: 0;
             background:
-                radial-gradient(at 90% 10%, rgba(238, 242, 255, 0.8) 0, transparent 50%),
-                radial-gradient(at 10% 90%, rgba(240, 249, 255, 0.7) 0, transparent 50%);
+                radial-gradient(at 90% 10%, rgba(224, 231, 255, 0.4) 0, transparent 50%),
+                radial-gradient(at 10% 90%, rgba(238, 242, 255, 0.3) 0, transparent 50%);
             z-index: 0;
         }
 
@@ -346,27 +346,27 @@
         .btn-login {
             width: 100%;
             padding: 12px;
-            background: var(--primary);
+            background: #2563eb;
             border: none;
             border-radius: 9px;
-            color: white;
-            font-size: 0.9rem;
-            font-weight: 600;
+            color: #ffffff !important;
+            font-size: 0.92rem;
+            font-weight: 700;
             font-family: 'Inter', sans-serif;
             cursor: pointer;
-            transition: all 0.18s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             margin-top: 0.25rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.22);
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
         }
 
         .btn-login:hover:not(:disabled) {
-            background: var(--primary-hover);
+            background: #1d4ed8;
             transform: translateY(-1px);
-            box-shadow: 0 6px 18px rgba(79, 70, 229, 0.30);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
         }
 
         .btn-login:disabled {
@@ -375,8 +375,8 @@
         }
 
         .btn-login.success {
-            background: var(--success);
-            box-shadow: 0 6px 18px rgba(5, 150, 105, 0.28);
+            background: #10b981 !important;
+            box-shadow: 0 6px 18px rgba(16, 185, 129, 0.28);
         }
 
         .divider {
@@ -480,10 +480,31 @@
                 width: 100%;
             }
         }
+        /* Fade out for redirect */
+        body.fading-out {
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .redirect-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-app);
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .redirect-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
     </style>
 </head>
 
 <body>
+    <div class="redirect-overlay" id="redirect-overlay"></div>
     <!-- LEFT BRAND PANEL -->
     <div class="login-left">
         <div class="left-blob left-blob-1"></div>
@@ -685,8 +706,8 @@
                 }
 
                 const data = await res.json();
-                localStorage.setItem('access_token', data.access_token);
-                if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token);
+                sessionStorage.setItem('access_token', data.access_token);
+                if (data.refresh_token) sessionStorage.setItem('refresh_token', data.refresh_token);
 
                 btn.classList.add('success');
                 btn.innerHTML = `<i class="bi bi-check-lg"></i> Success! Redirecting...`;
@@ -696,11 +717,14 @@
                     const r = await fetch(`${API}/auth/profile`, { headers: { 'Authorization': `Bearer ${data.access_token}` } });
                     if (r.ok) {
                         const p = await r.json();
-                        localStorage.setItem('srm_user', JSON.stringify({ id: p.id, name: p.name || p.email, role: p.role }));
+                        sessionStorage.setItem('srm_user', JSON.stringify({ id: p.id, name: p.name || p.email, email: p.email, role: p.role }));
                     }
                 } catch (_) { }
 
-                setTimeout(() => window.location.replace('dashboard.html'), 500);
+                setTimeout(() => {
+                    document.getElementById('redirect-overlay').classList.add('active');
+                    setTimeout(() => window.location.replace('dashboard.html'), 350);
+                }, 400);
 
             } catch (err) {
                 errText.textContent = err.message || 'Login failed. Please try again.';

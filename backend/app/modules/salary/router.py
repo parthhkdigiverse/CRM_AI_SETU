@@ -532,6 +532,8 @@ def _leave_to_dict(l: LeaveRecord, override_user: User = None) -> dict:
         "remarks": getattr(l, "remarks", None),
         "user_name": (user.name or user.email) if user else None,
         "approver_name": (l.approver.name or l.approver.email) if l.approver else None,
+        "created_at": l.created_at,
+        "updated_at": l.updated_at,
     }
 
 @router.delete("/salary/slip/{slip_id}", status_code=204, response_class=Response)

@@ -61,7 +61,13 @@ def init_db():
             if 'requires_qr' not in cols:
                 conn.execute(text("ALTER TABLE bills ADD COLUMN requires_qr BOOLEAN DEFAULT TRUE"))
         
-        # 4. Global Deletion Policy & Soft Delete Column Checks
+        # 4. system_settings
+        if inspector.has_table("system_settings"):
+            cols = [c['name'] for c in inspector.get_columns('system_settings')]
+            if 'access_policy' not in cols:
+                conn.execute(text("ALTER TABLE system_settings ADD COLUMN access_policy JSON DEFAULT '{}'"))
+
+        # 5. Global Deletion Policy & Soft Delete Column Checks
         tables_to_check = [
             "clients", "projects", "issues", "areas", "shops", "todos", 
             "meeting_summaries", "bills", "attendance", "feedbacks", 

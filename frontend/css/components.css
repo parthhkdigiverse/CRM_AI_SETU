@@ -685,12 +685,183 @@ input[type="password"]::-ms-clear { display: none; }
     margin-bottom: 0;
 }
 
-/* Auto-wrap tables that aren't already wrapped (if possible via CSS alone for simple layouts) */
-@media (max-width: 767.98px) {
-    .card-body > .table {
-        display: block;
+/* ── Global Dashboard/Employee Header ────────────────────────── */
+.dash-header {
+    background: linear-gradient(135deg, #1e3a8a, #1e40af, #2563eb);
+    border-radius: 14px;
+    padding: 24px 28px;
+    color: white;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    min-height: 120px;
+}
+
+.dash-date-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 6px;
+}
+
+.dash-greeting {
+    font-family: 'Outfit', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.dash-live-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(16, 185, 129, 0.15);
+    border-radius: 100px;
+    padding: 4px 10px;
+    font-size: 10px;
+    color: #4ade80;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.dash-live-dot::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 8px #4ade80;
+}
+
+/* ── Attendance Widget V2 (Standard) ────────────────────────── */
+.attendance-card-v2 {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 18px;
+    padding: 18px;
+    min-width: 300px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    z-index: 5;
+}
+
+.att-v2-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.att-v2-avatar {
+    width: 42px;
+    height: 42px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #fff;
+}
+
+.att-v2-info {
+    flex-grow: 1;
+}
+
+.att-v2-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.att-v2-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, 0.15);
+    display: inline-block;
+}
+
+.att-v2-timer {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.2rem;
+    font-weight: 700;
+    text-align: center;
+    margin: 4px 0;
+    letter-spacing: -0.02em;
+}
+
+.att-v2-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    font-weight: 500;
+    opacity: 0.85;
+    padding: 0 4px;
+}
+
+.att-punch-btn {
+    width: 100%;
+    height: 42px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.att-punch-btn.punch-in {
+    background: #fff;
+    color: #2563eb;
+}
+
+.att-punch-btn.punch-in:hover {
+    background: #f8fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.att-punch-btn.punch-out {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fee2e2;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    backdrop-filter: blur(4px);
+}
+
+.att-punch-btn.punch-out:hover {
+    background: rgba(239, 68, 68, 0.3);
+    transform: translateY(-2px);
+}
+
+.att-punch-btn.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+@media (max-width: 992px) {
+    .dash-header {
+        padding: 20px;
+    }
+    .attendance-card-v2 {
+        margin: 0 auto;
         width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        max-width: 340px;
     }
 }

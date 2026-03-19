@@ -2,7 +2,7 @@
 import enum
 from datetime import datetime, UTC
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Enum, Text, Float, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, DateTime, Enum, Text, Float, Boolean
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -44,6 +44,8 @@ class LeaveRecord(Base):
     status = Column(Enum(LeaveStatus), default=LeaveStatus.PENDING, nullable=False)
     approved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     remarks = Column(Text, nullable=True)  # Admin remarks on rejection/approval
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC), nullable=False)
     is_deleted = Column(Boolean, default=False, index=True)
 
     user = relationship("User", foreign_keys=[user_id], backref="leave_records")

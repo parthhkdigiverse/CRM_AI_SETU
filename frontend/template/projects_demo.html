@@ -16,7 +16,7 @@
         body { font-family: 'Outfit', sans-serif; background: #f8fafc; }
 
         .page-header-banner {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 60%, #a855f7 100%);
+            background: linear-gradient(135deg, #2563eb 0%, #2563eb 60%, #a855f7 100%);
             border-radius: 18px;
             padding: 2rem 2.5rem;
             color: white;
@@ -81,8 +81,8 @@
             color: white;
         }
         .demo-step-dot.active {
-            background: #4f46e5;
-            border-color: #4f46e5;
+            background: #2563eb;
+            border-color: #2563eb;
             color: white;
             box-shadow: 0 0 0 3px rgba(79,70,229,0.2);
         }
@@ -93,7 +93,7 @@
             text-align: center;
         }
         .demo-step-label.done { color: #10b981; }
-        .demo-step-label.active { color: #4f46e5; }
+        .demo-step-label.active { color: #2563eb; }
         .demo-step-connector {
             width: 18px;
             height: 2px;
@@ -273,7 +273,7 @@
 
                 // Demo Progress column: completed count + scheduled date or (+) button
                 const nextDemoLabel = hasDemoScheduled
-                    ? `<div class="mt-1"><span class="badge" style="background:#e0e7ff;color:#4f46e5;font-size:0.68rem;"><i class="bi bi-calendar-event me-1"></i>Next: ${fmtDt(shop.demo_scheduled_at)}</span></div>`
+                    ? `<div class="mt-1"><span class="badge" style="background:#e0e7ff;color:#2563eb;font-size:0.68rem;"><i class="bi bi-calendar-event me-1"></i>Next: ${fmtDt(shop.demo_scheduled_at)}</span></div>`
                     : `<button class="btn btn-sm btn-outline-primary px-2 py-0 ms-2" style="font-size:0.72rem;" onclick="openScheduleDemo(${shop.id})" title="Schedule next demo"><i class="bi bi-plus-lg"></i></button>`;
 
                 const demoProgressCell = `

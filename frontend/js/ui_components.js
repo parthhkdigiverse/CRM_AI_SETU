@@ -112,7 +112,7 @@ window.renderQuickAddItems = function (roleValue) {
         const action = item.onclick
             ? `href="${item.href}" onclick="${item.onclick}"`
             : `href="${item.href}"`;
-        return `<li><a class="dropdown-item rounded-2 py-2" ${action}><i class="bi ${item.icon} me-2 ${item.iconClass || ''}" ${item.iconStyle ? `style="${item.iconStyle}"` : ''}></i> ${item.label}</a></li>`;
+        return `<li><a class="dropdown-item" ${action}><i class="bi ${item.icon} ${item.iconClass || ''}"></i> ${item.label}</a></li>`;
     }).join('');
 }
 
@@ -186,21 +186,19 @@ window.renderSidebar = function (active) {
         </div>
 
         <div class="sb-scroll-area">
-            <div class="sb-section-label">Main</div>
             ${sbSection('db', 'Dashboard', 'bi-grid-1x2', [
                 { id: 'dashboard', href: 'dashboard.html', icon: 'bi-bar-chart-line-fill', label: 'Overview' },
                 { id: 'timetable', href: 'timetable.html', icon: 'bi-calendar3', label: 'Timetable' },
                 { id: 'todo', href: 'todo.html', icon: 'bi-check2-square', label: 'To-Do List' }
             ])}
 
-            <div class="sb-section-label">Operations</div>
             ${sbSection('admin', 'Administration', 'bi-shield-check', [
                 { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
             ])}
-            ${sbSection('field', 'Field Operations', 'bi-geo-alt', [
-                { id: 'leads', href: 'leads.html', icon: 'bi-kanban', label: 'Project Overview' },
-                { id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas & Shops' },
-                { id: 'visits', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' }
+            ${sbSection('fo', 'Field Operations', 'bi-geo-alt', [
+                { id: 'projects', href: 'projects.html', icon: 'bi-kanban', label: 'Projects' },
+                { id: 'visits', href: 'visits.html', icon: 'bi-geo-alt-fill', label: 'Visits' },
+                { id: 'areas', href: 'areas.html', icon: 'bi-shop', label: 'Areas & Shops' }
             ])}
             ${sbSection('pm', 'Project Management', 'bi-briefcase', [
                 { id: 'demo', href: 'projects_demo.html', icon: 'bi-play-circle', label: 'Demo' },
@@ -208,16 +206,16 @@ window.renderSidebar = function (active) {
                 { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
                 { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
             ])}
-            ${sbSection('cr', 'Client Relations', 'bi-people', [
+            ${sbSection('client', 'Client Relations', 'bi-person-badge', [
                 { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
                 { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' },
                 { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
             ])}
-            ${sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', [
+            ${sbSection('hr', 'HR & Payroll', 'bi-people-fill', [
                 { id: 'employees', href: 'employees.html', icon: 'bi-people', label: 'Employees' },
-                { id: 'salary', href: 'salary.html', icon: 'bi-cash-stack', label: 'Salary' },
-                { id: 'leaves', href: 'leaves.html', icon: 'bi-calendar3', label: 'Leaves' },
-                { id: 'incentives', href: 'incentives.html', icon: 'bi-trophy', label: 'Incentives' }
+                { id: 'salary', href: 'salary.html', icon: 'bi-cash-stack', label: 'Salary & Payroll' },
+                { id: 'leaves', href: 'leaves.html', icon: 'bi-calendar-x', label: 'Leaves' },
+                { id: 'incentives', href: 'incentives.html', icon: 'bi-award', label: 'Incentives' }
             ])}
             ${sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
                 { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
@@ -262,7 +260,7 @@ window.toggleMobileSearch = function() {
     
     if (!mobileSearch) {
         const html = `
-            <div id="mobile-search-overlay" class="position-fixed top-0 start-0 w-100 bg-white shadow-sm d-flex align-items-center px-3" style="height: 64px; z-index: 2000; transform: translateY(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+            <div id="mobile-search-overlay" class="position-fixed top-0 start-0 w-100 bg-white shadow-sm d-flex align-items-center px-3" style="height: 68px; z-index: 2000; transform: translateY(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
                 <i class="bi bi-search text-muted me-2"></i>
                 <input type="text" id="mobile-search-input" class="form-control border-0 bg-transparent p-0 shadow-none" placeholder="Search..." onkeyup="if(event.key === 'Enter') { const val = this.value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val); }">
                 <button class="btn btn-link text-muted p-2" onclick="toggleMobileSearch()">
@@ -362,49 +360,60 @@ window.injectTopHeader = function (pageTitle) {
     }
     const chevronSvg = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.5;"><path d="M4.5 9L7.5 6L4.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     const breadcrumbHtml = parent ? `
-        <div class="d-flex align-items-center gap-2" style="font-size: 13.5px;">
+        <div class="d-flex align-items-center gap-2" style="font-size: 15px;">
             <span style="color: var(--text-2);">${parent}</span>
             ${chevronSvg}
             <div class="fw-bold" style="color: var(--text-1);">${pageTitle}</div>
         </div>
-    ` : `<div class="fw-bold" style="color: var(--text-1); font-size: 13.5px;">${pageTitle}</div>`;
+    ` : `<div class="fw-bold" style="color: var(--text-1); font-size: 15px;">${pageTitle}</div>`;
 
     const alertsRedDot = '<span id="nav-notif-dot" class="position-absolute bg-danger border border-white rounded-circle d-none" style="width:8px;height:8px;top:8px;right:8px;"></span>';
 
     const quickAddItems = renderQuickAddItems(u?.role);
 
+    const logoHtml = `
+        <div class="nav-logo align-items-center gap-2 me-2 d-none" style="cursor: pointer;" onclick="window.location.href='dashboard.html'">
+            <div class="sidebar-brand-icon" style="width: 32px; height: 32px; border-radius: 8px; background: var(--nav-search-bg);">
+                <div class="sidebar-logo-ai"></div>
+            </div>
+            <span class="fw-bold" style="font-family: 'Outfit', sans-serif; font-size: 16px; letter-spacing: -0.02em; color: var(--nav-text-active);">SRM AI SETU</span>
+        </div>`;
+
     const headerHtml = `
     <div class="top-header">
         <div class="top-header-left">
-            <button class="btn btn-light d-lg-none" onclick="toggleMobileSidebar()">
-                <i class="bi bi-list"></i>
+            <button class="btn btn-dark-soft d-lg-none me-1" onclick="toggleMobileSidebar()" style="width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.1); border-radius: 8px;">
+                <i class="bi bi-list" style="font-size: 1.4rem; color: #2563eb;"></i>
             </button>
-            <div class="d-none d-sm-block">${breadcrumbHtml}</div>
-            <div class="d-block d-sm-none page-nav-title">${pageTitle}</div>
+            ${logoHtml}
+            <div class="nav-breadcrumb">
+                <div class="d-none d-sm-block">${breadcrumbHtml}</div>
+                <div class="d-block d-sm-none page-nav-title" style="color: var(--nav-text-active); font-weight: 600;">${pageTitle}</div>
+            </div>
         </div>
 
         <div class="top-header-center">
-            <div class="top-header-search" style="max-width: 320px; width: 100%;">
+            <div class="nav-search" style="max-width: 320px; width: 100%;">
                 <div class="position-relative w-100">
                     <button class="btn p-0 position-absolute text-muted search-btn" style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 10;" onclick="const val = document.getElementById('global-search-input').value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val);">
-                        <i class="bi bi-search"></i>
+                        <i class="bi bi-search" style="color: var(--nav-text-muted);"></i>
                     </button>
-                    <input type="text" id="global-search-input" class="form-control" placeholder="Search..." style="padding-left: 38px; border-radius: 20px; height: 38px; background: var(--bg-page); border: 1px solid var(--border);">
+                    <input type="text" id="global-search-input" class="form-control" placeholder="Search..." style="padding-left: 38px; border-radius: 20px; height: 38px; background: rgba(37, 99, 235, 0.03); border: 1px solid rgba(37, 99, 235, 0.1); color: #1e40af; font-weight: 500;">
                     <div id="live-search-dropdown" class="search-results-dropdown"></div>
                 </div>
             </div>
         </div>
 
         <div class="top-header-right d-flex align-items-center gap-2">
-            <!-- Mobile Search Icon (only visible on mobile) -->
-            <button class="btn d-md-none p-0 d-flex align-items-center justify-content-center hover-hit-target" style="width:40px; height:40px;" onclick="toggleMobileSearch()">
-                <i class="bi bi-search text-muted"></i>
+            <!-- Mobile Search Icon (only visible on tablet) -->
+            <button class="btn d-md-none p-0 d-flex align-items-center justify-content-center hover-hit-target search-icon-btn" style="width:40px; height:40px; color: var(--nav-text);" onclick="toggleMobileSearch()">
+                <i class="bi bi-search"></i>
             </button>
 
             <!-- Add New Gradient Button -->
-            <div class="dropdown d-none d-md-block">
-                <button class="btn d-flex align-items-center gap-2 px-3 dropdown-toggle shadow-sm" type="button" id="addNewDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:12.5px; font-weight:700; border-radius: 8px; height: 38px; background: linear-gradient(135deg, #6366f1, #4f46e5); color:#fff; border:none; padding: 10px 16px;">
-                    <i class="bi bi-plus-lg"></i> <span>Add New</span>
+            <div class="dropdown d-none d-sm-block nav-add">
+                <button class="btn d-flex align-items-center gap-2 px-3 dropdown-toggle shadow-sm" type="button" id="addNewDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:13px; font-weight:700; border-radius: 10px; height: 40px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff !important; border: 1px solid rgba(255,255,255,0.2); padding: 10px 18px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
+                    <i class="bi bi-plus-lg" style="color: #ffffff !important;"></i> <span style="color: #ffffff !important;">Add New</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.85rem; border-radius:12px; padding:8px; min-width:200px; background: var(--bg-surface); border: 1px solid var(--border) !important;">
                     ${quickAddItems}
@@ -413,7 +422,7 @@ window.injectTopHeader = function (pageTitle) {
 
             <!-- Notifications Bell -->
             <div class="dropdown">
-                <div class="position-relative d-flex align-items-center justify-content-center hover-hit-target" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer; width:40px; height:40px; border-radius: 50%; color: var(--text-2);">
+                <div class="position-relative d-flex align-items-center justify-content-center hover-hit-target" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer; width:40px; height:40px; border-radius: 50%; color: #2563eb; background: rgba(37, 99, 235, 0.05);">
                     <i class="bi bi-bell" style="font-size: 1.1rem;"></i>
                     ${alertsRedDot}
                 </div>
@@ -434,12 +443,12 @@ window.injectTopHeader = function (pageTitle) {
             <div class="d-flex align-items-center gap-2 ps-2 dropdown border-start ms-1" style="border-color: var(--border) !important;">
                 <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width:36px; height:36px; font-size:11px; border: 1px solid var(--border); background: var(--primary-soft); color: var(--primary);">${initials}</div>
                 <div class="d-flex align-items-center dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer;">
-                    <div class="d-none d-xl-block fw-bold mb-0" style="font-size:13px; line-height:1; color: var(--text-1);">Tisha Admin</div>
+                    <div class="d-none d-xl-block fw-bold mb-0 nav-uname" style="font-size:13px; line-height:1; color: #2563eb;">${u?.name || 'User'}</div>
                 </div>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" aria-labelledby="profileDropdown" style="border-radius:12px; min-width:180px; font-size:0.85rem; background: var(--bg-surface); border: 1px solid var(--border) !important;">
                     <li class="px-2 pt-1 pb-2">
-                        <div class="fw-bold" style="font-size:0.8rem; line-height:1.3; color: var(--text-1);">Tisha Admin</div>
-                        <div style="font-size:0.7rem; color: var(--text-3);">${u?.email || 'Admin'}</div>
+                        <div class="fw-bold" style="font-size:0.8rem; line-height:1.3; color: var(--text-1);">${u?.name || 'User'}</div>
+                        <div style="font-size:0.7rem; color: #cbd5e1;">${u?.email || 'Admin'}</div>
                     </li>
                     <li><hr class="dropdown-divider my-1" style="border-color: var(--border);"></li>
                     <li><a class="dropdown-item rounded-2 py-2" href="profile.html" style="color: var(--text-2);"><i class="bi bi-person me-2 text-primary"></i> Profile</a></li>
@@ -560,7 +569,7 @@ window._notifPollStarted = window._notifPollStarted || false;
 
 // Expose refreshBell globally so other pages (like notifications.html) can trigger an instant sync.
 window.refreshBell = async function () {
-    if (!localStorage.getItem('access_token')) return;
+    if (!sessionStorage.getItem('access_token')) return;
     try {
         const { unread } = await apiGet('/notifications/unread-count');
         const dot = document.getElementById('nav-notif-dot');
@@ -760,7 +769,7 @@ window.initLiveSearch = function () {
 
 
 window.checkHighPriorityIssues = async function () {
-    if (!localStorage.getItem('access_token')) return;
+    if (!sessionStorage.getItem('access_token')) return;
     try {
         const issues = await apiGet('/issues/');
         const unreadHigh = (Array.isArray(issues) ? issues : []).filter(i => i.severity === 'HIGH' && i.status === 'PENDING');
@@ -996,6 +1005,215 @@ window.startAllPolling = function () {
         document.documentElement.setAttribute('data-theme', 'dark');
     }
 })();
+
+// ─── Header & Context ────────────────────────────────────────────────
+window.updateHeaderContext = function () {
+    const u = typeof getUser === 'function' ? getUser() : (window.ApiClient ? window.ApiClient.getCurrentUser() : null);
+    if (!u) return;
+
+    // 1. Update Top Navigation (initially set by injectTopHeader, but here for sync)
+    const nameEls = document.querySelectorAll('.nav-uname');
+    nameEls.forEach(el => el.textContent = u.name || u.username || 'User');
+
+    // 2. Update Dashboard/Page Greetings
+    const now = new Date();
+    const hours = now.getHours();
+    let greeting = "Good Morning";
+    if (hours >= 12 && hours < 17) greeting = "Good Afternoon";
+    else if (hours >= 17) greeting = "Good Evening";
+
+    const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+    // Handle multiple possible IDs used across different page versions
+    const greetingIds = ['dash-greeting', 'dash-greeting-v2', 'greetingUser'];
+    greetingIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = `${greeting}, ${u.name || 'User'}`;
+    });
+
+    const dateIds = ['dash-date', 'dash-date-v2', 'dash-date-header'];
+    dateIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = dateStr;
+    });
+
+    // 3. Role-based Header Visibility
+    // The user specifically requested that the "greeting header" (gradient) stays only on Overview.
+    const isOverview = window.location.pathname.includes('dashboard.html');
+    const dashHeaders = document.querySelectorAll('.dash-header');
+    
+    dashHeaders.forEach(header => {
+        if (!isOverview) {
+             // In other pages, we can hide it OR keep it but only for staff if it contains the widget
+             // Here we just ensure the text is updated if it exists
+        }
+    });
+
+    // Sync initials if found
+    const avatarEls = document.querySelectorAll('.rounded-circle.fw-bold');
+    avatarEls.forEach(el => {
+        if (el.textContent.length <= 2 && typeof window.getInitials === 'function') {
+            el.textContent = window.getInitials(u.name || u.email || 'AD');
+        }
+    });
+};
+
+// ─── Attendance Widget ───────────────────────────────────────────────
+window.initAttendance = async function () {
+    const widget = document.getElementById('employee-header-widget');
+    if (!widget) return Promise.resolve();
+
+    widget.classList.remove('d-none');
+
+    const u = window.ApiClient ? window.ApiClient.getCurrentUser() : null;
+    if (!u) return Promise.resolve();
+
+    // 1. Populate Left Zone: Date + Greeting
+    const now = new Date();
+    const hrs = now.getHours();
+    let greeting = 'Good Morning';
+    if (hrs >= 12 && hrs < 17) greeting = 'Good Afternoon';
+    else if (hrs >= 17) greeting = 'Good Evening';
+
+    const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
+    const firstName = (u.name || 'User').split(' ')[0];
+
+    const dateEl        = document.getElementById('att-v2-date');
+    const greetLineEl   = document.getElementById('att-v2-greeting-line');
+    const leftNameEl    = document.getElementById('att-v2-left-name');
+    if (dateEl)      dateEl.textContent = dateStr;
+    if (greetLineEl) greetLineEl.textContent = greeting + ',';
+    if (leftNameEl)  leftNameEl.textContent = firstName;
+
+    // 2. Populate Right Zone: Avatar + Name
+    const nameEl   = document.getElementById('att-v2-name');
+    const avatarEl = document.getElementById('att-v2-avatar');
+    if (nameEl) nameEl.textContent = u.name || 'User';
+    if (avatarEl && typeof window.getInitials === 'function') {
+        const initials = window.getInitials(u.name || u.email || 'U');
+        if (u.photo_url) {
+            avatarEl.innerHTML = `<img src="${u.photo_url}" alt="${initials}" onerror="this.parentElement.innerHTML='${initials}'">`;
+        } else {
+            avatarEl.textContent = initials;
+        }
+    }
+
+    let status = null;
+    try {
+        status = await window.ApiClient.getPunchStatus();
+    } catch (e) {
+        console.error('Failed to get punch status', e);
+        return Promise.resolve();
+    }
+
+    const updateUI = (s) => {
+        const badge      = document.getElementById('att-v2-badge');
+        const btn        = document.getElementById('header-punch-btn-new');
+        const hh         = document.getElementById('att-v2-hh');
+        const mm         = document.getElementById('att-v2-mm');
+        const ss         = document.getElementById('att-v2-ss');
+        const firstIn    = document.getElementById('att-v2-first-in');
+        const liveBadge  = document.getElementById('att-v2-live-badge');
+        const livePulse  = document.getElementById('att-v2-pulse');
+        const liveText   = document.getElementById('att-v2-live-text');
+        const statusDot  = document.getElementById('att-v2-status-dot');
+        const lNameEl    = document.getElementById('att-v2-left-name');
+
+        if (s.is_punched_in) {
+            if (badge)     { badge.textContent = 'Punched In'; badge.className = 'pro-att-punch-badge in'; }
+            if (btn)       { btn.innerHTML = 'Punch<br>Out'; btn.className = 'pro-att-btn punch-out'; }
+            if (liveBadge) liveBadge.className = 'pro-att-live-badge live';
+            if (livePulse) livePulse.style.display = '';
+            if (liveText)  liveText.textContent = 'Live';
+            if (statusDot) statusDot.className = 'pro-att-status-dot online';
+            if (lNameEl)   lNameEl.className = 'pro-att-name punched-in';
+        } else {
+            if (badge)     { badge.textContent = 'Not Punched'; badge.className = 'pro-att-punch-badge out'; }
+            if (btn)       { btn.innerHTML = 'Punch<br>In'; btn.className = 'pro-att-btn punch-in'; }
+            if (liveBadge) liveBadge.className = 'pro-att-live-badge offline';
+            if (livePulse) livePulse.style.display = 'none';
+            if (liveText)  liveText.textContent = 'Offline';
+            if (statusDot) statusDot.className = 'pro-att-status-dot offline';
+            if (lNameEl)   lNameEl.className = 'pro-att-name punched-out';
+        }
+
+        // Punch-in time
+        if (firstIn) {
+            if (s.first_punch_in) {
+                const d = new Date(s.first_punch_in);
+                firstIn.textContent = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            } else {
+                firstIn.textContent = '--:--';
+            }
+        }
+
+        // Timer Logic: Fixed
+        if (window._attTimer) clearInterval(window._attTimer);
+        
+        const tick = () => {
+            let totalSec = s.today_hours_secs || 0;
+            if (s.is_punched_in && s.last_punch_ts) {
+                const elapsed = Math.max(0, (Date.now() - s.last_punch_ts) / 1000);
+                totalSec += elapsed;
+            }
+
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const sec = Math.floor(totalSec % 60);
+            
+            if (hh) hh.textContent = h.toString().padStart(2, '0');
+            if (mm) mm.textContent = m.toString().padStart(2, '0');
+            if (ss) ss.textContent = sec.toString().padStart(2, '0');
+        };
+
+        if (s.is_punched_in || (s.today_hours_secs > 0)) {
+            tick();
+            if (s.is_punched_in) {
+                window._attTimer = setInterval(tick, 1000);
+            }
+        } else {
+            if (hh) hh.textContent = '--';
+            if (mm) mm.textContent = '--';
+            if (ss) ss.textContent = '--';
+        }
+    };
+
+    updateUI(status);
+    
+    // 3. Punch Button Action
+    const punchBtn = document.getElementById('header-punch-btn-new');
+    if (punchBtn) {
+        punchBtn.onclick = async () => {
+            if (punchBtn.classList.contains('loading')) return;
+            punchBtn.classList.add('loading');
+            const origHTML = punchBtn.innerHTML;
+            punchBtn.textContent = '...';
+            try {
+                const res = await window.ApiClient.punch();
+                const newStatus = await window.ApiClient.getPunchStatus();
+                updateUI(newStatus);
+                if (typeof window.showToast === 'function') {
+                    window.showToast(res.message || 'Action successful');
+                }
+                if (typeof window.refreshDashboardKPIs === 'function') {
+                    window.refreshDashboardKPIs();
+                }
+            } catch (e) {
+                console.error('Punch failed', e);
+                if (typeof window.showToast === 'function') {
+                    window.showToast(e.data?.detail || 'Punch failed', 'error');
+                }
+                punchBtn.innerHTML = origHTML;
+            } finally {
+                punchBtn.classList.remove('loading');
+            }
+        };
+    }
+
+    return Promise.resolve();
+};
+
+
 
 window.setTheme = function (mode) {
     let applyDark = false;

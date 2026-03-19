@@ -5,9 +5,16 @@
 
 // ── Authentication ──
 function requireAuth() {
-    const token = localStorage.getItem('access_token');
+    const token = sessionStorage.getItem('access_token');
     if (!token) {
         window.location.replace('index.html');
+        if (window.ApiClient && typeof window.ApiClient.clearTokens === 'function') {
+            window.ApiClient.clearTokens();
+        } else {
+            sessionStorage.removeItem('access_token');
+            sessionStorage.removeItem('refresh_token');
+            sessionStorage.removeItem('srm_user');
+        }
         return false;
     }
     return true;
@@ -179,7 +186,8 @@ window.showOfflineBanner = showOfflineBanner;
  */
 async function apiGet(path) {
     try {
-        return await ApiClient.request(path, { method: 'GET' });
+        if (!window.ApiClient) throw new Error('ApiClient not initialized');
+        return await window.ApiClient.request(path, { method: 'GET' });
     } catch (error) {
         console.error(`apiGet failed for ${path}:`, error);
         throw error;
@@ -187,11 +195,64 @@ async function apiGet(path) {
 }
 
 /**
- * Global convenience function for POST/PATCH requests
+ * Global convenience function for POST requests
+ */
+async function apiPost(path, body = {}, options = {}) {
+    try {
+        if (!window.ApiClient) throw new Error('ApiClient not initialized');
+        return await window.ApiClient.request(path, { method: 'POST', body, ...options });
+    } catch (error) {
+        console.error(`apiPost failed for ${path}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Global convenience function for PATCH requests
+ */
+async function apiPatch(path, body = {}, options = {}) {
+    try {
+        if (!window.ApiClient) throw new Error('ApiClient not initialized');
+        return await window.ApiClient.request(path, { method: 'PATCH', body, ...options });
+    } catch (error) {
+        console.error(`apiPatch failed for ${path}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Global convenience function for PUT requests
+ */
+async function apiPut(path, body = {}, options = {}) {
+    try {
+        if (!window.ApiClient) throw new Error('ApiClient not initialized');
+        return await window.ApiClient.request(path, { method: 'PUT', body, ...options });
+    } catch (error) {
+        console.error(`apiPut failed for ${path}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Global convenience function for DELETE requests
+ */
+async function apiDelete(path, options = {}) {
+    try {
+        if (!window.ApiClient) throw new Error('ApiClient not initialized');
+        return await window.ApiClient.request(path, { method: 'DELETE', ...options });
+    } catch (error) {
+        console.error(`apiDelete failed for ${path}:`, error);
+        throw error;
+    }
+}
+
+/**
+ * Global convenience function for POST/PATCH requests (fetch fallback)
  * Wraps fetch with proper auth headers
  */
 async function apiFetch(path, options = {}) {
-    const url = `${ApiClient.API_BASE_URL}${path}`;
+    if (!window.ApiClient) throw new Error('ApiClient not initialized');
+    const url = `${window.ApiClient.API_BASE_URL}${path}`;
     const headers = {
         ...(options.headers || {})
     };
@@ -200,7 +261,7 @@ async function apiFetch(path, options = {}) {
         headers['Content-Type'] = 'application/json';
     }
 
-    const token = ApiClient.getAccessToken();
+    const token = window.ApiClient.getAccessToken();
     if (token && !options.noAuth) {
         headers['Authorization'] = `Bearer ${token}`;
     }
@@ -219,6 +280,10 @@ async function apiFetch(path, options = {}) {
 
 // Export to window
 window.apiGet = apiGet;
+window.apiPost = apiPost;
+window.apiPatch = apiPatch;
+window.apiPut = apiPut;
+window.apiDelete = apiDelete;
 window.apiFetch = apiFetch;
 
 /**
@@ -292,7 +357,8 @@ class ArchivedDataOffcanvas {
         tbody.innerHTML = `<tr><td colspan="${this.columns.length + 1}" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>`;
         
         try {
-            const data = await ApiClient.fetchArchived(this.moduleName);
+            if (!window.ApiClient) throw new Error('ApiClient not initialized');
+            const data = await window.ApiClient.fetchArchived(this.moduleName);
             this.renderTable(data || []);
         } catch (err) {
             console.error('Failed to fetch archived data', err);
@@ -310,7 +376,8 @@ class ArchivedDataOffcanvas {
             return;
         }
 
-        const user = ApiClient.getCurrentUser();
+        if (!window.ApiClient) throw new Error('ApiClient not initialized');
+        const user = window.ApiClient.getCurrentUser();
         const isAdmin = user && user.role && user.role.toUpperCase() === 'ADMIN';
 
         tbody.innerHTML = data.map(item => {
@@ -338,7 +405,8 @@ class ArchivedDataOffcanvas {
 
     async restoreItem(id) {
         try {
-            await ApiClient.unarchiveItem(this.moduleName, id);
+            if (!window.ApiClient) throw new Error('ApiClient not initialized');
+            await window.ApiClient.unarchiveItem(this.moduleName, id);
             toast('Item restored successfully');
             await this.loadData();
             if (this.onRestore) this.onRestore();
@@ -351,7 +419,8 @@ class ArchivedDataOffcanvas {
     async hardDeleteItem(id) {
         if (!confirm("Are you sure? This cannot be undone.")) return;
         try {
-            await ApiClient.hardDeleteItem(this.moduleName, id);
+            if (!window.ApiClient) throw new Error('ApiClient not initialized');
+            await window.ApiClient.hardDeleteItem(this.moduleName, id);
             toast('Item permanently deleted');
             await this.loadData();
             if (this.onRestore) this.onRestore();

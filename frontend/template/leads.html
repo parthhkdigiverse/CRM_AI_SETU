@@ -144,7 +144,7 @@
 
         .bg-website {
             background: #eef2ff;
-            color: #4f46e5;
+            color: #2563eb;
         }
 
         .bg-cold-call {
@@ -590,7 +590,7 @@
                                 </div>` : ''}
                                 ${l.project_manager_name ? `
                                 <div class="mt-1">
-                                    <span class="badge" style="background:#ede9fe;color:#6d28d9;font-size:0.65rem;">
+                                    <span class="badge" style="background:#dbeafe;color:#1d4ed8;font-size:0.65rem;">
                                         <i class="bi bi-person-gear me-1"></i>PM: ${l.project_manager_name}
                                     </span>
                                 </div>` : ''}
@@ -687,7 +687,7 @@
                                     bits += `<span class="badge mt-1 me-1" style="${vstyle}font-size:0.62rem;">${vlabel}</span>`;
                                 }
                                 if (l.project_manager_name) {
-                                    bits += `<span class="badge mt-1" style="background:#ede9fe;color:#6d28d9;font-size:0.62rem;"><i class="bi bi-person-gear me-1"></i>PM: ${l.project_manager_name}</span>`;
+                                    bits += `<span class="badge mt-1" style="background:#dbeafe;color:#1d4ed8;font-size:0.62rem;"><i class="bi bi-person-gear me-1"></i>PM: ${l.project_manager_name}</span>`;
                                 }
                                 return bits ? `<div class="mt-1">${bits}</div>` : '';
                             })()}
@@ -699,7 +699,7 @@
                         </td>
                         <td class="px-3 py-3">
                             <div class="d-flex align-items-center gap-2">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="background: #eef2ff; color: #4f46e5; width: 28px; height: 28px; font-size: 0.7rem; font-weight: bold;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="background: #eef2ff; color: #2563eb; width: 28px; height: 28px; font-size: 0.7rem; font-weight: bold;">
                                     ${getInitials(assigneeName)}
                                 </div>
                                 <div class="text-dark fw-medium" style="font-size: 0.8rem;">${assigneeName}</div>
@@ -751,14 +751,14 @@
                 const isStep3InProgress = (step.index === 2) && !isCompleted && l.project_manager_id && (l.demo_stage || 0) < 3;
 
                 // Colors: Green if done, Blue spinner if in-progress, Gray if pending
-                const dotColor = isCompleted ? '#10b981' : (isStep3InProgress ? '#4f46e5' : '#e2e8f0');
+                const dotColor = isCompleted ? '#10b981' : (isStep3InProgress ? '#2563eb' : '#e2e8f0');
                 const iconHtml = isCompleted
                     ? `<i class="bi bi-check text-white" style="font-size: 0.75rem;"></i>`
                     : (isStep3InProgress ? `<i class="bi bi-arrow-repeat text-white" style="font-size: 0.6rem;"></i>` : '');
-                const textColor = isCompleted ? '#0f172a' : (isStep3InProgress ? '#4f46e5' : '#94a3b8');
+                const textColor = isCompleted ? '#0f172a' : (isStep3InProgress ? '#2563eb' : '#94a3b8');
                 const weightClass = (isCompleted || isStep3InProgress) ? 'fw-bold' : 'fw-medium';
                 const subText = isStep3InProgress
-                    ? `<div class="mt-1" style="font-size:0.72rem;color:#4f46e5;"><i class="bi bi-person-gear me-1"></i>Assigned to PM: ${l.project_manager_name}</div>`
+                    ? `<div class="mt-1" style="font-size:0.72rem;color:#2563eb;"><i class="bi bi-person-gear me-1"></i>Assigned to PM: ${l.project_manager_name}</div>`
                     : '';
                 timelineHtml += `
                     <div class="d-flex position-relative z-1" style="margin-bottom: ${isLast ? '0' : '1.5rem'};">
@@ -810,7 +810,7 @@
                     <label class="text-muted small text-uppercase fw-bold mb-1">Assigned PM</label>
                     <div class="fw-bold text-success"><i class="bi bi-person-check me-1"></i>${l.project_manager_name}</div>
                     <div class="small text-muted mt-1">Demos completed: ${l.demo_stage || 0}</div>
-                    ${l.demo_scheduled_at ? `<div class="mt-1"><span class="badge" style="background:#e0e7ff;color:#4f46e5;font-size:0.68rem;"><i class="bi bi-calendar-event me-1"></i>Next Demo: ${new Date(l.demo_scheduled_at).toLocaleString('en-IN', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>` : ''}
+                    ${l.demo_scheduled_at ? `<div class="mt-1"><span class="badge" style="background:#e0e7ff;color:#2563eb;font-size:0.68rem;"><i class="bi bi-calendar-event me-1"></i>Next Demo: ${new Date(l.demo_scheduled_at).toLocaleString('en-IN', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>` : ''}
                 </div>` : ''}
 
                 <div class="mt-4 pt-4 border-top">
@@ -983,7 +983,7 @@
             const selectedIds = Array.from(document.querySelectorAll('.lead-checkbox:checked')).map(cb => parseInt(cb.value));
             if (!selectedIds.length) return;
 
-            const u = JSON.parse(localStorage.getItem('srm_user') || '{}');
+            const u = JSON.parse(sessionStorage.getItem('srm_user') || '{}');
             if (u.role !== 'ADMIN') {
                 showToast('Only Admins can perform bulk delete', 'error');
                 return;

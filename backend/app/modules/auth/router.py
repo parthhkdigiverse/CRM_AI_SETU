@@ -8,12 +8,13 @@ from sqlalchemy.exc import OperationalError
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import create_access_token, get_password_hash, verify_password
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, RoleChecker
 from app.modules.users.models import User, UserRole
 from app.modules.auth.schemas import Token, ChangePasswordRequest, UpdatePreferencesRequest
 from app.modules.users.schemas import UserCreate, UserRead, UserProfileUpdate
 from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
+from app.modules.settings.models import SystemSettings
 from fastapi import Request
 
 router = APIRouter()
@@ -325,3 +326,39 @@ async def logout(
             request=request
         )
     return {"message": "Logged out successfully"}
+
+# ── Access Policy (Admin) ─────────────────────────────────────────────────────
+
+@router.get("/access-policy")
+def get_access_policy(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Retrieve the global role-based access policy."""
+    settings_obj = db.query(SystemSettings).first()
+    if not settings_obj or not settings_obj.access_policy:
+        return {"page_access": {}, "feature_access": {}}
+    return settings_obj.access_policy
+
+@router.put("/access-policy")
+@router.post("/access-policy")
+def save_access_policy(
+    data: dict,
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(RoleChecker([UserRole.ADMIN]))
+):
+    """Update the global role-based access policy (Admin only)."""
+    settings_obj = db.query(SystemSettings).first()
+    if not settings_obj:
+        settings_obj = SystemSettings(feature_flags={}, access_policy={})
+        db.add(settings_obj)
+    
+    settings_obj.access_policy = data
+    
+    # Flag JSON modified
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(settings_obj, "access_policy")
+    
+    db.commit()
+    db.refresh(settings_obj)
+    return settings_obj.access_policy

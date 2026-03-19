@@ -19,18 +19,20 @@
         <div id="sidebar"></div>
         <div class="flex-grow-1 main-wrapper">
             <div class="page-content mx-auto" style="max-width: 1300px;">
-                <!-- Header -->
+                <!-- Header Section -->
                 <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                     <div>
                         <h2 class="page-section-title">Salary Management</h2>
-                        <p class="text-muted mb-0" style="font-size:0.93rem;">Generate, verify and manage employee
-                            salary slips and payroll history.</p>
+                        <p class="text-muted mb-0" style="font-size:0.93rem;">Generate, verify and manage employee salary slips and payroll history.</p>
                     </div>
-                    <div class="d-none gap-2" id="admin-actions">
-                        <button class="btn btn-primary fw-semibold" style="border-radius:10px;" id="gen-salary-btn"
-                            onclick="openSalaryModal()">
-                            <i class="bi bi-file-earmark-text me-2"></i>Generate Slip
-                        </button>
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- Page Specific Actions -->
+                        <div class="d-none gap-2" id="admin-actions">
+                            <button class="btn btn-primary fw-semibold" style="border-radius:10px;" id="gen-salary-btn"
+                                onclick="openSalaryModal()">
+                                <i class="bi bi-file-earmark-text me-2"></i>Generate Slip
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -93,15 +95,15 @@
                     <div class="table-responsive" style="font-size:0.82rem;">
                         <table class="table table-sm mb-0" style="width:100%; table-layout:fixed;">
                             <colgroup>
-                                <col style="width:18%">
-                                <col style="width:9%">
-                                <col style="width:12%">
-                                <col style="width:9%">
-                                <col style="width:11%">
-                                <col style="width:10%">
-                                <col style="width:10%">
-                                <col style="width:9%">
-                                <col style="width:12%">
+                                <col style="width:16%"> <!-- Name -->
+                                <col style="width:8%">  <!-- Month -->
+                                <col style="width:12%"> <!-- Base -->
+                                <col style="width:9%">  <!-- Leaves -->
+                                <col style="width:10%"> <!-- Bonus -->
+                                <col style="width:10%"> <!-- Deductions -->
+                                <col style="width:10%"> <!-- Net Pay -->
+                                <col style="width:11%"> <!-- Status (Increased) -->
+                                <col style="width:14%"> <!-- Actions (Increased) -->
                             </colgroup>
                             <thead>
                                 <tr>
@@ -205,7 +207,7 @@
                     <hr class="my-2">
                     <div class="d-flex justify-content-between fw-bold" style="font-size:1.05rem;">
                         <span>Net Payable</span>
-                        <span style="color:#4F46E5;" id="pv-final">--</span>
+                        <span style="color:#2563eb;" id="pv-final">--</span>
                     </div>
                     <div id="pv-existing-warn" class="mt-2 small fw-semibold" style="display:none; color:#B91C1C;">
                         A salary slip already exists for this employee/month.
@@ -435,56 +437,110 @@
 
                 document.getElementById('slip-count').textContent = slips.length + ' record(s)';
 
+                // SORTING LOGIC:
+                // 1. Remarks at top (Priority 1)
+                // 2. Drafts above Paid (Priority 2)
+                // 3. Month descending (Priority 3)
+                slips.sort((a, b) => {
+                    const aHasRemark = !!(a.employee_remarks && a.employee_remarks.trim() && a.employee_remarks !== 'None');
+                    const bHasRemark = !!(b.employee_remarks && b.employee_remarks.trim() && b.employee_remarks !== 'None');
+                    
+                    if (aHasRemark && !bHasRemark) return -1;
+                    if (!aHasRemark && bHasRemark) return 1;
+
+                    const aIsDraft = (a.status || '').toUpperCase() === 'DRAFT';
+                    const bIsDraft = (b.status || '').toUpperCase() === 'DRAFT';
+                    
+                    if (aIsDraft && !bIsDraft) return -1;
+                    if (!aIsDraft && bIsDraft) return 1;
+
+                    return (b.month || '').localeCompare(a.month || '');
+                });
+
                 if (!slips.length) {
                     tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted">No salary slips found.</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = slips.map(s => {
-                    const statusCls = s.status === 'CONFIRMED'
-                        ? 'badge-green-light'
-                        : 'badge-yellow-light';
+                    const canManageSalary = hasFeatureAccess('salary_manage_roles');
+                    const statusCls = s.status === 'CONFIRMED' ? 'badge-green-light' : 'badge-yellow-light';
                     const statusIcon = s.status === 'CONFIRMED' ? 'bi-check-circle' : 'bi-hourglass-split';
-                    const statusLabel = s.status === 'CONFIRMED' ? 'Paid' : 'Draft';
+                    const statusLabel = s.status === 'CONFIRMED' ? 'PAID' : 'DRAFT / UNPAID';
                     const visibleLabel = s.is_visible_to_employee ? 'Visible' : 'Hidden';
 
-                    const confirmBtn = canManageSalary && s.status === 'DRAFT'
-                        ? `<button class="btn btn-sm btn-outline-success" title="Mark as Paid" onclick="confirmSlip(${s.id})"><i class="bi bi-check-lg"></i></button>`
-                        : '';
-                    const visibilityBtn = canManageSalary
-                        ? `<button class="btn btn-sm btn-outline-secondary" title="${s.is_visible_to_employee ? 'Hide from employee' : 'Release to employee'}" onclick="toggleSalaryVisibility(${s.id}, ${s.is_visible_to_employee ? 'false' : 'true'})"><i class="bi ${s.is_visible_to_employee ? 'bi-eye-slash' : 'bi-eye'}"></i></button>`
-                        : '';
-                    const canAddEmployeeRemark = !canManageSalary && s.status === 'CONFIRMED' && s.is_visible_to_employee;
-                    const empRemarksEnc = encodeURIComponent(s.employee_remarks || '');
-                    const mgrRemarksEnc = encodeURIComponent(s.manager_remarks || '');
-                    const remarkBtn = (canManageSalary || canAddEmployeeRemark)
-                        ? `<button class="btn btn-sm btn-outline-info" title="Remarks" onclick="openSalaryRemarks(${s.id}, '${empRemarksEnc}', '${mgrRemarksEnc}', ${canManageSalary ? 'true' : 'false'})"><i class="bi bi-chat-left-text"></i></button>`
-                        : '';
-                    const invoiceBtn = s.status === 'CONFIRMED'
-                        ? `<button class="btn btn-sm btn-outline-primary" title="View Invoice" onclick="downloadInvoice(${s.id})"><i class="bi bi-file-earmark-text"></i></button>`
-                        : '';
+                    let previewBtn = '';
+                    let visibilityBtn = '';
+                    let confirmBtn = '';
+                    let remarkBtn = '';
+                    let slipIconBtn = '';
+
+                    if (canManageSalary) {
+                        // Admin Icons: Eye (Preview), Tick (Release/Visibility)
+                        previewBtn = `<button class="btn btn-sm btn-outline-primary" title="Preview Receipt" onclick="downloadInvoice(${s.id})"><i class="bi bi-eye"></i></button>`;
+                        
+                        const visibilityTitle = s.is_visible_to_employee ? 'Hide from employee' : 'Release to employee';
+                        const visibilityIcon = s.is_visible_to_employee ? 'bi-check-lg' : 'bi-send';
+                        const visibilityBtnClass = s.is_visible_to_employee ? 'btn-success' : 'btn-outline-secondary';
+                        visibilityBtn = `<button class="btn btn-sm ${visibilityBtnClass}" title="${visibilityTitle}" onclick="toggleSalaryVisibility(${s.id}, ${!s.is_visible_to_employee})"><i class="bi ${visibilityIcon}"></i></button>`;
+                        
+                        // Admin Remark Highlight: If user added a remark, show a RED ICON with emoji
+                        if (s.employee_remarks && s.employee_remarks.trim() && s.employee_remarks !== 'None') {
+                            remarkBtn = `<button class="btn btn-sm btn-danger text-white fw-bold px-2 py-1 shadow-sm d-flex align-items-center justify-content-center" style="border-radius: 50%; width: 28px; height: 28px; font-size: 0.8rem;" 
+                                            title="View Employee Remark: ${s.employee_remarks.substring(0, 50)}..." onclick="openSalaryRemarks(${s.id}, '${encodeURIComponent(s.employee_remarks)}', '${encodeURIComponent(s.manager_remarks || '')}', true)">
+                                            🚩
+                                         </button>`;
+                        }
+                    } else {
+                        // Employee Icons: Remark, Slip
+                        const empRemarksEnc = encodeURIComponent(s.employee_remarks || '');
+                        const mgrRemarksEnc = encodeURIComponent(s.manager_remarks || '');
+                        remarkBtn = `<button class="btn btn-sm btn-outline-info" title="Remarks" onclick="openSalaryRemarks(${s.id}, '${empRemarksEnc}', '${mgrRemarksEnc}', false)"><i class="bi bi-chat-left-text"></i></button>`;
+
+                        if (s.status === 'CONFIRMED' && s.is_visible_to_employee) {
+                            slipIconBtn = `<button class="btn btn-sm btn-outline-primary" title="View Slip" onclick="downloadInvoice(${s.id})"><i class="bi bi-file-earmark-text"></i></button>`;
+                        }
+                    }
 
                     const totalBonus = (parseFloat(s.incentive_amount) || 0) + (parseFloat(s.slab_bonus) || 0);
                     const empName = (window.userNameMap && window.userNameMap[s.user_id]) || s.user_name || 'User #' + s.user_id;
+                    
+                    // Status Toggle UI Logic (Admin)
+                    const isPaid = (s.status || '').toUpperCase() === 'CONFIRMED';
+                    const statusToggle = canManageSalary 
+                        ? `<div class="d-flex flex-column align-items-center">
+                             <div class="form-check form-switch p-0 m-0 d-flex align-items-center bg-white rounded-pill px-2 py-0 border" style="min-width: 80px; height: 24px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                               <input class="form-check-input ms-0 mt-0" type="checkbox" style="cursor:pointer; width: 28px; height: 14px;" 
+                                      ${isPaid ? 'checked disabled' : ''} 
+                                      onchange="if(this.checked) confirmSlip(${s.id})">
+                               <span class="ms-1" style="font-size: 0.62rem; font-weight: 800; color: ${isPaid ? '#059669' : '#64748b'};">
+                                  ${isPaid ? 'PAID' : 'DRAFT'}
+                               </span>
+                             </div>
+                             <div class="mt-1" style="font-size: 0.6rem; color: ${s.is_visible_to_employee ? '#10b981' : '#64748b'}; letter-spacing: 0.02em;">
+                                ${s.is_visible_to_employee ? 'RELEASED' : 'HIDDEN'}
+                             </div>
+                           </div>`
+                        : `<span class="status-pill ${statusCls} w-100 d-block text-center"><i class="bi ${statusIcon} me-1"></i>${statusLabel}</span>`;
+
                     return `<tr>
                         <td class="fw-semibold text-dark" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${empName}">${empName}</td>
-                        <td class="text-muted">${s.month}</td>
-                        <td>${INR(s.base_salary)}</td>
-                        <td>
+                        <td class="text-muted small">${s.month}</td>
+                        <td class="small">${INR(s.base_salary)}</td>
+                        <td class="small">
                             <span style="color:#059669;">${s.paid_leaves}P</span>
                             <span class="text-muted mx-1">/</span>
                             <span style="color:#B91C1C;">${s.unpaid_leaves}U</span>
                         </td>
-                        <td style="color:#059669; font-weight:600;">+${INR(totalBonus)}</td>
-                        <td style="color:#B91C1C; font-weight:600;">-${INR(s.deduction_amount)}</td>
-                        <td class="fw-bold">${INR(s.final_salary)}</td>
+                        <td style="color:#059669; font-weight:600;" class="small">+${INR(totalBonus)}</td>
+                        <td style="color:#B91C1C; font-weight:600;" class="small">-${INR(s.deduction_amount)}</td>
+                        <td class="fw-bold small">${INR(s.final_salary)}</td>
                         <td>
-                            <span class="status-pill ${statusCls}"><i class="bi ${statusIcon} me-1"></i>${statusLabel}</span>
-                            <div class="small text-muted mt-1">${visibleLabel}</div>
+                            ${statusToggle}
                         </td>
                         <td class="text-end">
-                            <div class="d-flex gap-1 justify-content-end">
-                                ${confirmBtn}${visibilityBtn}${remarkBtn}${invoiceBtn}
+                            <div class="d-flex gap-1 justify-content-end align-items-center">
+                                ${previewBtn}${visibilityBtn}${remarkBtn}${slipIconBtn}
                             </div>
                         </td>
                     </tr>`;
@@ -585,7 +641,7 @@
                 showToast('You do not have permission to confirm salary slips', 'error');
                 return;
             }
-            if (!confirm('Mark this salary slip as Paid? Once confirmed, the employee will be able to view it.')) return;
+            // No confirm() popup as requested
             try {
                 await ApiClient.confirmSalarySlip(slipId);
                 showToast('Salary slip confirmed.', 'success');
@@ -610,16 +666,10 @@
         async function openSalaryRemarks(slipId, currentEmployeeRemarksEnc, currentManagerRemarksEnc, isManager) {
             const currentEmployeeRemarks = decodeURIComponent(currentEmployeeRemarksEnc || '');
             const currentManagerRemarks = decodeURIComponent(currentManagerRemarksEnc || '');
+            
+            // For Managers (Admins), just show the remark, don't allow editing from here as requested
             if (isManager) {
-                const newManagerRemarks = prompt('Manager remarks for this slip:', currentManagerRemarks || '');
-                if (newManagerRemarks === null) return;
-                try {
-                    await ApiClient.updateSalarySlipRemarks(slipId, { manager_remarks: newManagerRemarks });
-                    showToast('Manager remarks saved', 'success');
-                    loadSlips();
-                } catch (e) {
-                    showToast(e.data?.detail || e.message || 'Failed to save remarks', 'error');
-                }
+                alert('EMPLOYEE REMARK:\n\n' + currentEmployeeRemarks);
                 return;
             }
 

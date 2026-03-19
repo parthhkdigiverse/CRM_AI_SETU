@@ -15,7 +15,9 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
+    width: 0; /* Allow flexbox to compute width correctly */
     position: relative;
+    overflow-x: hidden; /* Prevent horizontal scroll on the whole page */
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -175,6 +177,7 @@
 .page-content {
     flex-grow: 1;
     overflow-y: auto;
+    overflow-x: hidden; /* Prevent internal content from pushing it out */
     padding: 32px;
     transition: padding 0.3s ease;
 }

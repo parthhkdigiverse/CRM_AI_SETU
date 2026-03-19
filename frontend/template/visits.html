@@ -657,7 +657,7 @@
             if (photo) fd.append('photo', photo);
 
             try {
-                const token = localStorage.getItem('token') || localStorage.getItem('access_token');
+                const token = sessionStorage.getItem('token') || sessionStorage.getItem('access_token');
                 const res = await fetch('/api/visits/', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
@@ -748,7 +748,7 @@
                 const statusMap = {
                     NEW: { bg: '#dbeafe', color: '#1d4ed8', label: 'New Lead' },
                     CONTACTED: { bg: '#fef9c3', color: '#b45309', label: 'Contacted' },
-                    MEETING_SET: { bg: '#ede9fe', color: '#7c3aed', label: 'Meeting Set' },
+                    MEETING_SET: { bg: '#dbeafe', color: '#2563eb', label: 'Meeting Set' },
                     CONVERTED: { bg: '#dcfce7', color: '#16a34a', label: 'Converted' },
                 };
                 const st = statusMap[s.status] || { bg: '#f1f5f9', color: '#475569', label: s.status || '—' };

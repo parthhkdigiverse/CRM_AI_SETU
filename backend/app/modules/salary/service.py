@@ -18,6 +18,7 @@ class SalaryService:
     def __init__(self, db: Session):
         self.db = db
         self._ensure_salary_columns()
+        self._ensure_leave_columns()
 
     def _ensure_salary_columns(self) -> None:
         """Self-heal environments where salary visibility/remarks migration is not applied yet."""
@@ -26,6 +27,16 @@ class SalaryService:
             self.db.execute(text("ALTER TABLE salary_slips ADD COLUMN IF NOT EXISTS is_visible_to_employee BOOLEAN DEFAULT false"))
             self.db.execute(text("ALTER TABLE salary_slips ADD COLUMN IF NOT EXISTS employee_remarks TEXT"))
             self.db.execute(text("ALTER TABLE salary_slips ADD COLUMN IF NOT EXISTS manager_remarks TEXT"))
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+
+    def _ensure_leave_columns(self) -> None:
+        """Self-heal leave_records table for timestamps."""
+        from sqlalchemy import text
+        try:
+            self.db.execute(text("ALTER TABLE leave_records ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP"))
+            self.db.execute(text("ALTER TABLE leave_records ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP"))
             self.db.commit()
         except Exception:
             self.db.rollback()
@@ -122,7 +133,7 @@ class SalaryService:
             'slab_bonus': s.slab_bonus or 0.0,
             'total_earnings': s.total_earnings,
             'final_salary': s.final_salary,
-            'status': s.status or 'CONFIRMED',
+            'status': s.status or 'DRAFT',
             'confirmed_by': s.confirmed_by,
             'confirmed_at': s.confirmed_at,
             'is_visible_to_employee': bool(getattr(s, 'is_visible_to_employee', True)),
@@ -618,7 +629,7 @@ class SalaryService:
         </div>
         <div class="meta-cell">
             <div class="meta-lbl">Status</div>
-            <div class="meta-val {'s-confirmed' if status_str == 'CONFIRMED' else 's-draft'}">{'&#10003; Paid' if status_str == 'CONFIRMED' else '&#9679; Draft'}</div>
+            <div class="meta-val {'s-confirmed' if status_str == 'CONFIRMED' else 's-draft'}">{'&#10003; PAID' if status_str == 'CONFIRMED' else '&#9679; UNPAID / DRAFT'}</div>
         </div>
         <div class="meta-cell">
             <div class="meta-lbl">Net Payable</div>

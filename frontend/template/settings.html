@@ -13,242 +13,7 @@
     <link rel="stylesheet" href="../css/components.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/settings-access-control.css">
-    <style>
-        .settings-section {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05);
-            display: none; /* Hide all by default for tab system */
-        }
-        .settings-section.active-tab {
-            display: block;
-        }
-
-        .settings-section-title {
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            color: #94a3b8;
-            margin-bottom: 18px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .setting-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .setting-row:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .setting-label {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #0f172a;
-        }
-
-        .setting-desc {
-            font-size: 0.78rem;
-            color: #94a3b8;
-            margin-top: 2px;
-        }
-
-        /* Toggle Switch */
-        .toggle-switch {
-            position: relative;
-            width: 44px;
-            height: 24px;
-            flex-shrink: 0;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            inset: 0;
-            background: #e2e8f0;
-            border-radius: 24px;
-            transition: background 0.2s;
-        }
-
-        .toggle-slider::before {
-            content: '';
-            position: absolute;
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            top: 3px;
-            background: white;
-            border-radius: 50%;
-            transition: transform 0.2s;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-        }
-
-        .toggle-switch input:checked+.toggle-slider {
-            background: #4f46e5;
-        }
-
-        .toggle-switch input:checked+.toggle-slider::before {
-            transform: translateX(20px);
-        }
-
-        /* Settings nav pills */
-        .settings-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 12px;
-            position: sticky;
-            top: 24px;
-        }
-
-        .settings-nav a {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            border-radius: 9px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #475569;
-            text-decoration: none;
-            transition: all 0.18s;
-        }
-
-        .settings-nav a:hover {
-            background: #f8fafc;
-            color: #0f172a;
-        }
-
-        .settings-nav a.active {
-            background: #EEF2FF;
-            color: #4f46e5;
-            font-weight: 600;
-        }
-
-        @media (max-width: 767.98px) {
-            .settings-nav {
-                flex-direction: row;
-                overflow-x: auto;
-                position: static;
-                white-space: nowrap;
-                padding: 8px;
-                margin-bottom: 20px;
-                scrollbar-width: none;
-            }
-            .settings-nav::-webkit-scrollbar { display: none; }
-            .settings-nav a {
-                padding: 8px 12px;
-                font-size: 0.8rem;
-            }
-        }
-
-        .settings-nav a i {
-            width: 18px;
-            text-align: center;
-        }
-
-        .select-clean {
-            border: 1px solid #e2e8f0;
-            border-radius: 9px;
-            padding: 8px 12px;
-            font-size: 0.85rem;
-            color: #0f172a;
-            background: #fff;
-            cursor: pointer;
-            transition: border-color 0.2s;
-            outline: none;
-        }
-
-        .select-clean:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
-        }
-
-        .btn-save-sm {
-            background: #4f46e5;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 9px 20px;
-            font-size: 0.825rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-save-sm:hover {
-            background: #4338ca;
-        }
-
-        .danger-zone {
-            border: 1px solid #fecaca;
-            background: #fff;
-            border-radius: 14px;
-            padding: 24px;
-        }
-
-        .danger-zone-title {
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            color: #ef4444;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .version-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: #f0fdf4;
-            color: #16a34a;
-            border: 1px solid #bbf7d0;
-            border-radius: 100px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            padding: 4px 12px;
-        }
-
-        .toast-msg {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: #0f172a;
-            color: #fff;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-            z-index: 9999;
-            display: none;
-            align-items: center;
-            gap: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="../css/settings.css">
 </head>
 
 <body class="bg-light">
@@ -289,17 +54,58 @@
                             <div class="settings-section-title"><i class="bi bi-palette text-primary"></i> Appearance
                             </div>
 
-                            <div class="setting-row">
+                            <div class="setting-row" style="border-bottom:none; margin-bottom:-10px;">
                                 <div>
                                     <div class="setting-label">Theme</div>
                                     <div class="setting-desc">Choose your preferred colour scheme</div>
                                 </div>
-                                <select class="select-clean" id="theme-select"
-                                    onchange="saveSetting('theme', this.value); if(window.setTheme) window.setTheme(this.value);">
-                                    <option value="light">Light Mode</option>
-                                    <option value="dark">Dark Mode</option>
-                                    <option value="system">System Default</option>
-                                </select>
+                            </div>
+                            
+                            <div class="theme-grid mb-4">
+                                <div class="theme-card theme-light" data-theme="light">
+                                    <div class="theme-preview">
+                                        <div class="theme-preview-sidebar"></div>
+                                        <div class="theme-preview-content">
+                                            <div class="theme-preview-block" style="width: 80%"></div>
+                                            <div class="theme-preview-block" style="width: 60%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="theme-label">Light</div>
+                                </div>
+                                <div class="theme-card theme-dark" data-theme="dark">
+                                    <div class="theme-preview">
+                                        <div class="theme-preview-sidebar"></div>
+                                        <div class="theme-preview-content">
+                                            <div class="theme-preview-block" style="width: 80%"></div>
+                                            <div class="theme-preview-block" style="width: 60%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="theme-label">Dark</div>
+                                </div>
+                                <div class="theme-card theme-system" data-theme="system">
+                                    <div class="theme-preview">
+                                        <div class="theme-preview-sidebar"></div>
+                                        <div class="theme-preview-content">
+                                            <div class="theme-preview-block" style="width: 80%"></div>
+                                            <div class="theme-preview-block" style="width: 60%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="theme-label">System</div>
+                                </div>
+                            </div>
+
+                            <div class="group-title">Layout & Performance</div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Sidebar Style</div>
+                                    <div class="setting-desc">Compact view for more horizontal space</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="compact-sidebar"
+                                        onchange="saveSetting('compact_sidebar', this.checked); document.body.classList.toggle('sidebar-compact', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
                             </div>
 
                             <div class="setting-row">
@@ -308,7 +114,7 @@
                                     <div class="setting-desc">Fixed left (default)</div>
                                 </div>
                                 <span class="version-chip"
-                                    style="background:#f0f4ff; color:#4f46e5; border-color:#c7d2fe;"><i
+                                    style="background:#f0f4ff; color:#2563eb; border-color:#c7d2fe;"><i
                                         class="bi bi-layout-sidebar"></i> Left</span>
                             </div>
 
@@ -442,14 +248,27 @@
 
                             <div class="setting-row">
                                 <div>
-                                    <div class="setting-label">Date Format</div>
-                                    <div class="setting-desc">How dates are displayed across the SRM</div>
+                                    <div class="setting-label">Timezone</div>
+                                    <div class="setting-desc">Display times in your local zone</div>
                                 </div>
-                                <select class="select-clean" id="date-format"
-                                    onchange="saveSetting('date_format', this.value)">
-                                    <option value="dd/mm/yyyy" selected>DD/MM/YYYY</option>
-                                    <option value="mm/dd/yyyy">MM/DD/YYYY</option>
-                                    <option value="yyyy-mm-dd">YYYY-MM-DD</option>
+                                <select class="select-clean" id="timezone-select"
+                                    onchange="saveSetting('timezone', this.value)">
+                                    <option value="UTC">UTC (GMT+0)</option>
+                                    <option value="IST" selected>India (GMT+5:30)</option>
+                                    <option value="EST">Eastern Time (GMT-5)</option>
+                                    <option value="PST">Pacific Time (GMT-8)</option>
+                                </select>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <div class="setting-label">Display Language</div>
+                                    <div class="setting-desc">Select your preferred language</div>
+                                </div>
+                                <select class="select-clean" id="language-select"
+                                    onchange="saveSetting('language', this.value)">
+                                    <option value="en" selected>English (UK)</option>
+                                    <option value="hi">Hindi (Coming Soon)</option>
                                 </select>
                             </div>
 
@@ -938,80 +757,96 @@
                             </div>
                         </div>
 
+                        <!-- ── Access Control (admin-only) ── -->
                         <div class="settings-section" id="access-control" style="display:none;">
-                            <div class="settings-section-title"><i class="bi bi-shield-lock text-primary"></i> Role &amp; Page Access Control</div>
-                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:12px;">Assign page access and permissions using chips and toggles. Use * for full access.</p>
-
-                            <div class="access-control-grid">
-                                <div class="role-list">
-                                    <div class="role-chip" data-role="ADMIN">ADMIN</div>
-                                    <div class="role-chip" data-role="SALES">SALES</div>
-                                    <div class="role-chip" data-role="TELESALES">TELESALES</div>
-                                    <div class="role-chip" data-role="PROJECT_MANAGER">PROJECT MANAGER</div>
-                                    <div class="role-chip" data-role="PROJECT_MANAGER_AND_SALES">PM + SALES</div>
+                            <!-- Header -->
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <div class="settings-section-title mb-0">
+                                    <i class="bi bi-shield-halved text-primary"></i> Access Control
                                 </div>
-                                <div class="page-access-section">
-                                    <div class="page-access-title">Page Access</div>
-                                    <div class="page-chip-list" id="page-chip-list">
-                                        <!-- Chips for pages will be rendered here by JS -->
-                                    </div>
-                                    <div class="add-page-row">
-                                        <select class="add-page-input" id="add-page-select">
-                                            <option value="">Select page...</option>
-                                            <option value="admin.html">admin.html</option>
-                                            <option value="areas.html">areas.html</option>
-                                            <option value="billing.html">billing.html</option>
-                                            <option value="clients.html">clients.html</option>
-                                            <option value="dashboard.html">dashboard.html</option>
-                                            <option value="employees.html">employees.html</option>
-                                            <option value="feedback.html">feedback.html</option>
-                                            <option value="incentives.html">incentives.html</option>
-                                            <option value="index.html">index.html</option>
-                                            <option value="issues.html">issues.html</option>
-                                            <option value="leads.html">leads.html</option>
-                                            <option value="leaves.html">leaves.html</option>
-                                            <option value="meetings.html">meetings.html</option>
-                                            <option value="notifications.html">notifications.html</option>
-                                            <option value="profile.html">profile.html</option>
-                                            <option value="projects.html">projects.html</option>
-                                            <option value="projects_demo.html">projects_demo.html</option>
-                                            <option value="reports.html">reports.html</option>
-                                            <option value="salary.html">salary.html</option>
-                                            <option value="salary_slip_view.html">salary_slip_view.html</option>
-                                            <option value="search.html">search.html</option>
-                                            <option value="settings.html">settings.html</option>
-                                            <option value="timetable.html">timetable.html</option>
-                                            <option value="todo.html">todo.html</option>
-                                            <option value="visits.html">visits.html</option>
-                                        </select>
-                                        <button class="btn-add-page" id="btn-add-page"><i class="bi bi-plus"></i></button>
-                                    </div>
-                                </div>
-                                <div class="permission-matrix-section">
-                                    <div class="matrix-title">Action Permission Matrix</div>
-                                    <table class="permission-matrix">
-                                        <thead>
-                                            <tr>
-                                                <th>Action</th>
-                                                <th>ADMIN</th>
-                                                <th>SALES</th>
-                                                <th>TELESALES</th>
-                                                <th>PROJECT MANAGER</th>
-                                                <th>PM + SALES</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="matrix-body">
-                                            <!-- Matrix rows rendered by JS -->
-                                        </tbody>
-                                    </table>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:8px;font-size:0.78rem;font-weight:600;" onclick="resetAccessPolicy()">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Defaults
+                                    </button>
+                                    <button class="btn btn-sm btn-primary" style="border-radius:8px;font-size:0.78rem;font-weight:600;" id="btn-save-access" onclick="saveAccessPolicy()">
+                                        <span class="spinner-border spinner-border-sm d-none me-1" id="spn-save-access"></span>
+                                        <i class="bi bi-save me-1" id="icon-save-access"></i>Save Policy
+                                    </button>
                                 </div>
                             </div>
-                            <div class="mt-3">
-                                <button class="btn-save-sm" id="btn-save-access" onclick="saveAccessPolicy()">
-                                    <span class="spinner-border spinner-border-sm me-2 d-none" id="spn-save-access"></span>
-                                    <i class="bi bi-save me-1" id="icon-save-access"></i> Save Access Policy
-                                </button>
-                                <span id="access-policy-save-msg" class="ms-3 small text-success d-none">Saved!</span>
+                            <p class="text-muted mb-4" style="font-size:0.82rem;">Configure which pages and features each role can access. Changes take effect on next login.</p>
+
+                            <!-- Role Switcher -->
+                            <div class="ac-role-bar mb-4" id="ac-role-bar">
+                                <!-- roles injected by JS -->
+                            </div>
+
+                            <!-- Two-column layout: Pages + Features -->
+                            <div class="row g-3">
+                                <!-- Page Access -->
+                                <div class="col-md-6">
+                                    <div class="ac-card">
+                                        <div class="ac-card-header">
+                                            <i class="bi bi-files text-primary"></i>
+                                            <span>Page Access</span>
+                                            <span class="ms-auto" id="ac-page-count" style="font-size:0.75rem;color:#64748b;font-weight:500;"></span>
+                                        </div>
+                                        <div class="ac-card-body" id="ac-pages-list">
+                                            <!-- page toggles injected by JS -->
+                                        </div>
+                                        <div class="ac-card-footer">
+                                            <div class="d-flex gap-2 align-items-center">
+                                                <select class="form-select form-select-sm" id="ac-add-page-select" style="border-radius:8px;">
+                                                    <option value="">Add a page…</option>
+                                                    <option value="admin.html">admin.html</option>
+                                                    <option value="areas.html">areas.html</option>
+                                                    <option value="billing.html">billing.html</option>
+                                                    <option value="clients.html">clients.html</option>
+                                                    <option value="dashboard.html">dashboard.html</option>
+                                                    <option value="employees.html">employees.html</option>
+                                                    <option value="feedback.html">feedback.html</option>
+                                                    <option value="incentives.html">incentives.html</option>
+                                                    <option value="issues.html">issues.html</option>
+                                                    <option value="leads.html">leads.html</option>
+                                                    <option value="leaves.html">leaves.html</option>
+                                                    <option value="meetings.html">meetings.html</option>
+                                                    <option value="notifications.html">notifications.html</option>
+                                                    <option value="profile.html">profile.html</option>
+                                                    <option value="projects.html">projects.html</option>
+                                                    <option value="reports.html">reports.html</option>
+                                                    <option value="salary.html">salary.html</option>
+                                                    <option value="search.html">search.html</option>
+                                                    <option value="settings.html">settings.html</option>
+                                                    <option value="timetable.html">timetable.html</option>
+                                                    <option value="todo.html">todo.html</option>
+                                                    <option value="visits.html">visits.html</option>
+                                                </select>
+                                                <button class="btn btn-sm" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:8px;white-space:nowrap;" onclick="acAddPage()">
+                                                    <i class="bi bi-plus"></i> Add
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Feature Permissions -->
+                                <div class="col-md-6">
+                                    <div class="ac-card">
+                                        <div class="ac-card-header">
+                                            <i class="bi bi-toggles text-warning"></i>
+                                            <span>Feature Permissions</span>
+                                        </div>
+                                        <div class="ac-card-body" id="ac-features-list">
+                                            <!-- feature toggles injected by JS -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Save status -->
+                            <div class="mt-3 d-flex align-items-center gap-3">
+                                <span id="ac-save-msg" class="small text-success d-none"><i class="bi bi-check-circle me-1"></i>Policy saved successfully</span>
+                                <span id="ac-error-msg" class="small text-danger d-none"></span>
                             </div>
                         </div>
 
@@ -1080,848 +915,13 @@
         <span id="toast-text">Saved!</span>
     </div>
 
-    <script src="../js/utils.js?v=2.5"></script>
-    <script src="../js/api.js?v=2.5"></script>
-    <script src="../js/auth.js?v=2.5"></script>
-    <script src="../js/ui_components.js?v=20260312"></script>
-    <script src="../js/app.js?v=2.5"></script>
+    <script src="../js/utils.js?v=2.3"></script>
+    <script src="../js/api.js?v=2.3"></script>
+    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/ui_components.js?v=2.3"></script>
+    <script src="../js/app.js?v=2.3"></script>
+    <script src="../js/settings.js?v=1.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        requireAuth();
-        const sidebarElement = document.getElementById('sidebar');
-        if (sidebarElement) {
-            sidebarElement.innerHTML = renderSidebar('settings');
-        }
-        injectTopHeader('Settings');
-
-        // Initial load
-        window.addEventListener('DOMContentLoaded', () => {
-            console.trace('DOMContentLoaded triggered');
-            loadSettings();
-            initSystem();
-        });
-
-        // ── Prevents scroll/tab jump on hash change
-        window.addEventListener('hashchange', () => {
-             const id = window.location.hash.substring(1);
-             if (id) {
-                 const link = document.querySelector(`.settings-nav a[href="#${id}"]`);
-                 scrollTo(id, link);
-             }
-        });
-
-        // ── Load saved settings
-        async function loadSettings() {
-            let backendPrefs = {};
-            const u = JSON.parse(localStorage.getItem('srm_user') || '{}');
-
-            // Try fetching from backend first
-            if (u.id) {
-                try {
-                    const profile = await apiGet('/auth/profile');
-                    backendPrefs = profile.preferences || {};
-                } catch (err) {
-                    console.error('Failed to load backend preferences', err);
-                }
-            }
-
-            const keys = ['compact_tables', 'animate_cards', 'notif_inapp', 'notif_meetings', 'notif_issues', 'notif_leads'];
-            keys.forEach(k => {
-                const el = document.getElementById(k.replace('_', '-'));
-                if (el && el.type === 'checkbox') {
-                    // Backend -> LocalStorage -> Default
-                    let val = backendPrefs[k];
-                    if (val === undefined) val = localStorage.getItem('srm_setting_' + k);
-
-                    if (val !== undefined && val !== null) {
-                        el.checked = String(val) === 'true';
-                    } else {
-                        el.checked = el.defaultChecked !== false;
-                    }
-                }
-            });
-
-            // Map: element-id => preference key used when saving
-            const selectMap = {
-                'theme-select': 'theme',
-                'poll-rate': 'poll_rate',
-                'session-timeout': 'session_timeout',
-                'default-view': 'default_view',
-                'date-format': 'date_format'
-            };
-            Object.entries(selectMap).forEach(([elId, prefKey]) => {
-                const el = document.getElementById(elId);
-                if (el) {
-                    let val = backendPrefs[prefKey];
-                    if (val === undefined) val = localStorage.getItem('srm_setting_' + prefKey);
-                    if (val) el.value = val;
-                }
-            });
-        }
-
-        // ── Save a setting
-        async function saveSetting(key, value) {
-            // Save locally
-            localStorage.setItem('srm_setting_' + key, value);
-
-            // Save to backend
-            try {
-                const prefs = {};
-                prefs[key] = value;
-                await apiPatch('/auth/preferences', { preferences: prefs });
-                showToast('Setting saved');
-            } catch (err) {
-                console.error('Pref save error', err);
-                showToast('Saved locally (offline)', false);
-            }
-        }
-
-        // ── Toast
-        function showToast(msg, isError = false) {
-            const toast = document.getElementById('toast-msg');
-            const txt = document.getElementById('toast-text');
-            toast.querySelector('i').className = isError ? 'bi bi-x-circle-fill text-danger' : 'bi bi-check-circle-fill text-success';
-            txt.textContent = msg;
-            toast.style.display = 'flex';
-            setTimeout(() => { toast.style.display = 'none'; }, 2200);
-        }
-
-        // ── Tab Navigation
-        function scrollTo(id, el) {
-            console.log('Switching to tab:', id);
-            // Update nav active state
-            document.querySelectorAll('.settings-nav a').forEach(a => a.classList.remove('active'));
-            if (el) el.classList.add('active');
-
-            // Toggle section visibility
-            document.querySelectorAll('.settings-section, .danger-zone').forEach(sec => {
-                sec.classList.remove('active-tab');
-                sec.style.display = 'none';
-            });
-
-            const target = document.getElementById(id);
-            if (target) {
-                console.log('Showing section:', id);
-                target.classList.add('active-tab');
-                target.style.display = 'block';
-                
-                // Also show danger zone if it's the system tab and user is admin
-                if (id === 'system') {
-                   const dz = document.getElementById('danger-zone');
-                   if (dz) { dz.style.display = 'block'; dz.classList.add('active-tab'); }
-                }
-            } else {
-                console.error('Section not found:', id);
-            }
-
-            // Update URL hash without jumping
-            history.pushState(null, null, '#' + id);
-            return false;
-        }
-
-
-
-
-        // ── Clear all settings
-        async function clearAllSettings() {
-            const keys = Object.keys(localStorage).filter(k => k.startsWith('srm_setting_'));
-            keys.forEach(k => localStorage.removeItem(k));
-
-            try {
-                await apiPatch('/auth/preferences', { preferences: {} });
-            } catch (err) { }
-
-            loadSettings();
-            showToast('All settings reset to defaults');
-        }
-
-        // ── System section (admin-only)
-        function initSystem() {
-            const u = JSON.parse(localStorage.getItem('srm_user') || '{}');
-            const isAdmin = u?.role === 'ADMIN';
-
-            if (isAdmin) {
-                // Admin sections are already shown by the loop above or by manual calls
-                document.getElementById('system-nav-link').style.display = 'flex';
-                document.getElementById('incentives-nav-link').style.display = 'flex';
-                document.getElementById('payslip-nav-link').style.display = 'flex';
-                document.getElementById('invoice-nav-link').style.display = 'flex';
-                document.getElementById('access-control-nav-link').style.display = 'flex';
-                document.getElementById('data-management-nav-link').style.display = 'flex';
-                document.getElementById('attendance-nav-link').style.display = 'flex';
-                
-                loadSlabsSettings();
-                loadIncentiveEligibilityUsers();
-                loadPayslipContact();
-                loadInvoiceSettings();
-                loadAccessPolicy();
-                loadAttendanceSettings();
-                loadDeletePolicy();
-                
-                // Note: The specific section display is handled by scrollTo/tab logic
-                // But we need to ensure they are available in the DOM
-                const adminSections = [
-                    'incentives-config', 'employee-code-settings', 'attendance-settings', 
-                    'payslip-contact', 'data-management-settings', 'invoice-settings', 
-                    'access-control', 'system'
-                ];
-                // They stay display:none until clicked in nav
-
-                const apiUrl = window.API_BASE || (window.location.origin + '/api');
-                document.getElementById('api-url-display').textContent = apiUrl;
-                document.getElementById('sys-user-id').textContent = `#${u?.id || '—'}`;
-
-                // Ping API
-                apiGet('/health', {}, { timeout: 3000 }).then(() => {
-                    document.getElementById('api-status-chip').innerHTML = '<i class="bi bi-check-circle-fill"></i> Online';
-                }).catch(() => {
-                    document.getElementById('api-status-chip').innerHTML = '<i class="bi bi-x-circle-fill"></i> Offline';
-                    document.getElementById('api-status-chip').style.background = '#fef2f2';
-                    document.getElementById('api-status-chip').style.color = '#b91c1c';
-                    document.getElementById('api-status-chip').style.borderColor = '#fca5a5';
-                });
-            } else {
-                document.getElementById('system-nav-link').style.display = 'none';
-            }
-
-            function toggleLoading(btnId, spnId, iconId, isLoading) {
-            const btn = document.getElementById(btnId);
-            const spn = document.getElementById(spnId);
-            const icon = document.getElementById(iconId);
-            if (!btn) return;
-            btn.disabled = isLoading;
-            if (spn) spn.classList.toggle('d-none', !isLoading);
-            if (icon) icon.classList.toggle('d-none', isLoading);
-        }
-
-        // Default view: Show the first section if none in hash
-            const hash = window.location.hash.substring(1);
-            if (hash) {
-                const link = document.querySelector(`.settings-nav a[href="#${hash}"]`);
-                scrollTo(hash, link);
-            } else {
-                scrollTo('appearance', document.querySelector('.settings-nav a[href="#appearance"]'));
-            }
-        }
-        
-        // ── Save Global Setting ──
-        async function saveGlobalSetting(key, value) {
-            try {
-                // Fetch existing settings first
-                const res = await ApiClient.request('/settings/');
-                const flags = res.feature_flags || {};
-                flags[key] = value;
-                
-                await ApiClient.request('/settings/', {
-                    method: 'PATCH',
-                    body: JSON.stringify({ feature_flags: flags })
-                });
-                showToast('Global setting updated!');
-            } catch (err) {
-                console.error('Failed to save global setting', err);
-                showToast('Failed to save global setting', true);
-                // Revert toggle on error
-                const toggle = document.getElementById('sys-soft-delete');
-                if (toggle) toggle.checked = !value;
-            }
-        }
-
-
-        async function loadAttendanceSettings() {
-            try {
-                const settings = await window.ApiClient.getAttendanceSettings();
-                document.getElementById('att-absent-threshold').value = settings.absent_hours_threshold ?? 0;
-                document.getElementById('att-halfday-threshold').value = settings.half_day_hours_threshold ?? 4;
-                document.getElementById('att-saturday').value = (settings.weekly_off_saturday || 'FULL').toUpperCase();
-                document.getElementById('att-sunday').value = (settings.weekly_off_sunday || 'FULL').toUpperCase();
-
-                const holidays = (settings.official_holidays || []).map(d => {
-                    if (typeof d === 'string') return d;
-                    try { return new Date(d).toISOString().slice(0, 10); } catch { return ''; }
-                }).filter(Boolean);
-                document.getElementById('att-holidays').value = holidays.join(', ');
-            } catch (err) {
-                console.error('Failed to load attendance settings', err);
-            }
-        }
-
-        async function saveAttendanceSettings() {
-            const btnMsg = document.getElementById('att-save-msg');
-            const absent = parseFloat(document.getElementById('att-absent-threshold').value || '0');
-            const half = parseFloat(document.getElementById('att-halfday-threshold').value || '4');
-            const saturday = document.getElementById('att-saturday').value;
-            const sunday = document.getElementById('att-sunday').value;
-            const holidayRaw = document.getElementById('att-holidays').value || '';
-            const holidays = holidayRaw.split(',').map(h => h.trim()).filter(Boolean);
-
-            try {
-                toggleLoading('btn-save-att', 'spn-save-att', 'icon-save-att', true);
-                await window.ApiClient.updateAttendanceSettings({
-                    absent_hours_threshold: absent,
-                    half_day_hours_threshold: half,
-                    weekly_off_saturday: saturday,
-                    weekly_off_sunday: sunday,
-                    official_holidays: holidays
-                });
-                btnMsg.classList.remove('d-none');
-                setTimeout(() => btnMsg.classList.add('d-none'), 2000);
-            } catch (err) {
-                console.error('Attendance settings save failed', err);
-                showToast('Failed to save attendance settings', true);
-            } finally {
-                toggleLoading('btn-save-att', 'spn-save-att', 'icon-save-att', false);
-            }
-        }
-
-        // ── Incentives config (admin-only)
-        async function loadSlabsSettings() {
-            const list = document.getElementById('slabs-settings-list');
-            try {
-                const slabs = await ApiClient.getIncentiveSlabs();
-                if (!slabs || !slabs.length) {
-                    list.innerHTML = '<p class="text-muted small mb-0">No slabs configured yet. Add one below.</p>';
-                    return;
-                }
-                list.innerHTML = `
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle mb-0" style="font-size:0.85rem;">
-                        <thead><tr class="text-uppercase text-muted" style="font-size:0.72rem; font-weight:700; letter-spacing:0.06em;">
-                            <th>Range (Units)</th><th>Per Unit</th><th>Slab Bonus</th><th>Actions</th>
-                        </tr></thead>
-                        <tbody>${slabs.map(s => `
-                        <tr id="slab-row-${s.id}">
-                            <td class="fw-semibold">${s.min_units} – ${s.max_units}</td>
-                            <td class="text-primary fw-bold">₹${Number(s.incentive_per_unit).toLocaleString('en-IN')}</td>
-                            <td class="text-success fw-bold">₹${Number(s.slab_bonus).toLocaleString('en-IN')}</td>
-                            <td class="d-flex gap-1">
-                                <button class="btn btn-sm" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:7px;font-size:0.75rem;padding:2px 8px;" onclick="openEditSlabSettings(${s.id},${s.min_units},${s.max_units},${s.incentive_per_unit},${s.slab_bonus})"><i class="bi bi-pencil"></i></button>
-                                <button class="btn btn-sm" style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;border-radius:7px;font-size:0.75rem;padding:2px 8px;" onclick="deleteSlabSetting(${s.id})"><i class="bi bi-trash"></i></button>
-                            </td>
-                        </tr>`).join('')}
-                        </tbody>
-                    </table>
-                </div>`;
-            } catch (e) {
-                list.innerHTML = `<p class="text-danger small mb-0">Failed to load slabs: ${e.message || 'Error'}</p>`;
-            }
-        }
-
-        let _eligUsers = [];
-        async function loadIncentiveEligibilityUsers() {
-            const sel = document.getElementById('elig-user');
-            const msg = document.getElementById('eligibility-msg');
-            if (!sel) return;
-            try {
-                const users = await apiGet('/users/');
-                _eligUsers = (users || []).filter(u => u.role !== 'CLIENT');
-                sel.innerHTML = '<option value="">Select user</option>' + _eligUsers.map(u => {
-                    const label = `${u.name || u.email} (${u.role})`;
-                    return `<option value="${u.id}" data-enabled="${u.incentive_enabled !== false}">${label}</option>`;
-                }).join('');
-                sel.addEventListener('change', function() {
-                    const opt = sel.options[sel.selectedIndex];
-                    if (!opt || !opt.value) return;
-                    document.getElementById('elig-user-enabled').value = String(opt.dataset.enabled) === 'true' ? 'true' : 'false';
-                });
-                msg.textContent = `${_eligUsers.length} users loaded for incentive eligibility control.`;
-            } catch (e) {
-                msg.textContent = 'Failed to load users for eligibility setup.';
-                msg.className = 'small text-danger mb-3';
-            }
-        }
-
-        async function applyRoleEligibility() {
-            const role = document.getElementById('elig-role')?.value;
-            const enabled = document.getElementById('elig-role-enabled')?.value === 'true';
-            if (!role) {
-                showToast('Select a role', true);
-                return;
-            }
-            try {
-                toggleLoading('btn-apply-role-elig', 'spn-apply-role-elig', 'icon-apply-role-elig', true);
-                const res = await apiPatch('/users/incentive-eligibility/by-role', { role, enabled });
-                const count = res?.updated ?? 0;
-                document.getElementById('eligibility-msg').textContent = `Updated ${count} users in role ${role}.`;
-                document.getElementById('eligibility-msg').className = 'small text-success mb-3';
-                await loadIncentiveEligibilityUsers();
-                showToast('Role eligibility updated');
-            } catch (e) {
-                showToast(e.data?.detail || e.message || 'Failed to update role eligibility', true);
-            } finally {
-                toggleLoading('btn-apply-role-elig', 'spn-apply-role-elig', 'icon-apply-role-elig', false);
-            }
-        }
-
-        async function saveUserEligibility() {
-            const userId = document.getElementById('elig-user')?.value;
-            const enabled = document.getElementById('elig-user-enabled')?.value === 'true';
-            if (!userId) {
-                showToast('Select a user', true);
-                return;
-            }
-            try {
-                toggleLoading('btn-save-user-elig', 'spn-save-user-elig', 'icon-save-user-elig', true);
-                await apiPatch(`/users/${userId}/incentive-eligibility`, { enabled });
-                document.getElementById('eligibility-msg').textContent = 'User incentive eligibility saved.';
-                document.getElementById('eligibility-msg').className = 'small text-success mb-3';
-                await loadIncentiveEligibilityUsers();
-                showToast('User eligibility updated');
-            } catch (e) {
-                showToast(e.data?.detail || e.message || 'Failed to update user eligibility', true);
-            } finally {
-                toggleLoading('btn-save-user-elig', 'spn-save-user-elig', 'icon-save-user-elig', false);
-            }
-        }
-
-        async function addSlabSetting() {
-            const min = parseInt(document.getElementById('slab-min').value);
-            const max = parseInt(document.getElementById('slab-max').value);
-            const perUnit = parseFloat(document.getElementById('slab-per-unit').value);
-            const bonus = parseFloat(document.getElementById('slab-bonus').value || '0');
-            const msg = document.getElementById('slab-save-msg');
-
-            if (isNaN(min) || isNaN(max) || isNaN(perUnit) || min > max) {
-                msg.textContent = 'Please fill all fields correctly.';
-                msg.className = 'ms-3 small text-danger';
-                msg.classList.remove('d-none');
-                setTimeout(() => msg.classList.add('d-none'), 3000);
-                return;
-            }
-
-            try {
-                toggleLoading('btn-add-slab', 'spn-add-slab', 'icon-add-slab', true);
-                await ApiClient.createIncentiveSlab({ min_units: min, max_units: max, incentive_per_unit: perUnit, slab_bonus: bonus });
-                ['slab-min', 'slab-max', 'slab-per-unit', 'slab-bonus'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-                msg.textContent = 'Slab added!';
-                msg.className = 'ms-3 small text-success';
-                msg.classList.remove('d-none');
-                setTimeout(() => msg.classList.add('d-none'), 2500);
-                loadSlabsSettings();
-            } catch (e) {
-                msg.textContent = e.message || 'Failed to add slab.';
-                msg.className = 'ms-3 small text-danger';
-                msg.classList.remove('d-none');
-                setTimeout(() => msg.classList.add('d-none'), 3000);
-            } finally {
-                toggleLoading('btn-add-slab', 'spn-add-slab', 'icon-add-slab', false);
-            }
-        }
-
-        async function deleteSlabSetting(id) {
-            if (!confirm('Delete this incentive slab?')) return;
-            try {
-                await apiDelete('/incentives/slabs/' + id);
-                loadSlabsSettings();
-                showToast('Slab deleted');
-            } catch (e) {
-                showToast('Failed to delete slab', true);
-            }
-        }
-
-        let _editingSlabId = null;
-        function openEditSlabSettings(id, min, max, perUnit, bonus) {
-            _editingSlabId = id;
-            document.getElementById('slab-min').value = min;
-            document.getElementById('slab-max').value = max;
-            document.getElementById('slab-per-unit').value = perUnit;
-            document.getElementById('slab-bonus').value = bonus;
-            const btn = document.querySelector('[onclick="addSlabSetting()"]');
-            if (btn) { btn.innerHTML = '<i class="bi bi-check me-1"></i> Update Slab'; btn.setAttribute('onclick', 'saveEditSlabSettings()'); }
-            document.getElementById('slab-save-msg').textContent = `Editing slab ${min}–${max}`;
-            document.getElementById('slab-save-msg').className = 'ms-3 small text-info';
-            document.getElementById('slab-save-msg').classList.remove('d-none');
-            document.getElementById('slab-min').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        async function saveEditSlabSettings() {
-            const min = parseInt(document.getElementById('slab-min').value);
-            const max = parseInt(document.getElementById('slab-max').value);
-            const perUnit = parseFloat(document.getElementById('slab-per-unit').value);
-            const bonus = parseFloat(document.getElementById('slab-bonus').value || '0');
-            const msg = document.getElementById('slab-save-msg');
-
-            if (isNaN(min) || isNaN(max) || isNaN(perUnit) || min > max) {
-                msg.textContent = 'Please fill all fields correctly.';
-                msg.className = 'ms-3 small text-danger';
-                msg.classList.remove('d-none');
-                return;
-            }
-            try {
-                await ApiClient.updateIncentiveSlab(_editingSlabId, { min_units: min, max_units: max, incentive_per_unit: perUnit, slab_bonus: bonus });
-                ['slab-min', 'slab-max', 'slab-per-unit', 'slab-bonus'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-                _editingSlabId = null;
-                const btn = document.querySelector('[onclick="saveEditSlabSettings()"]');
-                if (btn) { btn.innerHTML = '<i class="bi bi-plus me-1"></i> Add Slab'; btn.setAttribute('onclick', 'addSlabSetting()'); }
-                msg.textContent = 'Slab updated!';
-                msg.className = 'ms-3 small text-success';
-                msg.classList.remove('d-none');
-                setTimeout(() => msg.classList.add('d-none'), 2500);
-                loadSlabsSettings();
-            } catch (e) {
-                msg.textContent = e.message || 'Failed to update slab.';
-                msg.className = 'ms-3 small text-danger';
-                msg.classList.remove('d-none');
-            }
-        }
-
-        // ── Employee Code Settings (admin-only)
-        async function loadEmployeeCodeSettings() {
-            try {
-                const data = await ApiClient.getEmployeeCodeSettings();
-                document.getElementById('emp-code-enabled').checked = data.enabled !== false;
-                document.getElementById('emp-code-prefix').value = data.prefix || 'EMP';
-                document.getElementById('emp-code-next-seq').value = data.next_seq || 1;
-            } catch (e) {
-                console.warn('Could not load employee code settings:', e);
-            }
-        }
-
-        async function saveEmployeeCodeSettings() {
-            const enabled = document.getElementById('emp-code-enabled').checked;
-            const prefix = document.getElementById('emp-code-prefix').value.trim();
-            const next_seq = parseInt(document.getElementById('emp-code-next-seq').value);
-            const msg = document.getElementById('emp-code-save-msg');
-
-            if (!prefix || isNaN(next_seq)) {
-                showToast('Prefix and next sequence are required', true);
-                return;
-            }
-            try {
-                toggleLoading('btn-save-emp-code', 'spn-save-emp-code', 'icon-save-emp-code', true);
-                await ApiClient.updateEmployeeCodeSettings({ enabled, prefix, next_seq });
-                msg.textContent = 'Saved!';
-                msg.classList.remove('d-none');
-                setTimeout(() => msg.classList.add('d-none'), 2500);
-                showToast('Employee code configuration saved');
-            } catch (e) {
-                showToast(e.data?.detail || e.message || 'Failed to save', true);
-            } finally {
-                toggleLoading('btn-save-emp-code', 'spn-save-emp-code', 'icon-save-emp-code', false);
-            }
-        }
-
-        // ── Payslip Contact (admin-only)
-        async function loadPayslipContact() {
-            try {
-                const data = await ApiClient.getPayslipSettings();
-                document.getElementById('payslip-email').value = data.email || '';
-                document.getElementById('payslip-phone').value = data.phone || '';
-            } catch (e) {
-                console.warn('Could not load payslip contact settings:', e);
-            }
-        }
-
-        async function savePayslipContact() {
-            const email = document.getElementById('payslip-email').value.trim();
-            const phone = document.getElementById('payslip-phone').value.trim();
-            const msg = document.getElementById('payslip-save-msg');
-            if (!email || !phone) {
-                showToast('Email and phone are required', true);
-                return;
-            }
-            try {
-                toggleLoading('btn-save-payslip', 'spn-save-payslip', 'icon-save-payslip', true);
-                await ApiClient.updatePayslipSettings({ email, phone });
-                msg.textContent = 'Saved!';
-                msg.classList.remove('d-none');
-                setTimeout(() => msg.classList.add('d-none'), 2500);
-                showToast('Payslip contact info saved');
-            } catch (e) {
-                showToast(e.message || 'Failed to save', true);
-            } finally {
-                toggleLoading('btn-save-payslip', 'spn-save-payslip', 'icon-save-payslip', false);
-            }
-        }
-
-        // ── Invoice & Payment Settings ────────────────────────────────────────
-        
-        async function uploadPaymentQR(inputEle, urlInputId, previewImgId) {
-            const file = inputEle.files[0];
-            if (!file) return;
-            const formData = new FormData();
-            formData.append('file', file);
-            try {
-                // Inline fetch or we can just send base64, but we have an endpoint
-                const token = localStorage.getItem('access_token');
-                if (!token) return;
-                const apiBase = window.API_BASE || (window.location.origin + '/api');
-                const res = await fetch(apiBase + '/billing/settings/upload-qr', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData
-                });
-                if (!res.ok) throw new Error('Upload failed');
-                const data = await res.json();
-                document.getElementById(urlInputId).value = data.url;
-                document.getElementById(previewImgId).src = data.url;
-                document.getElementById(previewImgId).style.display = 'block';
-            } catch(e) {
-                showToast('Failed to upload image', true);
-            }
-        }
-
-        async function loadInvoiceSettings() {
-            try {
-                const data = await ApiClient.getInvoiceSettings();
-                document.getElementById('inv-default-amount').value = data.invoice_default_amount || 12000;
-                document.getElementById('inv-personal-no-gst-amount').value = data.personal_without_gst_default_amount || 12000;
-                document.getElementById('inv-seq-with-gst').value = data.invoice_seq_with_gst || 1;
-                document.getElementById('inv-seq-without-gst').value = data.invoice_seq_without_gst || 1;
-                document.getElementById('inv-company-name').value = data.company_name || '';
-                document.getElementById('inv-company-address').value = data.company_address || '';
-                document.getElementById('inv-header-image-details').value = data.company_header_image_details || '';
-                document.getElementById('inv-company-phone').value = data.company_phone || '';
-                document.getElementById('inv-company-email').value = data.company_email || '';
-                document.getElementById('inv-company-gstin').value = data.company_gstin || '';
-                document.getElementById('inv-company-pan').value = data.company_pan || '';
-                document.getElementById('inv-company-cin').value = data.company_cin || '';
-                document.getElementById('inv-company-cst-code').value = data.company_cst_code || '';
-                document.getElementById('inv-terms-conditions').value = data.invoice_terms_conditions || '';
-                document.getElementById('inv-business-upi-id').value = data.business_payment_upi_id || data.payment_upi_id || '';
-                document.getElementById('inv-business-upi-name').value = data.business_payment_account_name || data.payment_account_name || '';
-                document.getElementById('inv-business-bank-name').value = data.business_payment_bank_name || data.payment_bank_name || '';
-                document.getElementById('inv-business-bank-account-number').value = data.business_payment_account_number || data.payment_account_number || '';
-                document.getElementById('inv-business-bank-ifsc').value = data.business_payment_ifsc || data.payment_ifsc || '';
-                document.getElementById('inv-business-bank-branch').value = data.business_payment_branch || data.payment_branch || '';
-                
-                const bQrUrl = data.business_payment_qr_image_url || data.payment_qr_image_url || '';
-                document.getElementById('inv-business-qr-url').value = bQrUrl;
-                if (bQrUrl) {
-                    document.getElementById('inv-business-qr-preview').src = bQrUrl;
-                    document.getElementById('inv-business-qr-preview').style.display = 'block';
-                } else {
-                    document.getElementById('inv-business-qr-preview').style.display = 'none';
-                }
-
-                document.getElementById('inv-personal-upi-id').value = data.personal_payment_upi_id || '';
-                document.getElementById('inv-personal-upi-name').value = data.personal_payment_account_name || '';
-                document.getElementById('inv-personal-bank-name').value = data.personal_payment_bank_name || '';
-                document.getElementById('inv-personal-bank-account-number').value = data.personal_payment_account_number || '';
-                document.getElementById('inv-personal-bank-ifsc').value = data.personal_payment_ifsc || '';
-                document.getElementById('inv-personal-bank-branch').value = data.personal_payment_branch || '';
-                
-                const pQrUrl = data.personal_payment_qr_image_url || '';
-                document.getElementById('inv-personal-qr-url').value = pQrUrl;
-                if (pQrUrl) {
-                    document.getElementById('inv-personal-qr-preview').src = pQrUrl;
-                    document.getElementById('inv-personal-qr-preview').style.display = 'block';
-                } else {
-                    document.getElementById('inv-personal-qr-preview').style.display = 'none';
-                }
-
-                const verifierRoles = String(data.invoice_verifier_roles || 'ADMIN').split(',').map(v => v.trim()).filter(Boolean);
-                document.querySelectorAll('#inv-verifier-roles input[type="checkbox"]').forEach(cb => {
-                    cb.checked = verifierRoles.includes(cb.value);
-                });
-            } catch (e) {
-                console.warn('Could not load invoice settings:', e);
-            }
-        }
-
-        // Live QR preview
-        document.addEventListener('DOMContentLoaded', () => {
-            const setupPreview = (inputId, previewId) => {
-                const input = document.getElementById(inputId);
-                if (input) {
-                    input.addEventListener('input', function() {
-                        const val = this.value.trim();
-                        const img = document.getElementById(previewId);
-                        if (val) {
-                            img.src = val;
-                            img.style.display = 'block';
-                        } else {
-                            img.style.display = 'none';
-                        }
-                    });
-                }
-            };
-            setupPreview('inv-business-qr-url', 'inv-business-qr-preview');
-            setupPreview('inv-personal-qr-url', 'inv-personal-qr-preview');
-        });
-
-        async function saveInvoiceSettings() {
-            const msg = document.getElementById('inv-save-msg');
-            const selectedRoles = Array.from(document.querySelectorAll('#inv-verifier-roles input[type="checkbox"]:checked')).map(cb => cb.value);
-            if (!selectedRoles.includes('ADMIN')) {
-                selectedRoles.unshift('ADMIN');
-            }
-            const payload = {
-                invoice_default_amount: parseFloat(document.getElementById('inv-default-amount').value) || 12000,
-                personal_without_gst_default_amount: parseFloat(document.getElementById('inv-personal-no-gst-amount').value) || 12000,
-                invoice_seq_with_gst: parseInt(document.getElementById('inv-seq-with-gst').value, 10) || 1,
-                invoice_seq_without_gst: parseInt(document.getElementById('inv-seq-without-gst').value, 10) || 1,
-                company_name: document.getElementById('inv-company-name').value.trim(),
-                company_address: document.getElementById('inv-company-address').value.trim(),
-                company_header_image_details: document.getElementById('inv-header-image-details').value.trim(),
-                company_phone: document.getElementById('inv-company-phone').value.trim(),
-                company_email: document.getElementById('inv-company-email').value.trim(),
-                company_gstin: document.getElementById('inv-company-gstin').value.trim(),
-                company_pan: document.getElementById('inv-company-pan').value.trim(),
-                company_cin: document.getElementById('inv-company-cin').value.trim(),
-                company_cst_code: document.getElementById('inv-company-cst-code').value.trim(),
-                invoice_terms_conditions: document.getElementById('inv-terms-conditions').value.trim(),
-                business_payment_upi_id: document.getElementById('inv-business-upi-id').value.trim(),
-                business_payment_account_name: document.getElementById('inv-business-upi-name').value.trim(),
-                business_payment_bank_name: document.getElementById('inv-business-bank-name').value.trim(),
-                business_payment_account_number: document.getElementById('inv-business-bank-account-number').value.trim(),
-                business_payment_ifsc: document.getElementById('inv-business-bank-ifsc').value.trim(),
-                business_payment_branch: document.getElementById('inv-business-bank-branch').value.trim(),
-                business_payment_qr_image_url: document.getElementById('inv-business-qr-url').value.trim(),
-                personal_payment_upi_id: document.getElementById('inv-personal-upi-id').value.trim(),
-                personal_payment_account_name: document.getElementById('inv-personal-upi-name').value.trim(),
-                personal_payment_bank_name: document.getElementById('inv-personal-bank-name').value.trim(),
-                personal_payment_account_number: document.getElementById('inv-personal-bank-account-number').value.trim(),
-                personal_payment_ifsc: document.getElementById('inv-personal-bank-ifsc').value.trim(),
-                personal_payment_branch: document.getElementById('inv-personal-bank-branch').value.trim(),
-                personal_payment_qr_image_url: document.getElementById('inv-personal-qr-url').value.trim(),
-                invoice_verifier_roles: selectedRoles.join(','),
-            };
-            try {
-                toggleLoading('btn-save-inv', 'spn-save-inv', 'icon-save-inv', true);
-                await ApiClient.updateInvoiceSettings(payload);
-                msg.textContent = 'Saved!';
-                msg.classList.remove('d-none');
-                setTimeout(() => msg.classList.add('d-none'), 2500);
-                showToast('Invoice settings saved');
-            } catch (e) {
-                showToast(e.data?.detail || e.message || 'Failed to save', true);
-            } finally {
-                toggleLoading('btn-save-inv', 'spn-save-inv', 'icon-save-inv', false);
-            }
-        }
-
-        function _pagesToText(pages) {
-            return (pages || []).join(', ');
-        }
-
-        function _textToPages(text) {
-            return String(text || '')
-                .split(',')
-                .map(v => v.trim())
-                .filter(Boolean);
-        }
-
-        function setRoleCheckboxes(containerId, roles) {
-            const normalized = (roles || []).map(v => String(v).toUpperCase());
-            document.querySelectorAll(`#${containerId} input[type="checkbox"]`).forEach(cb => {
-                cb.checked = normalized.includes(cb.value);
-            });
-        }
-
-        function getRoleCheckboxes(containerId, ensureAdmin = false) {
-            const selected = Array.from(document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`)).map(cb => cb.value);
-            if (ensureAdmin && !selected.includes('ADMIN')) selected.push('ADMIN');
-            return selected;
-        }
-
-        async function loadAccessPolicy() {
-            try {
-                const data = await ApiClient.getAccessPolicy();
-                const pageAccess = data.page_access || {};
-                document.getElementById('policy-pages-sales').value = _pagesToText(pageAccess.SALES || []);
-                document.getElementById('policy-pages-telesales').value = _pagesToText(pageAccess.TELESALES || []);
-                document.getElementById('policy-pages-pm').value = _pagesToText(pageAccess.PROJECT_MANAGER || []);
-                document.getElementById('policy-pages-pmsales').value = _pagesToText(pageAccess.PROJECT_MANAGER_AND_SALES || []);
-
-                const featureAccess = data.feature_access || {};
-                setRoleCheckboxes('policy-invoice-creators', featureAccess.invoice_creator_roles || []);
-                setRoleCheckboxes('policy-feature-issue-create', featureAccess.issue_create_roles || []);
-                setRoleCheckboxes('policy-feature-issue-manage', featureAccess.issue_manage_roles || []);
-                setRoleCheckboxes('policy-feature-leave-apply', featureAccess.leave_apply_roles || []);
-                setRoleCheckboxes('policy-feature-leave-manage', featureAccess.leave_manage_roles || []);
-                setRoleCheckboxes('policy-feature-leave-edit-own', featureAccess.leave_edit_own_roles || []);
-                setRoleCheckboxes('policy-feature-leave-cancel-own', featureAccess.leave_cancel_own_roles || []);
-                setRoleCheckboxes('policy-feature-salary-view-all', featureAccess.salary_view_all_roles || []);
-                setRoleCheckboxes('policy-feature-salary-manage', featureAccess.salary_manage_roles || []);
-                setRoleCheckboxes('policy-feature-incentive-view-all', featureAccess.incentive_view_all_roles || []);
-                setRoleCheckboxes('policy-feature-incentive-manage', featureAccess.incentive_manage_roles || []);
-                setRoleCheckboxes('policy-feature-employee-manage', featureAccess.employee_manage_roles || []);
-            } catch (e) {
-                console.warn('Could not load access policy:', e);
-            }
-        }
-
-        async function saveAccessPolicy() {
-            const msg = document.getElementById('access-policy-save-msg');
-            const creatorRoles = getRoleCheckboxes('policy-invoice-creators', true);
-
-            const payload = {
-                page_access: {
-                    ADMIN: ['*'],
-                    SALES: _textToPages(document.getElementById('policy-pages-sales').value),
-                    TELESALES: _textToPages(document.getElementById('policy-pages-telesales').value),
-                    PROJECT_MANAGER: _textToPages(document.getElementById('policy-pages-pm').value),
-                    PROJECT_MANAGER_AND_SALES: _textToPages(document.getElementById('policy-pages-pmsales').value),
-                    CLIENT: ['dashboard.html']
-                },
-                feature_access: {
-                    invoice_creator_roles: creatorRoles,
-                    invoice_verifier_roles: Array.from(document.querySelectorAll('#inv-verifier-roles input[type="checkbox"]:checked')).map(cb => cb.value),
-                    issue_create_roles: getRoleCheckboxes('policy-feature-issue-create', true),
-                    issue_manage_roles: getRoleCheckboxes('policy-feature-issue-manage', true),
-                    leave_apply_roles: getRoleCheckboxes('policy-feature-leave-apply', false),
-                    leave_manage_roles: getRoleCheckboxes('policy-feature-leave-manage', true),
-                    leave_edit_own_roles: getRoleCheckboxes('policy-feature-leave-edit-own', false),
-                    leave_cancel_own_roles: getRoleCheckboxes('policy-feature-leave-cancel-own', false),
-                    salary_view_all_roles: getRoleCheckboxes('policy-feature-salary-view-all', true),
-                    salary_manage_roles: getRoleCheckboxes('policy-feature-salary-manage', true),
-                    incentive_view_all_roles: getRoleCheckboxes('policy-feature-incentive-view-all', true),
-                    incentive_manage_roles: getRoleCheckboxes('policy-feature-incentive-manage', true),
-                    employee_manage_roles: getRoleCheckboxes('policy-feature-employee-manage', true)
-                }
-            };
-
-            if (!payload.feature_access.invoice_verifier_roles.includes('ADMIN')) {
-                payload.feature_access.invoice_verifier_roles.push('ADMIN');
-            }
-
-            try {
-                toggleLoading('btn-save-access', 'spn-save-access', 'icon-save-access', true);
-                await ApiClient.updateAccessPolicy(payload);
-                msg.classList.remove('d-none');
-                setTimeout(() => msg.classList.add('d-none'), 2500);
-                showToast('Access policy saved');
-            } catch (e) {
-                showToast(e.data?.detail || e.message || 'Failed to save access policy', true);
-            } finally {
-                toggleLoading('btn-save-access', 'spn-save-access', 'icon-save-access', false);
-            }
-        }
-
-        async function loadDeletePolicy() {
-            try {
-                // We'll use the payslip setting endpoint conceptually or a generic app setting one
-                // Since we implemented it in AppSetting model, let's look for a generic getter or use payslip context
-                // Backend: router.get("/payslip-settings") returns {email, phone}
-                // Let's assume there's a policy endpoint or we add one. 
-                // Wait, I didn't add a specific GET for delete_policy yet in the router.
-                // I should add a specific GET/PUT for this in a generic settings router or specific one.
-                // For now, I'll assume a new endpoint /settings/delete-policy or similar.
-                // RE-READING: I added it to AppSetting. I'll add the endpoint to salary router.
-                const res = await apiGet('/hrm/delete-policy');
-                document.getElementById('global-delete-policy').value = res.policy || 'SOFT';
-            } catch (e) {
-                console.warn('Failed to load delete policy');
-            }
-        }
-
-        async function saveDeletePolicy() {
-            const policy = document.getElementById('global-delete-policy').value;
-            const msg = document.getElementById('delete-policy-save-msg');
-            if (!confirm(`Are you sure you want to switch to ${policy} delete? This affects all future deletions.`)) return;
-            try {
-                toggleLoading('btn-save-del-policy', 'spn-save-del-policy', 'icon-save-del-policy', true);
-                await apiPut('/hrm/delete-policy', { policy });
-                msg.classList.remove('d-none');
-                setTimeout(() => msg.classList.add('d-none'), 2500);
-                showToast('Global delete policy updated');
-            } catch (e) {
-                showToast('Failed to update policy', true);
-            } finally {
-                toggleLoading('btn-save-del-policy', 'spn-save-del-policy', 'icon-save-del-policy', false);
-            }
-        }
-    </script>
 </body>
 
 </html>

@@ -26,25 +26,15 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap"
         rel="stylesheet">
     <style>
-        /* ── Page content padding ── */
-        .page-content {
-            padding: 24px 28px !important;
-        }
 
         /* ── Dashboard header ── */
         .dash-header {
-            background: linear-gradient(135deg, #3730a3 0%, #5b21b6 50%, #6d28d9 100%);
-            border-radius: 20px;
-            padding: 22px 26px;
-            color: white;
-            margin-bottom: 32px;
-            position: relative;
-            overflow: hidden;
             display: flex;
             align-items: center;
+            flex-direction: row;
             justify-content: space-between;
-            min-height: 180px;
-            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.2);
+            gap: 24px;
+            margin-bottom: 12px;
         }
 
         .dash-header::before {
@@ -54,8 +44,9 @@
             right: -100px;
             width: 300px;
             height: 300px;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
             border-radius: 50%;
+            z-index: 1;
         }
 
         .dash-header::after {
@@ -63,116 +54,72 @@
             position: absolute;
             bottom: -50px;
             left: 5%;
-            width: 200px;
-            height: 200px;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            width: 220px;
+            height: 220px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
             border-radius: 50%;
+            z-index: 1;
         }
 
-        .dash-greeting {
-            font-family: 'Inter', sans-serif;
-            font-size: 21px;
-            font-weight: 800;
-            margin-bottom: 8px;
+        .dash-header-left {
             position: relative;
             z-index: 2;
-        }
-
-        .dash-subtext {
-            font-size: 1.05rem;
-            color: rgba(255, 255, 255, 0.85);
-            margin-bottom: 0;
-            position: relative;
-            z-index: 2;
-        }
-
-        .dash-date-text {
-            font-family: 'Inter', sans-serif;
-            font-size: 12.5px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.55);
-        }
-
-        .dash-live-dot {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(16, 185, 129, 0.2);
-            border: 1px solid rgba(16, 185, 129, 0.35);
-            border-radius: 100px;
-            padding: 4px 12px;
-            font-size: 0.72rem;
-            color: #6ee7b7;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .dash-live-dot::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #10b981;
-            animation: pulseRing 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulseRing {
-            0% { transform: scale(1); opacity: 0.7; }
-            70% { transform: scale(1.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 0; }
-        }
-
-        /* ── Dashboard header ── */
-        .dash-header {
-            background: linear-gradient(135deg, #312e81, #4c1d95, #5b21b6);
-            border-radius: 14px;
-            padding: 20px 24px;
-            color: white;
-            margin-bottom: 24px;
-            position: relative;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            min-height: 120px;
+            align-items: center;
+            gap: 4px;
         }
 
         .dash-date-text {
             font-family: 'Inter', sans-serif;
-            font-size: 11.5px;
+            font-size: 13px;
             font-weight: 500;
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.02em;
             margin-bottom: 4px;
         }
 
         .dash-greeting {
-            font-family: 'Inter', sans-serif;
-            font-size: 20px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 32px;
             font-weight: 800;
-            margin-bottom: 8px;
-            color: #fff; /* Keep white for the gradient header card */
+            margin-bottom: 12px;
+            color: #ffffff;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            letter-spacing: -0.02em;
         }
 
         .dash-live-dot {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             background: rgba(16, 185, 129, 0.15);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(16, 185, 129, 0.3);
             border-radius: 100px;
-            padding: 4px 10px;
-            font-size: 10px;
+            padding: 5px 14px;
+            font-size: 11px;
             color: #4ade80;
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         .dash-live-dot::before {
             content: '';
-            width: 6px;
-            height: 6px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: #4ade80;
-            box-shadow: 0 0 8px #4ade80;
+            box-shadow: 0 0 12px #4ade80;
+            animation: pulseRing 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseRing {
+            0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+            70% { transform: scale(1.1); opacity: 0.8; box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); }
+            100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
         }
 
         /* ── KPI Cards ── */
@@ -196,7 +143,7 @@
         .kpi-value {
             font-size: 22px;
             font-weight: 800;
-            color: var(--text-1);
+            color: #1e40af; /* Blue value */
             font-family: 'Inter', sans-serif;
         }
 
@@ -213,11 +160,89 @@
             font-size: 16px;
         }
 
-        @media (max-width: 992px) {
-            .attendance-card-v2 {
-                margin: 20px auto;
-            }
+        /* ── Professional Attendance Widget (Dashboard) ── */
+        .pro-att-widget {
+            background: linear-gradient(135deg, #0d1f5c 0%, #102272 40%, #0f1e6a 70%, #0a1550 100%);
+            border-radius: 16px;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+            padding: 22px 24px;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
         }
+
+        .pro-att-widget::before {
+            content: '';
+            position: absolute;
+            top: -40px; left: -40px;
+            width: 180px; height: 180px;
+            background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .pro-att-widget::after {
+            content: '';
+            position: absolute;
+            bottom: -40px; right: -40px;
+            width: 160px; height: 160px;
+            background: radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .pro-att-left { flex: 1; padding-right: 24px; min-width: 0; }
+        .pro-att-date { font-size: 10.5px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255,255,255,0.32); margin-bottom: 6px; }
+        .pro-att-greeting-line { font-size: 13px; font-weight: 400; color: rgba(255,255,255,0.70); line-height: 1; margin-bottom: 2px; }
+        .pro-att-name { font-size: 22px; font-weight: 800; line-height: 1.15; margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pro-att-name.punched-in { background: linear-gradient(90deg, #c7d7ff, #a5b8ff, #e0e7ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .pro-att-name.punched-out { color: rgba(255,255,255,0.42); -webkit-text-fill-color: rgba(255,255,255,0.42); }
+
+        .pro-att-live-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+        .pro-att-live-badge.live { background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.22); color: #4ade80; }
+        .pro-att-live-badge.offline { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); color: rgba(255,255,255,0.35); }
+
+        .pro-att-pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 0 rgba(74,222,128,0.5); animation: attPulse 2s ease-in-out infinite; flex-shrink: 0; }
+        @keyframes attPulse { 0% { box-shadow: 0 0 0 0 rgba(74,222,128,0.5); } 60% { box-shadow: 0 0 0 5px rgba(74,222,128,0); } 100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); } }
+
+        .pro-att-sep { width: 1px; align-self: stretch; background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.10) 20%, rgba(255,255,255,0.10) 80%, transparent); flex-shrink: 0; margin: 0 4px; }
+
+        .pro-att-right { padding-left: 24px; display: flex; flex-direction: column; gap: 12px; min-width: 260px; max-width: 300px; }
+        .pro-att-user-row { display: flex; align-items: center; gap: 10px; }
+        .pro-att-avatar-wrap { position: relative; flex-shrink: 0; }
+        .pro-att-avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #3b5bdb, #6366f1); border: 2px solid rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: white; overflow: hidden; }
+        .pro-att-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .pro-att-status-dot { position: absolute; bottom: 1px; right: 1px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #102272; }
+        .pro-att-status-dot.online { background: #4ade80; }
+        .pro-att-status-dot.offline { background: rgba(255,255,255,0.25); }
+        .pro-att-user-info { flex: 1; min-width: 0; }
+        .pro-att-user-name { font-size: 13.5px; font-weight: 700; color: white; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pro-att-punch-badge { display: inline-flex; align-items: center; gap: 4px; margin-top: 3px; padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+        .pro-att-punch-badge.in { background: rgba(74,222,128,0.10); border: 1px solid rgba(74,222,128,0.20); color: #4ade80; }
+        .pro-att-punch-badge.out { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); color: rgba(255,255,255,0.40); }
+
+        .pro-att-bottom-row { display: flex; align-items: stretch; gap: 8px; }
+        .pro-att-info-cells { display: flex; flex: 1; background: rgba(0,0,0,0.25); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); overflow: hidden; }
+        .pro-att-info-cell { flex: 1; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+        .pro-att-info-cell + .pro-att-info-cell { border-left: 1px solid rgba(255,255,255,0.07); }
+        .pro-att-info-label { font-size: 8.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255,255,255,0.30); }
+        .pro-att-info-val { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.80); letter-spacing: 0.01em; white-space: nowrap; }
+
+        .pro-att-timer-val { font-family: 'JetBrains Mono', monospace; font-weight: 400; font-size: 17px; color: #fff; letter-spacing: 0; display: flex; align-items: center; }
+        .pro-att-timer-val .att-sep { animation: timerColonBlink 1s step-start infinite; }
+        @keyframes timerColonBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.18; } }
+
+        .pro-att-btn { width: 72px; flex-shrink: 0; border: none; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: white; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; display: flex; align-items: center; justify-content: center; line-height: 1.25; text-align: center; padding: 0; }
+        .pro-att-btn.punch-in { background: linear-gradient(150deg, #15803d, #22c55e); box-shadow: 0 4px 14px rgba(34,197,94,0.35); }
+        .pro-att-btn.punch-out { background: linear-gradient(150deg, #b91c1c, #ef4444); box-shadow: 0 4px 14px rgba(239,68,68,0.35); }
+        .pro-att-btn:hover { transform: translateY(-1px); }
+        .pro-att-btn.punch-in:hover { box-shadow: 0 6px 18px rgba(34,197,94,0.50); }
+        .pro-att-btn.punch-out:hover { box-shadow: 0 6px 18px rgba(239,68,68,0.50); }
+        .pro-att-btn:active { transform: scale(0.97); }
+        .pro-att-btn.loading { opacity: 0.50; cursor: not-allowed; transform: none; box-shadow: none; }
 
         /* ── Filter panel ── */
         .filter-panel {
@@ -459,7 +484,7 @@
         .kpi-value {
             font-size: 1.6rem;
             font-weight: 700;
-            color: var(--text-body);
+            color: #1e40af; /* Blue value */
             margin-bottom: 2px;
         }
 
@@ -495,6 +520,15 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+        }
+
+        .card-header-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e40af;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .section-card-title {
@@ -545,6 +579,14 @@
             padding: 18px 20px;
             height: 100%;
             box-shadow: var(--shadow-sm);
+        }
+
+        .page-section-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: #1e40af; /* Vibrant Blue */
+            margin-bottom: 2px;
+            letter-spacing: -0.02em;
         }
 
         .chart-card-title {
@@ -886,23 +928,19 @@
             }
 
             .dash-header {
-                padding: 30px 24px;
+                padding: 32px 20px;
                 border-radius: 20px;
                 margin-bottom: 24px;
-                flex-direction: column;
-                align-items: center !important;
-                text-align: center;
                 min-height: auto;
             }
 
             .dash-greeting {
-                font-size: 1.6rem;
-                margin-bottom: 10px;
+                font-size: 1.8rem;
+                margin-bottom: 8px;
             }
 
-            .dash-subtext {
-                font-size: 0.9rem;
-                margin-bottom: 15px;
+            .dash-date-text {
+                font-size: 12px;
             }
 
             .dash-header-actions {
@@ -961,12 +999,60 @@
         <div id="sidebar"></div>
         <div class="flex-grow-1 main-wrapper">
             <div class="page-content mx-auto">
-                <!-- Header -->
-                <div class="dash-header">
-                    <div class="dash-date-text" id="dash-date-header">--</div>
-                    <div class="dash-greeting" id="greetingUser">Good Afternoon, Tisha</div>
-                    <div class="dash-live-status mt-auto">
+                <!-- Header Section -->
+                <div class="dash-header d-flex align-items-center justify-content-between flex-wrap gap-4 mb-4">
+                    <div class="dash-header-left">
+                        <div class="dash-date-text" id="dash-date">--</div>
+                        <div class="dash-greeting" id="dash-greeting">Good Afternoon, User</div>
                         <div class="dash-live-dot">Live</div>
+                    </div>
+
+                    <!-- Attendance Widget (Professional Two-Zone) -->
+                    <div id="employee-header-widget" class="pro-att-widget d-none">
+                        <!-- Left Zone: Date + Greeting -->
+                        <div class="pro-att-left">
+                            <div class="pro-att-date" id="att-v2-date">--</div>
+                            <div class="pro-att-greeting-line" id="att-v2-greeting-line">Good Evening,</div>
+                            <div class="pro-att-name punched-out" id="att-v2-left-name">User</div>
+                            <div class="pro-att-live-badge offline" id="att-v2-live-badge">
+                                <span class="pro-att-pulse-dot" id="att-v2-pulse" style="display:none;"></span>
+                                <span id="att-v2-live-text">Offline</span>
+                            </div>
+                        </div>
+
+                        <!-- Vertical Separator -->
+                        <div class="pro-att-sep"></div>
+
+                        <!-- Right Zone: Profile + Punch Info -->
+                        <div class="pro-att-right">
+                            <div class="pro-att-user-row">
+                                <div class="pro-att-avatar-wrap">
+                                    <div class="pro-att-avatar" id="att-v2-avatar">--</div>
+                                    <div class="pro-att-status-dot offline" id="att-v2-status-dot"></div>
+                                </div>
+                                <div class="pro-att-user-info">
+                                    <div class="pro-att-user-name" id="att-v2-name">User Name</div>
+                                    <div class="pro-att-punch-badge out" id="att-v2-badge">Not Punched</div>
+                                </div>
+                            </div>
+                            <div class="pro-att-bottom-row">
+                                <div class="pro-att-info-cells">
+                                    <div class="pro-att-info-cell">
+                                        <div class="pro-att-info-label">Punch In</div>
+                                        <div class="pro-att-info-val" id="att-v2-first-in">--:--</div>
+                                    </div>
+                                    <div class="pro-att-info-cell">
+                                        <div class="pro-att-info-label">Duration</div>
+                                        <div class="pro-att-timer-val">
+                                            <span id="att-v2-hh">--</span><span class="att-sep">:</span><span id="att-v2-mm">--</span><span class="att-sep">:</span><span id="att-v2-ss">--</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button id="header-punch-btn-new" class="pro-att-btn punch-in">
+                                    Punch<br>In
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1145,7 +1231,7 @@
                         <div class="section-card h-100">
                             <div class="section-card-header">
                                 <div class="section-card-title">
-                                    <div class="title-icon" style="background:#eef2ff;color:#4f46e5;"><i
+                                    <div class="title-icon" style="background:#eef2ff;color:#2563eb;"><i
                                             class="bi bi-activity"></i></div>
                                     Recent Activity
                                 </div>
@@ -1239,7 +1325,7 @@
                         <div class="section-card">
                             <div class="section-card-header">
                                 <div class="section-card-title">
-                                    <div class="title-icon" style="background:#eef2ff;color:#4f46e5;"><i
+                                    <div class="title-icon" style="background:#eef2ff;color:#2563eb;"><i
                                             class="bi bi-person-badge"></i></div>
                                     Team Members
                                 </div>
@@ -1301,184 +1387,29 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
+        const currentUser = typeof getUser === 'function' ? getUser() : (window.ApiClient ? window.ApiClient.getCurrentUser() : null);
+        const isAdmin = currentUser?.role === 'ADMIN';
+
         document.getElementById('sidebar').innerHTML = renderSidebar('dashboard');
         injectTopHeader('Overview');
 
-        // Greeting by time of day + user name
-        const greetingEl = document.getElementById('greetingUser');
-        const dateHeaderEl = document.getElementById('dash-date-header');
-        
-        function updateHeaderContext() {
-            const hr = new Date().getHours();
-            const timeOfDay = hr < 12 ? 'Morning' : hr < 17 ? 'Afternoon' : 'Evening';
-            const u = getUser();
-            const fName = (u && u.name) ? u.name.trim().split(' ')[0] : 'User';
-            
-            if (greetingEl) greetingEl.textContent = `Good ${timeOfDay}, ${fName}`;
-            
-            const now = new Date();
-            const fmtDate = now.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-            if (dateHeaderEl) dateHeaderEl.textContent = fmtDate;
-        }
-        updateHeaderContext();
-
-        // ─── Attendance Logic (V2) ──────────────────────────────────────
-        let productionInterval;
-        let punchStartTime = null;
-        let accumulatedSeconds = 0;
-
-        function updateLiveTimer() {
-            if (!punchStartTime) return;
-            const diff = (Date.now() - punchStartTime) / 1000 + accumulatedSeconds;
-            
-            const h = Math.floor(diff / 3600);
-            const m = Math.floor((diff % 3600) / 60);
-            const s = Math.floor(diff % 60);
-
-            const hhEl = document.getElementById('att-v2-hh');
-            const mmEl = document.getElementById('att-v2-mm');
-            const ssEl = document.getElementById('att-v2-ss');
-
-            if (hhEl) hhEl.textContent = h < 10 ? '0' + h : h;
-            if (mmEl) mmEl.textContent = m < 10 ? '0' + m : m;
-            if (ssEl) ssEl.textContent = s < 10 ? '0' + s : s;
-        }
-
-        async function initAttendance() {
-            const u = getUser();
-            const isAdmin = !u || u.role === 'ADMIN';
-
-            const employeeWidget = document.getElementById('employee-header-widget');
-            
-            if (isAdmin) {
-                if (employeeWidget) employeeWidget.classList.add('d-none');
-            } else {
-                if (employeeWidget) employeeWidget.classList.remove('d-none');
-
-                // Update Name & Avatar
-                const v2NameEl = document.getElementById('att-v2-name');
-                const v2AvatarEl = document.getElementById('att-v2-avatar');
-                if (v2NameEl) v2NameEl.textContent = u.name || 'User';
-                if (v2AvatarEl) v2AvatarEl.textContent = getInitials(u.name);
-
-                await refreshAttendance();
-
-                // Wire up button
-                const punchBtn = document.getElementById('header-punch-btn-new');
-                if (punchBtn) {
-                    punchBtn.onclick = async () => {
-                        if (punchBtn.classList.contains('loading')) return;
-                        
-                        punchBtn.classList.add('loading');
-                        const originalText = punchBtn.textContent;
-                        punchBtn.textContent = 'Processing...';
-
-                        // 1.2s delay as requested
-                        setTimeout(async () => {
-                            try {
-                                await ApiClient.punch();
-                                showToast('Attendance recorded');
-                                await refreshAttendance();
-                            } catch (e) {
-                                console.error(e);
-                                showToast('Failed to record punch', 'error');
-                                punchBtn.textContent = originalText;
-                                punchBtn.classList.remove('loading');
-                            }
-                        }, 1200);
-                    };
-                }
-            }
-        }
-
-        async function refreshAttendance() {
+        async function refreshDashboardKPIs() {
             try {
                 const status = await ApiClient.getPunchStatus();
-                const punchBtn = document.getElementById('header-punch-btn-new');
-                const badge = document.getElementById('att-v2-badge');
-                const firstInEl = document.getElementById('att-v2-first-in');
-                const expectedOutEl = document.getElementById('att-v2-expected-out');
-                
-                if (productionInterval) clearInterval(productionInterval);
-                accumulatedSeconds = status.today_hours_secs || (status.today_hours || 0) * 3600;
-
-                if (status.is_punched_in) {
-                    if (punchBtn) {
-                        punchBtn.textContent = 'Punch Out';
-                        punchBtn.className = 'att-punch-btn punch-out';
-                    }
-                    if (badge) {
-                        badge.textContent = 'Punched In';
-                        badge.className = 'att-status-badge att-status-active';
-                    }
-                    
-                    if (status.last_punch_ts) {
-                        punchStartTime = status.last_punch_ts;
-                        updateLiveTimer();
-                        productionInterval = setInterval(updateLiveTimer, 1000);
-                    }
-                } else {
-                    if (punchBtn) {
-                        punchBtn.textContent = 'Punch In';
-                        punchBtn.className = 'att-punch-btn punch-in';
-                    }
-                    if (badge) {
-                        badge.textContent = 'Not Punched';
-                        badge.className = 'att-status-badge att-status-inactive';
-                    }
-                    punchStartTime = null;
-                    
-                    // Reset timer display
-                    const h = Math.floor(accumulatedSeconds / 3600);
-                    const m = Math.floor((accumulatedSeconds % 3600) / 60);
-                    const s = Math.floor(accumulatedSeconds % 60);
-                    if (document.getElementById('att-v2-hh')) document.getElementById('att-v2-hh').textContent = h < 10 ? '0' + h : h;
-                    if (document.getElementById('att-v2-mm')) document.getElementById('att-v2-mm').textContent = m < 10 ? '0' + m : m;
-                    if (document.getElementById('att-v2-ss')) document.getElementById('att-v2-ss').textContent = s < 10 ? '0' + s : s;
-                }
-
-                // Update Stats (First In / Expected Out)
-                if (status.first_punch_in) {
-                    const firstDate = new Date(status.first_punch_in);
-                    const firstStr = firstDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-                    if (firstInEl) firstInEl.textContent = firstStr;
-                    
-                    // Expected = First In + 8 hours
-                    const expDate = new Date(firstDate.getTime() + (8 * 60 * 60 * 1000));
-                    const expStr = expDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-                    if (expectedOutEl) expectedOutEl.textContent = expStr;
-                } else {
-                    if (firstInEl) firstInEl.textContent = '--:--';
-                    if (expectedOutEl) expectedOutEl.textContent = '--:--';
-                }
-
-                // Update KPIs
                 const hoursToday = document.getElementById('kpi-hours-today');
                 const hoursWeek = document.getElementById('kpi-hours-week');
                 const hoursMonth = document.getElementById('kpi-hours-month');
                 if (hoursToday) hoursToday.textContent = (status.today_hours || 0).toFixed(2);
                 if (hoursWeek) hoursWeek.textContent = (status.week_hours || 0).toFixed(2);
                 if (hoursMonth) hoursMonth.textContent = (status.month_hours || 0).toFixed(2);
-
-                // Restore button state
-                if (punchBtn) punchBtn.classList.remove('loading');
-
-            } catch (e) {
-                console.error('Refresh Attendance Error:', e);
-            }
+            } catch (e) { console.error(e); }
         }
 
-        initAttendance();
-
+        updateHeaderContext();
+        if (!isAdmin) {
+            initAttendance().then(refreshDashboardKPIs);
+        }
         // ── Utility ─────────────────────────────────────────────────────
-        function getInitials(name) {
-            if (!name) return '??';
-            const parts = name.trim().split(' ').filter(part => part.length > 0);
-            if (parts.length === 1) {
-                return parts[0].substring(0, 2).toUpperCase();
-            }
-            return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
-        }
 
         function timeAgo(dateStr) {
             if (!dateStr) return '—';
@@ -1783,7 +1714,7 @@
 
         // ── Activity Feed ─────────────────────────────────────────────────
         const ACTION_META = {
-            CREATE: { icon: 'bi-plus-lg', bg: '#e0e7ff', color: '#4f46e5', label: 'Created' },
+            CREATE: { icon: 'bi-plus-lg', bg: '#e0e7ff', color: '#2563eb', label: 'Created' },
             UPDATE: { icon: 'bi-pencil-fill', bg: '#e0f2fe', color: '#0ea5e9', label: 'Updated' },
             DELETE: { icon: 'bi-trash-fill', bg: '#ffe4e6', color: '#e11d48', label: 'Deleted' },
             LOGIN: { icon: 'bi-box-arrow-in-right', bg: '#dcfce7', color: '#16a34a', label: 'Logged in' },
@@ -1813,7 +1744,7 @@
                     CLIENT: { bg: '#ecfdf5', color: '#059669' },
                     ISSUE: { bg: '#fff1f2', color: '#e11d48' },
                     VISIT: { bg: '#fffbeb', color: '#d97706' },
-                    PROJECT: { bg: '#eef2ff', color: '#4f46e5' },
+                    PROJECT: { bg: '#eef2ff', color: '#2563eb' },
                     LEAD: { bg: '#f0f9ff', color: '#0369a1' },
                 };
                 feed.innerHTML = logs.map(log => {
@@ -1904,7 +1835,7 @@
                 </div>`;
 
             const pastelPairs = [
-                { bg: '#eef2ff', fg: '#4f46e5' },
+                { bg: '#eef2ff', fg: '#2563eb' },
                 { bg: '#ecfdf5', fg: '#059669' },
                 { bg: '#fffbeb', fg: '#d97706' },
                 { bg: '#fef2f2', fg: '#dc2626' },
@@ -1930,7 +1861,7 @@
                             <div class="fw-semibold text-truncate" style="font-size:0.84rem;color:#0f172a;">
                                 ${c.name}${org ? ` <span style="font-weight:400;color:#94a3b8;font-size:0.75rem;">&middot; ${org}</span>` : ''}
                             </div>
-                            <div style="font-size:0.72rem;color:#94a3b8;">${pm ? `PM: <span style="color:#4f46e5;font-weight:600;">${pm}</span>` : '<span style="color:#cbd5e1;">Unassigned</span>'}</div>
+                            <div style="font-size:0.72rem;color:#94a3b8;">${pm ? `PM: <span style="color:#2563eb;font-weight:600;">${pm}</span>` : '<span style="color:#cbd5e1;">Unassigned</span>'}</div>
                         </div>
                     </div>`;
                 }).join('');
@@ -1955,7 +1886,7 @@
                     return;
                 }
                 const pastelColors = ['#eef2ff', '#ecfdf5', '#fffbeb', '#fef2f2', '#f0f9ff'];
-                const textColors = ['#4f46e5', '#059669', '#d97706', '#dc2626', '#0ea5e9'];
+                const textColors = ['#2563eb', '#059669', '#d97706', '#dc2626', '#0ea5e9'];
                 el.innerHTML = emps.map((e, idx) => {
                     const initials = getInitials(e.name || 'Employee');
                     const name = e.name || `Employee #${e.id}`;
@@ -2007,7 +1938,7 @@
                             {
                                 label: 'In Demo',
                                 data: inDemoData,
-                                backgroundColor: '#4f46e5',
+                                backgroundColor: '#2563eb',
                                 borderRadius: 4
                             },
                             {
