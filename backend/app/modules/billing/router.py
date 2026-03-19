@@ -246,6 +246,7 @@ def list_invoices(
     payment_type: Optional[str] = None,
     gst_type: Optional[str] = None,
     search: Optional[str] = None,
+    shop_id: Optional[int] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_access),
 ) -> Any:
@@ -259,6 +260,7 @@ def list_invoices(
     payment_type=payment_type,
     gst_type=gst_type,
     search=search,
+    shop_id=shop_id,
   )
 
 

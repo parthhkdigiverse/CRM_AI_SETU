@@ -614,9 +614,46 @@ class ShopService:
     # ── Cancel a scheduled demo on the shop ──
     @staticmethod
     def cancel_demo(db: Session, shop_id: int, current_user: User):
+        from app.modules.visits.models import Visit, VisitStatus
+        from app.modules.timetable.models import TimetableEvent
+        from datetime import timedelta
+
         shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_deleted == False).first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
+
+        # ── Archive the cancelled demo before wiping it ──
+        demo_time = shop.demo_scheduled_at
+        pm_id = shop.project_manager_id or (current_user.id if current_user else None)
+        pm_name = None
+        if getattr(shop, 'project_manager', None):
+            pm_name = shop.project_manager.name or shop.project_manager.email
+        elif current_user:
+            pm_name = current_user.name or current_user.email
+
+        if demo_time and pm_id:
+            # Permanent Visit record for the Lead Timeline
+            archive_visit = Visit(
+                shop_id=shop.id,
+                user_id=pm_id,
+                status=VisitStatus.CANCELLED,
+                remarks="Product Demo Session was Cancelled.",
+                visit_date=demo_time,
+                duration_seconds=0
+            )
+            db.add(archive_visit)
+
+            # Permanent TimetableEvent record for the Calendar
+            tt_event = TimetableEvent(
+                user_id=pm_id,
+                title=f"Demo: {shop.name} (Cancelled)",
+                assignee_name=pm_name or "Project Manager",
+                date=demo_time.date(),
+                start_time=demo_time.time(),
+                end_time=(demo_time + timedelta(hours=1)).time(),
+                location=getattr(shop, 'demo_meet_link', None) or "Cancelled Demo"
+            )
+            db.add(tt_event)
 
         shop.demo_scheduled_at = None
         shop.demo_title = None

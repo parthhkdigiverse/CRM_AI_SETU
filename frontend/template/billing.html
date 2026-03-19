@@ -782,12 +782,18 @@
             const p = normalizeWhatsAppPhone(rawPhone);
             return p ? `https://wa.me/${p}` : '';
         }
-        function statusPill(st, phone = '') {
+        function statusPill(b, st, phone = '') {
             const s = STATUS_MAP[st] || { cls: 'pill-draft', icon: 'bi-dot', label: st };
+
+            // 🚀 NEW: Make the SENT pill a clickable Resend button!
             if (st === 'SENT') {
-                const waUrl = buildWhatsAppChatUrl(phone);
-                if (waUrl) return `<a href="${waUrl}" target="_blank" class="inv-pill ${s.cls}" style="text-decoration:none;"><i class="bi ${s.icon}"></i>${s.label}</a>`;
+                const cName = String(b.invoice_client_name || '').replace(/'/g, "\\'");
+                const iNo = String(b.invoice_number || '').replace(/'/g, "\\'");
+                return `<span class="inv-pill ${s.cls} shadow-sm" style="cursor:pointer;" onclick="openWAModal(${b.id}, '${cName}', '${iNo}', '${phone}')" title="Resend via WhatsApp">
+                            <i class="bi ${s.icon}"></i>${s.label} <i class="bi bi-arrow-repeat ms-1 opacity-75"></i>
+                        </span>`;
             }
+
             return `<span class="inv-pill ${s.cls}"><i class="bi ${s.icon}"></i>${s.label}</span>`;
         }
 
@@ -954,7 +960,7 @@
                 if (canVerifyRow && (st === 'PENDING_VERIFICATION' || st === 'DRAFT')) {
                     actions += `<button class="action-menu-btn me-1" title="Verify Invoice" onclick="openVerifyModal(${b.id},'${b.invoice_number}')" style="color:#15803D;border-color:#bbf7d0;background:#F0FDF4;"><i class="bi bi-patch-check"></i></button>`;
                 }
-                if (canSendRow && st === 'VERIFIED') {
+                if (canSendRow && (st === 'VERIFIED' || st === 'SENT')) {
                     actions += `<button class="action-menu-btn" title="Send via WhatsApp" onclick="openWAModal(${b.id},\`${clientDisplay}\`,\`${b.invoice_number}\`,\`${phone}\`)" style="color:#1565C0;border-color:#bfdbfe;background:#EFF6FF;"><i class="bi bi-whatsapp"></i></button>`;
                 }
                 if (rowActions.can_archive) actions += `<button class="action-menu-btn ms-1" title="Archive" onclick="archiveInvoice(${b.id},'${b.invoice_number || ''}')" style="color:#92400e;border-color:#fde68a;background:#fffbeb;"><i class="bi bi-archive"></i></button>`;
@@ -971,7 +977,7 @@
             <td><span class="inv-pill pill-draft">${paymentTypeLabel}</span></td>
             <td><span class="inv-pill ${b.gst_type === 'WITHOUT_GST' ? 'pill-draft' : 'pill-verified'}">${gstTypeLabel}</span></td>
             <td class="amt-cell">₹${Number(b.amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
-            <td><div class="d-flex align-items-center">${statusPill(st, phone)}</div></td>
+            <td><div class="d-flex align-items-center">${statusPill(b, st, phone)}</div></td>
             <td class="text-muted small">${dt}</td>
             <td class="text-end" style="white-space:nowrap;">${actions}</td>
         </tr>`;
@@ -1339,18 +1345,34 @@
         }
         function closeWAModal() { document.getElementById('waModal').classList.add('d-none'); }
 
+        // async function submitSendWhatsApp() {
+        //     const btn = document.getElementById('wa-send-btn');
+        //     btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+        //     try {
+        //         await ApiClient.getWhatsAppHealth();
+        //         const waRes = await ApiClient.sendInvoiceWhatsApp(pendingActionBillId);
+        //         const waUrl = waRes?.wa_url || buildWhatsAppChatUrl(pendingActionPhone);
+        //         closeWAModal(); showToast('Invoice sent via WhatsApp! Client auto-created if new.', 'success');
+        //         if (waUrl) window.open(waUrl, '_blank');
+        //         await loadBills();
+        //     } catch (e) { showToast(e.data?.detail || e.message || 'Failed to send', 'error'); }
+        //     finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-whatsapp me-2"></i>Send Invoice'; }
+        // }
         async function submitSendWhatsApp() {
             const btn = document.getElementById('wa-send-btn');
             btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
             try {
                 await ApiClient.getWhatsAppHealth();
-                const waRes = await ApiClient.sendInvoiceWhatsApp(pendingActionBillId);
-                const waUrl = waRes?.wa_url || buildWhatsAppChatUrl(pendingActionPhone);
-                closeWAModal(); showToast('Invoice sent via WhatsApp! Client auto-created if new.', 'success');
-                if (waUrl) window.open(waUrl, '_blank');
+                await ApiClient.sendInvoiceWhatsApp(pendingActionBillId);
+
+                closeWAModal();
+                showToast('Invoice sent silently via Meta Cloud API!', 'success');
                 await loadBills();
-            } catch (e) { showToast(e.data?.detail || e.message || 'Failed to send', 'error'); }
-            finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-whatsapp me-2"></i>Send Invoice'; }
+            } catch (e) {
+                showToast(e.data?.detail || e.message || 'Failed to send', 'error');
+            } finally {
+                btn.disabled = false; btn.innerHTML = '<i class="bi bi-whatsapp me-2"></i>Send Invoice';
+            }
         }
 
         // ── Settings ────────────────────────────────────────────────────────────────

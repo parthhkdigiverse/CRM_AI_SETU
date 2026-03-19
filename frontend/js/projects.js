@@ -260,14 +260,49 @@ async function loadVisitHistory(shopId) {
     const historyContainer = document.getElementById('visit-history-section');
     if (!historyContainer) return;
 
-    historyContainer.innerHTML = '<div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm me-2"></span>Loading visit history...</div>';
+    historyContainer.innerHTML = '<div class="text-center text-muted py-4"><span class="spinner-border spinner-border-sm me-2"></span>Loading 360° timeline...</div>';
 
     try {
-        const visits = await window.ApiClient.request(`/visits/?shop_id=${shopId}`);
-        let totalInteractions = visits ? visits.length : 0;
+        // 🚀 NEW: Bulletproof Fetching with Error Logging
+        let visitsRes = [];
+        let invoicesRes = [];
+
+        try {
+            visitsRes = await window.ApiClient.request(`/visits/?shop_id=${shopId}`);
+        } catch (e) {
+            console.warn("Visits fetch failed:", e);
+        }
+
+        try {
+            // If this fails, we will see it in the Chrome Console!
+            invoicesRes = await window.ApiClient.request(`/billing?shop_id=${shopId}&archived=ALL`);
+            console.log("📦 Raw Invoices Response:", invoicesRes);
+        } catch (e) {
+            console.error("❌ Invoices fetch failed! The endpoint might be /billing/invoices/ instead of /invoices/", e);
+        }
+
+        // Safely extract visits
+        const visits = Array.isArray(visitsRes) ? visitsRes : (visitsRes.items || visitsRes.data || []);
+
+        // 🚀 NEW: Bulletproof Invoice Extraction (Checks every possible JSON wrapper)
+        let invoices = [];
+        if (Array.isArray(invoicesRes)) {
+            invoices = invoicesRes;
+        } else if (invoicesRes) {
+            invoices = invoicesRes.items || invoicesRes.data || invoicesRes.invoices || [];
+        }
+
+        // 🚀 OVERRIDE THE UI: If an invoice exists, morph the Action Center into the Live Tracker!
+        if (currentProject && currentProject.pipeline_stage === "DELIVERY" && invoices.length > 0) {
+            // Sort to ensure we grab the absolute latest invoice
+            const sortedInvs = [...invoices].sort((a, b) => new Date(b.created_at || new Date()) - new Date(a.created_at || new Date()));
+            updateActionCenterForExistingInvoice(sortedInvs[0]);
+        }
+
+        let totalInteractions = visits.length + invoices.length;
         let demoCardHtml = '';
 
-        // 1. Virtual Card for UPCOMING Demos only
+        // 1. Virtual Card for UPCOMING Demos
         if (currentProject && currentProject.demo_scheduled_at) {
             totalInteractions += 1;
             const demoDate = new Date(currentProject.demo_scheduled_at).toLocaleString('en-IN', {
@@ -295,29 +330,106 @@ async function loadVisitHistory(shopId) {
             historyContainer.innerHTML = `
                 <div class="text-center p-4 border rounded" style="background: #f8fafc; border-style: dashed !important;">
                     <i class="bi bi-clock-history text-muted mb-2" style="font-size: 1.5rem; display: block;"></i>
-                    <span class="text-muted small">No past visits or demos recorded for this lead yet.</span>
+                    <span class="text-muted small">No past visits, demos, or invoices recorded yet.</span>
                 </div>`;
             return;
         }
 
-        const visitCountText = totalInteractions > 1 ? `${totalInteractions} Interactions` : `1 Interaction`;
+        const visitCountText = totalInteractions > 1 ? `${totalInteractions} Records` : `1 Record`;
         let html = `
             <div class="d-flex align-items-center mb-3">
-                <h6 class="fw-bold mb-0 text-uppercase" style="letter-spacing: 0.5px; font-size: 0.8rem; color: #64748b;">Past Interactions</h6>
+                <h6 class="fw-bold mb-0 text-uppercase" style="letter-spacing: 0.5px; font-size: 0.8rem; color: #64748b;">360° Interaction Timeline</h6>
                 <span class="badge bg-primary text-white rounded-pill ms-2 shadow-sm" style="font-size: 0.65rem; padding: 0.35em 0.65em;">${visitCountText}</span>
             </div>`;
 
         html += demoCardHtml; // Inject upcoming demo at the top
 
-        // 3. Render Historical Visits & Completed Demos
-        if (visits && visits.length > 0) {
-            visits.forEach(v => {
-                const visitDate = new Date(v.visit_date).toLocaleString('en-IN', {
-                    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                });
+        // 3. MERGE AND SORT ALL TIMELINE EVENTS
+        let timelineEvents = [];
+
+        visits.forEach(v => {
+            timelineEvents.push({ type: 'VISIT', dateObj: new Date(v.visit_date), data: v });
+        });
+
+        invoices.forEach(inv => {
+            // Use created_at, issue_date, or fallback to current time
+            timelineEvents.push({ type: 'INVOICE', dateObj: new Date(inv.created_at || inv.issue_date || new Date()), data: inv });
+        });
+
+        // Sort everything Newest First!
+        timelineEvents.sort((a, b) => b.dateObj - a.dateObj);
+
+        // 4. RENDER LOOP
+        timelineEvents.forEach(event => {
+            const dateStr = event.dateObj.toLocaleString('en-IN', {
+                day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+
+            // ==========================================
+            // 📝 INVOICE CARD UI
+            // ==========================================
+            if (event.type === 'INVOICE') {
+                const inv = event.data;
+                
+                // 🚀 FIX: We now explicitly check "invoice_status", which perfectly matches the Billing Dashboard!
+                const st = inv.invoice_status || inv.status || 'DRAFT';
+                const statusStr = String(st).toUpperCase();
+                
+                // Dynamic styling perfectly mirrored from billing.html
+                let bgGradient = 'linear-gradient(to right, #f8fafc, #f1f5f9)';
+                let borderLeft = '4px solid #94a3b8';
+                let iconColor = '#475569';
+                let badgeClass = 'bg-secondary';
+                let statusIcon = 'bi-file-earmark-text';
+                let finalBadgeText = st;
+
+                if (statusStr === 'VERIFIED') {
+                    // 🟩 Green for Verified
+                    bgGradient = 'linear-gradient(to right, #f0fdf4, #dcfce7)'; borderLeft = '4px solid #10b981'; iconColor = '#047857'; badgeClass = 'bg-success'; statusIcon = 'bi-patch-check';
+                    finalBadgeText = 'VERIFIED';
+                } else if (statusStr === 'SENT' || statusStr === 'CONFIRMED') {
+                    // 🟦 Blue for Sent via WhatsApp
+                    bgGradient = 'linear-gradient(to right, #eff6ff, #dbeafe)'; borderLeft = '4px solid #3b82f6'; iconColor = '#1d4ed8'; badgeClass = 'bg-primary'; statusIcon = 'bi-whatsapp';
+                    finalBadgeText = statusStr;
+                } else if (statusStr === 'PENDING_VERIFICATION' || statusStr === 'PENDING') {
+                    // 🟧 Orange for Pending Review
+                    bgGradient = 'linear-gradient(to right, #fffbeb, #fef3c7)'; borderLeft = '4px solid #f59e0b'; iconColor = '#b45309'; badgeClass = 'bg-warning text-dark'; statusIcon = 'bi-hourglass-split';
+                    finalBadgeText = 'PENDING REVIEW';
+                } else if (statusStr === 'CANCELLED') {
+                    // 🟥 Red for Cancelled
+                    bgGradient = 'linear-gradient(to right, #fef2f2, #fee2e2)'; borderLeft = '4px solid #ef4444'; iconColor = '#b91c1c'; badgeClass = 'bg-danger'; statusIcon = 'bi-x-circle';
+                    finalBadgeText = 'CANCELLED';
+                }
+
+                const amount = inv.total_amount || inv.amount || 0;
+                const formattedAmount = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+
+                html += `
+                    <div class="card mb-3 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden; background: ${bgGradient}; border-left: ${borderLeft} !important;">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="fw-bold mb-1" style="color: ${iconColor};"><i class="bi bi-receipt me-1"></i> Billing Invoice Generated</h6>
+                                    <div class="text-muted small mb-1"><i class="bi bi-calendar3 me-1"></i>${dateStr}</div>
+                                    <div class="text-muted mt-2" style="font-size: 0.8rem;">Invoice #: <span class="fw-bold text-dark">${inv.invoice_number || 'Draft'}</span></div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge ${badgeClass} shadow-sm mb-2 text-uppercase" style="letter-spacing: 0.5px;"><i class="bi ${statusIcon} me-1"></i>${finalBadgeText}</span>
+                                    <h5 class="fw-bold text-dark mb-0">${formattedAmount}</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+            
+            // ==========================================
+            // 🏃‍♂️ VISIT & DEMO CARDS UI
+            // ==========================================
+            else if (event.type === 'VISIT') {
+                const v = event.data;
                 const repName = v.user_name || (v.user && (v.user.full_name || v.user.name)) || 'Unknown Rep';
 
-                // 🚀 NEW: Special green card for completed demos logged by the backend!
+                // Completed Demo
                 if (v.status === 'COMPLETED') {
                     html += `
                         <div class="card mb-3 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden; background: linear-gradient(to right, #f0fdf4, #dcfce7); border-left: 4px solid #10b981 !important;">
@@ -325,58 +437,75 @@ async function loadVisitHistory(shopId) {
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <div>
                                         <h6 class="fw-bold mb-1" style="color: #047857;"><i class="bi bi-display me-1"></i> Product Demo Completed</h6>
-                                        <div class="text-muted small mb-1"><i class="bi bi-calendar3 me-1"></i>${visitDate}</div>
+                                        <div class="text-muted small mb-1"><i class="bi bi-calendar3 me-1"></i>${dateStr}</div>
                                         <div class="text-muted mt-2" style="font-size: 0.8rem;"><i class="bi bi-person-check text-secondary me-1"></i>Hosted by PM: <span class="fw-bold text-dark">${repName}</span></div>
                                     </div>
                                     <span class="badge bg-success shadow-sm"><i class="bi bi-check-circle-fill me-1"></i>Done</span>
                                 </div>
                             </div>
                         </div>`;
-                    return; // Skip drawing the regular visit layout
                 }
-
-                // Standard Field Visit Layout
-                const duration = v.duration_seconds ? formatTime(v.duration_seconds) : '00:00:00';
-                const statusColors = { 'SATISFIED': 'text-primary', 'ACCEPT': 'text-success', 'TAKE_TIME_TO_THINK': 'text-warning', 'DECLINE': 'text-danger', 'OTHER': 'text-secondary' };
-                const statusColor = statusColors[v.status] || 'text-dark';
-                
-                const formatImgUrl = (path) => {
-                    if (!path) return '';
-                    if (path.startsWith('http')) return path;
-                    const baseUrl = window.ApiClient.API_BASE_URL ? window.ApiClient.API_BASE_URL.split('/api')[0] : window.location.origin;
-                    return baseUrl + path;
-                };
-
-                let photosHtml = '<div class="mt-3 d-flex gap-2 flex-wrap">';
-                if (v.storefront_photo_url) photosHtml += `<div class="text-center"><img src="${formatImgUrl(v.storefront_photo_url)}" alt="Storefront" class="img-thumbnail shadow-sm bg-white" style="max-height: 120px; border-radius: 8px; cursor: pointer; object-fit: cover;" onclick="window.open(this.src, '_blank')"><div class="small text-muted mt-1 fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Storefront</div></div>`;
-                if (v.selfie_photo_url) photosHtml += `<div class="text-center"><img src="${formatImgUrl(v.selfie_photo_url)}" alt="Selfie" class="img-thumbnail shadow-sm bg-white" style="max-height: 120px; border-radius: 8px; cursor: pointer; object-fit: cover;" onclick="window.open(this.src, '_blank')"><div class="small text-muted mt-1 fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Rep Selfie</div></div>`;
-                if (!v.storefront_photo_url && !v.selfie_photo_url && v.photo_url) photosHtml += `<div class="text-center"><img src="${formatImgUrl(v.photo_url)}" alt="Visit Photo" class="img-thumbnail shadow-sm bg-white" style="max-height: 120px; border-radius: 8px; cursor: pointer; object-fit: cover;" onclick="window.open(this.src, '_blank')"><div class="small text-muted mt-1 fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Photo</div></div>`;
-                photosHtml += '</div>';
-
-                html += `
-                    <div class="card mb-3 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <h6 class="fw-bold mb-1 ${statusColor}"><i class="bi bi-record-circle me-1"></i>${v.status || 'VISIT'}</h6>
-                                    <div class="text-muted small mb-1"><i class="bi bi-calendar3 me-1"></i>${visitDate}</div>
-                                    <div class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-person-badge text-secondary me-1"></i>Visited by: <span class="fw-bold text-dark">${repName}</span></div>
+                // Cancelled Demo
+                else if (v.status === 'CANCELLED') {
+                    html += `
+                        <div class="card mb-3 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden; background: linear-gradient(to right, #fff1f2, #ffe4e6); border-left: 4px solid #e11d48 !important;">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="fw-bold mb-1" style="color: #be123c;"><i class="bi bi-x-octagon me-1"></i> Product Demo Cancelled</h6>
+                                        <div class="text-muted small mb-1"><i class="bi bi-calendar3 me-1"></i>${dateStr}</div>
+                                        <div class="text-muted mt-2" style="font-size: 0.8rem;"><i class="bi bi-person-x text-secondary me-1"></i>Cancelled by: <span class="fw-bold text-dark">${repName}</span></div>
+                                    </div>
+                                    <span class="badge bg-danger shadow-sm"><i class="bi bi-x me-1"></i>Cancelled</span>
                                 </div>
-                                <span class="badge bg-light text-dark border"><i class="bi bi-stopwatch me-1"></i>${duration}</span>
                             </div>
-                            <div class="mt-3 p-3 bg-light rounded text-dark" style="font-size: 0.9rem;">
-                                <strong>Remarks:</strong> ${v.remarks || '<span class="text-muted fst-italic">No remarks provided.</span>'}
-                                ${v.decline_remarks ? `<br><strong class="text-danger mt-1 d-block">Decline Reason:</strong> ${v.decline_remarks}` : ''}
+                        </div>`;
+                }
+                // Standard Physical Visit
+                else {
+                    const duration = v.duration_seconds ? formatTime(v.duration_seconds) : '00:00:00';
+                    const statusColors = { 'SATISFIED': 'text-primary', 'ACCEPT': 'text-success', 'TAKE_TIME_TO_THINK': 'text-warning', 'DECLINE': 'text-danger', 'OTHER': 'text-secondary' };
+                    const statusColor = statusColors[v.status] || 'text-dark';
+
+                    const formatImgUrl = (path) => {
+                        if (!path) return '';
+                        if (path.startsWith('http')) return path;
+                        const baseUrl = window.ApiClient.API_BASE_URL ? window.ApiClient.API_BASE_URL.split('/api')[0] : window.location.origin;
+                        return baseUrl + path;
+                    };
+
+                    let photosHtml = '<div class="mt-3 d-flex gap-2 flex-wrap">';
+                    if (v.storefront_photo_url) photosHtml += `<div class="text-center"><img src="${formatImgUrl(v.storefront_photo_url)}" alt="Storefront" class="img-thumbnail shadow-sm bg-white" style="max-height: 120px; border-radius: 8px; cursor: pointer; object-fit: cover;" onclick="window.open(this.src, '_blank')"><div class="small text-muted mt-1 fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Storefront</div></div>`;
+                    if (v.selfie_photo_url) photosHtml += `<div class="text-center"><img src="${formatImgUrl(v.selfie_photo_url)}" alt="Selfie" class="img-thumbnail shadow-sm bg-white" style="max-height: 120px; border-radius: 8px; cursor: pointer; object-fit: cover;" onclick="window.open(this.src, '_blank')"><div class="small text-muted mt-1 fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Rep Selfie</div></div>`;
+                    if (!v.storefront_photo_url && !v.selfie_photo_url && v.photo_url) photosHtml += `<div class="text-center"><img src="${formatImgUrl(v.photo_url)}" alt="Visit Photo" class="img-thumbnail shadow-sm bg-white" style="max-height: 120px; border-radius: 8px; cursor: pointer; object-fit: cover;" onclick="window.open(this.src, '_blank')"><div class="small text-muted mt-1 fw-bold" style="font-size: 0.7rem; text-transform: uppercase;">Photo</div></div>`;
+                    photosHtml += '</div>';
+
+                    html += `
+                        <div class="card mb-3 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="fw-bold mb-1 ${statusColor}"><i class="bi bi-record-circle me-1"></i>${v.status || 'VISIT'}</h6>
+                                        <div class="text-muted small mb-1"><i class="bi bi-calendar3 me-1"></i>${dateStr}</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-person-badge text-secondary me-1"></i>Visited by: <span class="fw-bold text-dark">${repName}</span></div>
+                                    </div>
+                                    <span class="badge bg-light text-dark border"><i class="bi bi-stopwatch me-1"></i>${duration}</span>
+                                </div>
+                                <div class="mt-3 p-3 bg-light rounded text-dark" style="font-size: 0.9rem;">
+                                    <strong>Remarks:</strong> ${v.remarks || '<span class="text-muted fst-italic">No remarks provided.</span>'}
+                                    ${v.decline_remarks ? `<br><strong class="text-danger mt-1 d-block">Decline Reason:</strong> ${v.decline_remarks}` : ''}
+                                </div>
+                                ${photosHtml}
                             </div>
-                            ${photosHtml}
-                        </div>
-                    </div>`;
-            });
-        }
+                        </div>`;
+                }
+            }
+        });
+
         historyContainer.innerHTML = html;
     } catch (error) {
-        console.error("Failed to load history:", error);
-        historyContainer.innerHTML = '<div class="text-center text-danger py-3 small"><i class="bi bi-exclamation-triangle me-1"></i> Could not load visit history.</div>';
+        console.error("Failed to load 360 history:", error);
+        historyContainer.innerHTML = '<div class="text-center text-danger py-3 small"><i class="bi bi-exclamation-triangle me-1"></i> Could not load full timeline.</div>';
     }
 }
 
@@ -662,3 +791,89 @@ function stopTimer() { clearInterval(visitTimerInterval); visitTimerInterval = n
 function formatTime(sec) { return `${String(Math.floor(sec / 3600)).padStart(2, '0')}:${String(Math.floor((sec % 3600) / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`; }
 
 document.addEventListener('DOMContentLoaded', loadHubData);
+
+// 🚀 NEW: Futuristic Billing Status Dashboard
+function updateActionCenterForExistingInvoice(inv) {
+    const actionContainer = document.querySelector('.action-center');
+    if (!actionContainer) return;
+
+    // Grab the true status exactly like our timeline does
+    const st = inv.invoice_status || inv.status || 'DRAFT';
+    const statusStr = String(st).toUpperCase();
+
+    // Logic for the glowing progress tracker
+    let step1 = 'active', step2 = '', step3 = '';
+    let badgeClass = 'bg-warning text-dark', statusText = 'PENDING ADMIN REVIEW';
+    let glowColor = 'rgba(245, 158, 11, 0.3)'; // Neon Orange Glow
+
+    if (statusStr === 'VERIFIED') {
+        step2 = 'active';
+        badgeClass = 'bg-success';
+        statusText = 'VERIFIED - READY TO SEND';
+        glowColor = 'rgba(16, 185, 129, 0.3)'; // Neon Green Glow
+    } else if (statusStr === 'SENT' || statusStr === 'CONFIRMED') {
+        step2 = 'active'; step3 = 'active';
+        badgeClass = 'bg-primary';
+        statusText = 'DISPATCHED TO CLIENT';
+        glowColor = 'rgba(59, 130, 246, 0.3)'; // Neon Blue Glow
+    } else if (statusStr === 'CANCELLED') {
+        badgeClass = 'bg-danger';
+        statusText = 'INVOICE CANCELLED';
+        glowColor = 'rgba(239, 68, 68, 0.3)'; // Neon Red Glow
+    }
+
+    const html = `
+        <div class="text-start p-4 rounded-4 position-relative overflow-hidden" style="background: linear-gradient(145deg, #0f172a, #1e293b); box-shadow: 0 10px 40px ${glowColor}; border: 1px solid #334155; transition: all 0.4s ease;">
+            <div class="position-absolute" style="top: -60px; right: -60px; width: 180px; height: 180px; background: ${glowColor}; filter: blur(60px); border-radius: 50%;"></div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4 position-relative" style="z-index: 2;">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-white bg-opacity-10 p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 54px; height: 54px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
+                        <i class="bi bi-receipt text-white fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0 text-white" style="letter-spacing: 0.5px;">Live Billing Tracker</h5>
+                        <div class="small" style="color: #94a3b8; font-family: monospace; font-size: 0.8rem;">${inv.invoice_number || 'Processing...'}</div>
+                    </div>
+                </div>
+                <span class="badge ${badgeClass} px-3 py-2 shadow-sm" style="font-size: 0.7rem; letter-spacing: 0.8px; border-radius: 8px;">${statusText}</span>
+            </div>
+
+            <div class="px-2 position-relative mb-4 mt-2" style="z-index: 2;">
+                <div class="d-flex justify-content-between position-relative">
+                    <div class="position-absolute" style="top: 16px; left: 10%; right: 10%; height: 2px; background: #334155; z-index: 0;"></div>
+                    <div class="position-absolute" style="top: 16px; left: 10%; height: 2px; background: #fff; box-shadow: 0 0 10px #fff; z-index: 0; width: ${step3 ? '80%' : (step2 ? '40%' : '0%')}; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+
+                    <div class="text-center position-relative" style="width: 30%; z-index: 1;">
+                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2 shadow-lg" style="width: 34px; height: 34px; background: ${step1 ? '#fff' : '#1e293b'}; color: ${step1 ? '#0f172a' : '#64748b'}; border: 2px solid ${step1 ? '#fff' : '#334155'}; transition: all 0.4s ease;">
+                            <i class="bi bi-file-earmark-plus-fill"></i>
+                        </div>
+                        <div class="small fw-bold text-uppercase" style="color: ${step1 ? '#f8fafc' : '#64748b'}; font-size: 0.65rem; letter-spacing: 1px;">Generated</div>
+                    </div>
+
+                    <div class="text-center position-relative" style="width: 30%; z-index: 1;">
+                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2 shadow-lg" style="width: 34px; height: 34px; background: ${step2 ? '#fff' : '#1e293b'}; color: ${step2 ? '#0f172a' : '#64748b'}; border: 2px solid ${step2 ? '#fff' : '#334155'}; transition: all 0.4s ease; transition-delay: 0.1s;">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div class="small fw-bold text-uppercase" style="color: ${step2 ? '#f8fafc' : '#64748b'}; font-size: 0.65rem; letter-spacing: 1px;">Verified</div>
+                    </div>
+
+                    <div class="text-center position-relative" style="width: 30%; z-index: 1;">
+                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2 shadow-lg" style="width: 34px; height: 34px; background: ${step3 ? '#fff' : '#1e293b'}; color: ${step3 ? '#0f172a' : '#64748b'}; border: 2px solid ${step3 ? '#fff' : '#334155'}; transition: all 0.4s ease; transition-delay: 0.2s;">
+                            <i class="bi bi-whatsapp"></i>
+                        </div>
+                        <div class="small fw-bold text-uppercase" style="color: ${step3 ? '#f8fafc' : '#64748b'}; font-size: 0.65rem; letter-spacing: 1px;">Dispatched</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 position-relative" style="z-index: 2;">
+                <button class="btn btn-light fw-bold flex-grow-1 shadow" style="border-radius: 10px; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'" onclick="window.location.href='billing.html'">
+                    Open Billing Dashboard <i class="bi bi-arrow-right ms-2"></i>
+                </button>
+            </div>
+        </div>
+    `;
+
+    actionContainer.innerHTML = html;
+}
