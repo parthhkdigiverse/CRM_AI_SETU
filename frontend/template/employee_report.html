@@ -63,14 +63,14 @@
 
         /* Modern Table Styles */
         .performance-table thead th {
-            background-color: #f1f5f9;
-            color: #334155;
+            background-color: #f8fafc;
+            color: #64748b;
             font-weight: 700;
             text-transform: uppercase;
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             letter-spacing: 0.05em;
             padding: 1.1rem 1.5rem;
-            border-bottom: 2px solid #e2e8f0;
+            border-bottom: 2px solid #f1f5f9;
         }
 
         .performance-table tbody td {
@@ -288,41 +288,20 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Metrics Summary -->
-                    <div class="row g-3 mb-4 text-center">
-                        <div class="col-4">
-                            <div class="p-2 border rounded-3">
-                                <div class="text-muted x-small fw-bold text-uppercase">Conversion</div>
-                                <div class="fw-bold text-primary" id="modal-conversion">0%</div>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="p-2 border rounded-3">
-                                <div class="text-muted x-small fw-bold text-uppercase">Target</div>
-                                <div class="fw-bold text-dark">₹2.5L</div>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="p-2 border rounded-3">
-                                <div class="text-muted x-small fw-bold text-uppercase">Rank</div>
-                                <div class="fw-bold text-warning">Top 5</div>
-                            </div>
-                        </div>
-                    </div>
-
+                    
                     <!-- Activity Table -->
                     <h6 class="fw-bold mb-3 d-flex align-items-center">
                         <i class="bi bi-clock-history me-2 text-primary"></i> Monthly Activity Details
                     </h6>
-                    <div class="table-responsive mb-4" style="max-height: 250px; overflow-y: auto;">
-                        <table class="table modal-activity-table table-sm align-middle">
-                            <thead>
+                    <div class="table-responsive mb-4 shadow-sm border rounded-4 bg-white" style="max-height: 250px; overflow-y: auto;">
+                        <table class="table modal-activity-table table-sm align-middle mb-0">
+                            <thead class="bg-light sticky-top" style="z-index: 5;">
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Client</th>
-                                    <th>Activity Type</th>
-                                    <th class="text-end">Status</th>
+                                    <th class="ps-3 py-2">Date</th>
+                                    <th>Client Name</th>
+                                    <th>Client Details</th>
+                                    <th>Project Instance</th>
+                                    <th class="text-end pe-3">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="modal-activity-tbody">
@@ -331,15 +310,31 @@
                         </table>
                     </div>
 
-                    <!-- Admin Notes -->
-                    <div class="p-3 border rounded-4 bg-light bg-opacity-50">
-                        <label class="form-label fw-bold small mb-2">Admin Performance Notes</label>
-                        <textarea id="admin-note" class="form-control border-0 bg-white" rows="3"
-                            placeholder="Add a private note regarding this employee's performance..."></textarea>
-                        <div class="text-end mt-2">
-                            <button class="btn btn-primary btn-sm px-4" onclick="saveAdminNote()">
-                                <i class="bi bi-save me-1"></i>Save Note
+                    <!-- Admin Notes Section -->
+                    <div class="p-4 border rounded-4 bg-light bg-opacity-50">
+                        <label class="form-label fw-bold text-dark mb-2 d-flex align-items-center">
+                            <i class="bi bi-pencil-square me-2 text-primary"></i> Performance Evaluation Notes
+                        </label>
+                        <textarea id="admin-note" class="form-control border shadow-sm mb-3" rows="3"
+                            placeholder="Add a private note regarding this employee's performance..."
+                            style="border-radius: 12px; font-size: 0.9rem;"></textarea>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <span class="text-muted x-small"><i class="bi bi-info-circle me-1"></i>Notes are persistent and only visible to authorized Admin users.</span>
+                            <button class="btn btn-primary px-4 fw-bold shadow-sm" style="border-radius: 10px;" id="save-note-btn">
+                                <i class="bi bi-send me-2"></i>Post Note
                             </button>
+                        </div>
+
+                        <!-- Note History Area -->
+                        <div id="note-history-container" class="d-none">
+                            <hr class="my-4 opacity-50">
+                            <h6 class="fw-bold mb-3 small text-uppercase letter-spacing-1 text-secondary d-flex align-items-center">
+                                <i class="bi bi-archive me-2"></i> Feedback History
+                            </h6>
+                            <div id="note-history-list" class="d-flex flex-column gap-3">
+                                <!-- Populated via JS from API -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -627,10 +622,6 @@
             document.getElementById('modal-emp-role').textContent = formatRole(role);
             document.getElementById('modal-emp-initials').textContent = name.split(' ').map(n => n[0]).join('').toUpperCase();
 
-            // Conversion logic
-            const visits = parseInt(leads) * 2.5; // Back-simulating visits for conversion view
-            const conversion = visits > 0 ? ((parseInt(leads) / visits) * 100).toFixed(1) : "0";
-            document.getElementById('modal-conversion').textContent = `${conversion}%`;
 
             // Populate actual activity data
             const activityTbody = document.getElementById('modal-activity-tbody');
@@ -639,16 +630,21 @@
             try {
                 const dateFrom = document.getElementById('date-from').value;
                 const dateTo = document.getElementById('date-to').value;
+
+                // Show modal AFTER setting up labels but BEFORE the potentially long API call
+                // modal.show(); // Removed as per instruction, will be called at the end
+
                 const activities = await apiGet(`/reports/employees/${id}/activities?start_date=${dateFrom}&end_date=${dateTo}`);
 
                 if (activities.length === 0) {
-                    activityTbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No activities found for this period.</td></tr>';
+                    activityTbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No activities found for this period.</td></tr>';
                 } else {
                     activityTbody.innerHTML = activities.map(a => `
                         <tr>
                             <td class="text-muted small">${new Date(a.date).toLocaleDateString()}</td>
-                            <td class="fw-bold small">${a.client}</td>
-                            <td><span class="badge bg-light text-dark x-small border">${a.type}</span></td>
+                            <td class="fw-bold small">${a.client_name}</td>
+                            <td class="text-muted small">${a.client_details}</td>
+                            <td class="small text-muted">${a.project}</td>
                             <td class="text-end">
                                 <span class="text-${a.status === 'Won' || a.status === 'SATISFIED' ? 'success' : 'primary'} fw-bold small">${a.status}</span>
                             </td>
@@ -656,26 +652,70 @@
                     `).join('');
                 }
             } catch (err) {
-                activityTbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-danger">Failed to load activity log.</td></tr>';
+                activityTbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-danger">Failed to load activity log.</td></tr>';
             }
 
-            // Load saved note if any (simulated)
-            const savedNote = localStorage.getItem(`emp_note_${id}`) || "";
-            document.getElementById('admin-note').value = savedNote;
-            document.getElementById('admin-note').setAttribute('data-current-emp', id);
+            // Register click handler for persistent saving
+            document.getElementById('save-note-btn').onclick = () => saveAdminNote(id);
+
+            // Fetch Note History from Database
+            fetchNoteHistory(id);
 
             modal.show();
         }
 
-        function saveAdminNote() {
+        async function fetchNoteHistory(empId) {
+            const list = document.getElementById('note-history-list');
+            const container = document.getElementById('note-history-container');
+            
+            try {
+                const notes = await apiGet(`/reports/employees/${empId}/notes`);
+
+                if (!notes || notes.length === 0) {
+                    container.classList.add('d-none');
+                    return;
+                }
+
+                container.classList.remove('d-none');
+                list.innerHTML = notes.map(n => {
+                    const dt = new Date(n.created_at).toLocaleString('en-IN', {
+                        day: '2-digit', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit', hour12: true
+                    });
+                    return `
+                    <div class="p-3 bg-white shadow-sm border-start border-4 border-primary" style="border-radius: 10px;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="badge bg-light text-muted fw-normal" style="font-size: 0.72rem;">
+                                <i class="bi bi-calendar3 me-1"></i> ${dt}
+                            </span>
+                        </div>
+                        <div class="text-dark small" style="line-height: 1.5; font-size: 0.88rem;">${n.note}</div>
+                    </div>`;
+                }).join('');
+            } catch (err) {
+                console.error("Failed to load note history", err);
+            }
+        }
+
+        async function saveAdminNote(empId) {
             const noteArea = document.getElementById('admin-note');
-            const empId = noteArea.getAttribute('data-current-emp');
-            const noteText = noteArea.value;
+            const noteText = noteArea.value.trim();
 
-            if (!empId) return;
+            if (!noteText) {
+                showToast("Please enter feedback text.", "warning");
+                return;
+            }
 
-            localStorage.setItem(`emp_note_${empId}`, noteText);
-            showToast("Performance note saved successfully!", "success");
+            try {
+                await apiPost(`/reports/employees/${empId}/notes`, { note: noteText });
+                
+                // Clear input and refresh
+                noteArea.value = '';
+                fetchNoteHistory(empId);
+                showToast("Feedback saved to database history!", "success");
+            } catch (err) {
+                showToast("Failed to save note: " + err.message, "danger");
+            }
         }
 
         document.addEventListener('DOMContentLoaded', initFilters);

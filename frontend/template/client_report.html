@@ -102,8 +102,8 @@
         }
 
         .table thead th {
-            background-color: #f1f5f9; /* Slate 100 */
-            color: var(--slate-800) !important;
+            background-color: #f8fafc; /* Slate 50 */
+            color: #64748b !important; /* Slate 500 */
             font-weight: 700;
             text-transform: uppercase;
             font-size: 0.7rem; /* Reduced from 0.75 */
@@ -137,11 +137,13 @@
             padding: 6px 12px;
             border-radius: 8px;
             letter-spacing: 0.02em;
+            text-transform: uppercase;
         }
-        .status-active { background: #e0e7ff; color: #4338ca; }
-        .status-completed { background: #dcfce7; color: #15803d; }
-        .status-hold { background: #fee2e2; color: #b91c1c; }
-
+        .status-planning { background: #fef9c3; color: #854d0e; } /* Open/Planning - Yellowish */
+        .status-ongoing { background: #e0e7ff; color: #4338ca; }  /* In Progress - Indigo */
+        .status-completed { background: #dcfce7; color: #15803d; } /* Resolved - Green */
+        .status-hold { background: #fee2e2; color: #b91c1c; }      /* Blocked - Red */
+        .status-cancelled { background: #f1f5f9; color: #475569; } /* Cancelled - Gray */
         .due-amount-pill {
             background: #fff1f2;
             color: #e11d48;
@@ -274,10 +276,11 @@
                         <select id="filter-status" class="form-select border-0 bg-light"
                             style="height: 46px; border-radius: 12px; font-weight: 500;">
                             <option value="">All Statuses</option>
-                            <option value="ACTIVE">Active / Ongoing</option>
-                            <option value="COMPLETED">Completed</option>
-                            <option value="ON_HOLD">On Hold</option>
-                            <option value="NEGOTIATION">Negotiation</option>
+                            <option value="OPEN">Planning</option>
+                            <option value="IN_PROGRESS">Ongoing</option>
+                            <option value="RESOLVED">Completed</option>
+                            <option value="BLOCKED">On Hold</option>
+                            <option value="CANCELLED">Cancelled</option>
                         </select>
                     </div>
                     <div class="pt-4">
@@ -404,8 +407,15 @@
                 const pColor = d.priority.toLowerCase() === 'high' ? 'priority-high' : 
                               (d.priority.toLowerCase() === 'low' ? 'priority-low' : 'priority-medium');
                 
-                const sClass = d.status.toUpperCase() === 'COMPLETED' ? 'status-completed' : 
-                              (d.status.toUpperCase() === 'ON_HOLD' ? 'status-hold' : 'status-active');
+                const statusMap = {
+                    'OPEN': { label: 'Planning', class: 'status-planning' },
+                    'IN_PROGRESS': { label: 'Ongoing', class: 'status-ongoing' },
+                    'RESOLVED': { label: 'Completed', class: 'status-completed' },
+                    'BLOCKED': { label: 'On Hold', class: 'status-hold' },
+                    'CANCELLED': { label: 'Cancelled', class: 'status-cancelled' }
+                };
+
+                const sInfo = statusMap[d.status.toUpperCase()] || { label: d.status, class: 'bg-light' };
                 
                 const progressPercent = d.totalAmount > 0 ? Math.round((d.paidAmount / d.totalAmount) * 100) : 0;
                 
@@ -434,7 +444,7 @@
                         </div>
                     </td>
                     <td class="text-center">
-                        <span class="status-badge ${sClass}" style="font-size: 0.65rem;">${d.status.replace('_', ' ')}</span>
+                        <span class="status-badge ${sInfo.class}" style="font-size: 0.65rem;">${sInfo.label}</span>
                     </td>
                     <td>
                         <div class="interaction-card" style="max-width: 180px;">

@@ -127,10 +127,10 @@ window.renderSidebar = function (active) {
     const roleName = String(role || '').toUpperCase();
     const fallbackPages = {
         ADMIN: ['*'],
-        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
-        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
-        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
-        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
+        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employee_report.html', 'client_report.html'],
+        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employee_report.html', 'client_report.html'],
+        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employee_report.html', 'client_report.html'],
+        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employee_report.html', 'client_report.html'],
         CLIENT: ['dashboard.html']
     };
     const effectivePolicy = window.__crmEffectiveAccessPolicy;
@@ -219,16 +219,15 @@ window.renderSidebar = function (active) {
     ];
     nav += sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', hrItems);
 
-    // REPORTS
+    // REPORTS & ANALYTICS
+    const rptItems = [];
     if (isAdmin || isPM || isSales || isTelesales) {
-        nav += sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
-            { id: 'employee_report', href: 'employee_report.html', icon: 'bi-person-badge', label: 'Employee Report' },
-            { id: 'client_report', href: 'client_report.html', icon: 'bi-people', label: 'Client Report' }
-        ]);
+        rptItems.push({ id: 'employee_report', href: 'employee_report.html', icon: 'bi-person-badge', label: 'Employee Report' });
+        rptItems.push({ id: 'client_report', href: 'client_report.html', icon: 'bi-people', label: 'Client Report' });
     }
-    nav += sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
-        { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
-    ]);
+    if (rptItems.length) {
+        nav += sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', rptItems);
+    }
 
     const userName = u?.name || u?.email || 'User';
     const initials = userName.slice(0, 2).toUpperCase();

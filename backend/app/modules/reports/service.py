@@ -13,6 +13,7 @@ from app.core.enums import GlobalTaskStatus
 from app.modules.payments.models import Payment, PaymentStatus
 from app.modules.salary.models import SalarySlip
 from app.modules.incentives.models import IncentiveSlip
+from app.modules.reports.models import PerformanceNote
 import io
 import csv
 from typing import List, Optional, Union, Any
@@ -289,7 +290,8 @@ class ReportService:
         user_id: Optional[Union[int, str]] = None
     ):
         # RBAC: Non-admins can only see their own performance metrics
-        if requesting_user.role != UserRole.ADMIN:
+        is_actually_admin = requesting_user.role == UserRole.ADMIN or str(requesting_user.role).upper() in ["ADMIN", "USERROLE.ADMIN"]
+        if not is_actually_admin:
             user_id = requesting_user.id
         elif user_id and str(user_id).lower() == 'all':
             user_id = None
@@ -535,30 +537,52 @@ class ReportService:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None
     ):
-        query = db.query(Visit).filter(Visit.user_id == user_id)
+        query = db.query(Visit).filter(Visit.user_id == user_id, Visit.is_deleted == False)
         
         if start_date:
-            query = query.filter(Visit.visit_date >= start_date)
+            try:
+                sd = datetime.strptime(start_date, '%Y-%m-%d')
+                query = query.filter(Visit.visit_date >= sd)
+            except ValueError:
+                pass
         if end_date:
-            query = query.filter(Visit.visit_date <= end_date)
+            try:
+                ed = datetime.strptime(end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+                query = query.filter(Visit.visit_date <= ed)
+            except ValueError:
+                pass
             
         visits = query.order_by(Visit.visit_date.desc()).all()
         activities = []
         
         for v in visits:
-            # Map visit type/status to a readable string format
-            act_type = "Site Visit"
-            if v.remarks:
-                act_type = v.remarks[:25] + "..." if len(v.remarks) > 25 else v.remarks
-
             activities.append({
                 "date": v.visit_date,
-                "client": v.shop.name if v.shop else "Unknown Client",
-                "type": act_type,
+                "client_name": v.shop.contact_person if v.shop and v.shop.contact_person else "Unknown Person",
+                "client_details": v.shop.name if v.shop else "N/A",
+                "project": v.shop.project_type if v.shop and v.shop.project_type else "General Project",
                 "status": str(v.status.value if hasattr(v.status, 'value') else v.status)
             })
             
         return activities
+
+    @staticmethod
+    def get_performance_notes(db: Session, employee_id: int):
+        return db.query(PerformanceNote).filter(
+            PerformanceNote.employee_id == employee_id
+        ).order_by(PerformanceNote.created_at.desc()).all()
+
+    @staticmethod
+    def add_performance_note(db: Session, employee_id: int, creator_id: int, note_text: str):
+        note = PerformanceNote(
+            employee_id=employee_id,
+            created_by_id=creator_id,
+            note=note_text
+        )
+        db.add(note)
+        db.commit()
+        db.refresh(note)
+        return note
 
     @staticmethod
     def generate_csv_response(data: List[dict]):

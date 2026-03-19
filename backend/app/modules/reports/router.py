@@ -1,5 +1,5 @@
 # backend/app/modules/reports/router.py
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Body, HTTPException, Response
 from fastapi.responses import StreamingResponse
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -8,7 +8,7 @@ import io
 from app.core.database import get_db
 from app.modules.users.models import User, UserRole
 from app.core.dependencies import RoleChecker
-from app.modules.reports.schemas import DashboardStats, EmployeePerformance, BusinessSummary, ProjectPortfolio, EmployeeActivity
+from app.modules.reports.schemas import DashboardStats, EmployeePerformance, BusinessSummary, ProjectPortfolio, EmployeeActivity, PerformanceNoteRead
 from app.modules.reports.service import ReportService
 
 router = APIRouter()
@@ -22,6 +22,29 @@ dashboard_viewer = RoleChecker([
     UserRole.SALES,
     UserRole.TELESALES
 ])
+
+@router.get("/employees/{user_id}/notes", response_model=List[PerformanceNoteRead])
+def get_employee_notes(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(dashboard_viewer)
+):
+    # Restricted to Admin
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    return ReportService.get_performance_notes(db, user_id)
+
+@router.post("/employees/{user_id}/notes")
+def add_employee_note(
+    user_id: int,
+    note: str = Body(..., embed=True),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(dashboard_viewer)
+):
+    # Restricted to Admin
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    return ReportService.add_performance_note(db, user_id, current_user.id, note)
 
 @router.get("/dashboard", response_model=DashboardStats)
 def get_dashboard_stats(
@@ -94,7 +117,6 @@ def get_employee_activities(
 ):
     # RBAC: Non-admins can only see their own activities
     if current_user.role != UserRole.ADMIN and current_user.id != user_id:
-        from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Not authorized to view activities for other users")
 
     return ReportService.get_employee_activities(

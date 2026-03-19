@@ -69,10 +69,22 @@ class ProjectPortfolio(BaseModel):
         from_attributes = True
 
 class EmployeeActivity(BaseModel):
-    date: datetime
-    client: str
-    type: str # Map from visit status or remarks
-    status: str
+    date: Optional[datetime] = None
+    client_name: Optional[str] = "Unknown"
+    client_details: Optional[str] = "N/A"
+    project: Optional[str] = "N/A"
+    status: Optional[str] = "N/A"
+
+    class Config:
+        from_attributes = True
+
+class PerformanceNoteRead(BaseModel):
+    id: int
+    employee_id: int
+    user_id: Optional[int] = None
+    note: str
+    created_at: Optional[datetime] = None
+    created_by: Optional[str] = None
 
     class Config:
         from_attributes = True
