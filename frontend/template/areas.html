@@ -307,16 +307,27 @@
                 opacity: 1;
             }
         }
+        @media (max-width: 767.98px) {
+            .split-panel {
+                grid-template-columns: 1fr !important;
+            }
+            .panel-sidebar {
+                width: 100% !important;
+                height: 300px;
+                border-right: none !important;
+                border-bottom: 1px solid var(--border);
+            }
+        }
     </style>
     <link rel="stylesheet" href="../css/theme.css?v=1772780188">
     <link rel="stylesheet" href="../css/components.css?v=1772780188">
 </head>
 
 <body>
-    <div class="d-flex" style="height: 100vh; overflow: hidden; background: #f8fafc;">
+    <div class="d-flex">
         <div id="sidebar"></div>
-        <div class="flex-grow-1 d-flex flex-column" style="height: 100vh; overflow: hidden;">
-            <div class="page-content d-flex flex-column flex-grow-1" style="padding: 1.5rem; overflow: hidden;">
+        <div class="flex-grow-1 main-wrapper">
+            <div class="page-content mx-auto" style="max-width: 1400px; width: 100%;">
                 <div class="px-0 d-flex flex-column flex-grow-1" style="min-height: 0;">
                     <div class="d-flex justify-content-between align-items-center mb-4 pt-0 flex-shrink-0">
                         <div>
@@ -533,7 +544,7 @@
                                 <div>
                                     <div class="fw-bold text-success" id="area-saved-msg">Area saved!</div>
                                     <small class="text-muted">Nearby shops discovered via Google Maps. Click "Add to
-                                        CRM" to import them.</small>
+                                        SRM" to import them.</small>
                                 </div>
                             </div>
                             <div class="table-responsive rounded border" style="max-height:300px;overflow-y:auto;">
@@ -602,7 +613,7 @@
                                 <select id="s-project" class="form-select">
                                     <option value="">— Select —</option>
                                     <option>AI Integration</option>
-                                    <option>CRM Setup</option>
+                                    <option>SRM Setup</option>
                                     <option>Other</option>
                                 </select>
                             </div>
@@ -777,6 +788,23 @@
         let globalSettings = { feature_flags: { enable_soft_delete: true } };
 
         async function loadAll() {
+            const ul = document.getElementById('area-list');
+            if (ul) {
+                ul.innerHTML = `
+                    <li class="area-item p-3 d-flex align-items-center gap-3 stagger-fade-in">
+                        <div class="skeleton-box skeleton-circle" style="width: 24px; height: 24px; border-radius: 4px;"></div>
+                        <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium mb-1"></div><div class="skeleton-box skeleton-text short"></div></div>
+                    </li>
+                    <li class="area-item p-3 d-flex align-items-center gap-3 stagger-fade-in">
+                        <div class="skeleton-box skeleton-circle" style="width: 24px; height: 24px; border-radius: 4px;"></div>
+                        <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium mb-1"></div><div class="skeleton-box skeleton-text short"></div></div>
+                    </li>
+                    <li class="area-item p-3 d-flex align-items-center gap-3 stagger-fade-in">
+                        <div class="skeleton-box skeleton-circle" style="width: 24px; height: 24px; border-radius: 4px;"></div>
+                        <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium mb-1"></div><div class="skeleton-box skeleton-text short"></div></div>
+                    </li>
+                `;
+            }
             try {
                 const [areasRes, shopsRes, usersRes, settingsRes] = await Promise.all([
                     ApiClient.getAreas(),

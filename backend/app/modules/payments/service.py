@@ -40,7 +40,7 @@ class PaymentService:
             else:
                 phone_val = "0000000000"
                 
-            email_val = shop.email if shop.email else f"shop_{shop_id}_{uuid.uuid4().hex[:6]}@crm.demo"
+            email_val = shop.email if shop.email else f"shop_{shop_id}_{uuid.uuid4().hex[:6]}@srm.demo"
             
             client = Client(
                 name=shop.name,
@@ -54,7 +54,7 @@ class PaymentService:
             self.db.refresh(client)
         
         # Mock QR generation data URL
-        qr_data = f"upi://pay?pa=business@upi&pn=CRM&am={payment_in.amount}&tr={uuid.uuid4()}"
+        qr_data = f"upi://pay?pa=business@upi&pn=SRM&am={payment_in.amount}&tr={uuid.uuid4()}"
         
         payment = Payment(
             client_id=client.id,

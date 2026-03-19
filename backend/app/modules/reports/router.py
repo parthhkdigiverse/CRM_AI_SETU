@@ -46,6 +46,14 @@ def get_employee_performance(
 ):
     return ReportService.get_employee_performance(db, month)
 
+@router.get("/present-employees")
+def get_present_employees(
+    limit: int = Query(10),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(dashboard_viewer)
+):
+    return ReportService.get_present_employees(db, limit)
+
 @router.get("/final", response_model=BusinessSummary)
 def get_business_summary(
     month: Optional[str] = Query(None),

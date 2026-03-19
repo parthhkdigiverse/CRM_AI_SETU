@@ -6,11 +6,13 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Settings — CRM AI SETU</title>
+    <title>Settings | SRM AI SETU</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/theme.css">
     <link rel="stylesheet" href="../css/components.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/settings-access-control.css">
     <style>
         .settings-section {
             background: #fff;
@@ -143,6 +145,23 @@
             font-weight: 600;
         }
 
+        @media (max-width: 767.98px) {
+            .settings-nav {
+                flex-direction: row;
+                overflow-x: auto;
+                position: static;
+                white-space: nowrap;
+                padding: 8px;
+                margin-bottom: 20px;
+                scrollbar-width: none;
+            }
+            .settings-nav::-webkit-scrollbar { display: none; }
+            .settings-nav a {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+        }
+
         .settings-nav a i {
             width: 18px;
             text-align: center;
@@ -235,10 +254,10 @@
 <body class="bg-light">
     <div class="d-flex">
         <div id="sidebar"></div>
-        <div class="flex-grow-1">
+        <div class="main-wrapper flex-grow-1">
             <!-- Top header injected -->
 
-            <div class="page-content" style="max-width: 1040px;">
+            <div class="page-content mx-auto" style="max-width: 1200px;">
 
                 <div class="row g-4">
 
@@ -276,9 +295,10 @@
                                     <div class="setting-desc">Choose your preferred colour scheme</div>
                                 </div>
                                 <select class="select-clean" id="theme-select"
-                                    onchange="saveSetting('theme', this.value)">
-                                    <option value="light">☀️ Light</option>
-                                    <option value="system">🖥️ System Default</option>
+                                    onchange="saveSetting('theme', this.value); if(window.setTheme) window.setTheme(this.value);">
+                                    <option value="light">Light Mode</option>
+                                    <option value="dark">Dark Mode</option>
+                                    <option value="system">System Default</option>
                                 </select>
                             </div>
 
@@ -325,7 +345,7 @@
                             <div class="setting-row">
                                 <div>
                                     <div class="setting-label">In-App Alerts</div>
-                                    <div class="setting-desc">Bell notifications inside the CRM</div>
+                                    <div class="setting-desc">Bell notifications inside the SRM</div>
                                 </div>
                                 <label class="toggle-switch">
                                     <input type="checkbox" id="notif-inapp" checked
@@ -423,7 +443,7 @@
                             <div class="setting-row">
                                 <div>
                                     <div class="setting-label">Date Format</div>
-                                    <div class="setting-desc">How dates are displayed across the CRM</div>
+                                    <div class="setting-desc">How dates are displayed across the SRM</div>
                                 </div>
                                 <select class="select-clean" id="date-format"
                                     onchange="saveSetting('date_format', this.value)">
@@ -460,7 +480,10 @@
                                     </select>
                                 </div>
                                 <div class="col-md-3 d-flex align-items-end">
-                                    <button class="btn-save-sm w-100" onclick="applyRoleEligibility()"><i class="bi bi-gear me-1"></i> Apply to All</button>
+                                    <button class="btn-save-sm w-100" id="btn-apply-role-elig" onclick="applyRoleEligibility()">
+                                        <span class="spinner-border spinner-border-sm me-2 d-none" id="spn-apply-role-elig"></span>
+                                        <i class="bi bi-gear me-1" id="icon-apply-role-elig"></i> Apply to All
+                                    </button>
                                 </div>
                             </div>
 
@@ -479,7 +502,10 @@
                                     </select>
                                 </div>
                                 <div class="col-md-3 d-flex align-items-end">
-                                    <button class="btn-save-sm w-100" onclick="saveUserEligibility()"><i class="bi bi-check2 me-1"></i> Save User</button>
+                                    <button class="btn-save-sm w-100" id="btn-save-user-elig" onclick="saveUserEligibility()">
+                                        <span class="spinner-border spinner-border-sm me-2 d-none" id="spn-save-user-elig"></span>
+                                        <i class="bi bi-check2 me-1" id="icon-save-user-elig"></i> Save User
+                                    </button>
                                 </div>
                             </div>
 
@@ -510,7 +536,10 @@
                                     <input type="number" id="slab-bonus" class="form-control form-control-sm" placeholder="e.g. 1000" min="0">
                                 </div>
                                 <div class="col-12 mt-2">
-                                    <button class="btn-save-sm" onclick="addSlabSetting()"><i class="bi bi-plus me-1"></i> Add Slab</button>
+                                    <button class="btn-save-sm" id="btn-add-slab" onclick="addSlabSetting()">
+                                        <span class="spinner-border spinner-border-sm me-2 d-none" id="spn-add-slab"></span>
+                                        <i class="bi bi-plus me-1" id="icon-add-slab"></i> Add Slab
+                                    </button>
                                     <span id="slab-save-msg" class="ms-3 small text-success d-none"></span>
                                 </div>
                             </div>
@@ -549,7 +578,10 @@
                             </div>
 
                             <div class="mt-3">
-                                <button class="btn-save-sm" onclick="saveEmployeeCodeSettings()"><i class="bi bi-save me-1"></i> Save Configuration</button>
+                                <button class="btn-save-sm" id="btn-save-emp-code" onclick="saveEmployeeCodeSettings()">
+                                    <span class="spinner-border spinner-border-sm me-2 d-none" id="spn-save-emp-code"></span>
+                                    <i class="bi bi-save me-1" id="icon-save-emp-code"></i> Save Configuration
+                                </button>
                                 <span id="emp-code-save-msg" class="ms-3 small text-success d-none">Saved!</span>
                             </div>
                         </div>
@@ -608,7 +640,10 @@
                             </div>
 
                             <div class="mt-3">
-                                <button class="btn-save-sm" onclick="saveAttendanceSettings()"><i class="bi bi-save me-1"></i> Save Attendance Rules</button>
+                                <button class="btn-save-sm" id="btn-save-att" onclick="saveAttendanceSettings()">
+                                    <span class="spinner-border spinner-border-sm me-2 d-none" id="spn-save-att"></span>
+                                    <i class="bi bi-save me-1" id="icon-save-att"></i> Save Attendance Rules
+                                </button>
                                 <span id="att-save-msg" class="ms-3 small text-success d-none">Saved!</span>
                             </div>
                         </div>
@@ -635,7 +670,10 @@
                             </div>
 
                             <div class="mt-3">
-                                <button class="btn-save-sm" onclick="savePayslipContact()"><i class="bi bi-save me-1"></i> Save Contact Info</button>
+                                <button class="btn-save-sm" id="btn-save-payslip" onclick="savePayslipContact()">
+                                    <span class="spinner-border spinner-border-sm me-2 d-none" id="spn-save-payslip"></span>
+                                    <i class="bi bi-save me-1" id="icon-save-payslip"></i> Save Contact Info
+                                </button>
                                 <span id="payslip-save-msg" class="ms-3 small text-success d-none">Saved!</span>
                             </div>
                         </div>
@@ -657,8 +695,9 @@
                             </div>
 
                             <div class="mt-3">
-                                <button class="btn btn-sm btn-danger" style="border-radius:8px; font-weight:600;" onclick="saveDeletePolicy()">
-                                    <i class="bi bi-shield-lock me-1"></i> Update Policy
+                                <button class="btn btn-sm btn-danger" id="btn-save-del-policy" style="border-radius:8px; font-weight:600;" onclick="saveDeletePolicy()">
+                                    <span class="spinner-border spinner-border-sm me-2 d-none" id="spn-save-del-policy"></span>
+                                    <i class="bi bi-shield-lock me-1" id="icon-save-del-policy"></i> Update Policy
                                 </button>
                                 <span id="delete-policy-save-msg" class="ms-3 small text-success d-none">Policy Updated!</span>
                             </div>
@@ -706,7 +745,7 @@
                                     <div class="setting-label">Company Name</div>
                                     <div class="setting-desc">Shown on invoice header</div>
                                 </div>
-                                <input type="text" id="inv-company-name" class="form-control form-control-sm" style="max-width:240px;" placeholder="CRM AI SETU">
+                                <input type="text" id="inv-company-name" class="form-control form-control-sm" style="max-width:240px;" placeholder="SRM AI SETU">
                             </div>
 
                             <div class="setting-row">
@@ -891,169 +930,87 @@
                             </div>
 
                             <div class="mt-3">
-                                <button class="btn-save-sm" onclick="saveInvoiceSettings()"><i class="bi bi-save me-1"></i> Save Invoice Settings</button>
+                                <button class="btn-save-sm" id="btn-save-inv" onclick="saveInvoiceSettings()">
+                                    <span class="spinner-border spinner-border-sm me-2 d-none" id="spn-save-inv"></span>
+                                    <i class="bi bi-save me-1" id="icon-save-inv"></i> Save Invoice Settings
+                                </button>
                                 <span id="inv-save-msg" class="ms-3 small text-success d-none">Saved!</span>
                             </div>
                         </div>
 
                         <div class="settings-section" id="access-control" style="display:none;">
                             <div class="settings-section-title"><i class="bi bi-shield-lock text-primary"></i> Role &amp; Page Access Control</div>
-                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:12px;">Define page access per role. Use comma-separated page names like: dashboard.html, billing.html, issues.html. Use * for full access.</p>
+                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:12px;">Assign page access and permissions using chips and toggles. Use * for full access.</p>
 
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">SALES Pages</label>
-                                    <textarea id="policy-pages-sales" class="form-control form-control-sm" rows="3"></textarea>
+                            <div class="access-control-grid">
+                                <div class="role-list">
+                                    <div class="role-chip" data-role="ADMIN">ADMIN</div>
+                                    <div class="role-chip" data-role="SALES">SALES</div>
+                                    <div class="role-chip" data-role="TELESALES">TELESALES</div>
+                                    <div class="role-chip" data-role="PROJECT_MANAGER">PROJECT MANAGER</div>
+                                    <div class="role-chip" data-role="PROJECT_MANAGER_AND_SALES">PM + SALES</div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">TELESALES Pages</label>
-                                    <textarea id="policy-pages-telesales" class="form-control form-control-sm" rows="3"></textarea>
+                                <div class="page-access-section">
+                                    <div class="page-access-title">Page Access</div>
+                                    <div class="page-chip-list" id="page-chip-list">
+                                        <!-- Chips for pages will be rendered here by JS -->
+                                    </div>
+                                    <div class="add-page-row">
+                                        <select class="add-page-input" id="add-page-select">
+                                            <option value="">Select page...</option>
+                                            <option value="admin.html">admin.html</option>
+                                            <option value="areas.html">areas.html</option>
+                                            <option value="billing.html">billing.html</option>
+                                            <option value="clients.html">clients.html</option>
+                                            <option value="dashboard.html">dashboard.html</option>
+                                            <option value="employees.html">employees.html</option>
+                                            <option value="feedback.html">feedback.html</option>
+                                            <option value="incentives.html">incentives.html</option>
+                                            <option value="index.html">index.html</option>
+                                            <option value="issues.html">issues.html</option>
+                                            <option value="leads.html">leads.html</option>
+                                            <option value="leaves.html">leaves.html</option>
+                                            <option value="meetings.html">meetings.html</option>
+                                            <option value="notifications.html">notifications.html</option>
+                                            <option value="profile.html">profile.html</option>
+                                            <option value="projects.html">projects.html</option>
+                                            <option value="projects_demo.html">projects_demo.html</option>
+                                            <option value="reports.html">reports.html</option>
+                                            <option value="salary.html">salary.html</option>
+                                            <option value="salary_slip_view.html">salary_slip_view.html</option>
+                                            <option value="search.html">search.html</option>
+                                            <option value="settings.html">settings.html</option>
+                                            <option value="timetable.html">timetable.html</option>
+                                            <option value="todo.html">todo.html</option>
+                                            <option value="visits.html">visits.html</option>
+                                        </select>
+                                        <button class="btn-add-page" id="btn-add-page"><i class="bi bi-plus"></i></button>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">PROJECT_MANAGER Pages</label>
-                                    <textarea id="policy-pages-pm" class="form-control form-control-sm" rows="3"></textarea>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label" style="font-size:0.8rem; font-weight:600; color:#475569;">PROJECT_MANAGER_AND_SALES Pages</label>
-                                    <textarea id="policy-pages-pmsales" class="form-control form-control-sm" rows="3"></textarea>
+                                <div class="permission-matrix-section">
+                                    <div class="matrix-title">Action Permission Matrix</div>
+                                    <table class="permission-matrix">
+                                        <thead>
+                                            <tr>
+                                                <th>Action</th>
+                                                <th>ADMIN</th>
+                                                <th>SALES</th>
+                                                <th>TELESALES</th>
+                                                <th>PROJECT MANAGER</th>
+                                                <th>PM + SALES</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="matrix-body">
+                                            <!-- Matrix rows rendered by JS -->
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-
-                            <div class="settings-section-title mt-4"><i class="bi bi-receipt text-primary"></i> Invoice Creator Roles</div>
-                            <div id="policy-invoice-creators" style="display:flex;gap:14px;flex-wrap:wrap;max-width:520px;">
-                                <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
-                                <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
-                                <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
-                                <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
-                                <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
-                            </div>
-
-                            <div class="settings-section-title mt-4"><i class="bi bi-sliders text-primary"></i> Action Permission Matrix</div>
-                            <p class="text-muted" style="font-size:0.82rem; margin-bottom:12px;">Choose which roles can perform each action. ADMIN is always enforced.</p>
-
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <div class="setting-label mb-1">Issue Create Roles</div>
-                                    <div id="policy-feature-issue-create" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="setting-label mb-1">Issue Manage Roles</div>
-                                    <div id="policy-feature-issue-manage" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
-                                    </div>
-                                </div>
-
-                                <div class="col-12 mt-2"><div class="setting-label">Leave</div></div>
-                                <div class="col-12">
-                                    <div class="setting-label mb-1">Leave Apply Roles</div>
-                                    <div id="policy-feature-leave-apply" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN"> ADMIN</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="setting-label mb-1">Leave Manage Roles (approve/reject/all)</div>
-                                    <div id="policy-feature-leave-manage" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="setting-label mb-1">Leave Edit Own Pending Roles</div>
-                                    <div id="policy-feature-leave-edit-own" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN"> ADMIN</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="setting-label mb-1">Leave Cancel Own Pending Roles</div>
-                                    <div id="policy-feature-leave-cancel-own" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN"> ADMIN</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
-                                    </div>
-                                </div>
-
-                                <div class="col-12 mt-2"><div class="setting-label">Salary</div></div>
-                                <div class="col-12">
-                                    <div class="setting-label mb-1">Salary View All Roles</div>
-                                    <div id="policy-feature-salary-view-all" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="setting-label mb-1">Salary Manage Roles</div>
-                                    <div id="policy-feature-salary-manage" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
-                                    </div>
-                                </div>
-
-                                <div class="col-12 mt-2"><div class="setting-label">Incentives</div></div>
-                                <div class="col-12">
-                                    <div class="setting-label mb-1">Incentive View All Roles</div>
-                                    <div id="policy-feature-incentive-view-all" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="setting-label mb-1">Incentive Manage Roles</div>
-                                    <div id="policy-feature-incentive-manage" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
-                                    </div>
-                                </div>
-
-                                <div class="col-12 mt-2"><div class="setting-label">Employees</div></div>
-                                <div class="col-12">
-                                    <div class="setting-label mb-1">Employee Manage Roles</div>
-                                    <div id="policy-feature-employee-manage" style="display:flex;gap:14px;flex-wrap:wrap;max-width:720px;">
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="ADMIN" checked> ADMIN</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="SALES"> SALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="TELESALES"> TELESALES</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER"> PROJECT_MANAGER</label>
-                                        <label style="font-size:0.82rem;"><input type="checkbox" value="PROJECT_MANAGER_AND_SALES"> PROJECT_MANAGER_AND_SALES</label>
-                                    </div>
-                                </div>
-                            </div>
-
                             <div class="mt-3">
-                                <button class="btn-save-sm" onclick="saveAccessPolicy()"><i class="bi bi-save me-1"></i> Save Access Policy</button>
+                                <button class="btn-save-sm" id="btn-save-access" onclick="saveAccessPolicy()">
+                                    <span class="spinner-border spinner-border-sm me-2 d-none" id="spn-save-access"></span>
+                                    <i class="bi bi-save me-1" id="icon-save-access"></i> Save Access Policy
+                                </button>
                                 <span id="access-policy-save-msg" class="ms-3 small text-success d-none">Saved!</span>
                             </div>
                         </div>
@@ -1090,7 +1047,7 @@
                             <div class="setting-row">
                                 <div>
                                     <div class="setting-label">Clear All Local Settings</div>
-                                    <div class="setting-desc">Reset all CRM preferences to defaults</div>
+                                    <div class="setting-desc">Reset all SRM preferences to defaults</div>
                                 </div>
                                 <button class="btn btn-sm"
                                     style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;border-radius:8px;font-size:0.82rem;font-weight:600;"
@@ -1156,7 +1113,7 @@
         // ── Load saved settings
         async function loadSettings() {
             let backendPrefs = {};
-            const u = JSON.parse(localStorage.getItem('crm_user') || '{}');
+            const u = JSON.parse(localStorage.getItem('srm_user') || '{}');
 
             // Try fetching from backend first
             if (u.id) {
@@ -1174,7 +1131,7 @@
                 if (el && el.type === 'checkbox') {
                     // Backend -> LocalStorage -> Default
                     let val = backendPrefs[k];
-                    if (val === undefined) val = localStorage.getItem('crm_setting_' + k);
+                    if (val === undefined) val = localStorage.getItem('srm_setting_' + k);
 
                     if (val !== undefined && val !== null) {
                         el.checked = String(val) === 'true';
@@ -1196,7 +1153,7 @@
                 const el = document.getElementById(elId);
                 if (el) {
                     let val = backendPrefs[prefKey];
-                    if (val === undefined) val = localStorage.getItem('crm_setting_' + prefKey);
+                    if (val === undefined) val = localStorage.getItem('srm_setting_' + prefKey);
                     if (val) el.value = val;
                 }
             });
@@ -1205,7 +1162,7 @@
         // ── Save a setting
         async function saveSetting(key, value) {
             // Save locally
-            localStorage.setItem('crm_setting_' + key, value);
+            localStorage.setItem('srm_setting_' + key, value);
 
             // Save to backend
             try {
@@ -1267,7 +1224,7 @@
 
         // ── Clear all settings
         async function clearAllSettings() {
-            const keys = Object.keys(localStorage).filter(k => k.startsWith('crm_setting_'));
+            const keys = Object.keys(localStorage).filter(k => k.startsWith('srm_setting_'));
             keys.forEach(k => localStorage.removeItem(k));
 
             try {
@@ -1280,7 +1237,7 @@
 
         // ── System section (admin-only)
         function initSystem() {
-            const u = JSON.parse(localStorage.getItem('crm_user') || '{}');
+            const u = JSON.parse(localStorage.getItem('srm_user') || '{}');
             const isAdmin = u?.role === 'ADMIN';
 
             if (isAdmin) {
@@ -1327,7 +1284,17 @@
                 document.getElementById('system-nav-link').style.display = 'none';
             }
 
-            // Default view: Show the first section if none in hash
+            function toggleLoading(btnId, spnId, iconId, isLoading) {
+            const btn = document.getElementById(btnId);
+            const spn = document.getElementById(spnId);
+            const icon = document.getElementById(iconId);
+            if (!btn) return;
+            btn.disabled = isLoading;
+            if (spn) spn.classList.toggle('d-none', !isLoading);
+            if (icon) icon.classList.toggle('d-none', isLoading);
+        }
+
+        // Default view: Show the first section if none in hash
             const hash = window.location.hash.substring(1);
             if (hash) {
                 const link = document.querySelector(`.settings-nav a[href="#${hash}"]`);
@@ -1388,6 +1355,7 @@
             const holidays = holidayRaw.split(',').map(h => h.trim()).filter(Boolean);
 
             try {
+                toggleLoading('btn-save-att', 'spn-save-att', 'icon-save-att', true);
                 await window.ApiClient.updateAttendanceSettings({
                     absent_hours_threshold: absent,
                     half_day_hours_threshold: half,
@@ -1400,6 +1368,8 @@
             } catch (err) {
                 console.error('Attendance settings save failed', err);
                 showToast('Failed to save attendance settings', true);
+            } finally {
+                toggleLoading('btn-save-att', 'spn-save-att', 'icon-save-att', false);
             }
         }
 
@@ -1468,6 +1438,7 @@
                 return;
             }
             try {
+                toggleLoading('btn-apply-role-elig', 'spn-apply-role-elig', 'icon-apply-role-elig', true);
                 const res = await apiPatch('/users/incentive-eligibility/by-role', { role, enabled });
                 const count = res?.updated ?? 0;
                 document.getElementById('eligibility-msg').textContent = `Updated ${count} users in role ${role}.`;
@@ -1476,6 +1447,8 @@
                 showToast('Role eligibility updated');
             } catch (e) {
                 showToast(e.data?.detail || e.message || 'Failed to update role eligibility', true);
+            } finally {
+                toggleLoading('btn-apply-role-elig', 'spn-apply-role-elig', 'icon-apply-role-elig', false);
             }
         }
 
@@ -1487,6 +1460,7 @@
                 return;
             }
             try {
+                toggleLoading('btn-save-user-elig', 'spn-save-user-elig', 'icon-save-user-elig', true);
                 await apiPatch(`/users/${userId}/incentive-eligibility`, { enabled });
                 document.getElementById('eligibility-msg').textContent = 'User incentive eligibility saved.';
                 document.getElementById('eligibility-msg').className = 'small text-success mb-3';
@@ -1494,6 +1468,8 @@
                 showToast('User eligibility updated');
             } catch (e) {
                 showToast(e.data?.detail || e.message || 'Failed to update user eligibility', true);
+            } finally {
+                toggleLoading('btn-save-user-elig', 'spn-save-user-elig', 'icon-save-user-elig', false);
             }
         }
 
@@ -1513,6 +1489,7 @@
             }
 
             try {
+                toggleLoading('btn-add-slab', 'spn-add-slab', 'icon-add-slab', true);
                 await ApiClient.createIncentiveSlab({ min_units: min, max_units: max, incentive_per_unit: perUnit, slab_bonus: bonus });
                 ['slab-min', 'slab-max', 'slab-per-unit', 'slab-bonus'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
                 msg.textContent = 'Slab added!';
@@ -1525,6 +1502,8 @@
                 msg.className = 'ms-3 small text-danger';
                 msg.classList.remove('d-none');
                 setTimeout(() => msg.classList.add('d-none'), 3000);
+            } finally {
+                toggleLoading('btn-add-slab', 'spn-add-slab', 'icon-add-slab', false);
             }
         }
 
@@ -1608,6 +1587,7 @@
                 return;
             }
             try {
+                toggleLoading('btn-save-emp-code', 'spn-save-emp-code', 'icon-save-emp-code', true);
                 await ApiClient.updateEmployeeCodeSettings({ enabled, prefix, next_seq });
                 msg.textContent = 'Saved!';
                 msg.classList.remove('d-none');
@@ -1615,6 +1595,8 @@
                 showToast('Employee code configuration saved');
             } catch (e) {
                 showToast(e.data?.detail || e.message || 'Failed to save', true);
+            } finally {
+                toggleLoading('btn-save-emp-code', 'spn-save-emp-code', 'icon-save-emp-code', false);
             }
         }
 
@@ -1638,6 +1620,7 @@
                 return;
             }
             try {
+                toggleLoading('btn-save-payslip', 'spn-save-payslip', 'icon-save-payslip', true);
                 await ApiClient.updatePayslipSettings({ email, phone });
                 msg.textContent = 'Saved!';
                 msg.classList.remove('d-none');
@@ -1645,6 +1628,8 @@
                 showToast('Payslip contact info saved');
             } catch (e) {
                 showToast(e.message || 'Failed to save', true);
+            } finally {
+                toggleLoading('btn-save-payslip', 'spn-save-payslip', 'icon-save-payslip', false);
             }
         }
 
@@ -1792,6 +1777,7 @@
                 invoice_verifier_roles: selectedRoles.join(','),
             };
             try {
+                toggleLoading('btn-save-inv', 'spn-save-inv', 'icon-save-inv', true);
                 await ApiClient.updateInvoiceSettings(payload);
                 msg.textContent = 'Saved!';
                 msg.classList.remove('d-none');
@@ -1799,6 +1785,8 @@
                 showToast('Invoice settings saved');
             } catch (e) {
                 showToast(e.data?.detail || e.message || 'Failed to save', true);
+            } finally {
+                toggleLoading('btn-save-inv', 'spn-save-inv', 'icon-save-inv', false);
             }
         }
 
@@ -1888,12 +1876,15 @@
             }
 
             try {
+                toggleLoading('btn-save-access', 'spn-save-access', 'icon-save-access', true);
                 await ApiClient.updateAccessPolicy(payload);
                 msg.classList.remove('d-none');
                 setTimeout(() => msg.classList.add('d-none'), 2500);
                 showToast('Access policy saved');
             } catch (e) {
                 showToast(e.data?.detail || e.message || 'Failed to save access policy', true);
+            } finally {
+                toggleLoading('btn-save-access', 'spn-save-access', 'icon-save-access', false);
             }
         }
 
@@ -1919,12 +1910,15 @@
             const msg = document.getElementById('delete-policy-save-msg');
             if (!confirm(`Are you sure you want to switch to ${policy} delete? This affects all future deletions.`)) return;
             try {
+                toggleLoading('btn-save-del-policy', 'spn-save-del-policy', 'icon-save-del-policy', true);
                 await apiPut('/hrm/delete-policy', { policy });
                 msg.classList.remove('d-none');
                 setTimeout(() => msg.classList.add('d-none'), 2500);
                 showToast('Global delete policy updated');
             } catch (e) {
                 showToast('Failed to update policy', true);
+            } finally {
+                toggleLoading('btn-save-del-policy', 'spn-save-del-policy', 'icon-save-del-policy', false);
             }
         }
     </script>

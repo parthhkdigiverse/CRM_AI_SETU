@@ -374,8 +374,7 @@ async def send_invoice_whatsapp(
     Auto-creates client if not already in the system.
     Returns the WhatsApp URL to open.
     """
-    # Assuming FastAPI Request has `.url` which is a starlette.datastructures.URL object
-    # We want the base_url, e.g. "http://127.0.0.1:8000/"
+    # Use dynamic base URL from request to avoid hardcoded localhost
     base_url = str(request.base_url)
     result = await BillingService(db).send_whatsapp_invoice(
         bill_id=bill_id, 
@@ -465,7 +464,7 @@ def _build_invoice_html(bill, settings: dict) -> str:
     client_address = bill.invoice_client_address or ""
     client_org     = bill.invoice_client_org     or ""
 
-    service_desc   = bill.service_description or "CRM AI SETU Software – Annual Subscription"
+    service_desc   = bill.service_description or "SRM AI SETU Software – Annual Subscription"
     amount         = bill.amount or 0.0
 
     is_with_gst = (bill.gst_type or "WITH_GST") == "WITH_GST"

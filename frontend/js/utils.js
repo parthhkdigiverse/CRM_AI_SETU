@@ -34,28 +34,63 @@ function toast(msg, type = 'success') {
             style.textContent = `
                 #toast-container {
                     position: fixed;
-                    bottom: 24px;
+                    top: 24px;
                     right: 24px;
                     z-index: 10000;
                     display: flex;
                     flex-direction: column;
-                    gap: 10px;
+                    gap: 12px;
+                    pointer-events: none;
                 }
                 .custom-toast {
-                    background: #0f172a;
-                    color: #fff;
-                    padding: 12px 20px;
+                    background: rgba(255, 255, 255, 0.95);
+                    backdrop-filter: blur(10px);
+                    color: #0f172a;
+                    padding: 14px 20px;
                     border-radius: 12px;
-                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
                     display: flex;
                     align-items: center;
-                    gap: 10px;
-                    animation: toastSlideUp 0.3s ease-out;
-                    min-width: 200px;
+                    gap: 12px;
+                    animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                    min-width: 280px;
+                    max-width: 350px;
+                    border: 1px solid rgba(226, 232, 240, 0.8);
+                    pointer-events: auto;
+                    transition: all 0.4s ease;
                 }
-                @keyframes toastSlideUp {
-                    from { transform: translateY(100%); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
+                .custom-toast.hide {
+                    opacity: 0;
+                    transform: translateY(-20px) scale(0.95);
+                }
+                .toast-icon-wrapper {
+                    flex-shrink: 0;
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.9rem;
+                }
+                .toast-content {
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                    line-height: 1.4;
+                    flex-grow: 1;
+                }
+                /* Success */
+                .toast-success .toast-icon-wrapper { background: #dcfce7; color: #16a34a; }
+                /* Error */
+                .toast-error .toast-icon-wrapper { background: #fee2e2; color: #dc2626; }
+                /* Warning */
+                .toast-warning .toast-icon-wrapper { background: #fef9c3; color: #ca8a04; }
+                /* Info */
+                .toast-info .toast-icon-wrapper { background: #e0f2fe; color: #0284c7; }
+                
+                @keyframes toastSlideIn {
+                    from { transform: translateX(110%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
                 }
             `;
             document.head.appendChild(style);
@@ -65,18 +100,20 @@ function toast(msg, type = 'success') {
     const t = document.createElement('div');
     t.className = `custom-toast toast-${type}`;
 
-    let icon = 'bi-check-circle-fill text-success';
-    if (type === 'error') icon = 'bi-exclamation-circle-fill text-danger';
-    if (type === 'warning') icon = 'bi-exclamation-triangle-fill text-warning';
-    if (type === 'info') icon = 'bi-info-circle-fill text-info';
+    let icon = 'bi-check-lg';
+    if (type === 'error') icon = 'bi-x-lg';
+    if (type === 'warning') icon = 'bi-exclamation-triangle-fill';
+    if (type === 'info') icon = 'bi-info-lg';
 
-    t.innerHTML = `<i class="bi ${icon}"></i><span>${msg}</span>`;
+    t.innerHTML = `
+        <div class="toast-icon-wrapper"><i class="bi ${icon}"></i></div>
+        <div class="toast-content">${msg}</div>
+    `;
     container.appendChild(t);
 
     setTimeout(() => {
-        t.style.opacity = '0';
-        t.style.transition = 'opacity 0.5s ease-out';
-        setTimeout(() => t.remove(), 500);
+        t.classList.add('hide');
+        setTimeout(() => t.remove(), 400); // Wait for transition
     }, 4000);
 }
 

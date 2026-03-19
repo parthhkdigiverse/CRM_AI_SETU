@@ -205,7 +205,7 @@ def read_current_user(
 ) -> Any:
     if current_user is None:  # Demo mode: return synthetic admin
         return {
-            "id": 0, "email": _DEMO_EMAIL, "name": "Demo Admin",
+            "id": 0, "email": _DEMO_EMAIL, "name": "Tisha Admin",
             "role": "ADMIN", "is_active": True, "phone": None
         }
     return current_user
@@ -214,7 +214,7 @@ def read_current_user(
 def read_profile(current_user: User = Depends(get_current_user)) -> Any:
     if current_user is None:  # Demo mode: return synthetic admin
         return {
-            "id": 0, "email": _DEMO_EMAIL, "name": "Demo Admin",
+            "id": 0, "email": _DEMO_EMAIL, "name": "Tisha Admin",
             "role": "ADMIN", "is_active": True, "phone": None
         }
     return current_user
@@ -228,7 +228,7 @@ async def update_profile(
 ) -> Any:
     if current_user is None:
          return {
-            "id": 0, "email": _DEMO_EMAIL, "name": profile_in.name or "Demo Admin",
+            "id": 0, "email": _DEMO_EMAIL, "name": profile_in.name or "Tisha Admin",
             "role": "ADMIN", "is_active": True, "phone": profile_in.phone
         }
 

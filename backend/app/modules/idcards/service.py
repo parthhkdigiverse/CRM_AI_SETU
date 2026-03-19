@@ -64,7 +64,7 @@ class IDCardService:
         <body>
             <div class="id-card">
                 <div class="header">
-                    <div class="logo">CRM SETU</div>
+                    <div class="logo">SRM SETU</div>
                     <div class="subtitle">Official Employee ID</div>
                 </div>
                 <div class="photo-area">

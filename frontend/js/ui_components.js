@@ -120,9 +120,14 @@ window.renderQuickAddItems = function (roleValue) {
 window.renderSidebar = function (active) {
     const u = getUser();
     const role = u?.role || 'TELESALES';
-    console.log('Sidebar Debug - Role:', role);
-
     const { isAdmin, isSales, isTelesales, isPM, isClient } = getRoleFlags(role);
+
+    const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+    if (isCollapsed) {
+        setTimeout(() => {
+            document.getElementById('sidebar-container')?.classList.add('collapsed');
+        }, 0);
+    }
 
     const roleName = String(role || '').toUpperCase();
     const fallbackPages = {
@@ -145,110 +150,166 @@ window.renderSidebar = function (active) {
         return allowedPages.includes(page);
     };
 
-    let nav = '';
+    const sbSection = (id, title, icon, items) => {
+        const filteredItems = items.filter(item => canShowPage(item.href));
+        if (filteredItems.length === 0) return '';
+        const isAnyActive = filteredItems.some(item => item.id === active);
+        const isOpen = isAnyActive; // Auto-open if active item is inside
 
-    function sbSection(id, label, icon, items) {
-        const visibleItems = (items || []).filter(item => canShowPage(item.href));
-        if (!visibleItems.length) return '';
-        const isActiveSection = visibleItems.some(i => i.id === active);
         return `
-        <div class="sb-section">
-            <div class="sb-section-header ${isActiveSection ? 'open' : ''}" onclick="toggleSbSection('${id}')">
+        <div class="sb-section" id="sb-sec-${id}">
+            <div class="sb-section-header ${isOpen ? 'open' : ''}" onclick="toggleSbSection('${id}')">
                 <i class="bi ${icon} sb-sec-icon"></i>
-                <span>${label}</span>
+                <span>${title}</span>
                 <i class="bi bi-chevron-right sb-arrow"></i>
             </div>
-            <ul class="sb-section-items ${isActiveSection ? 'open' : ''}">
-                ${visibleItems.map(item => `
-                <li><a href="${item.href}" class="sb-link ${active === item.id ? 'active' : ''}">
-                    <i class="bi ${item.icon}"></i><span>${item.label}</span></a></li>`).join('')}
-            </ul>
+            <div class="sb-section-items ${isOpen ? 'open' : ''}">
+                ${filteredItems.map(item => `
+                    <a href="${item.href}" class="sb-link ${item.id === active ? 'active' : ''}">
+                        <i class="bi ${item.icon}"></i>
+                        <span>${item.label}</span>
+                    </a>
+                `).join('')}
+            </div>
         </div>`;
-    }
-
-    // DASHBOARD
-    nav += sbSection('db', 'Dashboard', 'bi-grid-1x2', [
-        { id: 'dashboard', href: 'dashboard.html', icon: 'bi-bar-chart-line-fill', label: 'Overview' },
-        { id: 'timetable', href: 'timetable.html', icon: 'bi-calendar3', label: 'Timetable' },
-        { id: 'todo', href: 'todo.html', icon: 'bi-check2-square', label: 'To-Do List' }
-    ]);
-
-    // ADMINISTRATION
-    nav += sbSection('admin', 'Administration', 'bi-shield-check', [
-        { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
-    ]);
-
-    // FIELD OPERATIONS
-    const fieldItems = [];
-    fieldItems.push({ id: 'leads', href: 'leads.html', icon: 'bi-kanban', label: 'Project Overview' });
-    fieldItems.push({ id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas & Shops' });
-    fieldItems.push({ id: 'visits', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' });
-    if (fieldItems.length) {
-        nav += sbSection('field', 'Field Operations', 'bi-geo-alt', fieldItems);
-    }
-
-    // PROJECT MANAGEMENT
-    nav += sbSection('pm', 'Project Management', 'bi-briefcase', [
-        { id: 'demo', href: 'projects_demo.html', icon: 'bi-play-circle', label: 'Demo' },
-        { id: 'projects', href: 'projects.html', icon: 'bi-briefcase', label: 'Projects' },
-        { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
-        { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
-    ]);
-
-    // CLIENT RELATIONS
-    const crItems = [
-        { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
-        { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' },
-        { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
-    ];
-    nav += sbSection('cr', 'Client Relations', 'bi-people', crItems);
-
-    // HR & PAYROLL
-    const hrItems = [
-        { id: 'employees', href: 'employees.html', icon: 'bi-people', label: 'Employees' },
-        { id: 'salary', href: 'salary.html', icon: 'bi-cash-stack', label: 'Salary' },
-        { id: 'leaves', href: 'leaves.html', icon: 'bi-calendar3', label: 'Leaves' },
-        { id: 'incentives', href: 'incentives.html', icon: 'bi-trophy', label: 'Incentives' }
-    ];
-    nav += sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', hrItems);
-
-    // REPORTS
-    nav += sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
-        { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
-    ]);
-
-    const userName = u?.name || u?.email || 'User';
-    const initials = userName.slice(0, 2).toUpperCase();
-    const userInitials = window.getInitials(userName);
-    const userRole = (u?.role || 'USER').replace(/_/g, ' ');
+    };
 
     return `
     <div id="sidebar-container">
         <div class="sidebar-brand">
-            <div class="sidebar-brand-icon"><i class="bi bi-grid-fill"></i></div>
-            <span>SRM AI SETU</span>
+            <div class="sidebar-brand-icon">
+                <div class="sidebar-logo-ai"></div>
+            </div>
+            <div class="ms-2 d-flex flex-column">
+                <span>SRM AI SETU</span>
+            </div>
         </div>
-        <div class="sb-scroll-area mt-2">${nav}</div>
+
+        <div class="sb-scroll-area">
+            <div class="sb-section-label">Main</div>
+            ${sbSection('db', 'Dashboard', 'bi-grid-1x2', [
+                { id: 'dashboard', href: 'dashboard.html', icon: 'bi-bar-chart-line-fill', label: 'Overview' },
+                { id: 'timetable', href: 'timetable.html', icon: 'bi-calendar3', label: 'Timetable' },
+                { id: 'todo', href: 'todo.html', icon: 'bi-check2-square', label: 'To-Do List' }
+            ])}
+
+            <div class="sb-section-label">Operations</div>
+            ${sbSection('admin', 'Administration', 'bi-shield-check', [
+                { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
+            ])}
+            ${sbSection('field', 'Field Operations', 'bi-geo-alt', [
+                { id: 'leads', href: 'leads.html', icon: 'bi-kanban', label: 'Project Overview' },
+                { id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas & Shops' },
+                { id: 'visits', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' }
+            ])}
+            ${sbSection('pm', 'Project Management', 'bi-briefcase', [
+                { id: 'demo', href: 'projects_demo.html', icon: 'bi-play-circle', label: 'Demo' },
+                { id: 'projects', href: 'projects.html', icon: 'bi-briefcase', label: 'Projects' },
+                { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
+                { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
+            ])}
+            ${sbSection('cr', 'Client Relations', 'bi-people', [
+                { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
+                { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' },
+                { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
+            ])}
+            ${sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', [
+                { id: 'employees', href: 'employees.html', icon: 'bi-people', label: 'Employees' },
+                { id: 'salary', href: 'salary.html', icon: 'bi-cash-stack', label: 'Salary' },
+                { id: 'leaves', href: 'leaves.html', icon: 'bi-calendar3', label: 'Leaves' },
+                { id: 'incentives', href: 'incentives.html', icon: 'bi-trophy', label: 'Incentives' }
+            ])}
+            ${sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
+                { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
+            ])}
+        </div>
+        
         <div class="sb-bottom">
-            ${canShowPage('settings.html') ? '<a href="settings.html" class="sb-bottom-link"><i class="bi bi-gear-fill"></i> Settings</a>' : ''}
-            <a href="#" class="sb-bottom-link logout" onclick="logout();return false;"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            <a href="settings.html" class="sb-bottom-link ${active === 'settings' ? 'active' : ''}" title="Settings">
+                <i class="bi bi-gear"></i> <span>Settings</span>
+            </a>
+            <a href="#" class="sb-bottom-link logout" onclick="logout();return false;" title="Logout">
+                <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Logout</span>
+            </a>
         </div>
-    </div>`;
+
+        <!-- Floating Toggle Button -->
+        <div class="sb-toggle-btn" onclick="toggleSidebarState()" title="Toggle Sidebar">
+            <i class="bi bi-chevron-left"></i>
+        </div>
+    </div>
+    <div id="sb-overlay" class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+    `;
 }
 
+window.toggleMobileSidebar = function() {
+    const sb = document.getElementById('sidebar-container');
+    const overlay = document.getElementById('sb-overlay');
+    if (!sb) return;
+    
+    const isOpen = sb.classList.toggle('mobile-open');
+    if (overlay) {
+        overlay.style.opacity = isOpen ? '1' : '0';
+        overlay.style.visibility = isOpen ? 'visible' : 'hidden';
+    }
+    
+    // Lock body scroll when mobile sidebar is open
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+};
+
+window.toggleMobileSearch = function() {
+    let mobileSearch = document.getElementById('mobile-search-overlay');
+    
+    if (!mobileSearch) {
+        const html = `
+            <div id="mobile-search-overlay" class="position-fixed top-0 start-0 w-100 bg-white shadow-sm d-flex align-items-center px-3" style="height: 64px; z-index: 2000; transform: translateY(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+                <i class="bi bi-search text-muted me-2"></i>
+                <input type="text" id="mobile-search-input" class="form-control border-0 bg-transparent p-0 shadow-none" placeholder="Search..." onkeyup="if(event.key === 'Enter') { const val = this.value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val); }">
+                <button class="btn btn-link text-muted p-2" onclick="toggleMobileSearch()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+        mobileSearch = document.getElementById('mobile-search-overlay');
+    }
+    
+    const isShowing = mobileSearch.style.transform === 'translateY(0%)';
+    mobileSearch.style.transform = isShowing ? 'translateY(-100%)' : 'translateY(0%)';
+    
+    if (!isShowing) {
+        setTimeout(() => document.getElementById('mobile-search-input').focus(), 300);
+    }
+};
+
+window.toggleSidebarState = function() {
+    const sb = document.getElementById('sidebar-container');
+    if (!sb) return;
+    const isCollapsed = sb.classList.toggle('collapsed');
+    localStorage.setItem('sidebar-collapsed', isCollapsed);
+    
+    // Close all sections when collapsing
+    if (isCollapsed) {
+        document.querySelectorAll('.sb-section-items').forEach(el => el.classList.remove('open'));
+        document.querySelectorAll('.sb-section-header').forEach(el => el.classList.remove('open'));
+    }
+};
+
 window.toggleSbSection = function (id) {
-    document.querySelectorAll('.sb-section').forEach(sec => {
-        const hdr = sec.querySelector('.sb-section-header');
-        const lst = sec.querySelector('.sb-section-items');
-        const arr = sec.querySelector('.sb-arrow');
-        if (!hdr) return;
-        const isMe = (hdr.getAttribute('onclick') || '').includes(`'${id}'`);
-        if (isMe) {
-            hdr.classList.toggle('open');
-            lst && lst.classList.toggle('open');
-            if (arr) arr.className = `bi ${hdr.classList.contains('open') ? 'bi-chevron-down' : 'bi-chevron-right'} sb-arrow`;
-        }
-    });
+    const sb = document.getElementById('sidebar-container');
+    if (sb && sb.classList.contains('collapsed')) {
+        sb.classList.remove('collapsed');
+        localStorage.setItem('sidebar-collapsed', 'false');
+    }
+
+    const sec = document.getElementById(`sb-sec-${id}`);
+    if (!sec) return;
+    
+    const hdr = sec.querySelector('.sb-section-header');
+    const lst = sec.querySelector('.sb-section-items');
+    
+    const isOpen = lst.classList.toggle('open');
+    hdr.classList.toggle('open', isOpen);
 };
 
 // ─── TOP HEADER ───────────────────────────────────────────────────────
@@ -299,76 +360,91 @@ window.injectTopHeader = function (pageTitle) {
         const foundKey = Object.keys(pageToParent).find(k => k.toLowerCase() === lowerTitle);
         if (foundKey) parent = pageToParent[foundKey];
     }
+    const chevronSvg = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.5;"><path d="M4.5 9L7.5 6L4.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     const breadcrumbHtml = parent ? `
-        <div class="d-flex align-items-center gap-2">
-            <span class="text-muted" style="font-size: 0.875rem;">${parent}</span>
-            <i class="bi bi-chevron-right text-muted" style="font-size: 0.7rem;"></i>
-            <div class="page-nav-title">${pageTitle}</div>
+        <div class="d-flex align-items-center gap-2" style="font-size: 13.5px;">
+            <span style="color: var(--text-2);">${parent}</span>
+            ${chevronSvg}
+            <div class="fw-bold" style="color: var(--text-1);">${pageTitle}</div>
         </div>
-    ` : `<div class="page-nav-title">${pageTitle}</div>`;
+    ` : `<div class="fw-bold" style="color: var(--text-1); font-size: 13.5px;">${pageTitle}</div>`;
 
-    const alertsRedDot = '<span id="nav-notif-dot" class="position-absolute bg-danger border border-white rounded-circle d-none" style="width:10px;height:10px;top:8px;right:8px;"></span>';
+    const alertsRedDot = '<span id="nav-notif-dot" class="position-absolute bg-danger border border-white rounded-circle d-none" style="width:8px;height:8px;top:8px;right:8px;"></span>';
 
     const quickAddItems = renderQuickAddItems(u?.role);
 
     const headerHtml = `
     <div class="top-header">
-        <div class="d-flex align-items-center">${breadcrumbHtml}</div>
-        <div class="top-header-search" style="position:relative; z-index:1000;">
-            <div class="position-relative w-100">
-                <button class="btn p-0 position-absolute text-muted" style="left:12px; top:50%; transform:translateY(-50%); border:none; background:none; z-index:5;" onclick="const val = document.getElementById('global-search-input').value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val);">
-                    <i class="bi bi-search" style="font-size:0.9rem;"></i>
-                </button>
-                <input type="text" id="global-search-input" class="form-control bg-light border-0 shadow-none" placeholder="Search..." style="padding-left: 40px; border-radius: 10px; font-size: 0.9rem; height: 42px;">
-                <div id="live-search-dropdown" class="search-results-dropdown"></div>
+        <div class="top-header-left">
+            <button class="btn btn-light d-lg-none" onclick="toggleMobileSidebar()">
+                <i class="bi bi-list"></i>
+            </button>
+            <div class="d-none d-sm-block">${breadcrumbHtml}</div>
+            <div class="d-block d-sm-none page-nav-title">${pageTitle}</div>
+        </div>
+
+        <div class="top-header-center">
+            <div class="top-header-search" style="max-width: 320px; width: 100%;">
+                <div class="position-relative w-100">
+                    <button class="btn p-0 position-absolute text-muted search-btn" style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 10;" onclick="const val = document.getElementById('global-search-input').value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val);">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    <input type="text" id="global-search-input" class="form-control" placeholder="Search..." style="padding-left: 38px; border-radius: 20px; height: 38px; background: var(--bg-page); border: 1px solid var(--border);">
+                    <div id="live-search-dropdown" class="search-results-dropdown"></div>
+                </div>
             </div>
         </div>
-        <div class="d-flex align-items-center justify-content-end gap-3">
-            <!-- Add New Dropdown -->
-            <div class="dropdown">
-                <button class="btn btn-primary d-flex align-items-center gap-2 px-3 dropdown-toggle shadow-sm" type="button" id="addNewDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:0.875rem; border-radius: 8px; height: 40px; white-space: nowrap;">
-                    <i class="bi bi-plus-lg"></i> Add New
+
+        <div class="top-header-right d-flex align-items-center gap-2">
+            <!-- Mobile Search Icon (only visible on mobile) -->
+            <button class="btn d-md-none p-0 d-flex align-items-center justify-content-center hover-hit-target" style="width:40px; height:40px;" onclick="toggleMobileSearch()">
+                <i class="bi bi-search text-muted"></i>
+            </button>
+
+            <!-- Add New Gradient Button -->
+            <div class="dropdown d-none d-md-block">
+                <button class="btn d-flex align-items-center gap-2 px-3 dropdown-toggle shadow-sm" type="button" id="addNewDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:12.5px; font-weight:700; border-radius: 8px; height: 38px; background: linear-gradient(135deg, #6366f1, #4f46e5); color:#fff; border:none; padding: 10px 16px;">
+                    <i class="bi bi-plus-lg"></i> <span>Add New</span>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px; min-width:210px;">
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.85rem; border-radius:12px; padding:8px; min-width:200px; background: var(--bg-surface); border: 1px solid var(--border) !important;">
                     ${quickAddItems}
                 </ul>
             </div>
+
             <!-- Notifications Bell -->
             <div class="dropdown">
-                <div class="position-relative text-muted" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer; font-size:1.25rem; width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:#f8fafc; border-radius:50%;">
-                    <i class="bi bi-bell"></i>
+                <div class="position-relative d-flex align-items-center justify-content-center hover-hit-target" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer; width:40px; height:40px; border-radius: 50%; color: var(--text-2);">
+                    <i class="bi bi-bell" style="font-size: 1.1rem;"></i>
                     ${alertsRedDot}
                 </div>
-                <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-0" style="width: 320px; border-radius: 12px; overflow: hidden; z-index: 9999;">
-                    <div class="bg-light px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
-                        <span class="fw-bold fs-6">Notifications</span>
+                <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-0" style="width: 300px; border-radius: 12px; overflow: hidden; z-index: 9999; background: var(--bg-surface); border: 1px solid var(--border) !important;">
+                    <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center" style="background: var(--bg-page); border-color: var(--border) !important;">
+                        <span class="fw-bold small" style="color: var(--text-1);">Notifications</span>
                     </div>
                     <div id="bell-notif-list">
                         <div class="p-3 text-center">
-                            <i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i>
-                            <p class="text-muted small mt-2 mb-0">No new alerts.</p>
+                            <i class="bi bi-bell-slash text-muted" style="font-size: 1.5rem;"></i>
+                            <p class="text-muted extra-small mt-2 mb-0">No new alerts.</p>
                         </div>
-                    </div>
-                    <div class="bg-light px-3 py-2 border-top text-center" style="cursor: pointer;" onclick="window.location.href='notifications.html'">
-                        <span class="text-decoration-none small fw-semibold">View Master Feed</span>
                     </div>
                 </div>
             </div>
-            <div class="d-flex align-items-center gap-2 ps-2 dropdown border-start ms-1">
-                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold dropdown-toggle shadow-sm" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="width:38px;height:38px;font-size:13px;cursor:pointer;">${initials}</div>
-                <div class="d-none d-lg-block">
-                    <div class="fw-bold text-dark" style="font-size:0.85rem; line-height:1;">${u?.name || 'Admin'}</div>
-                    <div class="text-muted small" style="font-size:0.70rem; line-height:1.5;">${role}</div>
+            
+            <!-- Profile -->
+            <div class="d-flex align-items-center gap-2 ps-2 dropdown border-start ms-1" style="border-color: var(--border) !important;">
+                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width:36px; height:36px; font-size:11px; border: 1px solid var(--border); background: var(--primary-soft); color: var(--primary);">${initials}</div>
+                <div class="d-flex align-items-center dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer;">
+                    <div class="d-none d-xl-block fw-bold mb-0" style="font-size:13px; line-height:1; color: var(--text-1);">Tisha Admin</div>
                 </div>
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" aria-labelledby="profileDropdown" style="border-radius:12px; min-width:200px; font-size:0.875rem;">
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" aria-labelledby="profileDropdown" style="border-radius:12px; min-width:180px; font-size:0.85rem; background: var(--bg-surface); border: 1px solid var(--border) !important;">
                     <li class="px-2 pt-1 pb-2">
-                        <div class="fw-bold text-dark" style="font-size:0.85rem; line-height:1.3;">${u?.name || 'Admin'}</div>
-                        <div class="text-muted" style="font-size:0.73rem;">${u?.email || role}</div>
+                        <div class="fw-bold" style="font-size:0.8rem; line-height:1.3; color: var(--text-1);">Tisha Admin</div>
+                        <div style="font-size:0.7rem; color: var(--text-3);">${u?.email || 'Admin'}</div>
                     </li>
-                    <li><hr class="dropdown-divider my-1"></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="profile.html"><i class="bi bi-person me-2 text-primary"></i> My Profile</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="settings.html"><i class="bi bi-gear me-2 text-secondary"></i> Settings</a></li>
-                    <li><hr class="dropdown-divider my-1"></li>
+                    <li><hr class="dropdown-divider my-1" style="border-color: var(--border);"></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="profile.html" style="color: var(--text-2);"><i class="bi bi-person me-2 text-primary"></i> Profile</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="settings.html" style="color: var(--text-2);"><i class="bi bi-gear me-2 text-secondary"></i> Settings</a></li>
+                    <li><hr class="dropdown-divider my-1" style="border-color: var(--border);"></li>
                     <li><a class="dropdown-item rounded-2 py-2 text-danger" href="#" onclick="logout();return false;"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
                 </ul>
             </div>
@@ -389,6 +465,11 @@ window.injectTopHeader = function (pageTitle) {
     setTimeout(() => {
         if (window.checkUrlForQuickAdd) window.checkUrlForQuickAdd();
     }, 500);
+
+    // Inject overlay if not present
+    if (!document.getElementById('sb-overlay')) {
+        document.body.insertAdjacentHTML('beforeend', '<div id="sb-overlay" class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>');
+    }
 }
 
 window.getInitials = function (name) {
@@ -900,4 +981,65 @@ window.startAllPolling = function () {
     startNotificationPolling();
     // High priority check every 60s
     setInterval(window.checkHighPriorityIssues, 60000);
-}
+};
+
+// ─── Dark Mode ────────────────────────────────────────────────
+;(function applyInitialTheme() {
+    let saved = localStorage.getItem('srm-theme');
+    // Default to dark theme for consistency with redesign if no preference is set
+    if (!saved) {
+        saved = 'dark';
+        localStorage.setItem('srm-theme', 'dark');
+    }
+    
+    if (saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+})();
+
+window.setTheme = function (mode) {
+    let applyDark = false;
+    if (mode === 'dark') {
+        applyDark = true;
+    } else if (mode === 'system') {
+        applyDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
+    if (applyDark) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('srm-theme', 'dark');
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('srm-theme', 'light');
+    }
+
+    const icon = document.getElementById('dark-mode-icon');
+    if (icon) {
+        icon.className = applyDark ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+    }
+};
+
+window.toggleDarkMode = function () {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const newMode = isDark ? 'light' : 'dark';
+    window.setTheme(newMode);
+    
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) {
+        themeSelect.value = newMode;
+        if (typeof saveSetting === 'function') {
+            saveSetting('theme', newMode);
+        }
+    } else {
+        localStorage.setItem('srm_setting_theme', newMode);
+    }
+};
+
+// Sync icon with current mode on load (after header injection)
+document.addEventListener('DOMContentLoaded', function () {
+    const icon = document.getElementById('dark-mode-icon');
+    if (icon) {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        icon.className = isDark ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+    }
+});

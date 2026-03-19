@@ -1,16 +1,7 @@
 // frontend/js/auth.js
 // auth.js — shared across all pages
-let API = window.location.origin + '/api';
-
-// Background Refresh Config
-fetch(window.location.origin + '/api/config')
-    .then(r => r.json())
-    .then(data => {
-        if (data.API_BASE_URL) {
-            API = data.API_BASE_URL;
-        }
-    })
-    .catch(e => console.warn('Config fetch error:', e));
+// Config handled by ApiClient.initConfig() lazily or via explicit call
+if (window.ApiClient) window.ApiClient.initConfig();
 
 // Inject global theme styles (but NOT on the login page to avoid style degradation)
 const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/') || window.location.pathname === '';
@@ -32,10 +23,10 @@ function setTokens(a, r) {
 function clearTokens() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    localStorage.removeItem('crm_user');
+    localStorage.removeItem('srm_user');
 }
 function getUser() {
-    try { return JSON.parse(localStorage.getItem('crm_user')); } catch { return null; }
+    try { return JSON.parse(localStorage.getItem('srm_user')); } catch { return null; }
 }
 
 function showAccessDeniedState(role, path) {
@@ -46,19 +37,18 @@ function showAccessDeniedState(role, path) {
     const pageLabel = (path || 'this page').replace('.html', '').replace(/[-_]/g, ' ');
     const card = document.createElement('div');
     card.id = 'access-denied-state';
-    card.style.cssText = 'position:relative;z-index:20;margin:0 auto 24px auto;max-width:720px;background:#fff7ed;border:1px solid #fed7aa;border-radius:20px;padding:32px;box-shadow:0 20px 40px rgba(15,23,42,.08);';
+    // Use theme tokens for the card
+    card.style.cssText = 'position:relative;z-index:100;margin:0 auto 32px auto;max-width:540px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;box-shadow:var(--shadow-xl);overflow:visible;';
     card.innerHTML = `
-        <div style="display:flex;align-items:flex-start;gap:16px;">
-            <div style="width:56px;height:56px;border-radius:16px;background:#ffedd5;color:#ea580c;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">
+        <div style="text-align:center;">
+            <div style="width:64px;height:64px;border-radius:16px;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 24px auto;">
                 <i class="bi bi-shield-lock"></i>
             </div>
-            <div>
-                <div style="font-size:1.35rem;font-weight:700;color:#9a3412;line-height:1.2;">You don't have enough access</div>
-                <p style="margin:10px 0 0 0;color:#7c2d12;font-size:.95rem;line-height:1.6;">Your current role, ${roleLabel}, cannot open ${pageLabel}. The sidebar stays visible so you can move to pages that are available to you.</p>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
-                    <a href="dashboard.html" style="text-decoration:none;background:#ea580c;color:#fff;padding:10px 14px;border-radius:12px;font-weight:600;">Go to Dashboard</a>
-                    <a href="profile.html" style="text-decoration:none;background:#fff;color:#9a3412;padding:10px 14px;border-radius:12px;border:1px solid #fdba74;font-weight:600;">Open Profile</a>
-                </div>
+            <h2 style="font-size:1.5rem;font-weight:700;color:var(--text-1);margin-bottom:12px;font-family:'Outfit',sans-serif;">Access Restricted</h2>
+            <p style="color:var(--text-2);font-size:0.95rem;line-height:1.6;margin-bottom:32px;">Your current role, ${roleLabel}, cannot view ${pageLabel}. Please return to the dashboard or contact your administrator.</p>
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                <a href="dashboard.html" style="text-decoration:none;background:var(--primary);color:#fff;padding:10px 24px;border-radius:8px;font-weight:600;font-size:14px;min-width:120px;display:inline-flex;align-items:center;justify-content:center;transition:all 0.2s;">Return to Dashboard</a>
+                <a href="profile.html" style="text-decoration:none;background:var(--bg-page);color:var(--text-1);padding:10px 24px;border-radius:8px;border:1px solid var(--border);font-weight:600;font-size:14px;min-width:120px;display:inline-flex;align-items:center;justify-content:center;transition:all 0.2s;">Open Profile</a>
             </div>
         </div>`;
 
@@ -190,7 +180,7 @@ function requireAuth() {
         .then(async profile => {
             if (!profile) return;
             const userData = { id: profile.id, name: profile.name || profile.email, role: profile.role };
-            localStorage.setItem('crm_user', JSON.stringify(userData));
+            localStorage.setItem('srm_user', JSON.stringify(userData));
 
             if (window.ApiClient && window.ApiClient.getEffectiveAccessPolicy) {
                 try {
@@ -250,8 +240,14 @@ window.addEventListener('pageshow', (event) => {
 
 // Logout
 function logout() {
-    clearTokens();
-    window.location.replace('index.html');
+    if (window.ApiClient && typeof window.ApiClient.clearTokens === 'function') {
+        window.ApiClient.clearTokens();
+    } else {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('srm_user');
+    }
+    window.location.href = 'index.html?msg=logged_out';
 }
 
 // Global Critical Issue Check
@@ -407,28 +403,5 @@ async function apiDelete(path) {
     return res.status === 204 ? null : res.json();
 }
 
-// Show bootstrap toast
-function showToast(msg, type = 'success') {
-    const bg = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
-    const id = 'toast_' + Date.now();
-    const toastHtml = `
-        <div id="${id}" class="toast align-items-center text-white ${bg} border-0 mb-2" role="alert">
-            <div class="d-flex">
-                <div class="toast-body">${msg}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        </div>`;
-    let c = document.getElementById('toast-container');
-    if (!c) {
-        c = document.createElement('div');
-        c.id = 'toast-container';
-        c.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-        c.style.zIndex = 9999;
-        document.body.appendChild(c);
-    }
-    c.insertAdjacentHTML('beforeend', toastHtml);
-    const el = document.getElementById(id);
-    new bootstrap.Toast(el, { delay: 3500 }).show();
-    el.addEventListener('hidden.bs.toast', () => el.remove());
-}
+
 

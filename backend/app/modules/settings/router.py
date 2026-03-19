@@ -1,6 +1,7 @@
 # backend/app/modules/settings/router.py
 from typing import Any
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import RoleChecker, get_current_user
@@ -49,3 +50,33 @@ def update_settings(
     db.commit()
     db.refresh(settings_obj)
     return settings_obj
+
+@router.get("/access-control")
+def get_access_control(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    settings_obj = db.query(SystemSettings).first()
+    if not settings_obj or not settings_obj.feature_flags:
+        return {"rolePages": {}, "actionMatrix": {}}
+    ac = settings_obj.feature_flags.get("access_control", {})
+    return ac
+
+@router.post("/access-control")
+def set_access_control(
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_access)
+):
+    settings_obj = db.query(SystemSettings).first()
+    if not settings_obj:
+        settings_obj = SystemSettings(feature_flags={})
+        db.add(settings_obj)
+    flags = settings_obj.feature_flags or {}
+    flags["access_control"] = data
+    settings_obj.feature_flags = flags
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(settings_obj, "feature_flags")
+    db.commit()
+    db.refresh(settings_obj)
+    return JSONResponse(content=data)

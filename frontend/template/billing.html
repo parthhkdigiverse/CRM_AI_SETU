@@ -119,11 +119,8 @@
 <body>
 <div class="d-flex">
     <div id="sidebar"></div>
-    <div class="flex-grow-1 bg-light" style="height:100vh;overflow-y:auto;display:flex;flex-direction:column;">
-
-        <!-- Top Header injected by auth.js -->
-
-        <div class="page-content">
+    <div class="main-wrapper flex-grow-1">
+        <div class="page-content mx-auto" style="max-width: 1300px;">
 
             <!-- ── Page Header ──────────────────────────────────── -->
             <div class="page-header d-flex justify-content-between align-items-center mb-4">
@@ -313,7 +310,7 @@
             <div class="fw-bold mb-2 mt-1" style="font-size:0.75rem;letter-spacing:0.06em;text-transform:uppercase;color:#94a3b8;">Service & Payment</div>
             <div class="mb-3">
                 <div class="field-label">Service Description</div>
-                <input type="text" id="c-desc" class="field-input" placeholder="e.g. CRM AI SETU – Annual Subscription" value="CRM AI SETU Software – Annual Subscription">
+                <input type="text" id="c-desc" class="field-input" placeholder="e.g. SRM AI SETU – Annual Subscription" value="SRM AI SETU Software – Annual Subscription">
             </div>
             <div class="field-row2 mb-3">
                 <div>
@@ -781,7 +778,7 @@ function openCreateModal() {
     ['c-name','c-phone','c-email','c-org','c-address'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
     });
-    document.getElementById('c-desc').value = 'CRM AI SETU Software – Annual Subscription';
+    document.getElementById('c-desc').value = 'SRM AI SETU Software – Annual Subscription';
     document.getElementById('c-payment-type').value = '';
     document.getElementById('c-gst-type').value = '';
     const amtEl = document.getElementById('c-amount');

@@ -271,7 +271,7 @@ def get_timetable(
         ))
 
     # 5. Fetch Scheduled Shop Demos (from SM demo pipeline)
-    demo_query = db.query(Shop).filter(Shop.demo_scheduled_at.isnot(None))
+    demo_query = db.query(Shop).filter(Shop.demo_scheduled_at.is_not(None))
     if not is_admin:
         demo_query = demo_query.filter(Shop.project_manager_id == user_id)
 

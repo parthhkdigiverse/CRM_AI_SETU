@@ -12,26 +12,46 @@ if root_dir not in sys.path:
 if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
 
-if __name__ == "__main__":
-    print("==================================================")
-    print("SRM AI SETU - Startup Diagnostics")
-    print(f"Root Directory: {root_dir}")
-    print(f"Backend Directory: {backend_dir}")
-    print(f"Python Version: {sys.version}")
+    from config.config import HOST, PORT
+    _display_host = "localhost" if HOST == "0.0.0.0" else HOST
+    
+    def kill_process_on_port(port):
+        """Automatically find and kill any process holding the specified port on Windows."""
+        import subprocess
+        import re
+        try:
+            # Find the PID(s) using the port
+            cmd = f'netstat -ano | findstr :{port}'
+            output = subprocess.check_output(cmd, shell=True).decode()
+            pids = set(re.findall(r'\s+(\d+)$', output, re.MULTILINE))
+            
+            for pid in pids:
+                if pid != '0':
+                    print(f"[Cleanup] Terminating conflicting process PID: {pid} on port {port}...")
+                    subprocess.run(f'taskkill /F /PID {pid}', shell=True, check=False)
+        except subprocess.CalledProcessError:
+            # This happens if no process is found (findstr returns exit code 1)
+            pass
+        except Exception as e:
+            print(f"[Cleanup] Warning: Failed to clear port {port}: {e}")
+
     print("--------------------------------------------------")
-    print("-> Frontend UI : http://127.0.0.1:8080/frontend/template/index.html")
-    print("-> Backend API : http://127.0.0.1:8080/docs")
+    print(f"-> Frontend UI : http://{_display_host}:{PORT}/frontend/template/index.html")
+    print(f"-> Backend API : http://{_display_host}:{PORT}/docs")
     print("==================================================")
     
     print("Attempting to start uvicorn...")
     try:
+        # Clear the port before starting
+        kill_process_on_port(PORT)
+        
         # Run the FastAPI server mapped to the backend main file
+        from config.config import HOST, PORT
         uvicorn.run(
-            "app.main:app", 
-            host="127.0.0.1", 
-            port=8080,
-            reload=True,
-            reload_dirs=[backend_dir]
+            "backend.app.main:app", 
+            host=HOST, 
+            port=PORT,
+            reload=False
         )
     except Exception as e:
         print(f"Startup EXCEPTION: {e}")

@@ -187,6 +187,7 @@
             flex: 1;
             background: var(--bg-app);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 2rem;
@@ -210,7 +211,7 @@
             max-width: 420px;
             background: var(--surface);
             border-radius: var(--radius-lg);
-            padding: 2.75rem 2.5rem;
+            padding: 2.5rem 2.25rem 1.75rem;
             box-shadow: var(--shadow-xl);
             border: 1px solid var(--border);
         }
@@ -419,13 +420,38 @@
             font-size: 0.77rem;
         }
 
+        /* Trust strip inside card */
+        .card-trust-strip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            margin-top: 1.5rem;
+            padding-top: 1.1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .trust-item i {
+            font-size: 0.82rem;
+            color: var(--primary);
+        }
+
         .right-footer {
-            position: absolute;
-            bottom: 1.5rem;
-            font-size: 0.73rem;
+            position: relative;
+            z-index: 1;
+            margin-top: 1.1rem;
+            font-size: 0.72rem;
             color: var(--text-muted);
             text-align: center;
-            z-index: 1;
         }
 
         /* Spinner */
@@ -476,7 +502,7 @@
         </h1>
 
         <p class="left-desc">
-            A unified CRM platform built for modern sales teams — track leads, clients, visits, projects and billing all
+            A unified SRM platform built for modern sales teams — track leads, clients, visits, projects and billing all
             from one powerful workspace.
         </p>
 
@@ -495,15 +521,33 @@
             </div>
         </div>
 
-        <div class="left-footer">© 2025 SRM AI SETU. All rights reserved.</div>
+        <div class="left-footer">© 2026 Harikrushn DigiVerse LLP. All rights reserved.</div>
     </div>
 
     <!-- RIGHT FORM PANEL -->
     <div class="login-right">
         <div class="login-form-card">
-            <p class="form-eyebrow">Welcome Back</p>
-            <h2 class="form-title">Sign in to your workspace</h2>
-            <p class="form-subtitle">Enter your credentials to access your dashboard.</p>
+            <!-- Logout Success State -->
+            <div id="logout-success" style="display: none; text-align: center;">
+                <div style="width: 56px; height: 56px; background: var(--primary-soft); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: var(--primary);">
+                    <i class="bi bi-check2-circle" style="font-size: 28px;"></i>
+                </div>
+                <h2 class="form-title" style="margin-bottom: 8px;">Logged Out Successfully</h2>
+                <p class="form-subtitle" style="margin-bottom: 28px;">Your session has been securely terminated. Thank you for using SRM AI SETU.</p>
+                <div>
+                    <a href="index.html" class="btn-login" style="padding: 10px 24px; min-width: 120px; border-radius: 8px; text-decoration: none; display: inline-flex; width: auto; margin: 0 auto;">
+                        <i class="bi bi-arrow-left" style="margin-right: 8px;"></i>
+                        Return to Login
+                    </a>
+                </div>
+            </div>
+
+            <!-- Login Fields -->
+            <div id="login-fields">
+                <p class="form-eyebrow">Welcome Back</p>
+                <h2 class="form-title">Sign in to your workspace</h2>
+                <p class="form-subtitle">Enter your credentials to access your dashboard.</p>
+            </div>
 
             <div class="error-box" id="error-box" role="alert">
                 <i class="bi bi-exclamation-circle-fill"></i>
@@ -540,17 +584,24 @@
                 </button>
             </form>
 
-            <div class="divider">Default credentials</div>
-
-            <div class="demo-hint">
-                <i class="bi bi-info-circle-fill"></i>
-                <div>
-                    Use <code>admin@example.com</code> / <code>password123</code> if you haven't set up a database yet.
+            <!-- Trust Strip -->
+            <div class="card-trust-strip">
+                <div class="trust-item">
+                    <i class="bi bi-shield-lock-fill"></i>
+                    <span>Secure Login</span>
+                </div>
+                <div class="trust-item">
+                    <i class="bi bi-lock-fill"></i>
+                    <span>Encrypted</span>
+                </div>
+                <div class="trust-item">
+                    <i class="bi bi-person-check-fill"></i>
+                    <span>Trusted Access</span>
                 </div>
             </div>
         </div>
 
-        <p class="right-footer">Secured with end-to-end authentication</p>
+        <div class="right-footer">Handcrafted with <span style="color: var(--primary);">♥</span> by the HK DigiVerse team</div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -578,10 +629,22 @@
             if (domainParts.some(p => p.length === 0)) return { msg: 'Please enter a valid email address (e.g. name@example.com).', field: 'email' };
             if (!password) return { msg: 'Password is required.', field: 'password' };
             if (password.length < 4) return { msg: 'Password is too short — please enter at least 4 characters.', field: 'password' };
-            return null; // valid
-        }
+                return null; // valid
+            }
 
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            // Handle Logout Message
+            document.addEventListener('DOMContentLoaded', () => {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('msg') === 'logged_out') {
+                    document.getElementById('logout-success').style.display = 'block';
+                    document.getElementById('login-fields').style.display = 'none';
+                    document.getElementById('login-form').style.display = 'none';
+                    const strip = document.querySelector('.card-trust-strip');
+                    if (strip) strip.style.display = 'none';
+                }
+            });
+
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('login-btn');
             const errBox = document.getElementById('error-box');
@@ -633,7 +696,7 @@
                     const r = await fetch(`${API}/auth/profile`, { headers: { 'Authorization': `Bearer ${data.access_token}` } });
                     if (r.ok) {
                         const p = await r.json();
-                        localStorage.setItem('crm_user', JSON.stringify({ id: p.id, name: p.name || p.email, role: p.role }));
+                        localStorage.setItem('srm_user', JSON.stringify({ id: p.id, name: p.name || p.email, role: p.role }));
                     }
                 } catch (_) { }
 

@@ -7,7 +7,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>My Profile — CRM AI SETU</title>
+    <title>Profile — SRM AI SETU</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/theme.css">
@@ -23,6 +23,29 @@
             gap: 28px;
             margin-bottom: 24px;
             box-shadow: 0 2px 12px rgba(99, 102, 241, 0.06);
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 991.98px) {
+            .profile-hero {
+                padding: 24px;
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .profile-hero {
+                flex-direction: column;
+                text-align: center;
+                padding: 24px;
+            }
+            .profile-avatar-lg {
+                margin: 0 auto;
+            }
+            #stats-row {
+                width: 100%;
+                justify-content: center;
+            }
         }
 
         .profile-avatar-lg {
@@ -224,14 +247,22 @@
 <body class="bg-light">
     <div class="d-flex">
         <div id="sidebar"></div>
-        <div class="flex-grow-1">
+        <div class="flex-grow-1 main-wrapper">
             <!-- Top header injected by auth.js -->
 
-            <div class="page-content" style="max-width: 980px;">
+            <div class="page-content mx-auto" style="max-width: 1200px;">
 
                 <!-- Profile Hero -->
                 <div class="profile-hero">
-                    <div class="profile-avatar-lg" id="hero-avatar">AD</div>
+                    <div class="profile-avatar-lg position-relative" id="hero-avatar">
+                        <img id="profile-img" src="" alt="Profile image of user" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;top:0;left:0;" />
+                        <span id="profile-initials">AD</span>
+                        <label for="avatar-upload" class="position-absolute bottom-0 end-0 bg-white rounded-circle p-1" style="cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.08);" aria-label="Upload avatar" title="Upload avatar">
+                            <i class="bi bi-camera" style="font-size:1rem;color:#6366f1;" aria-hidden="true"></i>
+                            <input type="file" id="avatar-upload" accept="image/*" style="display:none;" aria-label="Choose profile image" />
+                        </label>
+                        <img id="avatar-preview" src="" alt="Avatar preview" style="display:none;width:88px;height:88px;object-fit:cover;border-radius:50%;position:absolute;top:0;left:0;z-index:2;" />
+                    </div>
                     <div class="flex-grow-1">
                         <h2 class="mb-1" id="hero-name" style="font-size:1.5rem;">Loading...</h2>
                         <div class="role-badge mb-2" id="hero-role"><i class="bi bi-shield-check"></i> —</div>
@@ -257,48 +288,6 @@
                             </div>
                         </div>
 
-                        <!-- Recent Activity Summary -->
-                        <div class="info-card">
-                            <div class="info-card-title"><i class="bi bi-lightning-charge text-warning"></i> Quick Links
-                            </div>
-                            <div class="d-flex flex-column gap-2">
-                                <a href="settings.html"
-                                    class="d-flex align-items-center gap-3 p-2 rounded-3 text-decoration-none"
-                                    style="color:#475569; background:#f8fafc; transition: background 0.18s;"
-                                    onmouseover="this.style.background='#eef2ff'"
-                                    onmouseout="this.style.background='#f8fafc'">
-                                    <i class="bi bi-gear text-primary"></i>
-                                    <span style="font-size:0.875rem; font-weight:500;">Account Settings</span>
-                                    <i class="bi bi-chevron-right ms-auto" style="font-size:0.7rem; color:#94a3b8;"></i>
-                                </a>
-                                <a href="dashboard.html"
-                                    class="d-flex align-items-center gap-3 p-2 rounded-3 text-decoration-none"
-                                    style="color:#475569; background:#f8fafc; transition: background 0.18s;"
-                                    onmouseover="this.style.background='#eef2ff'"
-                                    onmouseout="this.style.background='#f8fafc'">
-                                    <i class="bi bi-bar-chart-line text-success"></i>
-                                    <span style="font-size:0.875rem; font-weight:500;">Go to Dashboard</span>
-                                    <i class="bi bi-chevron-right ms-auto" style="font-size:0.7rem; color:#94a3b8;"></i>
-                                </a>
-                                <a href="notifications.html"
-                                    class="d-flex align-items-center gap-3 p-2 rounded-3 text-decoration-none"
-                                    style="color:#475569; background:#f8fafc; transition: background 0.18s;"
-                                    onmouseover="this.style.background='#eef2ff'"
-                                    onmouseout="this.style.background='#f8fafc'">
-                                    <i class="bi bi-bell text-info"></i>
-                                    <span style="font-size:0.875rem; font-weight:500;">Notifications</span>
-                                    <i class="bi bi-chevron-right ms-auto" style="font-size:0.7rem; color:#94a3b8;"></i>
-                                </a>
-                                <button onclick="logout()"
-                                    class="d-flex align-items-center gap-3 p-2 rounded-3 w-100 border-0 text-start"
-                                    style="color:#ef4444; background:#fef2f2; font-size:0.875rem; font-weight:500; cursor:pointer; transition: background 0.18s;"
-                                    onmouseover="this.style.background='#fee2e2'"
-                                    onmouseout="this.style.background='#fef2f2'">
-                                    <i class="bi bi-box-arrow-right"></i>
-                                    <span>Sign Out</span>
-                                </button>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Right Column -->
@@ -310,34 +299,35 @@
                             <form id="edit-profile-form">
                                 <div class="row g-3">
                                     <div class="col-12">
-                                        <label class="form-label-sm">Full Name</label>
-                                        <input type="text" id="edit-name" class="form-control form-control-clean w-100"
-                                            placeholder="Your full name">
+                                        <label class="form-label-sm" for="edit-name">Full Name</label>
+                                        <input type="text" id="edit-name" class="form-control form-control-clean w-100" placeholder="Your full name" aria-label="Full Name" required>
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label-sm">Email Address</label>
-                                        <input type="email" id="edit-email"
-                                            class="form-control form-control-clean w-100" placeholder="your@email.com"
-                                            disabled style="background:#f8fafc; color:#94a3b8; border-style: dashed;">
-                                        <div class="text-muted mt-1" style="font-size:0.75rem;"><i
-                                                class="bi bi-info-circle me-1"></i>Email cannot be changed here. Contact
-                                            admin.</div>
+                                        <label class="form-label-sm" for="edit-email">Email Address</label>
+                                        <input type="email" id="edit-email" class="form-control form-control-clean w-100" placeholder="your@email.com" disabled style="background:#f8fafc; color:#94a3b8; border-style: dashed;" aria-label="Email Address">
+                                        <div class="text-muted mt-1" style="font-size:0.75rem;"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Email cannot be changed here. Contact admin.</div>
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label-sm">Phone Number</label>
-                                        <input type="tel" id="edit-phone" class="form-control form-control-clean w-100"
-                                            placeholder="+91 98765 43210">
+                                        <label class="form-label-sm" for="edit-phone">Phone Number</label>
+                                        <input type="tel" id="edit-phone" class="form-control form-control-clean w-100" placeholder="+91 98765 43210" aria-label="Phone Number" pattern="[0-9\-\+\s]{10,15}">
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label-sm">Department / Designation</label>
-                                        <input type="text" id="edit-dept" class="form-control form-control-clean w-100"
-                                            placeholder="e.g. Sales, Operations" disabled
-                                            style="background:#f8fafc; color:#94a3b8; border-style: dashed;">
+                                        <label class="form-label-sm" for="edit-dept">Department / Designation</label>
+                                        <input type="text" id="edit-dept" class="form-control form-control-clean w-100" placeholder="e.g. Sales, Operations" disabled style="background:#f8fafc; color:#94a3b8; border-style: dashed;" aria-label="Department or Designation">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label-sm" for="edit-summary">Professional Summary</label>
+                                        <textarea id="edit-summary" class="form-control form-control-clean w-100" placeholder="Brief professional summary or about you (max 300 chars)" maxlength="300" aria-label="Professional Summary"></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label-sm" for="edit-linkedin">LinkedIn / Social Profile</label>
+                                        <input type="url" id="edit-linkedin" class="form-control form-control-clean w-100" placeholder="https://linkedin.com/in/yourprofile" aria-label="LinkedIn or Social Profile">
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-center gap-3 mt-4">
-                                    <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold" style="border-radius: 10px;">
-                                        <i class="bi bi-check2-circle me-2"></i>Save Profile
+                                    <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold" style="border-radius: 10px;" id="btn-save-profile">
+                                        <span class="spinner-border spinner-border-sm me-2 d-none" id="spinner-save-profile"></span>
+                                        <i class="bi bi-check2-circle me-2" id="icon-save-profile"></i>Save Profile
                                     </button>
                                 </div>
                             </form>
@@ -362,22 +352,21 @@
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="form-label-sm">New Password</label>
+                                        <label class="form-label-sm" for="new-password">New Password</label>
                                         <div class="position-relative">
-                                            <input type="password" id="new-password"
-                                                class="form-control form-control-clean w-100"
-                                                placeholder="Minimum 8 characters" oninput="checkStrength(this.value)"
-                                                style="padding-right: 40px;">
-                                            <button type="button" class="password-toggle"
-                                                onclick="togglePasswordVisibility('new-password', 'new-pwd-icon')">
+                                            <input type="password" id="new-password" class="form-control form-control-clean w-100" placeholder="Minimum 8 characters" oninput="checkStrength(this.value)" style="padding-right: 40px;" aria-label="New Password" aria-describedby="pwd-reqs" required>
+                                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('new-password', 'new-pwd-icon')" aria-label="Show/hide new password" title="Show/hide password">
                                                 <i class="bi bi-eye" id="new-pwd-icon"></i>
                                             </button>
+                                        </div>
+                                        <div id="pwd-reqs" class="text-muted mt-1" style="font-size:0.73rem;">
+                                            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+                                            Password must be at least 8 characters, include a number, an uppercase letter, and a special character.
                                         </div>
                                         <div class="password-strength mt-2">
                                             <div class="password-strength-bar" id="pwd-strength-bar"></div>
                                         </div>
-                                        <div class="text-muted mt-1" id="pwd-strength-text" style="font-size:0.73rem;">
-                                        </div>
+                                        <div class="text-muted mt-1" id="pwd-strength-text" style="font-size:0.73rem;"></div>
                                     </div>
                                     <div>
                                         <label class="form-label-sm">Confirm New Password</label>
@@ -393,8 +382,10 @@
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-center gap-3 mt-4">
-                                    <button type="submit" class="btn-save"><i class="bi bi-shield-lock me-1"></i> Update
-                                        Password</button>
+                                    <button type="submit" class="btn-save" id="btn-update-pwd">
+                                        <span class="spinner-border spinner-border-sm me-2 d-none" id="spinner-update-pwd"></span>
+                                        <i class="bi bi-shield-lock me-1" id="icon-update-pwd"></i> Update Password
+                                    </button>
                                     <span id="pwd-save-msg" class="small d-none"></span>
                                 </div>
                             </form>
@@ -414,6 +405,26 @@
     <script src="../js/app.js?v=2.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Avatar preview before upload
+        document.getElementById('avatar-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                showToast('Only image files are allowed.', 'error');
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                showToast('Image size should be less than 2MB.', 'error');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                const preview = document.getElementById('avatar-preview');
+                preview.src = ev.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
         requireAuth();
         const sidebarElement = document.getElementById('sidebar');
         if (sidebarElement) {
@@ -424,8 +435,9 @@
         // Use global showToast from auth.js
 
         // ── Load profile data
+
         async function loadProfile() {
-            const u = JSON.parse(localStorage.getItem('crm_user') || '{}');
+            const u = JSON.parse(localStorage.getItem('srm_user') || '{}');
             let name = u?.name || u?.email || 'User';
             const role = (u?.role || 'USER').replace(/_/g, ' ');
             let phone = u?.phone || '';
@@ -434,7 +446,8 @@
             let department = u?.department || '';
             let baseSalary = u?.base_salary ?? null;
             let target = u?.target ?? null;
-
+            let profileImg = u?.profile_img || '';
+            let userId = u?.id || '';
             // Fetch fresh data from backend to get latest name/phone
             try {
                 const profile = await apiGet('/auth/profile');
@@ -446,8 +459,10 @@
                     department = profile.department || '';
                     baseSalary = profile.base_salary ?? null;
                     target = profile.target ?? null;
+                    profileImg = profile.profile_img || '';
+                    userId = profile.id || userId;
                     // Update localStorage with fresh data
-                    const stored = JSON.parse(localStorage.getItem('crm_user') || '{}');
+                    const stored = JSON.parse(localStorage.getItem('srm_user') || '{}');
                     stored.name = name;
                     stored.phone = phone;
                     stored.employee_code = employeeCode;
@@ -455,14 +470,26 @@
                     stored.department = department;
                     stored.base_salary = baseSalary;
                     stored.target = target;
-                    localStorage.setItem('crm_user', JSON.stringify(stored));
+                    stored.profile_img = profileImg;
+                    stored.id = userId;
+                    localStorage.setItem('srm_user', JSON.stringify(stored));
                 }
             } catch (e) { /* use local data */ }
 
-            const initials = name.slice(0, 2).toUpperCase();
+            // Avatar logic
+            const initials = window.getInitials(name);
+            const avatarImg = document.getElementById('profile-img');
+            const avatarInitials = document.getElementById('profile-initials');
+            if (profileImg) {
+                avatarImg.src = profileImg;
+                avatarImg.style.display = 'block';
+                avatarInitials.style.display = 'none';
+            } else {
+                avatarImg.style.display = 'none';
+                avatarInitials.textContent = initials;
+                avatarInitials.style.display = 'block';
+            }
 
-            // Hero section
-            document.getElementById('hero-avatar').textContent = initials;
             document.getElementById('hero-name').textContent = name;
             document.getElementById('hero-role').innerHTML = `<i class="bi bi-shield-check"></i> ${role}`;
             document.getElementById('hero-email').innerHTML = `<i class="bi bi-envelope me-1"></i>${u?.email || '—'}`;
@@ -473,11 +500,11 @@
             document.getElementById('edit-phone').value = phone;
             document.getElementById('edit-dept').value = department || role;
 
-            // Account info rows
+            // Account info rows (professional/CEO-level only)
             const joinedDate = joiningDateRaw
                 ? new Date(joiningDateRaw).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
                 : '—';
-            const salaryText = baseSalary !== null && baseSalary !== undefined
+            const salaryText = baseSalary !== null && baseSalary !== undefined && role.toUpperCase() !== 'ADMIN'
                 ? 'Rs ' + Number(baseSalary || 0).toLocaleString('en-IN')
                 : '—';
 
@@ -488,31 +515,27 @@
                 { label: 'Department', value: department, icon: 'bi-building' },
                 { label: 'Employee Code', value: employeeCode, icon: 'bi-upc-scan' },
                 { label: 'Joined', value: joinedDate, icon: 'bi-calendar3' },
-                { label: 'Target', value: target, icon: 'bi-bullseye' },
                 { label: 'Base Salary', value: salaryText, icon: 'bi-cash-stack' },
                 { label: 'Phone', value: phone, icon: 'bi-telephone' },
-                { label: 'User ID', value: `<span class="text-muted">#${u?.id || '—'}</span>`, icon: 'bi-clock' }
+                { label: 'User ID', value: `<span class="text-muted">#${userId || '—'}</span>`, icon: 'bi-clock' },
+                { label: 'Summary', value: u?.summary, icon: 'bi-person-vcard' },
+                { label: 'LinkedIn', value: u?.linkedin ? `<a href="${u.linkedin}" target="_blank">${u.linkedin}</a>` : '', icon: 'bi-linkedin' }
             ];
 
             document.getElementById('account-info-rows').innerHTML = rows
                 .filter(row => {
                     if (!row || !row.value) return false;
                     let v = String(row.value).replace(/<\/?[^>]+(>|$)/g, "").trim();
-                    
-                    // Fail-safe check for empty/null placeholders
                     if (!v || v === "" || v.toLowerCase() === "null" || v.toLowerCase() === "undefined" || v === "0") return false;
-                    
-                    // Aggressive placeholder detection (em-dash, en-dash, hyphen-minus)
-                    // Char codes: em-dash(8212), en-dash(8211), hyphen-minus(45)
                     const isPlaceholder = /^([—\-\–\s]|&mdash;|&ndash;|&#8212;|&#8211;)+$/.test(v) || 
                                         v.charCodeAt(0) === 8212 || 
                                         v.charCodeAt(0) === 8211 || 
                                         v === "—" || v === "-" || v === "–";
-                    
-                    if (isPlaceholder) {
-                        console.log(`[ProfileFilter] Hiding placeholder row: ${row.label} (value: "${v}", charCode: ${v.charCodeAt(0)})`);
-                        return false;
-                    }
+                    if (isPlaceholder) return false;
+                    // Only show email if user is CEO or self
+                    if (row.label === 'Email' && !(role.toUpperCase().includes('CEO') || u?.is_self)) return false;
+                    // Hide base salary for admin
+                    if (row.label === 'Base Salary' && role.toUpperCase() === 'ADMIN') return false;
                     return true;
                 })
                 .map(row => `
@@ -521,6 +544,32 @@
                         <span class="info-value">${row.value}</span>
                     </div>
                 `).join('');
+
+            // Avatar upload logic
+            const avatarInput = document.getElementById('avatar-upload');
+            if (avatarInput) {
+                avatarInput.onchange = async function (e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const formData = new FormData();
+                    formData.append('avatar', file);
+                    try {
+                        const res = await fetch('/auth/upload-avatar', { method: 'POST', body: formData, credentials: 'include' });
+                        const data = await res.json();
+                        if (data && data.url) {
+                            avatarImg.src = data.url;
+                            avatarImg.style.display = 'block';
+                            avatarInitials.style.display = 'none';
+                            // Save to localStorage
+                            const stored = JSON.parse(localStorage.getItem('srm_user') || '{}');
+                            stored.profile_img = data.url;
+                            localStorage.setItem('srm_user', JSON.stringify(stored));
+                        }
+                    } catch (err) {
+                        showToast('Failed to upload avatar.', 'error');
+                    }
+                }
+            }
 
             // Load role-aware stats from API
             try {
@@ -615,31 +664,37 @@
             e.preventDefault();
             const newName = document.getElementById('edit-name').value.trim();
             const phone = document.getElementById('edit-phone').value.trim();
-            if (!newName) return;
-
+            const btn = document.getElementById('btn-save-profile');
+            const spn = document.getElementById('spinner-save-profile');
+            const icon = document.getElementById('icon-save-profile');
+            if (!newName) { showToast('Name is required.', 'error'); return; }
+            if (phone && !/^([0-9\-\+\s]{10,15})$/.test(phone)) { showToast('Invalid phone number format.', 'error'); return; }
             try {
+                if (btn) btn.disabled = true;
+                if (spn) spn.classList.remove('d-none');
+                if (icon) icon.classList.add('d-none');
                 // Save to backend
                 await apiPatch('/auth/profile', { name: newName, phone: phone });
-
                 // Update local storage optimistically
-                const u = JSON.parse(localStorage.getItem('crm_user') || '{}');
+                const u = JSON.parse(localStorage.getItem('srm_user') || '{}');
                 u.name = newName;
                 if (phone) u.phone = phone;
-                localStorage.setItem('crm_user', JSON.stringify(u));
-
+                localStorage.setItem('srm_user', JSON.stringify(u));
                 // Global Sync (Top Header)
                 if (window.updateTopHeaderProfile) {
                     window.updateTopHeaderProfile(newName, u.role);
                 }
-
                 showToast('Profile updated successfully!');
-
                 // Refresh hero & Local UI
                 document.getElementById('hero-name').textContent = newName;
                 document.getElementById('hero-avatar').textContent = window.getInitials(newName);
                 loadProfile(); // Re-load to sync account info card
             } catch (err) {
                 showToast(err?.message || 'Failed to save changes.', 'error');
+            } finally {
+                if (btn) btn.disabled = false;
+                if (spn) spn.classList.add('d-none');
+                if (icon) icon.classList.remove('d-none');
             }
         });
 
@@ -651,11 +706,19 @@
             const conf = document.getElementById('confirm-password').value;
             const msgEl = document.getElementById('pwd-save-msg');
 
+            const btn = document.getElementById('btn-update-pwd');
+            const spn = document.getElementById('spinner-update-pwd');
+            const icon = document.getElementById('icon-update-pwd');
+
             if (!old || !nw || !conf) { showToast('Please fill all password fields.', true); return; }
             if (nw !== conf) { showToast('New passwords do not match!', true); return; }
             if (nw.length < 8) { showToast('Password must be at least 8 characters.', true); return; }
 
             try {
+                if (btn) btn.disabled = true;
+                if (spn) spn.classList.remove('d-none');
+                if (icon) icon.classList.add('d-none');
+
                 await apiPost('/auth/change-password', { old_password: old, new_password: nw });
                 document.getElementById('change-password-form').reset();
                 document.getElementById('pwd-strength-bar').style.width = '0%';
@@ -663,6 +726,10 @@
                 showToast('Password changed successfully!');
             } catch (err) {
                 showToast(err?.message || 'Incorrect current password.', 'error');
+            } finally {
+                if (btn) btn.disabled = false;
+                if (spn) spn.classList.add('d-none');
+                if (icon) icon.classList.remove('d-none');
             }
         });
 

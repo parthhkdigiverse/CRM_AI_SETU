@@ -1,21 +1,5 @@
 // frontend/js/app.js
-// ─── Toast Helper ─────────────────────────────────────
-function showToast(msg, type = 'success') {
-    let container = document.getElementById('toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'toast-container';
-        container.className = 'toast-container';
-        document.body.appendChild(container);
-    }
-    const t = document.createElement('div');
-    t.className = `toast ${type}`;
-    const icon = type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-xmark' : 'fa-circle-info';
-    t.innerHTML = `<i class="fa-solid ${icon}"></i> ${msg}`;
-    container.appendChild(t);
-    setTimeout(() => t.remove(), 3500);
-}
-window.showToast = showToast;
+
 
 // Global DOM references (initialized in DOMContentLoaded)
 let mainContent;
@@ -2224,7 +2208,7 @@ async function renderDashboard() {
             { id: 1, title: 'Finalize Proposal - TechCorp', priority: 'HIGH', status: 'OPEN', assigned: 'Nency Savaliya', due: `${tomorrow}T14:30:00`, related: 'Project Alpha' },
             { id: 2, title: 'Follow-up with New Leads', priority: 'MEDIUM', status: 'IN_PROGRESS', assigned: 'Nency Savaliya', due: `${today}T10:00:00`, related: 'Tech Expo' },
             { id: 3, title: 'Internal Security Audit', priority: 'LOW', status: 'OPEN', assigned: 'Admin', due: `${yesterday}T16:00:00`, related: 'System Admin' },
-            { id: 4, title: 'Client Feedback Analysis', priority: 'HIGH', status: 'RESOLVED', assigned: 'Nency Savaliya', due: '2026-02-26T12:00:00', related: 'CRM Feedback' },
+            { id: 4, title: 'Client Feedback Analysis', priority: 'HIGH', status: 'RESOLVED', assigned: 'Nency Savaliya', due: '2026-02-26T12:00:00', related: 'SRM Feedback' },
         ];
 
         const formatRelativeDate = (dateStr) => {

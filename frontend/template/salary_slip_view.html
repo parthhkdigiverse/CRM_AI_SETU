@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salary Slip — SRM AI SETU</title>
+    <title>Salary Slip | SRM AI SETU</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #dde3ec; min-height: 100vh; font-family: 'Segoe UI', Arial, sans-serif; }
@@ -38,18 +39,35 @@
     </style>
 </head>
 <body>
-    <div id="loading">
-        <div class="spinner"></div>
-        Loading salary slip&hellip;
-    </div>
+    <div class="d-flex">
+        <div id="sidebar"></div>
+        <div class="flex-grow-1 main-wrapper">
+            <div class="page-content mx-auto" style="max-width: 900px; width: 100%;">
+                <div id="loading">
+                    <div class="spinner"></div>
+                    Loading salary slip&hellip;
+                </div>
     <div id="error-box">
         <h3>Could not load salary slip</h3>
         <p id="error-msg"></p>
         <button id="retry-btn" onclick="location.reload()">Retry</button>
     </div>
 
+            </div>
+        </div>
+    </div>
+    <script src="../js/utils.js?v=2.3"></script>
+    <script src="../js/auth.js?v=2.3"></script>
+    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/app.js?v=2.3"></script>
     <script src="../js/api.js?v=2.9"></script>
     <script>
+        requireAuth();
+        injectTopHeader('Salary Slip');
+        const sidebarElement = document.getElementById('sidebar');
+        if (sidebarElement) {
+            sidebarElement.innerHTML = renderSidebar('salary');
+        }
         (async () => {
             const params = new URLSearchParams(window.location.search);
             const slipId = params.get('id');

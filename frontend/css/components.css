@@ -95,8 +95,8 @@
     background: none;
 }
 
-/* ── CRM Standardized Modals ─────────────────────────────────── */
-.crm-overlay {
+/* ── SRM Standardized Modals ─────────────────────────────────── */
+.srm-overlay {
     position: fixed;
     inset: 0;
     background: rgba(13, 21, 38, 0.40);
@@ -110,9 +110,9 @@
     visibility: hidden;
     transition: opacity 0.22s ease, visibility 0.22s ease;
 }
-.crm-overlay.show { opacity: 1; visibility: visible; }
+.srm-overlay.show { opacity: 1; visibility: visible; }
 
-.crm-box {
+.srm-box {
     background: var(--surface);
     border-radius: var(--radius-lg);
     padding: 28px 32px;
@@ -125,7 +125,7 @@
     max-height: 90vh;
     overflow-y: auto;
 }
-.crm-overlay.show .crm-box { transform: scale(1) translateY(0); }
+.srm-overlay.show .srm-box { transform: scale(1) translateY(0); }
 
 /* ── Keyframes ───────────────────────────────────────────────── */
 @keyframes fadeIn {
@@ -673,3 +673,24 @@ input[type="password"]::-ms-clear { display: none; }
 }
 .bulk-delete-confirm-btn:hover { background: #b91c1c; transform: scale(1.02); }
 .bulk-delete-confirm-btn:active { transform: scale(0.98); }
+
+/* ── Global Table Responsiveness ────────────────────────────── */
+.table-responsive {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    margin-bottom: 1rem;
+}
+
+.table-responsive .table {
+    margin-bottom: 0;
+}
+
+/* Auto-wrap tables that aren't already wrapped (if possible via CSS alone for simple layouts) */
+@media (max-width: 767.98px) {
+    .card-body > .table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}

@@ -8,15 +8,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Overview — SRM AI SETU</title>
+    <script>
+        console.log('Diagnostic: Dashboard HTML started loading');
+        window.onerror = function(msg, url, line, col, error) {
+            console.error('DIAGNOSTIC GLOBAL ERROR:', msg, 'at', url, 'line', line);
+        };
+    </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/theme.css?v=1772780187">
     <link rel="stylesheet" href="../css/components.css?v=1772780187">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap"
         rel="stylesheet">
     <style>
         /* ── Page content padding ── */
@@ -26,71 +33,64 @@
 
         /* ── Dashboard header ── */
         .dash-header {
-            background: linear-gradient(135deg, #4f46e5 0%, #6d28d9 100%);
+            background: linear-gradient(135deg, #3730a3 0%, #5b21b6 50%, #6d28d9 100%);
             border-radius: 20px;
-            padding: 28px 32px;
+            padding: 22px 26px;
             color: white;
-            margin-bottom: 28px;
+            margin-bottom: 32px;
             position: relative;
             overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 180px;
+            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.2);
         }
 
         .dash-header::before {
             content: '';
             position: absolute;
-            top: -50px;
-            right: -50px;
-            width: 220px;
-            height: 220px;
-            background: rgba(255, 255, 255, 0.07);
+            top: -100px;
+            right: -100px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
             border-radius: 50%;
         }
 
         .dash-header::after {
             content: '';
             position: absolute;
-            bottom: -60px;
-            left: 40%;
-            width: 180px;
-            height: 180px;
-            background: rgba(255, 255, 255, 0.05);
+            bottom: -50px;
+            left: 5%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
             border-radius: 50%;
         }
 
         .dash-greeting {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.6rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            margin-bottom: 4px;
+            font-family: 'Inter', sans-serif;
+            font-size: 21px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 2;
         }
 
         .dash-subtext {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .dash-header-actions {
+            font-size: 1.05rem;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 0;
             position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 8px;
+            z-index: 2;
         }
 
-        .dash-date-chip {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            padding: 5px 14px;
-            font-size: 0.82rem;
-            color: rgba(255, 255, 255, 0.92);
-            font-weight: 600;
+        .dash-date-text {
             font-family: 'Inter', sans-serif;
-            backdrop-filter: blur(8px);
-            white-space: nowrap;
-            letter-spacing: 0.01em;
+            font-size: 12.5px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.55);
         }
 
         .dash-live-dot {
@@ -104,6 +104,7 @@
             font-size: 0.72rem;
             color: #6ee7b7;
             font-weight: 600;
+            text-transform: uppercase;
         }
 
         .dash-live-dot::before {
@@ -112,20 +113,109 @@
             height: 6px;
             border-radius: 50%;
             background: #10b981;
-            animation: live-pulse 2s ease-in-out infinite;
+            animation: pulseRing 1.5s ease-in-out infinite;
         }
 
-        @keyframes live-pulse {
+        @keyframes pulseRing {
+            0% { transform: scale(1); opacity: 0.7; }
+            70% { transform: scale(1.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 0; }
+        }
 
-            0%,
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
+        /* ── Dashboard header ── */
+        .dash-header {
+            background: linear-gradient(135deg, #312e81, #4c1d95, #5b21b6);
+            border-radius: 14px;
+            padding: 20px 24px;
+            color: white;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 120px;
+        }
 
-            50% {
-                opacity: 0.4;
-                transform: scale(0.7);
+        .dash-date-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 11.5px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 4px;
+        }
+
+        .dash-greeting {
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: #fff; /* Keep white for the gradient header card */
+        }
+
+        .dash-live-dot {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.15);
+            border-radius: 100px;
+            padding: 4px 10px;
+            font-size: 10px;
+            color: #4ade80;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .dash-live-dot::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 8px #4ade80;
+        }
+
+        /* ── KPI Cards ── */
+        .kpi-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .kpi-label {
+            font-size: 9.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-bottom: 4px;
+        }
+
+        .kpi-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-1);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .kpi-icon-wrapper {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        @media (max-width: 992px) {
+            .attendance-card-v2 {
+                margin: 20px auto;
             }
         }
 
@@ -344,92 +434,50 @@
         /* ── KPI Cards ── */
         .kpi-card {
             background: var(--surface);
-            border: 1px solid var(--border) !important;
-            border-radius: var(--radius-md) !important;
-            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 20px;
+            box-shadow: var(--shadow-sm);
             position: relative;
-            transition: transform 0.22s ease, box-shadow 0.22s ease;
-            padding: 20px 22px !important;
-            box-shadow: var(--shadow-sm) !important;
-        }
-
-        .kpi-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            border-radius: 16px 16px 0 0;
-        }
-
-        .kpi-card.kpi-visits::before {
-            background: linear-gradient(90deg, #4f46e5, #818cf8);
-        }
-
-        .kpi-card.kpi-clients::before {
-            background: linear-gradient(90deg, #10b981, #34d399);
-        }
-
-        .kpi-card.kpi-projects::before {
-            background: linear-gradient(90deg, #f59e0b, #fbbf24);
-        }
-
-        .kpi-card.kpi-revenue::before {
-            background: linear-gradient(90deg, #2563eb, #38bdf8);
+            transition: transform 0.15s, box-shadow 0.15s;
         }
 
         .kpi-card:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-md) !important;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .kpi-label {
-            font-size: 0.67rem;
+            font-size: 0.72rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.07em;
+            letter-spacing: 0.05em;
             color: var(--text-muted);
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .kpi-value {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.85rem;
+            font-size: 1.6rem;
             font-weight: 700;
-            letter-spacing: -0.03em;
-            line-height: 1;
-            color: var(--text-main);
-            margin-bottom: 12px;
-        }
-
-        .kpi-card.kpi-revenue .kpi-value {
-            color: var(--info);
+            color: var(--text-body);
+            margin-bottom: 2px;
         }
 
         .kpi-icon-wrapper {
-            width: 42px;
-            height: 42px;
-            border-radius: 11px;
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
-            transition: transform 0.22s ease;
+            font-size: 1.4rem;
             flex-shrink: 0;
         }
 
-        .kpi-card:hover .kpi-icon-wrapper {
-            transform: scale(1.10) rotate(-5deg);
-        }
-
         .kpi-trend {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding-top: 10px;
-            border-top: 1px solid var(--border-subtle);
-            font-size: 0.73rem;
+            font-size: 0.68rem;
+            font-weight: 600;
+            margin-top: 4px;
         }
 
         /* ── Section card ── */
@@ -791,38 +839,138 @@
             font-size: 0.8rem;
             margin: 0;
         }
+
+        /* ── Drag & Drop Widgets ── */
+        .dashboard-widget-row>[data-widget-id] {
+            position: relative;
+            cursor: default;
+            transition: box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .dashboard-widget-row>[data-widget-id] .section-card-header::before,
+        .dashboard-widget-row>[data-widget-id] .card-header::before {
+            content: '\F58F';
+            /* bi-grip-vertical unicode */
+            font-family: "bootstrap-icons";
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            color: #cbd5e1;
+            font-size: 1rem;
+            cursor: grab;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .dashboard-widget-row>[data-widget-id]:hover .section-card-header::before,
+        .dashboard-widget-row>[data-widget-id]:hover .card-header::before {
+            opacity: 1;
+        }
+
+        .sortable-ghost {
+            opacity: 0.35;
+            background: var(--primary-light);
+            border-radius: 16px;
+        }
+
+        .sortable-drag {
+            opacity: 1;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+            cursor: grabbing !important;
+        }
+
+        /* ── Responsive adjustments (Dashboard specific) ── */
+        @media (max-width: 767.98px) {
+            .page-content {
+                padding: 16px 12px !important;
+            }
+
+            .dash-header {
+                padding: 30px 24px;
+                border-radius: 20px;
+                margin-bottom: 24px;
+                flex-direction: column;
+                align-items: center !important;
+                text-align: center;
+                min-height: auto;
+            }
+
+            .dash-greeting {
+                font-size: 1.6rem;
+                margin-bottom: 10px;
+            }
+
+            .dash-subtext {
+                font-size: 0.9rem;
+                margin-bottom: 15px;
+            }
+
+            .dash-header-actions {
+                width: 100%;
+                align-items: center;
+                justify-content: center;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .dash-date-chip,
+            .dash-live-dot {
+                font-size: 0.75rem;
+                padding: 4px 10px;
+            }
+
+            .kpi-card {
+                padding: 12px 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                justify-content: center;
+                min-height: 110px;
+            }
+
+            .kpi-label {
+                font-size: 0.6rem;
+                margin-bottom: 2px;
+            }
+
+            .kpi-value {
+                font-size: 1.1rem;
+                margin-bottom: 0;
+            }
+
+            .kpi-icon-wrapper {
+                width: 32px;
+                height: 32px;
+                font-size: 1rem;
+                margin-bottom: 4px;
+                order: -1; /* Move icon to top */
+            }
+
+            .kpi-trend {
+                font-size: 0.6rem;
+                margin-top: 2px;
+            }
+        }
     </style>
 </head>
 
 <body class="bg-light">
     <div class="d-flex">
         <div id="sidebar"></div>
-
-        <div class="flex-grow-1">
-            <!-- Top header injected by auth.js?v=2.3 -->
-
-            <div class="page-content">
-
-                <!-- Dashboard Hero Header -->
-                <div class="dash-header mb-4">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div style="position:relative;z-index:1;">
-                            <div class="dash-greeting">Good <span id="dash-greeting-time"></span>, <span
-                                    id="dash-user-name"></span></div>
-                            <div class="dash-subtext">Here's your business overview</div>
-                        </div>
-                        <div class="dash-header-actions">
-                            <div id="punch-container" class="d-none">
-                                <button id="btn-punch" class="btn btn-light fw-bold px-4"
-                                    style="border-radius:20px; color:var(--primary);">
-                                    <i class="bi bi-clock-history me-2"></i><span id="punch-text">Punch In</span>
-                                </button>
-                            </div>
-                            <div class="dash-date-chip" id="dash-full-date"></div>
-                            <div class="dash-live-dot">Live</div>
-                        </div>
+        <div class="flex-grow-1 main-wrapper">
+            <div class="page-content mx-auto">
+                <!-- Header -->
+                <div class="dash-header">
+                    <div class="dash-date-text" id="dash-date-header">--</div>
+                    <div class="dash-greeting" id="greetingUser">Good Afternoon, Tisha</div>
+                    <div class="dash-live-status mt-auto">
+                        <div class="dash-live-dot">Live</div>
                     </div>
                 </div>
+
+
 
                 <!-- Filter Panel (period picker integrated in header) -->
                 <div class="filter-panel">
@@ -881,18 +1029,18 @@
                 </div>
 
                 <!-- KPI Cards -->
-                <div class="row g-3 mb-4" id="admin-kpis">
-                    <div class="col-12 col-sm-6 col-xl-3">
+                <div class="row g-2 g-md-3 mb-4" id="admin-kpis">
+                    <div class="col-6 col-sm-6 col-xl-3" data-widget-id="kpi-visits">
                         <a href="visits.html" class="text-decoration-none d-block h-100">
                             <div class="kpi-card kpi-visits h-100">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1 me-3">
+                                <div class="d-flex justify-content-between align-items-start w-100 kpi-inner-mobile">
+                                    <div class="flex-grow-1 me-2 kpi-text-container">
                                         <div class="kpi-label" id="kpi-visits-label">Total Visits</div>
                                         <div class="kpi-value" id="kpi-leads">
                                             <span class="spinner-border spinner-border-sm text-secondary"></span>
                                         </div>
                                     </div>
-                                    <div class="kpi-icon-wrapper" style="background:#eef2ff;color:#4f46e5;">
+                                    <div class="kpi-icon-wrapper kpi-icon-bg-1">
                                         <i class="bi bi-calendar-check"></i>
                                     </div>
                                 </div>
@@ -900,17 +1048,17 @@
                             </div>
                         </a>
                     </div>
-                    <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="col-6 col-sm-6 col-xl-3" data-widget-id="kpi-clients">
                         <a href="clients.html" class="text-decoration-none d-block h-100">
                             <div class="kpi-card kpi-clients h-100">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1 me-3">
+                                <div class="d-flex justify-content-between align-items-start w-100 kpi-inner-mobile">
+                                    <div class="flex-grow-1 me-2 kpi-text-container">
                                         <div class="kpi-label" id="kpi-clients-label">Active Clients</div>
                                         <div class="kpi-value" id="kpi-clients">
                                             <span class="spinner-border spinner-border-sm text-secondary"></span>
                                         </div>
                                     </div>
-                                    <div class="kpi-icon-wrapper" style="background:#ecfdf5;color:#059669;">
+                                    <div class="kpi-icon-wrapper kpi-icon-bg-2">
                                         <i class="bi bi-people"></i>
                                     </div>
                                 </div>
@@ -918,35 +1066,35 @@
                             </div>
                         </a>
                     </div>
-                    <div class="col-12 col-sm-6 col-xl-3">
-                        <a href="projects.html" class="text-decoration-none d-block h-100">
-                            <div class="kpi-card kpi-projects h-100">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1 me-3">
-                                        <div class="kpi-label" id="kpi-projects-label">Ongoing Projects</div>
-                                        <div class="kpi-value" id="kpi-projects">
+                    <div class="col-6 col-sm-6 col-xl-3" data-widget-id="kpi-employees">
+                        <a href="employees.html" class="text-decoration-none d-block h-100">
+                            <div class="kpi-card kpi-employees h-100">
+                                <div class="d-flex justify-content-between align-items-start w-100 kpi-inner-mobile">
+                                    <div class="flex-grow-1 me-2 kpi-text-container">
+                                        <div class="kpi-label" id="kpi-employees-label">Present Employees</div>
+                                        <div class="kpi-value" id="kpi-employees">
                                             <span class="spinner-border spinner-border-sm text-secondary"></span>
                                         </div>
                                     </div>
-                                    <div class="kpi-icon-wrapper" style="background:#fffbeb;color:#d97706;">
-                                        <i class="bi bi-briefcase"></i>
+                                    <div class="kpi-icon-wrapper" style="background:#f0fdf4;color:#16a34a;">
+                                        <i class="bi bi-person-check-fill"></i>
                                     </div>
                                 </div>
-                                <div class="kpi-trend" id="kpi-projects-trend">—</div>
+                                <div class="kpi-trend" id="kpi-employees-trend">—</div>
                             </div>
                         </a>
                     </div>
-                    <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="col-6 col-sm-6 col-xl-3" data-widget-id="kpi-revenue">
                         <a href="billing.html" class="text-decoration-none d-block h-100">
                             <div class="kpi-card kpi-revenue h-100">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1 me-3">
-                                        <div class="kpi-label" id="kpi-revenue-label">Revenue (MTD)</div>
+                                <div class="d-flex justify-content-between align-items-start w-100 kpi-inner-mobile">
+                                    <div class="flex-grow-1 me-2 kpi-text-container">
+                                        <div class="kpi-label" id="kpi-revenue-label">Total Revenue</div>
                                         <div class="kpi-value" id="kpi-revenue">
                                             <span class="spinner-border spinner-border-sm text-secondary"></span>
                                         </div>
                                     </div>
-                                    <div class="kpi-icon-wrapper" style="background:#eff6ff;color:#2563eb;">
+                                    <div class="kpi-icon-wrapper kpi-icon-bg-4">
                                         <i class="bi bi-currency-rupee"></i>
                                     </div>
                                 </div>
@@ -956,30 +1104,6 @@
                     </div>
                 </div>
 
-                <!-- User Attendance KPIs (Initially Hidden) -->
-                <div class="row g-3 mb-4 d-none" id="user-kpis">
-                    <div class="col-12 col-sm-6 col-md-4">
-                        <div class="kpi-card kpi-visits h-100">
-                            <div class="kpi-label">Today's Hours</div>
-                            <div class="kpi-value" id="kpi-hours-today">0.00</div>
-                            <div class="kpi-trend">Production Today</div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-sm-6 col-md-4">
-                        <div class="kpi-card kpi-clients h-100">
-                            <div class="kpi-label">This Week</div>
-                            <div class="kpi-value" id="kpi-hours-week">0.00</div>
-                            <div class="kpi-trend">Total Hours</div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-sm-6 col-md-4">
-                        <div class="kpi-card kpi-revenue h-100">
-                            <div class="kpi-label">This Month</div>
-                            <div class="kpi-value" id="kpi-hours-month">0.00</div>
-                            <div class="kpi-trend">Total Hours</div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Charts Row -->
                 <div class="row g-3 mb-4">
@@ -1006,11 +1130,149 @@
                             <div class="chart-card-title">Visit Outcomes</div>
                             <div class="chart-card-sub">Distribution of interaction results</div>
                             <div class="d-flex justify-content-center flex-grow-1"
-                                style="position:relative;height:180px;">
+                                style="position:relative;height:200px;">
                                 <canvas id="outcomesChart"></canvas>
                             </div>
                             <div id="outcomes-legend" class="d-flex flex-wrap justify-content-center gap-3 mt-3"
                                 style="font-size:0.72rem;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity + Issues Row -->
+                <div class="row g-3 mb-4 dashboard-widget-row" id="widget-row-1">
+                    <div class="col-md-7" data-widget-id="activity">
+                        <div class="section-card h-100">
+                            <div class="section-card-header">
+                                <div class="section-card-title">
+                                    <div class="title-icon" style="background:#eef2ff;color:#4f46e5;"><i
+                                            class="bi bi-activity"></i></div>
+                                    Recent Activity
+                                </div>
+                                <span class="view-all-btn" style="cursor:default;opacity:0.5;">Last 10 actions</span>
+                            </div>
+                            <div class="section-card-body" id="activity-feed">
+                                <div class="py-3 px-3">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="skeleton-box skeleton-circle flex-shrink-0"></div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="skeleton-box skeleton-circle flex-shrink-0"></div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3 mb-2">
+                                        <div class="skeleton-box skeleton-circle flex-shrink-0"></div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-5" data-widget-id="issues">
+                        <div class="section-card h-100">
+                            <div class="section-card-header">
+                                <div class="section-card-title">
+                                    <div class="title-icon" style="background:#fef2f2;color:#dc2626;"><i
+                                            class="bi bi-exclamation-circle"></i></div>
+                                    Issues
+                                </div>
+                                <a href="issues.html" class="view-all-btn">View All</a>
+                            </div>
+                            <div class="section-card-body" id="issues-list">
+                                <div class="py-3 px-3">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="skeleton-box skeleton-circle flex-shrink-0"></div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clients + Employees Row -->
+                <div class="row g-3 dashboard-widget-row" id="widget-row-2">
+                    <div class="col-md-7" data-widget-id="clients">
+                        <div class="section-card">
+                            <div class="section-card-header">
+                                <div class="section-card-title">
+                                    <div class="title-icon" style="background:#ecfdf5;color:#059669;"><i
+                                            class="bi bi-people"></i></div>
+                                    Recent Clients
+                                </div>
+                                <a href="clients.html" class="view-all-btn">View All</a>
+                            </div>
+                            <div class="section-card-body" id="clients-table">
+                                <div class="py-3 px-3 stagger-fade-in">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="skeleton-box skeleton-avatar" style="width: 36px; height: 36px;"></div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium mb-1"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="skeleton-box skeleton-avatar" style="width: 36px; height: 36px;"></div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium mb-1"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-5" data-widget-id="employees">
+                        <div class="section-card">
+                            <div class="section-card-header">
+                                <div class="section-card-title">
+                                    <div class="title-icon" style="background:#eef2ff;color:#4f46e5;"><i
+                                            class="bi bi-person-badge"></i></div>
+                                    Team Members
+                                </div>
+                                <a href="employees.html" class="view-all-btn">View All</a>
+                            </div>
+                            <div class="section-card-body" id="employees-list">
+                                <div class="px-3 py-3">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="skeleton-box skeleton-avatar" style="width: 36px; height: 36px;">
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium mb-1"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="skeleton-box skeleton-avatar" style="width: 36px; height: 36px;">
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium mb-1"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="skeleton-box skeleton-avatar" style="width: 36px; height: 36px;">
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium mb-1"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1028,97 +1290,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- Activity + Issues Row -->
-                <div class="row g-3 mb-4">
-                    <div class="col-md-7">
-                        <div class="section-card h-100">
-                            <div class="section-card-header">
-                                <div class="section-card-title">
-                                    <div class="title-icon" style="background:#eef2ff;color:#4f46e5;"><i
-                                            class="bi bi-activity"></i></div>
-                                    Recent Activity
-                                </div>
-                                <span class="view-all-btn" style="cursor:default;opacity:0.5;">Last 10 actions</span>
-                            </div>
-                            <div class="section-card-body" id="activity-feed">
-                                <div class="text-center py-4 text-secondary">
-                                    <div class="spinner-border spinner-border-sm"></div>
-                                    <p class="mt-2 small mb-0">Loading activity...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-5">
-                        <div class="section-card h-100">
-                            <div class="section-card-header">
-                                <div class="section-card-title">
-                                    <div class="title-icon" style="background:#fff1f2;color:#e11d48;"><i
-                                            class="bi bi-exclamation-circle"></i></div>
-                                    Open Issues
-                                </div>
-                                <a href="issues.html" class="view-all-btn">View All</a>
-                            </div>
-                            <div class="section-card-body" id="open-issues-list">
-                                <div class="text-center py-4 text-secondary">
-                                    <div class="spinner-border spinner-border-sm"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Clients + Employees Row -->
-                <div class="row g-3">
-                    <div class="col-md-7">
-                        <div class="section-card">
-                            <div class="section-card-header">
-                                <div class="section-card-title">
-                                    <div class="title-icon" style="background:#ecfdf5;color:#059669;"><i
-                                            class="bi bi-people"></i></div>
-                                    Recent Clients
-                                </div>
-                                <a href="clients.html" class="view-all-btn">View All</a>
-                            </div>
-                            <div class="p-0">
-                                <table class="table clients-table mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Organisation</th>
-                                            <th>Status</th>
-                                            <th>PM</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="clients-table">
-                                        <tr>
-                                            <td colspan="4" class="text-center text-secondary py-4">
-                                                <div class="spinner-border spinner-border-sm"></div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-5">
-                        <div class="section-card">
-                            <div class="section-card-header">
-                                <div class="section-card-title">
-                                    <div class="title-icon" style="background:#eef2ff;color:#4f46e5;"><i
-                                            class="bi bi-person-badge"></i></div>
-                                    Team Members
-                                </div>
-                                <a href="employees.html" class="view-all-btn">View All</a>
-                            </div>
-                            <div class="section-card-body" id="employees-list">
-                                <div class="text-center py-4 text-secondary">
-                                    <div class="spinner-border spinner-border-sm"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </div><!-- /page-content -->
         </div>
     </div>
@@ -1134,65 +1305,166 @@
         injectTopHeader('Overview');
 
         // Greeting by time of day + user name
-        const hour = new Date().getHours();
-        document.getElementById('dash-greeting-time').textContent =
-            hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening';
+        const greetingEl = document.getElementById('greetingUser');
+        const dateHeaderEl = document.getElementById('dash-date-header');
+        
+        function updateHeaderContext() {
+            const hr = new Date().getHours();
+            const timeOfDay = hr < 12 ? 'Morning' : hr < 17 ? 'Afternoon' : 'Evening';
+            const u = getUser();
+            const fName = (u && u.name) ? u.name.trim().split(' ')[0] : 'User';
+            
+            if (greetingEl) greetingEl.textContent = `Good ${timeOfDay}, ${fName}`;
+            
+            const now = new Date();
+            const fmtDate = now.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+            if (dateHeaderEl) dateHeaderEl.textContent = fmtDate;
+        }
+        updateHeaderContext();
 
-        var crmUser = (function () { try { return JSON.parse(localStorage.getItem('crm_user')); } catch (e) { return null; } })();
-        var firstName = (crmUser && crmUser.name) ? crmUser.name.trim().split(' ')[0] : '';
-        document.getElementById('dash-user-name').textContent = firstName;
+        // ─── Attendance Logic (V2) ──────────────────────────────────────
+        let productionInterval;
+        let punchStartTime = null;
+        let accumulatedSeconds = 0;
 
-        const now = new Date();
-        document.getElementById('dash-full-date').textContent = now.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+        function updateLiveTimer() {
+            if (!punchStartTime) return;
+            const diff = (Date.now() - punchStartTime) / 1000 + accumulatedSeconds;
+            
+            const h = Math.floor(diff / 3600);
+            const m = Math.floor((diff % 3600) / 60);
+            const s = Math.floor(diff % 60);
 
-        // ─── Attendance Logic ──────────────────────────────────────────
+            const hhEl = document.getElementById('att-v2-hh');
+            const mmEl = document.getElementById('att-v2-mm');
+            const ssEl = document.getElementById('att-v2-ss');
+
+            if (hhEl) hhEl.textContent = h < 10 ? '0' + h : h;
+            if (mmEl) mmEl.textContent = m < 10 ? '0' + m : m;
+            if (ssEl) ssEl.textContent = s < 10 ? '0' + s : s;
+        }
+
         async function initAttendance() {
             const u = getUser();
-            if (!u || u.role === 'ADMIN') return;
+            const isAdmin = !u || u.role === 'ADMIN';
 
-            // Show user-specific UI
-            document.getElementById('punch-container').classList.remove('d-none');
-            document.getElementById('admin-kpis').classList.add('d-none');
-            document.getElementById('user-kpis').classList.remove('d-none');
+            const employeeWidget = document.getElementById('employee-header-widget');
+            
+            if (isAdmin) {
+                if (employeeWidget) employeeWidget.classList.add('d-none');
+            } else {
+                if (employeeWidget) employeeWidget.classList.remove('d-none');
 
-            await refreshAttendance();
+                // Update Name & Avatar
+                const v2NameEl = document.getElementById('att-v2-name');
+                const v2AvatarEl = document.getElementById('att-v2-avatar');
+                if (v2NameEl) v2NameEl.textContent = u.name || 'User';
+                if (v2AvatarEl) v2AvatarEl.textContent = getInitials(u.name);
 
-            document.getElementById('btn-punch').onclick = async () => {
-                try {
-                    const btn = document.getElementById('btn-punch');
-                    btn.disabled = true;
-                    await ApiClient.punch();
-                    showToast('Punch entry recorded');
-                    await refreshAttendance();
-                } catch (e) {
-                    showToast('Failed to record punch', 'error');
-                } finally {
-                    document.getElementById('btn-punch').disabled = false;
+                await refreshAttendance();
+
+                // Wire up button
+                const punchBtn = document.getElementById('header-punch-btn-new');
+                if (punchBtn) {
+                    punchBtn.onclick = async () => {
+                        if (punchBtn.classList.contains('loading')) return;
+                        
+                        punchBtn.classList.add('loading');
+                        const originalText = punchBtn.textContent;
+                        punchBtn.textContent = 'Processing...';
+
+                        // 1.2s delay as requested
+                        setTimeout(async () => {
+                            try {
+                                await ApiClient.punch();
+                                showToast('Attendance recorded');
+                                await refreshAttendance();
+                            } catch (e) {
+                                console.error(e);
+                                showToast('Failed to record punch', 'error');
+                                punchBtn.textContent = originalText;
+                                punchBtn.classList.remove('loading');
+                            }
+                        }, 1200);
+                    };
                 }
-            };
+            }
         }
 
         async function refreshAttendance() {
             try {
                 const status = await ApiClient.getPunchStatus();
-                const btn = document.getElementById('btn-punch');
-                const text = document.getElementById('punch-text');
+                const punchBtn = document.getElementById('header-punch-btn-new');
+                const badge = document.getElementById('att-v2-badge');
+                const firstInEl = document.getElementById('att-v2-first-in');
+                const expectedOutEl = document.getElementById('att-v2-expected-out');
+                
+                if (productionInterval) clearInterval(productionInterval);
+                accumulatedSeconds = status.today_hours_secs || (status.today_hours || 0) * 3600;
 
                 if (status.is_punched_in) {
-                    btn.classList.replace('btn-light', 'btn-danger');
-                    btn.style.color = 'white';
-                    text.textContent = 'Punch Out';
+                    if (punchBtn) {
+                        punchBtn.textContent = 'Punch Out';
+                        punchBtn.className = 'att-punch-btn punch-out';
+                    }
+                    if (badge) {
+                        badge.textContent = 'Punched In';
+                        badge.className = 'att-status-badge att-status-active';
+                    }
+                    
+                    if (status.last_punch_ts) {
+                        punchStartTime = status.last_punch_ts;
+                        updateLiveTimer();
+                        productionInterval = setInterval(updateLiveTimer, 1000);
+                    }
                 } else {
-                    btn.classList.replace('btn-danger', 'btn-light');
-                    btn.style.color = 'var(--primary)';
-                    text.textContent = 'Punch In';
+                    if (punchBtn) {
+                        punchBtn.textContent = 'Punch In';
+                        punchBtn.className = 'att-punch-btn punch-in';
+                    }
+                    if (badge) {
+                        badge.textContent = 'Not Punched';
+                        badge.className = 'att-status-badge att-status-inactive';
+                    }
+                    punchStartTime = null;
+                    
+                    // Reset timer display
+                    const h = Math.floor(accumulatedSeconds / 3600);
+                    const m = Math.floor((accumulatedSeconds % 3600) / 60);
+                    const s = Math.floor(accumulatedSeconds % 60);
+                    if (document.getElementById('att-v2-hh')) document.getElementById('att-v2-hh').textContent = h < 10 ? '0' + h : h;
+                    if (document.getElementById('att-v2-mm')) document.getElementById('att-v2-mm').textContent = m < 10 ? '0' + m : m;
+                    if (document.getElementById('att-v2-ss')) document.getElementById('att-v2-ss').textContent = s < 10 ? '0' + s : s;
                 }
 
-                document.getElementById('kpi-hours-today').textContent = status.today_hours.toFixed(2);
-                document.getElementById('kpi-hours-week').textContent = status.week_hours.toFixed(2);
-                document.getElementById('kpi-hours-month').textContent = status.month_hours.toFixed(2);
+                // Update Stats (First In / Expected Out)
+                if (status.first_punch_in) {
+                    const firstDate = new Date(status.first_punch_in);
+                    const firstStr = firstDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    if (firstInEl) firstInEl.textContent = firstStr;
+                    
+                    // Expected = First In + 8 hours
+                    const expDate = new Date(firstDate.getTime() + (8 * 60 * 60 * 1000));
+                    const expStr = expDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    if (expectedOutEl) expectedOutEl.textContent = expStr;
+                } else {
+                    if (firstInEl) firstInEl.textContent = '--:--';
+                    if (expectedOutEl) expectedOutEl.textContent = '--:--';
+                }
+
+                // Update KPIs
+                const hoursToday = document.getElementById('kpi-hours-today');
+                const hoursWeek = document.getElementById('kpi-hours-week');
+                const hoursMonth = document.getElementById('kpi-hours-month');
+                if (hoursToday) hoursToday.textContent = (status.today_hours || 0).toFixed(2);
+                if (hoursWeek) hoursWeek.textContent = (status.week_hours || 0).toFixed(2);
+                if (hoursMonth) hoursMonth.textContent = (status.month_hours || 0).toFixed(2);
+
+                // Restore button state
+                if (punchBtn) punchBtn.classList.remove('loading');
+
             } catch (e) {
-                console.error('Failed to load attendance status', e);
+                console.error('Refresh Attendance Error:', e);
             }
         }
 
@@ -1232,38 +1504,129 @@
         }
 
         // ── Charts (now using backend-aggregated data) ──────────────────
+        const getOrCreateTooltip = (chart) => {
+            let tooltipEl = chart.canvas.parentNode.querySelector('div.custom-tooltip');
+            if (!tooltipEl) {
+                tooltipEl = document.createElement('div');
+                tooltipEl.className = 'custom-tooltip shadow-sm';
+                tooltipEl.style.background = 'rgba(255, 255, 255, 0.95)';
+                tooltipEl.style.backdropFilter = 'blur(10px)';
+                tooltipEl.style.borderRadius = '12px';
+                tooltipEl.style.color = '#0f172a';
+                tooltipEl.style.opacity = 1;
+                tooltipEl.style.pointerEvents = 'none';
+                tooltipEl.style.position = 'absolute';
+                tooltipEl.style.transform = 'translate(-50%, 0)';
+                tooltipEl.style.transition = 'all .2s ease';
+                tooltipEl.style.zIndex = 100;
+                tooltipEl.style.padding = '10px 14px';
+                tooltipEl.style.border = '1px solid rgba(226, 232, 240, 0.8)';
+                tooltipEl.style.minWidth = '120px';
+
+                chart.canvas.parentNode.appendChild(tooltipEl);
+            }
+            return tooltipEl;
+        };
+
+        const externalTooltipHandler = (context) => {
+            const { chart, tooltip } = context;
+            const tooltipEl = getOrCreateTooltip(chart);
+
+            if (tooltip.opacity === 0) {
+                tooltipEl.style.opacity = 0;
+                return;
+            }
+
+            if (tooltip.body) {
+                const titleLines = tooltip.title || [];
+                const bodyLines = tooltip.body.map(b => b.lines);
+
+                let innerHtml = '<div>';
+                titleLines.forEach(title => {
+                    innerHtml += '<div style="font-size: 0.75rem; color: #64748b; margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">' + title + '</div>';
+                });
+
+                bodyLines.forEach((body, i) => {
+                    const colors = tooltip.labelColors[i];
+                    let style = 'background:' + colors.backgroundColor;
+                    style += '; border-color:' + colors.borderColor;
+                    style += '; border-width: 2px';
+                    style += '; width: 10px; height: 10px; display: inline-block; border-radius: 50%; margin-right: 8px;';
+                    const span = '<span style="' + style + '"></span>';
+                    innerHtml += '<div style="font-size: 0.9rem; font-weight: 700; color: #1e293b; display:flex; align-items:center;">' + span + body + '</div>';
+                });
+                innerHtml += '</div>';
+
+                tooltipEl.innerHTML = innerHtml;
+            }
+
+            const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
+            tooltipEl.style.opacity = 1;
+            tooltipEl.style.left = positionX + tooltip.caretX + 'px';
+            tooltipEl.style.top = positionY + tooltip.caretY - 10 + 'px';
+        };
+
         let leadsChartObj, revenueChartObj, outcomesChartObj;
 
         function initCharts(stats) {
             Chart.defaults.font.family = "'Inter', 'Segoe UI', sans-serif";
 
-            // UPDATE: Dynamic Chart Title & Data
-            document.getElementById('dynamic-visits-title').textContent = stats.visits_chart_title || 'Visits by Period';
-            document.getElementById('dynamic-visits-sub').textContent = 'Field visit activity — based on filter';
-
-            // 1. Visits (bar)
+            // 1. Visits by Month (bar)
             try {
                 let labels = Object.keys(stats.visits_chart_data || {});
                 let data = Object.values(stats.visits_chart_data || {});
                 if (labels.length === 0) { labels = ['No Data']; data = [0]; }
 
                 if (leadsChartObj) leadsChartObj.destroy();
-                leadsChartObj = new Chart(document.getElementById('leadsChart'), {
+                const ctx = document.getElementById('leadsChart').getContext('2d');
+                const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+                gradient.addColorStop(0, '#6366f1');
+                gradient.addColorStop(1, '#a5b4fc');
+
+                leadsChartObj = new Chart(ctx, {
                     type: 'bar',
                     data: {
                         labels,
                         datasets: [{
-                            label: 'Visits', data,
-                            backgroundColor: '#4f46e5', borderRadius: 4, barPercentage: 0.6
+                            label: 'Visits', 
+                            data,
+                            backgroundColor: gradient,
+                            borderRadius: 6,
+                            barPercentage: 0.5,
+                            categoryPercentage: 0.8
                         }]
                     },
                     options: {
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: true, border: { display: false }, grid: { color: '#f1f5f9', drawTicks: false }, ticks: { font: { size: 10 }, padding: 10, stepSize: 35 } },
-                            x: { border: { display: false }, grid: { display: false }, ticks: { font: { size: 10 } } }
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#1e293b',
+                                padding: 12,
+                                titleFont: { size: 14, weight: '600' },
+                                bodyFont: { size: 13 },
+                                cornerRadius: 8,
+                                displayColors: false
+                            }
                         },
-                        maintainAspectRatio: false
+                        scales: {
+                            y: { 
+                                beginAtZero: true, 
+                                border: { display: false }, 
+                                grid: { color: 'rgba(241, 245, 249, 0.6)', drawTicks: false }, 
+                                ticks: { 
+                                    font: { size: 11, weight: '500' }, 
+                                    padding: 10,
+                                    callback: (v) => v >= 1000 ? (v/1000).toFixed(1) + 'k' : v
+                                } 
+                            },
+                            x: { 
+                                border: { display: false }, 
+                                grid: { display: false }, 
+                                ticks: { font: { size: 11, weight: '500' }, color: '#64748b' } 
+                            }
+                        },
+                        maintainAspectRatio: false,
+                        interaction: { intersect: false, mode: 'index' }
                     }
                 });
             } catch (e) { console.error("Visits Chart Error:", e); }
@@ -1275,26 +1638,62 @@
                 if (rLabels.length === 0) { rLabels = ['No Data']; rData = [0]; }
 
                 if (revenueChartObj) revenueChartObj.destroy();
-                revenueChartObj = new Chart(document.getElementById('revenueChart'), {
+                const rCtx = document.getElementById('revenueChart').getContext('2d');
+                const rGradient = rCtx.createLinearGradient(0, 0, 0, 200);
+                rGradient.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+                rGradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+                revenueChartObj = new Chart(rCtx, {
                     type: 'line',
                     data: {
                         labels: rLabels,
                         datasets: [{
-                            label: 'Revenue', data: rData,
-                            borderColor: '#10b981', backgroundColor: '#10b981',
-                            tension: 0.4, borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#10b981'
+                            label: 'Revenue', 
+                            data: rData,
+                            borderColor: '#10b981', 
+                            backgroundColor: rGradient,
+                            fill: true,
+                            tension: 0.4, 
+                            borderWidth: 3, 
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: '#10b981',
+                            pointHoverBorderColor: '#fff',
+                            pointHoverBorderWidth: 2
                         }]
                     },
                     options: {
-                        plugins: { legend: { display: false } },
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#1e293b',
+                                padding: 12,
+                                cornerRadius: 8,
+                                displayColors: false,
+                                callbacks: {
+                                    label: (context) => ' ₹' + context.parsed.y.toLocaleString('en-IN')
+                                }
+                            }
+                        },
                         scales: {
                             y: {
-                                beginAtZero: true, border: { display: false }, grid: { color: '#f1f5f9' },
-                                ticks: { font: { size: 10 }, callback: (value) => '₹' + (value >= 1000 ? (value / 1000) + 'K' : value) }
+                                beginAtZero: true, 
+                                border: { display: false }, 
+                                grid: { color: 'rgba(241, 245, 249, 0.6)' },
+                                ticks: { 
+                                    font: { size: 11, weight: '500' }, 
+                                    padding: 8,
+                                    callback: (value) => '₹' + (value >= 100000 ? (value / 100000).toFixed(1) + 'L' : (value >= 1000 ? (value / 1000) + 'K' : value)) 
+                                }
                             },
-                            x: { border: { display: false }, grid: { display: false }, ticks: { font: { size: 10 } } }
+                            x: { 
+                                border: { display: false }, 
+                                grid: { display: false }, 
+                                ticks: { font: { size: 11, weight: '500' }, color: '#64748b' } 
+                            }
                         },
-                        maintainAspectRatio: false
+                        maintainAspectRatio: false,
+                        interaction: { intersect: false, mode: 'index' }
                     }
                 });
             } catch (e) { console.error("Revenue Chart Error:", e); }
@@ -1323,31 +1722,62 @@
                 // Generate the colors array by looking up each label
                 const dynamicColors = sLabels.map(label => colorMap[label.toUpperCase()] || '#cbd5e1');
 
-                if (outcomesChartObj) outcomesChartObj.destroy();
-                outcomesChartObj = new Chart(document.getElementById('outcomesChart'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: sLabels,
-                        datasets: [{
-                            data: sValues,
-                            backgroundColor: dynamicColors,
-                            borderWidth: 0,
-                            hoverOffset: 10
+                const outcomesCanvas = document.getElementById('outcomesChart');
+                if (outcomesCanvas) {
+                    if (outcomesChartObj) outcomesChartObj.destroy();
+                    outcomesChartObj = new Chart(outcomesCanvas, {
+                        type: 'doughnut',
+                        data: {
+                            labels: sLabels,
+                            datasets: [{
+                                data: sValues,
+                                backgroundColor: dynamicColors,
+                                borderWidth: 2,
+                                borderColor: '#ffffff',
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: {
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: false, external: externalTooltipHandler }
+                            },
+                            cutout: '75%',
+                            maintainAspectRatio: false
+                        },
+                        plugins: [{
+                            id: 'centerText',
+                            beforeDraw: function(chart) {
+                                if (chart.config.type !== 'doughnut') return;
+                                const width = chart.width, height = chart.height, ctx = chart.ctx;
+                                ctx.restore();
+                                const fontSize = (height / 114).toFixed(2);
+                                ctx.font = `600 ${fontSize}em 'Inter'`;
+                                ctx.textBaseline = "middle";
+                                const text = sValues.reduce((a, b) => a + b, 0),
+                                      textX = Math.round((width - ctx.measureText(text).width) / 2),
+                                      textY = height / 2;
+                                ctx.fillStyle = '#1e293b';
+                                ctx.fillText(text, textX, textY);
+                                
+                                ctx.font = `500 0.75em 'Inter'`;
+                                const label = "TOTAL",
+                                      labelX = Math.round((width - ctx.measureText(label).width) / 2),
+                                      labelY = (height / 2) + 20;
+                                ctx.fillStyle = '#64748b';
+                                ctx.fillText(label, labelX, labelY);
+                                ctx.save();
+                            }
                         }]
-                    },
-                    options: {
-                        plugins: { legend: { display: false } },
-                        cutout: '75%',
-                        maintainAspectRatio: false
-                    }
-                });
+                    });
 
-                document.getElementById('outcomes-legend').innerHTML = sLabels.map((s, i) =>
-                    `<div class="d-flex align-items-center gap-2 fw-medium text-secondary" style="font-size: 0.7rem;">
-                        <span style="width:8px;height:8px;background:${dynamicColors[i]};border-radius:2px;display:inline-block;"></span> 
-                        <span>${s.replace(/_/g, ' ')}</span>
-                    </div>`
-                ).join('');
+                    document.getElementById('outcomes-legend').innerHTML = sLabels.map((s, i) =>
+                        `<div class="d-flex align-items-center gap-2 fw-medium text-secondary" style="font-size: 0.7rem;">
+                            <span style="width:8px;height:8px;background:${dynamicColors[i]};border-radius:2px;display:inline-block;"></span> 
+                            <span>${s.replace(/_/g, ' ')}</span>
+                        </div>`
+                    ).join('');
+                }
             } catch (e) { console.error("Outcomes Chart Error:", e); }
         }
 
@@ -1360,9 +1790,19 @@
             LOGOUT: { icon: 'bi-box-arrow-right', bg: '#f1f5f9', color: '#64748b', label: 'Logged out' },
         };
 
+
         async function loadActivity() {
             const feed = document.getElementById('activity-feed');
-            feed.innerHTML = `<div class="text-center py-3"><div class="spinner-border spinner-border-sm"></div></div>`;
+            feed.innerHTML = `
+                <div class="py-3 px-3 stagger-fade-in">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="skeleton-box skeleton-circle flex-shrink-0"></div>
+                        <div class="flex-grow-1">
+                            <div class="skeleton-box skeleton-text medium"></div>
+                            <div class="skeleton-box skeleton-text short"></div>
+                        </div>
+                    </div>
+                </div>`;
             try {
                 const logs = await apiGet('/activity-logs/?limit=10');
                 if (!logs.length) {
@@ -1410,76 +1850,104 @@
             }
         }
 
-        // ── Open Issues ───────────────────────────────────────────────────
-        async function loadOpenIssues() {
-            const el = document.getElementById('open-issues-list');
+        async function loadIssuesOverview() {
+            const el = document.getElementById('issues-list');
+            if (!el) return;
+            el.innerHTML = `
+                <div class="py-3 px-3 stagger-fade-in">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="skeleton-box skeleton-circle flex-shrink-0"></div>
+                        <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium"></div><div class="skeleton-box skeleton-text short"></div></div>
+                    </div>
+                </div>`;
             try {
-                const issues = await apiGet('/issues/?status=OPEN,RESOLVED&limit=20');
-                const filtered = issues.filter(i => ['OPEN', 'RESOLVED'].includes(i.status)).slice(0, 5);
-                if (!filtered.length) {
-                    el.innerHTML = `<div class="empty-state"><i class="bi bi-check-circle text-success"></i><p class="text-success fw-semibold">No open issues — great work!</p></div>`;
+                const issues = await apiGet('/issues/?limit=5');
+                
+                if (!issues.length) {
+                    el.innerHTML = `<div class="empty-state py-4"><i class="bi bi-check2-circle opacity-25" style="font-size: 2rem;"></i><p class="mt-2 text-muted small">No active issues found.</p></div>`;
                     return;
                 }
                 const sevStyle = {
-                    HIGH: 'background:#fee2e2;color:#b91c1c;',
-                    MEDIUM: 'background:#fef3c7;color:#92400e;',
-                    LOW: 'background:#d1fae5;color:#059669;',
+                    HIGH: 'color: #dc3545; background-color: #ffeef0;',
+                    MEDIUM: 'color: #d39e00; background-color: #fff8e1;',
+                    LOW: 'color: #0d6efd; background-color: #e6f0ff;'
                 };
-                el.innerHTML = filtered.map(i => `
-                    <div class="issue-row">
-                        <div class="sev-dot sev-${i.severity || 'LOW'}"></div>
+                el.innerHTML = issues.map(i => `
+                    <div class="emp-row d-flex align-items-center gap-3 py-2 px-3 border-bottom border-light hover-bg" onclick="location.href='issues.html?id=${i.id}'" style="cursor:pointer;">
+                        <div class="avatar-sq-sm" style="${sevStyle[i.severity] || sevStyle.LOW}width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:0.75rem;">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
                         <div class="flex-grow-1 overflow-hidden">
-                            <div class="fw-semibold text-truncate" style="font-size:0.84rem;color:#0f172a;" title="${i.title}">${i.title}</div>
-                            <div style="font-size:0.72rem;color:#94a3b8;">${i.reporter_name || 'Unknown'}</div>
+                            <div class="fw-semibold text-truncate" style="font-size:0.84rem;color:#0f172a;">${i.title}</div>
+                            <div style="font-size:0.72rem;color:#94a3b8;">${i.project_name || 'N/A'} <span class="mx-1">&middot;</span> ${timeAgo(i.created_at)}</div>
                         </div>
-                        <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
-                            <span class="badge-pill" style="${sevStyle[i.severity] || sevStyle.LOW}">${i.severity || 'LOW'}</span>
-                        </div>
+                        <span class="badge rounded-pill" style="font-size:0.6rem; ${sevStyle[i.severity] || sevStyle.LOW}">${i.severity}</span>
                     </div>`).join('');
             } catch (e) {
-                el.innerHTML = `<div class="empty-state"><i class="bi bi-exclamation-triangle"></i><p>Could not load issues.</p></div>`;
+                el.innerHTML = `<div class="empty-state py-4"><i class="bi bi-exclamation-triangle"></i><p class="small text-muted">Could not load issues.</p></div>`;
             }
         }
 
-        // ── Clients table ─────────────────────────────────────────────────
+        // ── Clients list ──────────────────────────────────────────────────
         async function loadClients() {
-            const tbody = document.getElementById('clients-table');
+            const el = document.getElementById('clients-table');
+            el.innerHTML = `
+                <div class="py-3 px-3 stagger-fade-in">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="skeleton-box skeleton-avatar" style="width: 36px; height: 36px;"></div>
+                        <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium mb-1"></div><div class="skeleton-box skeleton-text short"></div></div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="skeleton-box skeleton-avatar" style="width: 36px; height: 36px;"></div>
+                        <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium mb-1"></div><div class="skeleton-box skeleton-text short"></div></div>
+                    </div>
+                </div>`;
+
+            const pastelPairs = [
+                { bg: '#eef2ff', fg: '#4f46e5' },
+                { bg: '#ecfdf5', fg: '#059669' },
+                { bg: '#fffbeb', fg: '#d97706' },
+                { bg: '#fef2f2', fg: '#dc2626' },
+                { bg: '#f0f9ff', fg: '#0ea5e9' },
+                { bg: '#fdf4ff', fg: '#9333ea' },
+            ];
+
             try {
                 const clients = await apiGet('/clients/?limit=6&sort_by=created_at&sort_order=desc');
                 if (!clients.length) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">No clients yet.</td></tr>`;
+                    el.innerHTML = `<div class="empty-state py-4"><i class="bi bi-people opacity-25" style="font-size:2rem;"></i><p class="mt-2 text-muted small">No clients yet.</p></div>`;
                     return;
                 }
-                tbody.innerHTML = clients.map(c => {
+                el.innerHTML = clients.map((c, idx) => {
                     const initials = getInitials(c.name || 'Client');
-                    const statusStyle = c.status === 'ACTIVE'
-                        ? 'background:#d1fae5;color:#059669;'
-                        : c.status === 'INACTIVE'
-                            ? 'background:#f1f5f9;color:#64748b;'
-                            : 'background:#e0e7ff;color:#4f46e5;';
+                    const { bg, fg } = pastelPairs[idx % pastelPairs.length];
+                    const org = c.organization || '';
+                    const pm = c.pm_name || '';
                     return `
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="avatar-sq-sm" style="background:#eef2ff;color:#4f46e5;">${initials}</div>
-                                <div>
-                                    <div class="fw-semibold" style="font-size:0.84rem;color:#0f172a;">${c.name}</div>
-                                    <div style="font-size:0.72rem;color:#94a3b8;">${c.email || ''}</div>
-                                </div>
+                    <div class="emp-row d-flex align-items-center gap-3 py-2 px-3 border-bottom border-light hover-bg" onclick="location.href='clients.html?id=${c.id}'" style="cursor:pointer;">
+                        <div class="avatar-sq" style="background:${bg};color:${fg};flex-shrink:0;">${initials}</div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="fw-semibold text-truncate" style="font-size:0.84rem;color:#0f172a;">
+                                ${c.name}${org ? ` <span style="font-weight:400;color:#94a3b8;font-size:0.75rem;">&middot; ${org}</span>` : ''}
                             </div>
-                        </td>
-                        <td style="color:#64748b;font-size:0.84rem;">${c.organization || '—'}</td>
-                        <td><span class="badge-pill" style="${statusStyle}">${(c.status || 'NEW').replace('_', ' ')}</span></td>
-                        <td style="font-size:0.82rem;color:#334155;">${c.pm_name || '<span style="color:#94a3b8;">Unassigned</span>'}</td>
-                    </tr>`;
+                            <div style="font-size:0.72rem;color:#94a3b8;">${pm ? `PM: <span style="color:#4f46e5;font-weight:600;">${pm}</span>` : '<span style="color:#cbd5e1;">Unassigned</span>'}</div>
+                        </div>
+                    </div>`;
                 }).join('');
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Could not load clients.</td></tr>`;
+                el.innerHTML = `<div class="empty-state py-4"><i class="bi bi-wifi-off"></i><p class="small text-muted">Could not load clients.</p></div>`;
             }
         }
 
         async function loadEmployees() {
             const el = document.getElementById('employees-list');
+            el.innerHTML = `
+                <div class="py-3 px-3 stagger-fade-in">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="skeleton-box skeleton-avatar" style="width: 40px; height: 40px; border-radius: 8px;"></div>
+                        <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium"></div><div class="skeleton-box skeleton-text short"></div></div>
+                    </div>
+                </div>`;
             try {
                 const emps = await apiGet('/employees/?limit=5');
                 if (!emps.length) {
@@ -1585,65 +2053,94 @@
         }
 
         async function loadDashboard() {
-            const areaId = document.getElementById('filter-area').value;
-            const userId = document.getElementById('filter-user').value;
-            const start = document.getElementById('filter-start').value;
-            const end = document.getElementById('filter-end').value;
-
-            let query = '';
-            if (areaId) query += `&area_id=${areaId}`;
-            if (userId) query += `&user_id=${userId}`;
-            if (start) query += `&start_date=${start}`;
-            if (end) query += `&end_date=${end}`;
-
-            if (query) query = '?' + query.substring(1);
-
             try {
-                // Load pre-aggregated stats from backend
-                const stats = await apiGet('/reports/dashboard' + query);
-
-                // Update KPIs
-                document.getElementById('kpi-leads').textContent = (stats.total_visits || 0).toLocaleString('en-IN');
-                document.getElementById('kpi-leads-trend').innerHTML = formatTrend(stats.visits_mom_pct || 0);
-
-                document.getElementById('kpi-clients').textContent = (stats.active_clients || 0).toLocaleString('en-IN');
-                document.getElementById('kpi-clients-trend').innerHTML = formatTrend(stats.clients_mom_pct || 0);
-
-                document.getElementById('kpi-projects').textContent = (stats.ongoing_projects || 0).toLocaleString('en-IN');
-                document.getElementById('kpi-projects-trend').innerHTML = formatTrend(stats.projects_mom_pct || 0);
-
-                // Format Revenue (e.g. 24.5L, 300K, etc.)
-                const rev = stats.revenue_mtd || 0;
-                let revText = '₹' + rev.toLocaleString('en-IN');
-                if (rev >= 100000) {
-                    revText = '₹' + (rev / 100000).toFixed(1) + 'L';
-                } else if (rev >= 1000) {
-                    revText = '₹' + (rev / 1000).toFixed(1) + 'K';
+                // Show/hide Punch In card based on role
+                const currentUser = getUser();
+                if (currentUser && currentUser.role !== 'ADMIN') {
+                    initAttendance();
                 }
-                document.getElementById('kpi-revenue').textContent = revText;
-                document.getElementById('kpi-revenue-trend').innerHTML = formatTrend(stats.revenue_mom_pct || 0);
 
-                // Charts
-                initCharts(stats);
+                // ... existing data fetching ...
+                const areaEl = document.getElementById('filter-area');
+                const userEl = document.getElementById('filter-user');
+                const startEl = document.getElementById('filter-start');
+                const endEl = document.getElementById('filter-end');
+                const areaId = areaEl ? areaEl.value : '';
+                const userId = userEl ? userEl.value : '';
+                const start = startEl ? startEl.value : '';
+                const end = endEl ? endEl.value : '';
 
-                // PM Pipeline
-                loadDashboardPipelineChart();
+                let query = '';
+                if (areaId) query += `&area_id=${areaId}`;
+                if (userId) query += `&user_id=${userId}`;
+                if (start) query += `&start_date=${start}`;
+                if (end) query += `&end_date=${end}`;
+                if (query) query = '?' + query.substring(1);
 
-            } catch (e) {
-                console.error("Dashboard Stats Error:", e);
-                ['leads', 'clients', 'projects', 'revenue'].forEach(id => {
-                    const el = document.getElementById('kpi-' + id);
-                    if (el) el.textContent = '—';
-                });
+                try {
+                    // Load pre-aggregated stats from backend
+                    const stats = await apiGet('/reports/dashboard' + query);
+
+                    // Update KPIs (with null guards since non-admin dashboard may differ)
+                    // Update KPIs (with null guards since non-admin dashboard may differ)
+                    const kpiLeads = document.getElementById('kpi-leads');
+                    const kpiLeadsTrend = document.getElementById('kpi-leads-trend');
+                    const kpiRevenue = document.getElementById('kpi-revenue');
+                    const kpiRevenueTrend = document.getElementById('kpi-revenue-trend');
+                    const kpiClients = document.getElementById('kpi-clients');
+                    const kpiClientsTrend = document.getElementById('kpi-clients-trend');
+                    const kpiEmployees = document.getElementById('kpi-employees');
+                    const kpiEmployeesTrend = document.getElementById('kpi-employees-trend');
+                    const kpiUserPresence = document.getElementById('kpi-user-presence');
+                    const kpiUserPresenceTrend = document.getElementById('kpi-user-presence-trend');
+
+                    if (kpiLeads) kpiLeads.textContent = (stats.total_visits || 0).toLocaleString('en-IN');
+                    if (kpiLeadsTrend) kpiLeadsTrend.innerHTML = formatTrend(stats.visits_mom_pct || 0);
+
+                    // Format Revenue (e.g. 24.5L, 300K, etc.)
+                    const rev = stats.revenue_mtd || 0;
+                    let revText = '₹' + rev.toLocaleString('en-IN');
+                    if (rev >= 100000) {
+                        revText = '₹' + (rev / 100000).toFixed(1) + 'L';
+                    } else if (rev >= 1000) {
+                        revText = '₹' + (rev / 1000).toFixed(1) + 'K';
+                    }
+                    if (kpiRevenue) kpiRevenue.textContent = revText;
+                    if (kpiRevenueTrend) kpiRevenueTrend.innerHTML = formatTrend(stats.revenue_mom_pct || 0);
+
+                    if (kpiClients) kpiClients.textContent = (stats.active_clients || 0).toLocaleString('en-IN');
+                    if (kpiClientsTrend) kpiClientsTrend.innerHTML = formatTrend(stats.clients_mom_pct || 0);
+
+                    if (kpiEmployees) kpiEmployees.textContent = (stats.employees_present || 0).toLocaleString('en-IN');
+                    if (kpiEmployeesTrend) kpiEmployeesTrend.innerHTML = formatTrend(stats.presence_mom_pct || 0);
+                    
+                    if (kpiUserPresence) kpiUserPresence.textContent = (stats.employees_present || 0).toLocaleString('en-IN');
+                    if (kpiUserPresenceTrend) kpiUserPresenceTrend.innerHTML = formatTrend(stats.presence_mom_pct || 0);
+
+                    // Charts
+                    initCharts(stats);
+
+                    // PM Pipeline
+                    loadDashboardPipelineChart();
+
+                } catch (e) {
+                    console.error("Dashboard Stats Error:", e);
+                    ['leads', 'clients', 'employees', 'revenue'].forEach(id => {
+                        const el = document.getElementById('kpi-' + id);
+                        if (el) el.textContent = '—';
+                    });
+                }
+
+                // Panels (Individual lists still fetch their own data for detailed view)
+                await Promise.allSettled([
+                    loadActivity(),
+                    loadIssuesOverview(),
+                    loadClients(),
+                    loadEmployees()
+                ]);
+            } catch (err) {
+                console.error("Dashboard load failed", err);
             }
-
-            // Panels (Individual lists still fetch their own data for detailed view)
-            await Promise.allSettled([
-                loadActivity(),
-                loadOpenIssues(),
-                loadClients(),
-                loadEmployees()
-            ]);
         }
 
         async function populateFilters() {
@@ -1656,53 +2153,71 @@
                 const areaSel = document.getElementById('filter-area');
                 const userSel = document.getElementById('filter-user');
 
-                areas.forEach(a => {
-                    const opt = document.createElement('option');
-                    opt.value = a.id;
-                    opt.textContent = a.name;
-                    areaSel.appendChild(opt);
-                });
+                if (areaSel) {
+                    areas.forEach(a => {
+                        const opt = document.createElement('option');
+                        opt.value = a.id;
+                        opt.textContent = a.name;
+                        areaSel.appendChild(opt);
+                    });
+                }
 
-                users.filter(u => u.role !== 'CLIENT').forEach(u => {
-                    const opt = document.createElement('option');
-                    opt.value = u.id;
-                    opt.textContent = u.name || u.email.split('@')[0];
-                    userSel.appendChild(opt);
-                });
+                if (userSel) {
+                    users.filter(u => u.role !== 'CLIENT').forEach(u => {
+                        const opt = document.createElement('option');
+                        opt.value = u.id;
+                        opt.textContent = u.name || u.email.split('@')[0];
+                        userSel.appendChild(opt);
+                    });
+                }
             } catch (e) {
                 console.warn("Failed to populate filters", e);
             }
         }
 
-        document.getElementById('apply-filters').onclick = function () {
-            updateFilterPills();
-            loadDashboard();
-        };
-        document.getElementById('reset-filters').onclick = function () {
-            document.getElementById('filter-area').value = '';
-            document.getElementById('filter-user').value = '';
-            document.getElementById('filter-start').value = '';
-            document.getElementById('filter-end').value = '';
-            updateFilterPills();
-            loadDashboard();
-        };
+        // Filter panel wiring (only available for admins — guard against null)
+        const applyFiltersBtn = document.getElementById('apply-filters');
+        const resetFiltersBtn = document.getElementById('reset-filters');
+        const filterPanelToggle = document.getElementById('filter-panel-toggle');
+
+        if (applyFiltersBtn) {
+            applyFiltersBtn.onclick = function () {
+                updateFilterPills();
+                loadDashboard();
+            };
+        }
+        if (resetFiltersBtn) {
+            resetFiltersBtn.onclick = function () {
+                const fa = document.getElementById('filter-area');
+                const fu = document.getElementById('filter-user');
+                const fs = document.getElementById('filter-start');
+                const fe = document.getElementById('filter-end');
+                if (fa) fa.value = '';
+                if (fu) fu.value = '';
+                if (fs) fs.value = '';
+                if (fe) fe.value = '';
+                updateFilterPills();
+                loadDashboard();
+            };
+        }
 
         // Update pills on change, but do NOT auto-reload — wait for Apply click
         ['filter-area', 'filter-user', 'filter-start', 'filter-end'].forEach(function (id) {
-            document.getElementById(id).addEventListener('change', function () {
-                updateFilterPills();
-            });
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', function () { updateFilterPills(); });
         });
 
         // Filter panel toggle
         var filterPanelBody = document.getElementById('filter-panel-body');
         var filterToggleBtn = document.getElementById('filter-toggle-btn');
         var filterToggleLabel = document.getElementById('filter-toggle-label');
-        document.getElementById('filter-panel-toggle').addEventListener('click', function () {
-            var isOpen = filterPanelBody.classList.toggle('open');
-            filterToggleBtn.classList.toggle('open', isOpen);
-            filterToggleLabel.textContent = isOpen ? 'Hide' : 'Show';
-        });
+        if (filterPanelToggle && filterPanelBody) {
+            filterPanelToggle.addEventListener('click', function () {
+                var isOpen = filterPanelBody.classList.toggle('open');
+                if (filterToggleBtn) filterToggleBtn.classList.toggle('open', isOpen);
+                if (filterToggleLabel) filterToggleLabel.textContent = isOpen ? 'Hide' : 'Show';
+            });
+        }
 
         // Active filter pills in header
         function updateFilterPills() {
@@ -1733,14 +2248,14 @@
 
         // ── Period Picker ─────────────────────────────────────────────
         const PERIOD_LABELS = {
-            today: { badge: 'Today Only', labels: ['Visits (Today)', 'Active Clients', 'Ongoing Projects', 'Revenue (Today)'] },
-            week: { badge: 'This Week', labels: ['Visits (This Week)', 'Active Clients', 'Ongoing Projects', 'Revenue (This Week)'] },
-            month: { badge: 'This Month', labels: ['Visits (MTD)', 'Active Clients', 'Ongoing Projects', 'Revenue (MTD)'] },
-            last_3_months: { badge: 'Last 3 Months', labels: ['Visits (3M)', 'Active Clients', 'Ongoing Projects', 'Revenue (3M)'] },
-            last_6_months: { badge: 'Last 6 Months', labels: ['Visits (6M)', 'Active Clients', 'Ongoing Projects', 'Revenue (6M)'] },
-            this_year: { badge: 'This Year', labels: ['Visits (YTD)', 'Active Clients', 'Ongoing Projects', 'Revenue (YTD)'] },
-            last_year: { badge: 'Previous Year', labels: ['Visits (Last Yr)', 'Active Clients', 'Ongoing Projects', 'Revenue (Last Yr)'] },
-            all: { badge: 'All Records', labels: ['Total Visits', 'Active Clients', 'Ongoing Projects', 'Total Revenue'] }
+            today: { badge: 'Today Only', labels: ['Visits (Today)', 'Active Clients', 'Present Employees', 'Revenue (Today)'] },
+            week: { badge: 'This Week', labels: ['Visits (This Week)', 'Active Clients', 'Present Employees', 'Revenue (This Week)'] },
+            month: { badge: 'This Month', labels: ['Visits (MTD)', 'Active Clients', 'Present Employees', 'Revenue (MTD)'] },
+            last_3_months: { badge: 'Last 3 Months', labels: ['Visits (3M)', 'Active Clients', 'Present Employees', 'Revenue (3M)'] },
+            last_6_months: { badge: 'Last 6 Months', labels: ['Visits (6M)', 'Active Clients', 'Present Employees', 'Revenue (6M)'] },
+            this_year: { badge: 'This Year', labels: ['Visits (YTD)', 'Active Clients', 'Present Employees', 'Revenue (YTD)'] },
+            last_year: { badge: 'Previous Year', labels: ['Visits (Last Yr)', 'Active Clients', 'Present Employees', 'Revenue (Last Yr)'] },
+            all: { badge: 'All Records', labels: ['Total Visits', 'Active Clients', 'Present Employees', 'Total Revenue'] }
         };
 
         function applyPeriod(period, reload) {
@@ -1774,8 +2289,10 @@
             }
             // 'all' leaves start/end empty
 
-            document.getElementById('filter-start').value = start;
-            document.getElementById('filter-end').value = end;
+            const fsEl = document.getElementById('filter-start');
+            const feEl = document.getElementById('filter-end');
+            if (fsEl) fsEl.value = start;
+            if (feEl) feEl.value = end;
 
             // Mark active button
             document.querySelectorAll('.period-btn').forEach(function (btn) {
@@ -1784,10 +2301,11 @@
 
             // Update context badge
             var meta = PERIOD_LABELS[period] || PERIOD_LABELS.all;
-            document.getElementById('period-context-badge').textContent = meta.badge;
+            const periodBadge = document.getElementById('period-context-badge');
+            if (periodBadge) periodBadge.textContent = meta.badge;
 
             // Update KPI labels
-            var kpiIds = ['kpi-visits-label', 'kpi-clients-label', 'kpi-projects-label', 'kpi-revenue-label'];
+            var kpiIds = ['kpi-visits-label', 'kpi-clients-label', 'kpi-employees-label', 'kpi-revenue-label'];
             kpiIds.forEach(function (id, i) {
                 var el = document.getElementById(id);
                 if (el) el.textContent = meta.labels[i];
@@ -1807,6 +2325,65 @@
 
         // Always default to 'all' (all data till now) on page load
         applyPeriod('all');
+    </script>
+
+    <!-- ── Dashboard Widget Drag & Drop ── -->
+    <script>
+        (function initDashboardDnd() {
+            const STORAGE_KEY_PREFIX = 'dash-widget-order-';
+
+            function saveOrder(rowId, order) {
+                try { localStorage.setItem(STORAGE_KEY_PREFIX + rowId, JSON.stringify(order)); } catch (e) { }
+            }
+
+            function getOrder(rowId) {
+                try { return JSON.parse(localStorage.getItem(STORAGE_KEY_PREFIX + rowId)) || null; } catch (e) { return null; }
+            }
+
+            function applyOrder(row, order) {
+                if (!order || !order.length) return;
+                order.forEach(id => {
+                    const el = row.querySelector(`[data-widget-id="${id}"]`);
+                    if (el) row.appendChild(el);
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                ['widget-row-1', 'widget-row-2'].forEach(rowId => {
+                    const row = document.getElementById(rowId);
+                    if (!row || typeof Sortable === 'undefined') return;
+
+                    // Restore saved order
+                    applyOrder(row, getOrder(rowId));
+
+                    Sortable.create(row, {
+                        animation: 250,
+                        easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+                        ghostClass: 'sortable-ghost',
+                        dragClass: 'sortable-drag',
+                        handle: '.section-card-header',
+                         onEnd: function () {
+                            const order = Array.from(row.querySelectorAll('[data-widget-id]'))
+                                .map(el => el.dataset.widgetId);
+                            saveOrder(rowId, order);
+                        }
+                    });
+                });
+                
+                // Refresh order if widget IDs changed
+                ['widget-row-1'].forEach(rowId => {
+                    const row = document.getElementById(rowId);
+                    if (row) {
+                       const order = getOrder(rowId);
+                       if (order && order.includes('open-issues')) {
+                           const newOrder = order.map(id => id === 'open-issues' ? 'present-employees' : id);
+                           saveOrder(rowId, newOrder);
+                           applyOrder(row, newOrder);
+                       }
+                    }
+                });
+            });
+        })();
     </script>
 </body>
 

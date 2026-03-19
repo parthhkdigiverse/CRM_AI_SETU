@@ -17,9 +17,9 @@
 <body class="bg-light">
     <div class="d-flex">
         <div id="sidebar"></div>
-        <div class="flex-grow-1">
+        <div class="flex-grow-1 main-wrapper">
             <!-- The top header is automatically injected here by js/auth.js?v=2.3 -->
-            <div class="page-content">
+            <div class="page-content mx-auto" style="max-width: 1300px; width: 100%;">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
                         <h2 class="page-section-title">Issues</h2>
@@ -33,31 +33,33 @@
                 <div id="filter-wrapper"></div>
                 <div class="card shadow-sm">
                     <div class="card-body p-0">
-                        <table class="table align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th class="ps-3" style="width: 40px;">
-                                        <input type="checkbox" class="form-check-input" id="issue-select-all"
-                                            onclick="toggleAllIssues(this)">
-                                    </th>
-                                    <th class="text-secondary fw-semibold">ISSUE</th>
-                                    <th class="text-secondary fw-semibold">SEVERITY</th>
-                                    <th class="text-secondary fw-semibold">STATUS</th>
-                                    <th class="text-secondary fw-semibold">PROJECT & PM</th>
-                                    <th class="text-secondary fw-semibold">REPORTED BY</th>
-                                    <th class="text-secondary fw-semibold">DATE</th>
-                                    <th class="text-secondary fw-semibold text-end">ACTION</th>
-                                </tr>
-                            </thead>
-                            <tbody id="issues-table">
-                                <tr>
-                                    <td colspan="8" class="text-center py-5 text-muted">
-                                        <i class="bi bi-arrow-clockwise" style="font-size:2rem;"></i>
-                                        <p class="mt-2">Loading...</p>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-3" style="width: 40px;">
+                                            <input type="checkbox" class="form-check-input" id="issue-select-all"
+                                                onclick="toggleAllIssues(this)">
+                                        </th>
+                                        <th class="text-secondary fw-semibold">ISSUE</th>
+                                        <th class="text-secondary fw-semibold">SEVERITY</th>
+                                        <th class="text-secondary fw-semibold">STATUS</th>
+                                        <th class="text-secondary fw-semibold">PROJECT & PM</th>
+                                        <th class="text-secondary fw-semibold">REPORTED BY</th>
+                                        <th class="text-secondary fw-semibold">DATE</th>
+                                        <th class="text-secondary fw-semibold text-end">ACTION</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="issues-table">
+                                    <tr>
+                                        <td colspan="8" class="text-center py-5 text-muted">
+                                            <i class="bi bi-arrow-clockwise" style="font-size:2rem;"></i>
+                                            <p class="mt-2">Loading...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div><!-- /page-content -->
@@ -188,6 +190,23 @@
         }
 
         async function loadIssues(filters = {}) {
+            const tableBody = document.getElementById('issues-table');
+            tableBody.innerHTML = `
+                <tr class="stagger-fade-in">
+                    <td colspan="7" class="py-4">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="skeleton-box skeleton-circle" style="width: 24px; height: 24px;"></div>
+                            <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium mb-1"></div></div>
+                            <div class="flex-grow-1"><div class="skeleton-box skeleton-text short mb-1"></div></div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="skeleton-box skeleton-circle" style="width: 24px; height: 24px;"></div>
+                            <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium mb-1"></div></div>
+                            <div class="flex-grow-1"><div class="skeleton-box skeleton-text short mb-1"></div></div>
+                        </div>
+                    </td>
+                </tr>`;
+
             const params = new URLSearchParams();
             params.append('limit', '200');
             if (filters.severity) params.append('severity', filters.severity);

@@ -106,7 +106,7 @@ def _compute_daily_summary(records: List[models.Attendance], day: date) -> dict:
             total_hours += max(0.0, (end_time - rec.punch_in).total_seconds() / 3600)
 
     return {
-        "total_hours": round(total_hours, 2),
+        "total_hours": total_hours,
         "first_punch_in": first_in,
         "last_punch_out": last_out,
         "missing_punch_out": missing_punch_out,
@@ -196,7 +196,7 @@ def punch_in_out(db: Session = Depends(get_db), current_user = Depends(get_curre
         # Punch Out
         attendance.punch_out = now
         duration = (attendance.punch_out - attendance.punch_in).total_seconds() / 3600
-        attendance.total_hours = round(duration, 2)
+        attendance.total_hours = duration
         db.commit()
         db.refresh(attendance)
         return attendance
@@ -226,6 +226,13 @@ def get_punch_status(db: Session = Depends(get_db), current_user = Depends(get_c
     is_punched_in = last_record is not None and last_record.punch_out is None
     last_punch = last_record.punch_in if last_record else None
     
+    first_record = db.query(models.Attendance).filter(
+        models.Attendance.user_id == current_user.id,
+        models.Attendance.date == today,
+        models.Attendance.is_deleted == False
+    ).order_by(models.Attendance.punch_in.asc()).first()
+    first_punch_in = first_record.punch_in if first_record else None
+    
     # 2. Today's total hours
     today_hours = db.query(func.sum(models.Attendance.total_hours)).filter(
         models.Attendance.user_id == current_user.id,
@@ -250,9 +257,13 @@ def get_punch_status(db: Session = Depends(get_db), current_user = Depends(get_c
     return {
         "is_punched_in": is_punched_in,
         "last_punch": last_punch,
-        "today_hours": round(today_hours, 2),
-        "week_hours": round(week_hours, 2),
-        "month_hours": round(month_hours, 2)
+        "last_punch_ts": last_punch.timestamp() * 1000 if last_punch else None,
+        "first_punch_in": first_punch_in,
+        "first_punch_in_ts": first_punch_in.timestamp() * 1000 if first_punch_in else None,
+        "today_hours": today_hours,
+        "today_hours_secs": today_hours * 3600,
+        "week_hours": week_hours,
+        "month_hours": month_hours
     }
 
 
@@ -422,6 +433,6 @@ def get_attendance_summary(
     return {
         "start_date": start_date,
         "end_date": end_date,
-        "total_hours": round(total_hours, 2),
+        "total_hours": total_hours,
         "records": records,
     }
