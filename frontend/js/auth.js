@@ -1,16 +1,33 @@
 // frontend/js/auth.js
 // auth.js — shared across all pages
-let API = window.location.origin + '/api';
+// Config handled by ApiClient.initConfig() lazily or via explicit call
+if (window.ApiClient) window.ApiClient.initConfig();
 
-// Background Refresh Config
-fetch(window.location.origin + '/api/config')
-    .then(r => r.json())
-    .then(data => {
-        if (data.API_BASE_URL) {
-            API = data.API_BASE_URL;
-        }
-    })
-    .catch(e => console.warn('Config fetch error:', e));
+// Global fallback for feature access roles
+const FEATURE_ACCESS_FALLBACK = {
+    issue_create_roles: ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
+    issue_manage_roles: ['ADMIN', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES', 'SALES', 'TELESALES'],
+    invoice_creator_roles: ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER_AND_SALES'],
+    invoice_verifier_roles: ['ADMIN'],
+    leave_apply_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
+    leave_edit_own_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
+    leave_cancel_own_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
+    leave_manage_roles: ['ADMIN'],
+    salary_manage_roles: ['ADMIN'],
+    salary_view_all_roles: ['ADMIN'],
+    incentive_manage_roles: ['ADMIN'],
+    incentive_view_all_roles: ['ADMIN'],
+    employee_manage_roles: ['ADMIN'],
+};
+
+window.hasFeatureAccess = function(featureKey, roleInput) {
+    const roleName = String(roleInput || getUser()?.role || '').toUpperCase();
+    if (!roleName) return false;
+    const effective = window.__crmEffectiveAccessPolicy;
+    const featureAccess = effective?.feature_access || effective?.policy?.feature_access || FEATURE_ACCESS_FALLBACK;
+    const allowedRoles = featureAccess?.[featureKey] || FEATURE_ACCESS_FALLBACK[featureKey] || [];
+    return Array.isArray(allowedRoles) && allowedRoles.map(v => String(v).toUpperCase()).includes(roleName);
+};
 
 // Inject global theme styles (but NOT on the login page to avoid style degradation)
 const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/') || window.location.pathname === '';
@@ -21,21 +38,22 @@ if (!isLoginPage) {
 }
 
 function getToken() {
-    const t = localStorage.getItem('access_token');
+    const t = sessionStorage.getItem('access_token');
     if (!t || t === 'null' || t === 'undefined' || t === '') return null;
     return t;
 }
 function setTokens(a, r) {
-    localStorage.setItem('access_token', a);
-    if (r) localStorage.setItem('refresh_token', r);
+    sessionStorage.setItem('access_token', a);
+    if (r) sessionStorage.setItem('refresh_token', r);
 }
 function clearTokens() {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('crm_user');
+    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('refresh_token');
+    sessionStorage.removeItem('srm_user');
+    sessionStorage.removeItem('current_user'); // Added based on snippet
 }
 function getUser() {
-    try { return JSON.parse(localStorage.getItem('crm_user')); } catch { return null; }
+    try { return JSON.parse(sessionStorage.getItem('srm_user')); } catch { return null; }
 }
 
 function showAccessDeniedState(role, path) {
@@ -46,19 +64,18 @@ function showAccessDeniedState(role, path) {
     const pageLabel = (path || 'this page').replace('.html', '').replace(/[-_]/g, ' ');
     const card = document.createElement('div');
     card.id = 'access-denied-state';
-    card.style.cssText = 'position:relative;z-index:20;margin:0 auto 24px auto;max-width:720px;background:#fff7ed;border:1px solid #fed7aa;border-radius:20px;padding:32px;box-shadow:0 20px 40px rgba(15,23,42,.08);';
+    // Use theme tokens for the card
+    card.style.cssText = 'position:relative;z-index:100;margin:0 auto 32px auto;max-width:540px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;box-shadow:var(--shadow-xl);overflow:visible;';
     card.innerHTML = `
-        <div style="display:flex;align-items:flex-start;gap:16px;">
-            <div style="width:56px;height:56px;border-radius:16px;background:#ffedd5;color:#ea580c;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">
+        <div style="text-align:center;">
+            <div style="width:64px;height:64px;border-radius:16px;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 24px auto;">
                 <i class="bi bi-shield-lock"></i>
             </div>
-            <div>
-                <div style="font-size:1.35rem;font-weight:700;color:#9a3412;line-height:1.2;">You don't have enough access</div>
-                <p style="margin:10px 0 0 0;color:#7c2d12;font-size:.95rem;line-height:1.6;">Your current role, ${roleLabel}, cannot open ${pageLabel}. The sidebar stays visible so you can move to pages that are available to you.</p>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
-                    <a href="dashboard.html" style="text-decoration:none;background:#ea580c;color:#fff;padding:10px 14px;border-radius:12px;font-weight:600;">Go to Dashboard</a>
-                    <a href="profile.html" style="text-decoration:none;background:#fff;color:#9a3412;padding:10px 14px;border-radius:12px;border:1px solid #fdba74;font-weight:600;">Open Profile</a>
-                </div>
+            <h2 style="font-size:1.5rem;font-weight:700;color:var(--text-1);margin-bottom:12px;font-family:'Outfit',sans-serif;">Access Restricted</h2>
+            <p style="color:var(--text-2);font-size:0.95rem;line-height:1.6;margin-bottom:32px;">Your current role, ${roleLabel}, cannot view ${pageLabel}. Please return to the dashboard or contact your administrator.</p>
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                <a href="dashboard.html" style="text-decoration:none;background:var(--primary);color:#fff;padding:10px 24px;border-radius:8px;font-weight:600;font-size:14px;min-width:120px;display:inline-flex;align-items:center;justify-content:center;transition:all 0.2s;">Return to Dashboard</a>
+                <a href="profile.html" style="text-decoration:none;background:var(--bg-page);color:var(--text-1);padding:10px 24px;border-radius:8px;border:1px solid var(--border);font-weight:600;font-size:14px;min-width:120px;display:inline-flex;align-items:center;justify-content:center;transition:all 0.2s;">Open Profile</a>
             </div>
         </div>`;
 
@@ -81,6 +98,16 @@ function requireAuth() {
     const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
 
     if (params.get('dev') === 'true' && isLocal) {
+        // Mock an ADMIN user for testing dev mode features if no session exists or if explicitly requested via dev=admin
+        if (!sessionStorage.getItem('srm_user') || params.get('dev_role') === 'ADMIN') {
+            sessionStorage.setItem('access_token', 'dev-token');
+            sessionStorage.setItem('srm_user', JSON.stringify({
+                id: 1, 
+                name: 'System Administrator (Dev)', 
+                email: 'admin@crm.dev', 
+                role: 'ADMIN'
+            }));
+        }
         document.body.style.visibility = 'visible';
         let pageName = document.title.split('—')[0].trim();
         if (!pageName || pageName === 'SRM AI SETU') pageName = 'Dashboard';
@@ -99,39 +126,16 @@ function requireAuth() {
     // --- ROLE BASED ROUTING GUARD ---
     const ROLE_PERMISSIONS_FALLBACK = {
         'ADMIN': ['*'],
-        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
-        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
-        'PROJECT_MANAGER': ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html'],
-        'PROJECT_MANAGER_AND_SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html'],
-        'CLIENT': ['dashboard.html']
+        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
+        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
+        'PROJECT_MANAGER': ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        'PROJECT_MANAGER_AND_SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        'CLIENT': ['dashboard.html', 'projects.html', 'billing.html', 'feedback.html', 'profile.html']
     };
+
 
     window.__crmEffectiveAccessPolicy = window.__crmEffectiveAccessPolicy || null;
 
-    const FEATURE_ACCESS_FALLBACK = {
-        issue_create_roles: ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
-        issue_manage_roles: ['ADMIN', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES', 'SALES', 'TELESALES'],
-        invoice_creator_roles: ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER_AND_SALES'],
-        invoice_verifier_roles: ['ADMIN'],
-        leave_apply_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
-        leave_edit_own_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
-        leave_cancel_own_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
-        leave_manage_roles: ['ADMIN'],
-        salary_manage_roles: ['ADMIN'],
-        salary_view_all_roles: ['ADMIN'],
-        incentive_manage_roles: ['ADMIN'],
-        incentive_view_all_roles: ['ADMIN'],
-        employee_manage_roles: ['ADMIN'],
-    };
-
-    window.hasFeatureAccess = function(featureKey, roleInput) {
-        const roleName = String(roleInput || getUser()?.role || '').toUpperCase();
-        if (!roleName) return false;
-        const effective = window.__crmEffectiveAccessPolicy;
-        const featureAccess = effective?.feature_access || effective?.policy?.feature_access || FEATURE_ACCESS_FALLBACK;
-        const allowedRoles = featureAccess?.[featureKey] || FEATURE_ACCESS_FALLBACK[featureKey] || [];
-        return Array.isArray(allowedRoles) && allowedRoles.map(v => String(v).toUpperCase()).includes(roleName);
-    };
 
     function getAllowedPagesForRole(role) {
         const roleName = (role || '').toUpperCase();
@@ -146,10 +150,11 @@ function requireAuth() {
         return ROLE_PERMISSIONS_FALLBACK[roleName] || [];
     }
 
-    function enforceRoleAccess(role) {
+    // Exported to window for use in syncAccessControl
+    window.enforceRoleAccess = function(role) {
         if (!role || role === 'ADMIN') return true;
-        const path = window.location.pathname.split('/').pop();
-        if (!path || path === 'index.html') return true;
+        const path = window.location.pathname.split('/').pop() || 'index.html';
+        if (path === 'index.html' || path === 'login.html') return true;
 
         const allowed = getAllowedPagesForRole(role);
         if (!allowed.includes(path) && !allowed.includes('*')) {
@@ -157,20 +162,30 @@ function requireAuth() {
             return false;
         }
         return true;
-    }
+    };
 
     // --- OPTIMISTIC UI ---
     // If we have a user in session, show the page IMMEDIATELY.
+    // Ensure background matches theme to avoid flash
+    const storedTheme = localStorage.getItem('theme') || 'light';
+    const bgColor = storedTheme === 'dark' ? '#0f172a' : '#f0f5fb';
+    document.body.style.backgroundColor = bgColor;
+
     if (user) {
         enforceRoleAccess(user.role);
         document.body.style.visibility = 'visible';
+        document.body.style.opacity = '1';
         const el = document.getElementById('username-display');
         if (el) el.textContent = user.name || 'User';
     } else {
         // Fallback: hide until we get a profile (rare)
         document.body.style.visibility = 'hidden';
-        // Emergency unhide after 3 seconds to prevent permanent black screen
-        setTimeout(() => { document.body.style.visibility = 'visible'; }, 3000);
+        document.body.style.opacity = '0';
+        // Emergency unhide after 2 seconds to prevent permanent black screen
+        setTimeout(() => { 
+            document.body.style.visibility = 'visible';
+            document.body.style.opacity = '1';
+        }, 2000);
     }
 
     // Background Verification
@@ -189,8 +204,8 @@ function requireAuth() {
         })
         .then(async profile => {
             if (!profile) return;
-            const userData = { id: profile.id, name: profile.name || profile.email, role: profile.role };
-            localStorage.setItem('crm_user', JSON.stringify(userData));
+            const userData = { id: profile.id, name: profile.name || profile.email, email: profile.email, role: profile.role };
+            sessionStorage.setItem('srm_user', JSON.stringify(userData));
 
             if (window.ApiClient && window.ApiClient.getEffectiveAccessPolicy) {
                 try {
@@ -203,16 +218,88 @@ function requireAuth() {
 
             enforceRoleAccess(userData.role);
             document.body.style.visibility = 'visible';
+            document.body.style.opacity = '1';
             const el = document.getElementById('username-display');
             if (el) el.textContent = profile.name || 'User';
 
+            // Initial sync to set version
+            syncAccessControl(true);
+
             // Fetch and check for critical issues across the app
-            checkCriticalIssues();
+            if (typeof checkCriticalIssues === 'function') checkCriticalIssues();
         })
         .catch((err) => {
             console.warn('Background auth check failed:', err);
             document.body.style.visibility = 'visible';
         });
+}
+
+// --- AUTOMATIC ACCESS SYNC ---
+async function syncAccessControl(isInitial = false) {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+        const response = await fetch(`${window.API}/users/access-policy/status`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) {
+            if (response.status === 401) logout();
+            return;
+        }
+        const status = await response.json();
+        
+        const cachedUser = getUser();
+        const cachedVersion = sessionStorage.getItem('policy_version');
+        
+        // Detect changes
+        const roleChanged = cachedUser && cachedUser.role !== status.role;
+        const policyChanged = cachedVersion && parseInt(cachedVersion) !== status.policy_version;
+        const deactivation = cachedUser && !status.is_active;
+
+        if (deactivation) {
+            alert('Your account has been deactivated. Logging out.');
+            logout();
+            return;
+        }
+
+        if (roleChanged || policyChanged || isInitial) {
+            sessionStorage.setItem('policy_version', status.policy_version);
+            
+            if (roleChanged || policyChanged) {
+                console.log('Access control update detected, refreshing permissions...');
+                
+                // Refetch full profile and policy
+                const profile = await window.ApiClient.getProfile();
+                const userData = { id: profile.id, name: profile.name || profile.email, email: profile.email, role: profile.role };
+                sessionStorage.setItem('srm_user', JSON.stringify(userData));
+
+                if (window.ApiClient && window.ApiClient.getEffectiveAccessPolicy) {
+                    const effective = await window.ApiClient.getEffectiveAccessPolicy();
+                    window.__crmEffectiveAccessPolicy = effective;
+                }
+
+                // Update UI: Dispatch event for SPA components to re-render
+                window.dispatchEvent(new CustomEvent('permissions-changed', { 
+                    detail: { role: userData.role, policy: window.__crmEffectiveAccessPolicy } 
+                }));
+                
+                // Re-enforce access for current page
+                if (window.enforceRoleAccess) {
+                    window.enforceRoleAccess(userData.role);
+                }
+                
+                if (typeof showToast === 'function') showToast('Permissions updated automatically', 'info');
+            }
+        }
+    } catch (e) {
+        console.warn('Access sync failed:', e);
+    }
+}
+
+// Set up background polling (every 30 seconds)
+if (!window.__accessSyncInterval) {
+    window.__accessSyncInterval = setInterval(() => syncAccessControl(), 30000);
 }
 
 
@@ -250,8 +337,14 @@ window.addEventListener('pageshow', (event) => {
 
 // Logout
 function logout() {
-    clearTokens();
-    window.location.replace('index.html');
+    if (window.ApiClient && typeof window.ApiClient.clearTokens === 'function') {
+        window.ApiClient.clearTokens();
+    } else {
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('refresh_token');
+        sessionStorage.removeItem('srm_user');
+    }
+    window.location.href = 'index.html?msg=logged_out';
 }
 
 // Global Critical Issue Check
@@ -349,86 +442,11 @@ if (typeof document !== 'undefined') {
 // Call initially
 resetInactivityTimer();
 
-// Generic authenticated fetch
-async function apiFetch(path, options = {}) {
-    const headers = { 'Content-Type': 'application/json', ...options.headers };
-    const token = getToken();
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(API + path, { ...options, headers });
-    if (res.status === 401) {
-        const params = new URLSearchParams(window.location.search);
-        const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
-        if (params.get('dev') === 'true' && isLocal) {
-            console.warn('API 401 suppressed in dev mode.');
-            return res;
-        }
-        clearTokens();
-        window.location.replace('index.html');
-        return;
-    }
-    return res;
-}
+// Generic authenticated fetch (moved to utils.js)
+// GET shorthand (moved to utils.js)
+// POST shorthand (moved to utils.js)
+// PATCH shorthand (moved to utils.js)
+// DELETE shorthand (moved to utils.js)
 
-// GET shorthand
-async function apiGet(path) {
-    const res = await apiFetch(path);
-    if (!res || !res.ok) throw new Error(`GET ${path} failed: ${res?.status}`);
-    return res.json();
-}
 
-// POST shorthand
-async function apiPost(path, body) {
-    const res = await apiFetch(path, { method: 'POST', body: JSON.stringify(body) });
-    if (!res || !res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `POST ${path} failed`);
-    }
-    return res.json();
-}
-
-// PATCH shorthand
-async function apiPatch(path, body) {
-    const res = await apiFetch(path, { method: 'PATCH', body: JSON.stringify(body) });
-    if (!res || !res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `PATCH ${path} failed`);
-    }
-    return res.json();
-}
-
-// DELETE shorthand
-async function apiDelete(path) {
-    const res = await apiFetch(path, { method: 'DELETE' });
-    if (!res || !res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `DELETE ${path} failed`);
-    }
-    // DELETE often returns 204 No Content, so we don't always expect JSON
-    return res.status === 204 ? null : res.json();
-}
-
-// Show bootstrap toast
-function showToast(msg, type = 'success') {
-    const bg = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
-    const id = 'toast_' + Date.now();
-    const toastHtml = `
-        <div id="${id}" class="toast align-items-center text-white ${bg} border-0 mb-2" role="alert">
-            <div class="d-flex">
-                <div class="toast-body">${msg}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        </div>`;
-    let c = document.getElementById('toast-container');
-    if (!c) {
-        c = document.createElement('div');
-        c.id = 'toast-container';
-        c.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-        c.style.zIndex = 9999;
-        document.body.appendChild(c);
-    }
-    c.insertAdjacentHTML('beforeend', toastHtml);
-    const el = document.getElementById(id);
-    new bootstrap.Toast(el, { delay: 3500 }).show();
-    el.addEventListener('hidden.bs.toast', () => el.remove());
-}
 

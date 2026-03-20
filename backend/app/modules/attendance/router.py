@@ -106,7 +106,7 @@ def _compute_daily_summary(records: List[models.Attendance], day: date) -> dict:
             total_hours += max(0.0, (end_time - rec.punch_in).total_seconds() / 3600)
 
     return {
-        "total_hours": round(total_hours, 2),
+        "total_hours": total_hours,
         "first_punch_in": first_in,
         "last_punch_out": last_out,
         "missing_punch_out": missing_punch_out,
@@ -196,7 +196,7 @@ def punch_in_out(db: Session = Depends(get_db), current_user = Depends(get_curre
         # Punch Out
         attendance.punch_out = now
         duration = (attendance.punch_out - attendance.punch_in).total_seconds() / 3600
-        attendance.total_hours = round(duration, 2)
+        attendance.total_hours = duration
         db.commit()
         db.refresh(attendance)
         return attendance
@@ -226,34 +226,80 @@ def get_punch_status(db: Session = Depends(get_db), current_user = Depends(get_c
     is_punched_in = last_record is not None and last_record.punch_out is None
     last_punch = last_record.punch_in if last_record else None
     
-    # 2. Today's total hours
-    today_hours = db.query(func.sum(models.Attendance.total_hours)).filter(
+    first_record = db.query(models.Attendance).filter(
         models.Attendance.user_id == current_user.id,
         models.Attendance.date == today,
         models.Attendance.is_deleted == False
-    ).scalar() or 0.0
+    ).order_by(models.Attendance.punch_in.asc()).first()
+    first_punch_in = first_record.punch_in if first_record else None
+    
+    # 2. Today's total hours - Explicit Manual Sum for Robustness
+    today_records = db.query(models.Attendance).filter(
+        models.Attendance.user_id == current_user.id,
+        models.Attendance.date == today,
+        models.Attendance.is_deleted == False
+    ).all()
+    
+    today_hours = sum(r.total_hours for r in today_records if r.total_hours)
     
     # 3. Weekly total hours (Last 7 days)
     week_ago = today - timedelta(days=7)
-    week_hours = db.query(func.sum(models.Attendance.total_hours)).filter(
+    week_hours = db.query(func.coalesce(func.sum(models.Attendance.total_hours), 0.0)).filter(
         models.Attendance.user_id == current_user.id,
-        models.Attendance.date >= week_ago
-    ).scalar() or 0.0
+        models.Attendance.date >= week_ago,
+        models.Attendance.is_deleted == False
+    ).scalar()
     
     # 4. Monthly total hours (Current month)
     month_start = today.replace(day=1)
-    month_hours = db.query(func.sum(models.Attendance.total_hours)).filter(
+    month_hours = db.query(func.coalesce(func.sum(models.Attendance.total_hours), 0.0)).filter(
         models.Attendance.user_id == current_user.id,
-        models.Attendance.date >= month_start
-    ).scalar() or 0.0
+        models.Attendance.date >= month_start,
+        models.Attendance.is_deleted == False
+    ).scalar()
     
+    # if currently punched in, add ongoing duration to today_hours (for display)
+    # but keep completed_hours_secs as the base for the client timer
+    completed_hours_secs = round(today_hours * 3600)
+    if is_punched_in and last_record:
+        now = datetime.now()
+        ongoing_secs = (now - last_record.punch_in).total_seconds()
+        today_hours += (ongoing_secs / 3600)
+
+    last_punch_ts = last_punch.timestamp() * 1000 if last_punch else None
+    first_punch_in_ts = first_punch_in.timestamp() * 1000 if first_punch_in else None
+
     return {
         "is_punched_in": is_punched_in,
         "last_punch": last_punch,
-        "today_hours": round(today_hours, 2),
+        "last_punch_ts": last_punch_ts,
+        "first_punch_in": first_punch_in,
+        "first_punch_in_ts": first_punch_in_ts,
+        "today_hours": round(today_hours, 4),
+        "today_hours_secs": round(today_hours * 3600),
+        "completed_hours_secs": completed_hours_secs,
         "week_hours": round(week_hours, 2),
         "month_hours": round(month_hours, 2)
     }
+
+
+@router.get("/logs", response_model=List[schemas.AttendanceLog])
+def get_attendance_logs(
+    date: date,
+    user_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Determine which user's logs to show
+    target_user_id = user_id if user_id and current_user.role == UserRole.ADMIN else current_user.id
+    
+    logs = db.query(models.Attendance).filter(
+        models.Attendance.user_id == target_user_id,
+        models.Attendance.date == date,
+        models.Attendance.is_deleted == False
+    ).order_by(models.Attendance.punch_in.asc()).all()
+    
+    return logs
 
 
 @router.get("/settings", response_model=schemas.AttendanceSettings)
@@ -422,6 +468,6 @@ def get_attendance_summary(
     return {
         "start_date": start_date,
         "end_date": end_date,
-        "total_hours": round(total_hours, 2),
+        "total_hours": total_hours,
         "records": records,
     }

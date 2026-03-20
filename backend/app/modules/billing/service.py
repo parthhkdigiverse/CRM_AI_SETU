@@ -1135,8 +1135,10 @@ class BillingService:
             class _TempBill:
                 invoice_number = None
                 id             = 0
+                payment_type   = None
             _tmp = _TempBill()
             _tmp.amount = total_amount
+            _tmp.payment_type = payment_type
 
             # Try dynamic QR (PhonePe or UPI string)
             safe_phone = phone.strip().replace("+", "").replace(" ", "")

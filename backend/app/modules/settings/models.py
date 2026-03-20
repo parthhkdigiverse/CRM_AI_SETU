@@ -7,3 +7,5 @@ class SystemSettings(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     feature_flags = Column(JSON, nullable=False, default=dict)
+    access_policy = Column(JSON, nullable=False, default=dict)
+    policy_version = Column(Integer, nullable=False, default=1)

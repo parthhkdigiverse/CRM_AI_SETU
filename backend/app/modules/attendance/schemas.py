@@ -19,10 +19,24 @@ class AttendanceResponse(AttendanceBase):
     class Config:
         from_attributes = True
 
+class AttendanceLog(BaseModel):
+    id: int
+    punch_in: Optional[datetime] = None
+    punch_out: Optional[datetime] = None
+    total_hours: float = 0.0
+
+    class Config:
+        from_attributes = True
+
 class PunchStatus(BaseModel):
     is_punched_in: bool
     last_punch: Optional[datetime] = None
+    last_punch_ts: Optional[float] = None  # Epoch milliseconds
+    first_punch_in: Optional[datetime] = None
+    first_punch_in_ts: Optional[float] = None  # Epoch milliseconds
     today_hours: float = 0.0
+    today_hours_secs: float = 0.0
+    completed_hours_secs: float = 0.0
     week_hours: float = 0.0
     month_hours: float = 0.0
 

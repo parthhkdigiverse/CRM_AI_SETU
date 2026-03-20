@@ -17,9 +17,9 @@
 <body>
     <div class="d-flex">
         <div id="sidebar"></div>
-        <div class="flex-grow-1">
-            <div class="page-content">
-                <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="flex-grow-1 main-wrapper">
+            <div class="page-content mx-auto" style="max-width: 1000px;">
+                <div class="page-header-glass d-flex justify-content-between align-items-center">
                     <div>
                         <h2 class="page-section-title">Client Feedback</h2>
                         <p class="text-muted small mb-0">Select a client to view their feedback</p>
@@ -46,21 +46,23 @@
 
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-0">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Rating</th>
-                                    <th>Comment</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody id="feedback-table">
-                                <tr>
-                                    <td colspan="3" class="text-center py-5 text-muted">Select a client above to view
-                                        feedback.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Rating</th>
+                                        <th>Comment</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="feedback-table">
+                                    <tr>
+                                        <td colspan="3" class="text-center py-5 text-muted">Select a client above to view
+                                            feedback.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div><!-- /page-content -->

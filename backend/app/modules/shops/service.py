@@ -218,7 +218,7 @@ class ShopService:
         # Create new client
         db_client = Client(
             name=db_shop.contact_person or db_shop.name,
-            email=db_shop.email or f"converted_{db_shop.id}@crm.internal", # Fallback email if missing
+            email=db_shop.email or f"converted_{db_shop.id}@srm.internal", # Fallback email if missing
             phone=db_shop.phone,
             organization=db_shop.name,
             owner_id=db_shop.owner_id

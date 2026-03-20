@@ -53,7 +53,7 @@ class EmailService:
                     <tr><td><strong>Organisation</strong></td><td>{client_org}</td></tr>
                     <tr><td><strong>Phone</strong></td><td>{client_phone}</td></tr>
                 </table>
-                <p>Please log in to the CRM to view full client details and get started.</p>
+                <p>Please log in to the SRM to view full client details and get started.</p>
                 <br>
                 <p>Regards,<br>SRM AI SETU</p>
             </body>
@@ -75,7 +75,7 @@ class EmailService:
                 </ul>
                 <p>Please check the CMS for more details.</p>
                 <br>
-                <p>Regards,<br>CRM System</p>
+                <p>Regards,<br>SRM System</p>
             </body>
         </html>
         """

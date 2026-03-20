@@ -112,7 +112,7 @@ window.renderQuickAddItems = function (roleValue) {
         const action = item.onclick
             ? `href="${item.href}" onclick="${item.onclick}"`
             : `href="${item.href}"`;
-        return `<li><a class="dropdown-item rounded-2 py-2" ${action}><i class="bi ${item.icon} me-2 ${item.iconClass || ''}" ${item.iconStyle ? `style="${item.iconStyle}"` : ''}></i> ${item.label}</a></li>`;
+        return `<li><a class="dropdown-item" ${action}><i class="bi ${item.icon} ${item.iconClass || ''}"></i> ${item.label}</a></li>`;
     }).join('');
 }
 
@@ -120,17 +120,23 @@ window.renderQuickAddItems = function (roleValue) {
 window.renderSidebar = function (active) {
     const u = getUser();
     const role = u?.role || 'TELESALES';
-    console.log('Sidebar Debug - Role:', role);
-
     const { isAdmin, isSales, isTelesales, isPM, isClient } = getRoleFlags(role);
 
+    const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+    if (isCollapsed) {
+        setTimeout(() => {
+            document.getElementById('sidebar-container')?.classList.add('collapsed');
+        }, 0);
+    }
+
+    window.__lastSidebarActive = active;
     const roleName = String(role || '').toUpperCase();
     const fallbackPages = {
         ADMIN: ['*'],
-        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'projects.html'],
-        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'projects.html'],
-        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
-        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
+        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html', 'projects.html'],
+        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html', 'projects.html'],
+        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
         CLIENT: ['dashboard.html']
     };
     const effectivePolicy = window.__crmEffectiveAccessPolicy;
@@ -145,115 +151,170 @@ window.renderSidebar = function (active) {
         return allowedPages.includes(page);
     };
 
-    let nav = '';
+    const sbSection = (id, title, icon, items) => {
+        const filteredItems = items.filter(item => canShowPage(item.href));
+        if (filteredItems.length === 0) return '';
+        const isAnyActive = filteredItems.some(item => item.id === active);
+        const isOpen = isAnyActive; // Auto-open if active item is inside
 
-    function sbSection(id, label, icon, items) {
-        const visibleItems = (items || []).filter(item => canShowPage(item.href));
-        if (!visibleItems.length) return '';
-        const isActiveSection = visibleItems.some(i => i.id === active);
         return `
-        <div class="sb-section">
-            <div class="sb-section-header ${isActiveSection ? 'open' : ''}" onclick="toggleSbSection('${id}')">
+        <div class="sb-section" id="sb-sec-${id}">
+            <div class="sb-section-header ${isOpen ? 'open' : ''}" onclick="toggleSbSection('${id}')">
                 <i class="bi ${icon} sb-sec-icon"></i>
-                <span>${label}</span>
+                <span>${title}</span>
                 <i class="bi bi-chevron-right sb-arrow"></i>
             </div>
-            <ul class="sb-section-items ${isActiveSection ? 'open' : ''}">
-                ${visibleItems.map(item => `
-                <li><a href="${item.href}" class="sb-link ${active === item.id ? 'active' : ''}">
-                    <i class="bi ${item.icon}"></i><span>${item.label}</span></a></li>`).join('')}
-            </ul>
+            <div class="sb-section-items ${isOpen ? 'open' : ''}">
+                ${filteredItems.map(item => `
+                    <a href="${item.href}" class="sb-link ${item.id === active ? 'active' : ''}">
+                        <i class="bi ${item.icon}"></i>
+                        <span>${item.label}</span>
+                    </a>
+                `).join('')}
+            </div>
         </div>`;
-    }
-
-    // DASHBOARD
-    nav += sbSection('db', 'Dashboard', 'bi-grid-1x2', [
-        { id: 'dashboard', href: 'dashboard.html', icon: 'bi-bar-chart-line-fill', label: 'Overview' },
-        { id: 'timetable', href: 'timetable.html', icon: 'bi-calendar3', label: 'Timetable' },
-        { id: 'todo', href: 'todo.html', icon: 'bi-check2-square', label: 'To-Do List' }
-    ]);
-
-    // ADMINISTRATION
-    nav += sbSection('admin', 'Administration', 'bi-shield-check', [
-        { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
-    ]);
-
-    // FIELD OPERATIONS
-    const fieldItems = [];
-    fieldItems.push({ id: 'leads', href: 'leads.html', icon: 'bi-kanban', label: 'Project Overview' });
-    fieldItems.push({ id: 'areas', href: 'areas.html', icon: 'bi-building', label: 'Areas & Shops' });
-    fieldItems.push({ id: 'visits', href: 'visits.html', icon: 'bi-calendar3', label: 'Visits' });
-    if (fieldItems.length) {
-        nav += sbSection('field', 'Field Operations', 'bi-geo-alt', fieldItems);
-    }
-
-    // PROJECT MANAGEMENT
-    nav += sbSection('pm', 'Project Management', 'bi-briefcase', [
-        { id: 'demo', href: 'projects_demo.html', icon: 'bi-play-circle', label: 'Demo' },
-        { id: 'projects', href: 'projects.html', icon: 'bi-briefcase', label: 'Projects' },
-        { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
-        { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
-    ]);
-
-    // CLIENT RELATIONS
-    const crItems = [
-        { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
-        { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' },
-        { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
-    ];
-    nav += sbSection('cr', 'Client Relations', 'bi-people', crItems);
-
-    // HR & PAYROLL
-    const hrItems = [
-        { id: 'employees', href: 'employees.html', icon: 'bi-people', label: 'Employees' },
-        { id: 'salary', href: 'salary.html', icon: 'bi-cash-stack', label: 'Salary' },
-        { id: 'leaves', href: 'leaves.html', icon: 'bi-calendar3', label: 'Leaves' },
-        { id: 'incentives', href: 'incentives.html', icon: 'bi-trophy', label: 'Incentives' }
-    ];
-    nav += sbSection('hr', 'HR & Payroll', 'bi-currency-dollar', hrItems);
-
-    // REPORTS
-    nav += sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
-        { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
-    ]);
-
-    const userName = u?.name || u?.email || 'User';
-    const initials = userName.slice(0, 2).toUpperCase();
-    const userInitials = window.getInitials(userName);
-    const userRole = (u?.role || 'USER').replace(/_/g, ' ');
+    };
 
     return `
     <div id="sidebar-container">
         <div class="sidebar-brand">
-            <div class="sidebar-brand-icon"><i class="bi bi-grid-fill"></i></div>
-            <span>SRM AI SETU</span>
+            <div class="sidebar-brand-icon">
+                <div class="sidebar-logo-ai"></div>
+            </div>
+            <div class="ms-2 d-flex flex-column">
+                <span>SRM AI SETU</span>
+            </div>
         </div>
-        <div class="sb-scroll-area mt-2">${nav}</div>
+
+        <div class="sb-scroll-area">
+            ${sbSection('db', 'Dashboard', 'bi-grid-1x2', [
+                { id: 'dashboard', href: 'dashboard.html', icon: 'bi-bar-chart-line-fill', label: 'Overview' },
+                { id: 'timetable', href: 'timetable.html', icon: 'bi-calendar3', label: 'Timetable' },
+                { id: 'todo', href: 'todo.html', icon: 'bi-check2-square', label: 'To-Do List' }
+            ])}
+
+            ${sbSection('admin', 'Administration', 'bi-shield-check', [
+                { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
+            ])}
+            ${sbSection('fo', 'Field Operations', 'bi-geo-alt', [
+                { id: 'projects', href: 'projects.html', icon: 'bi-kanban', label: 'Projects' },
+                { id: 'visits', href: 'visits.html', icon: 'bi-geo-alt-fill', label: 'Visits' },
+                { id: 'areas', href: 'areas.html', icon: 'bi-shop', label: 'Areas & Shops' }
+            ])}
+            ${sbSection('pm', 'Project Management', 'bi-briefcase', [
+                { id: 'demo', href: 'projects_demo.html', icon: 'bi-play-circle', label: 'Demo' },
+                { id: 'projects', href: 'projects.html', icon: 'bi-briefcase', label: 'Projects' },
+                { id: 'meetings', href: 'meetings.html', icon: 'bi-calendar-event', label: 'Meetings' },
+                { id: 'issues', href: 'issues.html', icon: 'bi-exclamation-triangle', label: 'Issues' }
+            ])}
+            ${sbSection('client', 'Client Relations', 'bi-person-badge', [
+                { id: 'clients', href: 'clients.html', icon: 'bi-people', label: 'Clients' },
+                { id: 'payment', href: 'billing.html', icon: 'bi-receipt', label: 'Billing & Invoices' },
+                { id: 'feedback', href: 'feedback.html', icon: 'bi-chat-square-text', label: 'Feedback' }
+            ])}
+            ${sbSection('hr', 'HR & Payroll', 'bi-people-fill', [
+                { id: 'employees', href: 'employees.html', icon: 'bi-people', label: 'Employees' },
+                { id: 'salary', href: 'salary.html', icon: 'bi-cash-stack', label: 'Salary & Payroll' },
+                { id: 'leaves', href: 'leaves.html', icon: 'bi-calendar-x', label: 'Leaves' },
+                { id: 'incentives', href: 'incentives.html', icon: 'bi-award', label: 'Incentives' }
+            ])}
+            ${sbSection('rpt', 'Reports & Analytics', 'bi-graph-up', [
+                { id: 'reports', href: 'reports.html', icon: 'bi-graph-up', label: 'Reports' }
+            ])}
+        </div>
+        
         <div class="sb-bottom">
-            ${canShowPage('settings.html') ? '<a href="settings.html" class="sb-bottom-link"><i class="bi bi-gear-fill"></i> Settings</a>' : ''}
-            <a href="#" class="sb-bottom-link logout" onclick="logout();return false;"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            <a href="settings.html" class="sb-bottom-link ${active === 'settings' ? 'active' : ''}" title="Settings">
+                <i class="bi bi-gear"></i> <span>Settings</span>
+            </a>
+            <a href="#" class="sb-bottom-link logout" onclick="logout();return false;" title="Logout">
+                <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Logout</span>
+            </a>
         </div>
-    </div>`;
+
+        <!-- Floating Toggle Button -->
+        <div class="sb-toggle-btn" onclick="toggleSidebarState()" title="Toggle Sidebar">
+            <i class="bi bi-chevron-left"></i>
+        </div>
+    </div>
+    <div id="sb-overlay" class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+    `;
 }
 
+window.toggleMobileSidebar = function() {
+    const sb = document.getElementById('sidebar-container');
+    const overlay = document.getElementById('sb-overlay');
+    if (!sb) return;
+    
+    const isOpen = sb.classList.toggle('mobile-open');
+    if (overlay) {
+        overlay.style.opacity = isOpen ? '1' : '0';
+        overlay.style.visibility = isOpen ? 'visible' : 'hidden';
+    }
+    
+    // Lock body scroll when mobile sidebar is open
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+};
+
+window.toggleMobileSearch = function() {
+    let mobileSearch = document.getElementById('mobile-search-overlay');
+    
+    if (!mobileSearch) {
+        const html = `
+            <div id="mobile-search-overlay" class="position-fixed top-0 start-0 w-100 bg-white shadow-sm d-flex align-items-center px-3" style="height: 68px; z-index: 2000; transform: translateY(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+                <i class="bi bi-search text-muted me-2"></i>
+                <input type="text" id="mobile-search-input" class="form-control border-0 bg-transparent p-0 shadow-none" placeholder="Search..." onkeyup="if(event.key === 'Enter') { const val = this.value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val); }">
+                <button class="btn btn-link text-muted p-2" onclick="toggleMobileSearch()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+        mobileSearch = document.getElementById('mobile-search-overlay');
+    }
+    
+    const isShowing = mobileSearch.style.transform === 'translateY(0%)';
+    mobileSearch.style.transform = isShowing ? 'translateY(-100%)' : 'translateY(0%)';
+    
+    if (!isShowing) {
+        setTimeout(() => document.getElementById('mobile-search-input').focus(), 300);
+    }
+};
+
+window.toggleSidebarState = function() {
+    const sb = document.getElementById('sidebar-container');
+    if (!sb) return;
+    const isCollapsed = sb.classList.toggle('collapsed');
+    localStorage.setItem('sidebar-collapsed', isCollapsed);
+    
+    // Close all sections when collapsing
+    if (isCollapsed) {
+        document.querySelectorAll('.sb-section-items').forEach(el => el.classList.remove('open'));
+        document.querySelectorAll('.sb-section-header').forEach(el => el.classList.remove('open'));
+    }
+};
+
 window.toggleSbSection = function (id) {
-    document.querySelectorAll('.sb-section').forEach(sec => {
-        const hdr = sec.querySelector('.sb-section-header');
-        const lst = sec.querySelector('.sb-section-items');
-        const arr = sec.querySelector('.sb-arrow');
-        if (!hdr) return;
-        const isMe = (hdr.getAttribute('onclick') || '').includes(`'${id}'`);
-        if (isMe) {
-            hdr.classList.toggle('open');
-            lst && lst.classList.toggle('open');
-            if (arr) arr.className = `bi ${hdr.classList.contains('open') ? 'bi-chevron-down' : 'bi-chevron-right'} sb-arrow`;
-        }
-    });
+    const sb = document.getElementById('sidebar-container');
+    if (sb && sb.classList.contains('collapsed')) {
+        sb.classList.remove('collapsed');
+        localStorage.setItem('sidebar-collapsed', 'false');
+    }
+
+    const sec = document.getElementById(`sb-sec-${id}`);
+    if (!sec) return;
+    
+    const hdr = sec.querySelector('.sb-section-header');
+    const lst = sec.querySelector('.sb-section-items');
+    
+    const isOpen = lst.classList.toggle('open');
+    hdr.classList.toggle('open', isOpen);
 };
 
 // ─── TOP HEADER ───────────────────────────────────────────────────────
 window.injectTopHeader = function (pageTitle) {
     if (document.querySelector('.top-header')) return;
+    window.__lastPageTitle = pageTitle;
     const u = getUser();
     const role = (u?.role || '').replace(/_/g, ' ');
     const initials = window.getInitials(u?.name || u?.email || 'AD');
@@ -299,76 +360,102 @@ window.injectTopHeader = function (pageTitle) {
         const foundKey = Object.keys(pageToParent).find(k => k.toLowerCase() === lowerTitle);
         if (foundKey) parent = pageToParent[foundKey];
     }
+    const chevronSvg = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.5;"><path d="M4.5 9L7.5 6L4.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     const breadcrumbHtml = parent ? `
-        <div class="d-flex align-items-center gap-2">
-            <span class="text-muted" style="font-size: 0.875rem;">${parent}</span>
-            <i class="bi bi-chevron-right text-muted" style="font-size: 0.7rem;"></i>
-            <div class="page-nav-title">${pageTitle}</div>
+        <div class="d-flex align-items-center gap-2" style="font-size: 15px;">
+            <span style="color: var(--text-2);">${parent}</span>
+            ${chevronSvg}
+            <div class="fw-bold" style="color: var(--text-1);">${pageTitle}</div>
         </div>
-    ` : `<div class="page-nav-title">${pageTitle}</div>`;
+    ` : `<div class="fw-bold" style="color: var(--text-1); font-size: 15px;">${pageTitle}</div>`;
 
-    const alertsRedDot = '<span id="nav-notif-dot" class="position-absolute bg-danger border border-white rounded-circle d-none" style="width:10px;height:10px;top:8px;right:8px;"></span>';
+    const alertsRedDot = '<span id="nav-notif-dot" class="position-absolute bg-danger border border-white rounded-circle d-none" style="width:8px;height:8px;top:8px;right:8px;"></span>';
 
     const quickAddItems = renderQuickAddItems(u?.role);
 
+    const logoHtml = `
+        <div class="nav-logo align-items-center gap-2 me-2 d-none" style="cursor: pointer;" onclick="window.location.href='dashboard.html'">
+            <div class="sidebar-brand-icon" style="width: 32px; height: 32px; border-radius: 8px; background: var(--nav-search-bg);">
+                <div class="sidebar-logo-ai"></div>
+            </div>
+            <span class="fw-bold" style="font-family: 'Outfit', sans-serif; font-size: 16px; letter-spacing: -0.02em; color: var(--nav-text-active);">SRM AI SETU</span>
+        </div>`;
+
     const headerHtml = `
     <div class="top-header">
-        <div class="d-flex align-items-center">${breadcrumbHtml}</div>
-        <div class="top-header-search" style="position:relative; z-index:1000;">
-            <div class="position-relative w-100">
-                <button class="btn p-0 position-absolute text-muted" style="left:12px; top:50%; transform:translateY(-50%); border:none; background:none; z-index:5;" onclick="const val = document.getElementById('global-search-input').value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val);">
-                    <i class="bi bi-search" style="font-size:0.9rem;"></i>
-                </button>
-                <input type="text" id="global-search-input" class="form-control bg-light border-0 shadow-none" placeholder="Search..." style="padding-left: 40px; border-radius: 10px; font-size: 0.9rem; height: 42px;">
-                <div id="live-search-dropdown" class="search-results-dropdown"></div>
+        <div class="top-header-left">
+            <button class="btn btn-dark-soft d-lg-none me-1" onclick="toggleMobileSidebar()" style="width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.1); border-radius: 8px;">
+                <i class="bi bi-list" style="font-size: 1.4rem; color: var(--primary);"></i>
+            </button>
+            ${logoHtml}
+            <div class="nav-breadcrumb">
+                <div class="d-none d-sm-block">${breadcrumbHtml}</div>
+                <div class="d-block d-sm-none page-nav-title" style="color: var(--nav-text-active); font-weight: 600;">${pageTitle}</div>
             </div>
         </div>
-        <div class="d-flex align-items-center justify-content-end gap-3">
-            <!-- Add New Dropdown -->
-            <div class="dropdown">
-                <button class="btn btn-primary d-flex align-items-center gap-2 px-3 dropdown-toggle shadow-sm" type="button" id="addNewDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:0.875rem; border-radius: 8px; height: 40px; white-space: nowrap;">
-                    <i class="bi bi-plus-lg"></i> Add New
+
+        <div class="top-header-center">
+            <div class="nav-search" style="max-width: 320px; width: 100%;">
+                <div class="position-relative w-100">
+                    <button class="btn p-0 position-absolute text-muted search-btn" style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 10;" onclick="const val = document.getElementById('global-search-input').value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val);">
+                        <i class="bi bi-search" style="color: var(--nav-text-muted);"></i>
+                    </button>
+                    <input type="text" id="global-search-input" class="form-control" placeholder="Search..." style="padding-left: 38px; border-radius: 20px; height: 38px; background: rgba(37, 99, 235, 0.03); border: 1px solid rgba(37, 99, 235, 0.1); color: var(--title-color); font-weight: 500;">
+                    <div id="live-search-dropdown" class="search-results-dropdown"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="top-header-right d-flex align-items-center gap-2">
+            <!-- Mobile Search Icon (only visible on tablet) -->
+            <button class="btn d-md-none p-0 d-flex align-items-center justify-content-center hover-hit-target search-icon-btn" style="width:40px; height:40px; color: var(--nav-text);" onclick="toggleMobileSearch()">
+                <i class="bi bi-search"></i>
+            </button>
+
+            <!-- Add New Gradient Button -->
+            <div class="dropdown d-none d-sm-block nav-add">
+                <button class="btn d-flex align-items-center gap-2 px-3 dropdown-toggle shadow-sm" type="button" id="addNewDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:13px; font-weight:700; border-radius: 10px; height: 40px; background: var(--accent-gradient); color: #ffffff !important; border: 1px solid rgba(255,255,255,0.2); padding: 10px 18px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
+                    <i class="bi bi-plus-lg" style="color: #ffffff !important;"></i> <span style="color: #ffffff !important;">Add New</span>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.875rem; border-radius:12px; padding:8px; min-width:210px;">
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.85rem; border-radius:12px; padding:8px; min-width:200px; background: var(--bg-surface); border: 1px solid var(--border) !important;">
                     ${quickAddItems}
                 </ul>
             </div>
+
             <!-- Notifications Bell -->
             <div class="dropdown">
-                <div class="position-relative text-muted" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer; font-size:1.25rem; width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:#f8fafc; border-radius:50%;">
-                    <i class="bi bi-bell"></i>
+                <div class="position-relative d-flex align-items-center justify-content-center hover-hit-target" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer; width:40px; height:40px; border-radius: 50%; color: var(--primary); background: var(--primary-soft);">
+                    <i class="bi bi-bell" style="font-size: 1.1rem;"></i>
                     ${alertsRedDot}
                 </div>
-                <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-0" style="width: 320px; border-radius: 12px; overflow: hidden; z-index: 9999;">
-                    <div class="bg-light px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
-                        <span class="fw-bold fs-6">Notifications</span>
+                <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-0" style="width: 300px; border-radius: 12px; overflow: hidden; z-index: 9999; background: var(--bg-surface); border: 1px solid var(--border) !important;">
+                    <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center" style="background: var(--bg-page); border-color: var(--border) !important;">
+                        <span class="fw-bold small" style="color: var(--text-1);">Notifications</span>
                     </div>
                     <div id="bell-notif-list">
                         <div class="p-3 text-center">
-                            <i class="bi bi-bell-slash text-muted" style="font-size: 2rem;"></i>
-                            <p class="text-muted small mt-2 mb-0">No new alerts.</p>
+                            <i class="bi bi-bell-slash text-muted" style="font-size: 1.5rem;"></i>
+                            <p class="text-muted extra-small mt-2 mb-0">No new alerts.</p>
                         </div>
-                    </div>
-                    <div class="bg-light px-3 py-2 border-top text-center" style="cursor: pointer;" onclick="window.location.href='notifications.html'">
-                        <span class="text-decoration-none small fw-semibold">View Master Feed</span>
                     </div>
                 </div>
             </div>
-            <div class="d-flex align-items-center gap-2 ps-2 dropdown border-start ms-1">
-                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold dropdown-toggle shadow-sm" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="width:38px;height:38px;font-size:13px;cursor:pointer;">${initials}</div>
-                <div class="d-none d-lg-block">
-                    <div class="fw-bold text-dark" style="font-size:0.85rem; line-height:1;">${u?.name || 'Admin'}</div>
-                    <div class="text-muted small" style="font-size:0.70rem; line-height:1.5;">${role}</div>
+            
+            <!-- Profile -->
+            <div class="d-flex align-items-center gap-2 ps-2 dropdown border-start ms-1" style="border-color: var(--border) !important;">
+                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width:36px; height:36px; font-size:11px; border: 1px solid var(--border); background: var(--primary-soft); color: var(--primary);">${initials}</div>
+                <div class="d-flex align-items-center dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer;">
+                    <div class="d-none d-xl-block fw-bold mb-0 nav-uname" style="font-size:13px; line-height:1; color: var(--primary);">${u?.name || 'User'}</div>
                 </div>
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" aria-labelledby="profileDropdown" style="border-radius:12px; min-width:200px; font-size:0.875rem;">
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" aria-labelledby="profileDropdown" style="border-radius:12px; min-width:180px; font-size:0.85rem; background: var(--bg-surface); border: 1px solid var(--border) !important;">
                     <li class="px-2 pt-1 pb-2">
-                        <div class="fw-bold text-dark" style="font-size:0.85rem; line-height:1.3;">${u?.name || 'Admin'}</div>
-                        <div class="text-muted" style="font-size:0.73rem;">${u?.email || role}</div>
+                        <div class="fw-bold" style="font-size:0.8rem; line-height:1.3; color: var(--text-1);">${u?.name || 'User'}</div>
+                        <div style="font-size:0.7rem; color: #cbd5e1;">${u?.email || 'Admin'}</div>
                     </li>
-                    <li><hr class="dropdown-divider my-1"></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="profile.html"><i class="bi bi-person me-2 text-primary"></i> My Profile</a></li>
-                    <li><a class="dropdown-item rounded-2 py-2" href="settings.html"><i class="bi bi-gear me-2 text-secondary"></i> Settings</a></li>
-                    <li><hr class="dropdown-divider my-1"></li>
+                    <li><hr class="dropdown-divider my-1" style="border-color: var(--border);"></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="profile.html" style="color: var(--text-2);"><i class="bi bi-person me-2 text-primary"></i> Profile</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="settings.html" style="color: var(--text-2);"><i class="bi bi-gear me-2 text-secondary"></i> Settings</a></li>
+                    <li><hr class="dropdown-divider my-1" style="border-color: var(--border);"></li>
                     <li><a class="dropdown-item rounded-2 py-2 text-danger" href="#" onclick="logout();return false;"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
                 </ul>
             </div>
@@ -389,7 +476,40 @@ window.injectTopHeader = function (pageTitle) {
     setTimeout(() => {
         if (window.checkUrlForQuickAdd) window.checkUrlForQuickAdd();
     }, 500);
+
+    // Inject overlay if not present
+    if (!document.getElementById('sb-overlay')) {
+        document.body.insertAdjacentHTML('beforeend', '<div id="sb-overlay" class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>');
+    }
+
+    // Run access check
+    if (typeof window.checkPageAccess === 'function') {
+        window.checkPageAccess();
+    }
 }
+
+// ─── AUTO-REFRESH UI ON PERMISSIONS CHANGE ──────────────────────────
+document.addEventListener('permissions-changed', () => {
+    console.log('UI Components: Permissions changed, refreshing sidebar and header...');
+    
+    // Re-render sidebar if container exists
+    const sbContainer = document.getElementById('sidebar');
+    if (sbContainer && window.renderSidebar && window.__lastSidebarActive) {
+        sbContainer.innerHTML = window.renderSidebar(window.__lastSidebarActive);
+    }
+    
+    // Re-render top header if breadcrumb exists
+    const topHeader = document.querySelector('.top-header');
+    if (topHeader) {
+        topHeader.remove(); // Remove old one
+        if (window.injectTopHeader && window.__lastPageTitle) {
+            window.injectTopHeader(window.__lastPageTitle);
+        }
+    }
+    
+    // Also update any quick-add items if the dropdown is open or stored
+    // (They are re-rendered as part of injectTopHeader)
+});
 
 window.getInitials = function (name) {
     if (!name) return '??';
@@ -479,7 +599,7 @@ window._notifPollStarted = window._notifPollStarted || false;
 
 // Expose refreshBell globally so other pages (like notifications.html) can trigger an instant sync.
 window.refreshBell = async function () {
-    if (!localStorage.getItem('access_token')) return;
+    if (!sessionStorage.getItem('access_token')) return;
     try {
         const { unread } = await apiGet('/notifications/unread-count');
         const dot = document.getElementById('nav-notif-dot');
@@ -679,7 +799,7 @@ window.initLiveSearch = function () {
 
 
 window.checkHighPriorityIssues = async function () {
-    if (!localStorage.getItem('access_token')) return;
+    if (!sessionStorage.getItem('access_token')) return;
     try {
         const issues = await apiGet('/issues/');
         const unreadHigh = (Array.isArray(issues) ? issues : []).filter(i => i.severity === 'HIGH' && i.status === 'PENDING');
@@ -900,4 +1020,386 @@ window.startAllPolling = function () {
     startNotificationPolling();
     // High priority check every 60s
     setInterval(window.checkHighPriorityIssues, 60000);
-}
+};
+
+// ─── Dark Mode ────────────────────────────────────────────────
+;(function applyInitialTheme() {
+    let saved = localStorage.getItem('srm-theme');
+    // Default to dark theme for consistency with redesign if no preference is set
+    if (!saved) {
+        saved = 'dark';
+        localStorage.setItem('srm-theme', 'dark');
+    }
+    
+    if (saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+})();
+
+// ─── Header & Context ────────────────────────────────────────────────
+window.updateHeaderContext = function () {
+    const u = typeof getUser === 'function' ? getUser() : (window.ApiClient ? window.ApiClient.getCurrentUser() : null);
+    if (!u) return;
+
+    // 1. Update Top Navigation (initially set by injectTopHeader, but here for sync)
+    const nameEls = document.querySelectorAll('.nav-uname');
+    nameEls.forEach(el => el.textContent = u.name || u.username || 'User');
+
+    const firstName = (u.name || u.username || 'User').split(' ')[0];
+    const now = new Date();
+    const hours = now.getHours();
+    
+    // Determine period
+    let period = 'night';
+    if (hours < 12) period = 'morning';
+    else if (hours < 17) period = 'afternoon';
+    else if (hours < 21) period = 'evening';
+
+    // 16 Warm & Professional Motivational Greetings
+    const GREETINGS_DB = {
+        morning: [
+            { main: "Good Morning", sub: "A fresh day, a clean slate. Let's make progress that matters." },
+            { main: "Rise and Shine", sub: "The morning sun brings new opportunities. Seize them." },
+            { main: "New Beginnings", sub: "Every sunrise is an invitation to be your best self." },
+            { main: "Focused Start", sub: "Clarity in the first hours sets the tone for a productive day." }
+        ],
+        afternoon: [
+            { main: "Good Afternoon", sub: "Halfway through. Everything you do from here compounds." },
+            { main: "Keep Moving", sub: "The midday momentum is your biggest asset. Stay steady." },
+            { main: "Stay Diligent", sub: "Consistency now defines a successful finish. You've got this." },
+            { main: "Midday Pulse", sub: "Take a breath, refocus, and push through the peak of the day." }
+        ],
+        evening: [
+            { main: "Good Evening", sub: "The day's final stretch. Finish what you started." },
+            { main: "Strong Finish", sub: "A strong finish defines the day. You're almost there." },
+            { main: "Great Progress", sub: "Consistency in the final hours is what separates good from great." },
+            { main: "Steady Hands", sub: "Stay focused. The quality of your work tonight shows your character." }
+        ],
+        night: [
+            { main: "Working Late", sub: "Your commitment doesn't go unnoticed. Finish strong and rest well." },
+            { main: "Still at It", sub: "Dedication like yours moves the whole team forward." },
+            { main: "Late Session", sub: "The extra effort you put in tonight will show tomorrow's results." },
+            { main: "Good Night", sub: "You've given today everything. Log off knowing it was worth it." }
+        ]
+    };
+
+    const options = GREETINGS_DB[period];
+    const pick = options[Math.floor(Math.random() * options.length)];
+
+    const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    
+    // Update Premium Header (Commonly used IDs)
+    const premiumDateEl = document.getElementById('att-v2-date');
+    if (premiumDateEl) premiumDateEl.textContent = dateStr.toUpperCase();
+    
+    // Also populate Admin-specific date if it exists
+    const adminDateEl = document.getElementById('att-v2-date-admin');
+    if (adminDateEl) adminDateEl.textContent = dateStr.toUpperCase();
+    
+    const premiumGreetLineEl = document.getElementById('att-v2-greeting-line');
+    if (premiumGreetLineEl) {
+        // Use innerHTML safely if we want to preserve sub-elements, or just rebuild it
+        premiumGreetLineEl.innerHTML = `${pick.main}, <span class="header-name" id="att-v2-left-name">${firstName}</span>`;
+    }
+    
+    const motivationalEl = document.getElementById('att-v2-motivational-msg');
+    if (motivationalEl) {
+        motivationalEl.textContent = pick.sub;
+    }
+    
+    // Fallback for non-premium greeting IDs
+    const greetingIds = ['dash-greeting', 'dash-greeting-v2', 'greetingUser'];
+    greetingIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = `${pick.main}, ${firstName}`;
+    });
+
+    const dateIds = ['dash-date', 'dash-date-v2', 'dash-date-header'];
+    dateIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = dateStr;
+    });
+
+    // 3. Role-based Header Visibility
+    // The user specifically requested that the "greeting header" (gradient) stays only on Overview.
+    const isOverview = window.location.pathname.includes('dashboard.html');
+    const dashHeaders = document.querySelectorAll('.dash-header');
+    
+    dashHeaders.forEach(header => {
+        if (!isOverview) {
+             // In other pages, we can hide it OR keep it but only for staff if it contains the widget
+             // Here we just ensure the text is updated if it exists
+        }
+    });
+
+    // Sync initials if found
+    const avatarEls = document.querySelectorAll('.rounded-circle.fw-bold');
+    avatarEls.forEach(el => {
+        if (el.textContent.length <= 2 && typeof window.getInitials === 'function') {
+            el.textContent = window.getInitials(u.name || u.email || 'AD');
+        }
+    });
+};
+
+// ─── Attendance Widget ───────────────────────────────────────────────
+window.initAttendance = async function () {
+    const widget = document.getElementById('employee-header-widget');
+    if (!widget) return Promise.resolve();
+
+    widget.classList.remove('d-none');
+    
+    // Hide basic greeting to avoid duplicates
+    const basicHeader = document.querySelector('.dash-header-left');
+    if (basicHeader) basicHeader.classList.add('d-none');
+
+    const u = window.ApiClient ? window.ApiClient.getCurrentUser() : null;
+    if (!u) return Promise.resolve();
+
+    // 1. Greeting & Name are now handled globally by updateHeaderContext()
+    // to ensure unique motivational messages are preserved.
+
+    // 2. Populate Right Zone: Avatar + Name
+    const nameEl   = document.getElementById('att-v2-name');
+    const avatarEl = document.getElementById('att-v2-avatar');
+    if (nameEl) nameEl.textContent = u.name || 'User';
+    if (avatarEl && typeof window.getInitials === 'function') {
+        const initials = window.getInitials(u.name || u.email || 'U');
+        if (u.photo_url) {
+            avatarEl.innerHTML = `<img src="${u.photo_url}" alt="${initials}" onerror="this.parentElement.innerHTML='${initials}'">`;
+        } else {
+            avatarEl.textContent = initials;
+        }
+    }
+
+    let status = null;
+    try {
+        status = await window.ApiClient.getPunchStatus();
+    } catch (e) {
+        console.error('Failed to get punch status', e);
+        return Promise.resolve();
+    }
+
+    const updateUI = (s) => {
+        const badge      = document.getElementById('att-v2-badge');
+        const btn        = document.getElementById('header-punch-btn-new');
+        const hh         = document.getElementById('att-v2-hh');
+        const mm         = document.getElementById('att-v2-mm');
+        const ss         = document.getElementById('att-v2-ss');
+        const firstIn    = document.getElementById('att-v2-first-in');
+        const liveBadge  = document.getElementById('att-v2-live-badge');
+        const livePulse  = document.getElementById('att-v2-pulse');
+        const liveText   = document.getElementById('att-v2-live-text');
+        const statusDot  = document.getElementById('att-v2-status-dot');
+        const lNameEl    = document.getElementById('att-v2-left-name');
+
+        if (s.is_punched_in) {
+            if (badge)     { badge.textContent = 'Punched In'; badge.className = 'pro-att-punch-badge in'; }
+            if (btn)       { btn.innerHTML = 'Punch<br>Out'; btn.className = 'pro-att-btn punch-out'; }
+            if (liveBadge) liveBadge.className = 'pro-att-live-badge live';
+            if (livePulse) livePulse.style.display = '';
+            if (liveText)  liveText.textContent = 'Live';
+            if (statusDot) statusDot.className = 'pro-att-status-dot online';
+            if (lNameEl)   lNameEl.className = 'pro-att-name punched-in';
+        } else {
+            if (badge)     { badge.textContent = 'Not Punched'; badge.className = 'pro-att-punch-badge out'; }
+            if (btn)       { btn.innerHTML = 'Punch<br>In'; btn.className = 'pro-att-btn punch-in'; }
+            if (liveBadge) liveBadge.className = 'pro-att-live-badge offline';
+            if (livePulse) livePulse.style.display = 'none';
+            if (liveText)  liveText.textContent = 'Offline';
+            if (statusDot) statusDot.className = 'pro-att-status-dot offline';
+            if (lNameEl)   lNameEl.className = 'pro-att-name punched-out';
+        }
+
+        // Punch-in time
+        if (firstIn) {
+            if (s.first_punch_in) {
+                const d = new Date(s.first_punch_in);
+                firstIn.textContent = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            } else {
+                firstIn.textContent = '--:--';
+            }
+        }
+
+        // Timer Logic: Fixed
+        if (window._attTimer) clearInterval(window._attTimer);
+        
+        const tick = () => {
+            let totalSec = s.completed_hours_secs || 0;
+            if (s.is_punched_in && s.last_punch_ts) {
+                const elapsed = Math.max(0, (Date.now() - s.last_punch_ts) / 1000);
+                totalSec += elapsed;
+            }
+
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const sec = Math.floor(totalSec % 60);
+            
+            if (hh) hh.textContent = h.toString().padStart(2, '0');
+            if (mm) mm.textContent = m.toString().padStart(2, '0');
+            if (ss) ss.textContent = sec.toString().padStart(2, '0');
+        };
+
+        if (s.is_punched_in || (s.completed_hours_secs > 0)) {
+            tick();
+            if (s.is_punched_in) {
+                window._attTimer = setInterval(tick, 1000);
+            }
+        } else {
+            if (hh) hh.textContent = '--';
+            if (mm) mm.textContent = '--';
+            if (ss) ss.textContent = '--';
+        }
+    };
+
+    updateUI(status);
+    
+    // 3. Punch Button Action
+    const punchBtn = document.getElementById('header-punch-btn-new');
+    if (punchBtn) {
+        punchBtn.onclick = async () => {
+            if (punchBtn.classList.contains('loading')) return;
+            punchBtn.classList.add('loading');
+            const origHTML = punchBtn.innerHTML;
+            punchBtn.textContent = '...';
+            try {
+                const res = await window.ApiClient.punch();
+                const newStatus = await window.ApiClient.getPunchStatus();
+                updateUI(newStatus);
+                if (typeof window.showToast === 'function') {
+                    window.showToast(res.message || 'Action successful');
+                }
+                if (typeof window.refreshDashboardKPIs === 'function') {
+                    window.refreshDashboardKPIs();
+                }
+            } catch (e) {
+                console.error('Punch failed', e);
+                if (typeof window.showToast === 'function') {
+                    window.showToast(e.data?.detail || 'Punch failed', 'error');
+                }
+                punchBtn.innerHTML = origHTML;
+            } finally {
+                punchBtn.classList.remove('loading');
+            }
+        };
+    }
+
+    return Promise.resolve();
+};
+
+
+
+window.setTheme = function (mode) {
+    let applyDark = false;
+    if (mode === 'dark') {
+        applyDark = true;
+    } else if (mode === 'system') {
+        applyDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
+    if (applyDark) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('srm-theme', 'dark');
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('srm-theme', 'light');
+    }
+
+    const icon = document.getElementById('dark-mode-icon');
+    if (icon) {
+        icon.className = applyDark ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+    }
+};
+
+window.toggleDarkMode = function () {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const newMode = isDark ? 'light' : 'dark';
+    window.setTheme(newMode);
+    
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) {
+        themeSelect.value = newMode;
+        if (typeof saveSetting === 'function') {
+            saveSetting('theme', newMode);
+        }
+    } else {
+        localStorage.setItem('srm_setting_theme', newMode);
+    }
+};
+
+// Sync icon with current mode on load (after header injection)
+document.addEventListener('DOMContentLoaded', function () {
+    const icon = document.getElementById('dark-mode-icon');
+    if (icon) {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        icon.className = isDark ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+    }
+});
+// ─── ACCESS CONTROL OVERLAY ──────────────────────────────────────────
+window.checkPageAccess = function() {
+    const u = getUser();
+    if (!u) return; // Not logged in yet
+    
+    // Skip check for basic pages
+    const path = window.location.pathname.split('/').pop() || 'index.html';
+    if (['index.html', 'login.html', 'dashboard.html', 'profile.html', 'notifications.html', 'search.html', 'employees.html'].includes(path)) {
+        return;
+    }
+
+    // Reuse the logic from renderSidebar's canShowPage equivalent
+    const roleName = String(u.role || '').toUpperCase();
+    if (roleName === 'ADMIN') return; // Admins see everything
+
+    const fallbackPages = {
+        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
+        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
+        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        CLIENT: ['dashboard.html']
+    };
+
+    const effectivePolicy = window.__crmEffectiveAccessPolicy;
+    const allowedPages = Array.isArray(effectivePolicy?.allowed_pages)
+        ? effectivePolicy.allowed_pages
+        : (effectivePolicy?.policy?.page_access?.[roleName] || fallbackPages[roleName] || []);
+
+    if (!allowedPages.includes(path) && !allowedPages.includes('*')) {
+        showAccessDenied(path);
+    }
+};
+
+window.showAccessDenied = function(pageName) {
+    // Remove existing content to prevent interaction
+    const mainWrapper = document.querySelector('.main-wrapper');
+    if (!mainWrapper) return;
+
+    const nicePageName = pageName.replace('.html', '').replace(/_/g, ' ').toUpperCase();
+
+    mainWrapper.innerHTML = `
+        <div class="d-flex flex-column align-items-center justify-content-center text-center p-5" style="min-height: 80vh;">
+            <div class="mb-4" style="width: 120px; height: 120px; background: rgba(239, 68, 68, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 50px;">
+                <i class="bi bi-shield-lock"></i>
+            </div>
+            <h1 class="fw-bold mb-2" style="font-family: 'Outfit', sans-serif; color: var(--text-1);">Access Restricted</h1>
+            <p class="text-muted mb-4" style="max-width: 450px;">
+                You don't have enough permission to access the <strong>${nicePageName}</strong> module. 
+                Please contact your supervisor or administrator if you believe this is an error.
+            </p>
+            <div class="d-flex gap-3">
+                <a href="dashboard.html" class="btn btn-primary px-4 py-2" style="border-radius: 10px; font-weight: 600;">
+                    <i class="bi bi-house me-2"></i> Back to Dashboard
+                </a>
+                <button onclick="window.location.reload()" class="btn btn-outline-secondary px-4 py-2" style="border-radius: 10px; font-weight: 600;">
+                    <i class="bi bi-arrow-clockwise me-2"></i> Retry
+                </button>
+            </div>
+            <div class="mt-5 pt-4 border-top w-100" style="max-width: 400px; opacity: 0.6; font-size: 0.8rem;">
+                <p class="mb-1">Access Policy: <strong>${getUser()?.role || 'Guest'}</strong></p>
+                <p>Module ID: <code>${pageName}</code></p>
+            </div>
+        </div>
+    `;
+    
+    // Also remove the "Add New" button if present
+    const addBtn = document.querySelector('.nav-add');
+    if (addBtn) addBtn.style.display = 'none';
+};

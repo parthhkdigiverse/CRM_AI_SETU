@@ -13,6 +13,9 @@ from app.core.enums import GlobalTaskStatus
 from app.modules.payments.models import Payment, PaymentStatus
 from app.modules.salary.models import SalarySlip
 from app.modules.incentives.models import IncentiveSlip
+from app.modules.attendance.models import Attendance
+from app.modules.todos.models import Todo, TodoStatus
+from app.modules.meetings.models import MeetingSummary
 import io
 import csv
 from typing import List
@@ -120,6 +123,31 @@ class ReportService:
             open_issues_query = apply_filters(open_issues_query, Issue, 'created_at', 'assigned_user_id')
             open_issues = open_issues_query.scalar() or 0
 
+            # Employees Present Today (Unique users)
+            today_date = now.date()
+            present_query = db.query(func.count(func.distinct(Attendance.user_id))).filter(
+                Attendance.date == today_date,
+                Attendance.is_deleted == False
+            )
+            employees_present = present_query.scalar() or 0
+
+            # Presence MoM % (Compare today with daily average of last month)
+            last_month_start = datetime(prev_year, prev_month, 1).date()
+            last_month_end = datetime(prev_year, prev_month, calendar.monthrange(prev_year, prev_month)[1]).date()
+            
+            avg_presence_query = db.query(
+                func.count(func.distinct(Attendance.user_id)).label('daily_count'),
+                Attendance.date
+            ).filter(
+                Attendance.date >= last_month_start,
+                Attendance.date <= last_month_end,
+                Attendance.is_deleted == False
+            ).group_by(Attendance.date)
+            
+            last_month_daily_counts = [r.daily_count for r in avg_presence_query.all()]
+            avg_prev_presence = (sum(last_month_daily_counts) / len(last_month_daily_counts)) if last_month_daily_counts else 0
+            presence_mom_pct = get_mom_pct(employees_present, avg_prev_presence)
+
             from collections import defaultdict
             
             chart_title = "Visits by Month"
@@ -194,6 +222,33 @@ class ReportService:
             outcome_data = vo_query.all()
             visit_outcomes_breakdown = {str(s.value if hasattr(s, 'value') else s): c for s, c in outcome_data if s is not None}
 
+            # --- Role-Specific Calculations ---
+            total_incentive = 0.0
+            pending_todos = 0
+            meetings_today = 0
+
+            if user_id:
+                # 1. Total Incentive for current month
+                inc_val = db.query(func.sum(IncentiveSlip.total_incentive)).filter(
+                    IncentiveSlip.user_id == user_id,
+                    IncentiveSlip.period == f"{curr_year}-{curr_month:02d}"
+                ).scalar() or 0.0
+                total_incentive = float(inc_val)
+
+                # 2. Pending Todos
+                pending_todos = db.query(func.count(Todo.id)).filter(
+                    Todo.user_id == user_id,
+                    Todo.status != TodoStatus.COMPLETED,
+                    Todo.is_deleted == False
+                ).scalar() or 0
+
+                # 3. Meetings Today (for PM)
+                meetings_today = db.query(func.count(MeetingSummary.id)).join(Client).filter(
+                    Client.pm_id == user_id,
+                    func.date(MeetingSummary.date) == today_date,
+                    MeetingSummary.is_deleted == False
+                ).scalar() or 0
+
             return {
                 "total_visits": total_visits,
                 "active_clients": active_clients,
@@ -203,7 +258,12 @@ class ReportService:
                 "clients_mom_pct": clients_mom_pct,
                 "projects_mom_pct": projects_mom_pct,
                 "revenue_mom_pct": revenue_mom_pct,
+                "presence_mom_pct": presence_mom_pct,
                 "open_issues": open_issues,
+                "employees_present": employees_present,
+                "total_incentive": total_incentive,
+                "pending_todos": pending_todos,
+                "meetings_today": meetings_today,
                 "visits_chart_title": chart_title,
                 "visits_chart_data": visits_chart_data,
                 "revenue_by_month": revenue_by_month,
@@ -216,22 +276,48 @@ class ReportService:
             import traceback
             traceback.print_exc()
             return {
-                "total_visits": 0, "active_clients": 0, "ongoing_projects": 0, "revenue_mtd": 0.0,
-                "visits_mom_pct": 0.0, "clients_mom_pct": 0.0, "projects_mom_pct": 0.0, "revenue_mom_pct": 0.0,
-                "open_issues": 0, "visits_chart_title": "Visits by Month", "visits_chart_data": {}, "revenue_by_month": {}, 
-                "visit_status_breakdown": {}, "issue_severity_breakdown": {}, "visit_outcomes_breakdown": {}
+                "total_visits": 0,
+                "active_clients": 0,
+                "ongoing_projects": 0,
+                "revenue_mtd": 0.0,
+                "visits_mom_pct": 0.0,
+                "clients_mom_pct": 0.0,
+                "projects_mom_pct": 0.0,
+                "revenue_mom_pct": 0.0,
+                "presence_mom_pct": 0.0,
+                "open_issues": 0,
+                "employees_present": 0,
+                "total_incentive": 0.0,
+                "pending_todos": 0,
+                "meetings_today": 0,
+                "visits_chart_title": "Visits by Month",
+                "visits_chart_data": {},
+                "revenue_by_month": {},
+                "visit_status_breakdown": {},
+                "issue_severity_breakdown": {},
+                "visit_outcomes_breakdown": {}
             }
 
-        except Exception as e:
-            print(f"Dashboard Stats Error: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return {
-                "total_leads": 0, "active_clients": 0, "ongoing_projects": 0, "revenue_mtd": 0.0,
-                "leads_mom_pct": 0.0, "clients_mom_pct": 0.0, "projects_mom_pct": 0.0, "revenue_mom_pct": 0.0,
-                "open_issues": 0, "visits_chart_title": "Visits by Month", "visits_chart_data": {}, "revenue_by_month": {}, 
-                "visit_status_breakdown": {}, "issue_severity_breakdown": {}, "visit_outcomes_breakdown": {}
-            }
+    @staticmethod
+    def get_present_employees(db: Session, limit: int = 10):
+        today = datetime.now().date()
+        present_records = db.query(Attendance).filter(
+            Attendance.date == today,
+            Attendance.punch_out.is_(None),
+            Attendance.is_deleted == False
+        ).order_by(Attendance.punch_in.desc()).limit(limit).all()
+        
+        results = []
+        for rec in present_records:
+            user = db.query(User).filter(User.id == rec.user_id).first()
+            if user:
+                results.append({
+                    "id": user.id,
+                    "name": user.name or user.email,
+                    "department": user.department or "Staff",
+                    "punch_in": rec.punch_in.isoformat() if rec.punch_in else None
+                })
+        return results
 
     @staticmethod
     def get_employee_performance(db: Session, month: str = None):

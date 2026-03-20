@@ -6,7 +6,7 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Incentives &mdash; SRM AI SETU</title>
+    <title>Incentives — SRM AI SETU</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -67,15 +67,7 @@
             white-space: nowrap;
         }
 
-        .emp-avatar {
-            width: 32px; height: 32px; flex-shrink: 0;
-            background: var(--primary-light);
-            color: var(--primary);
-            font-weight: 700; font-size: 0.8rem;
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: var(--shadow-xs);
-        }
+
 
         .pct-label {
             font-size: 0.75rem;
@@ -117,7 +109,7 @@
             margin-top: 4px;
         }
         .preview-total-row .label { color: var(--text-main); }
-        .preview-total-row .value { color: #16a34a; font-size: 1.1rem; }
+        .preview-total-row .value { color: var(--success); font-size: 1.25rem; font-weight: 800; }
 
         .slab-form-shell {
             background: linear-gradient(180deg, rgba(79,70,229,0.05), rgba(79,70,229,0.02));
@@ -192,16 +184,16 @@
         .slips-table {
             width: 100%;
             min-width: 760px;
-            table-layout: auto;
+            table-layout: fixed;
             font-size: 0.82rem;
         }
 
-        .slips-table col.col-employee { width: 24%; }
+        .slips-table col.col-employee { width: 22%; }
         .slips-table col.col-period { width: 18%; }
         .slips-table col.col-tasks { width: 10%; }
-        .slips-table col.col-slab { width: 20%; }
-        .slips-table col.col-rate { width: 12%; }
-        .slips-table col.col-total { width: 16%; }
+        .slips-table col.col-slab { width: 22%; }
+        .slips-table col.col-rate { width: 14%; }
+        .slips-table col.col-total { width: 14%; }
 
         .slips-table td,
         .slips-table th {
@@ -245,13 +237,13 @@
 
     <div class="d-flex">
         <div id="sidebar"></div>
-        <div class="flex-grow-1" style="min-width:0;">
-            <div class="page-content">
+        <div class="flex-grow-1 main-wrapper" style="min-width:0;">
+            <div class="page-content mx-auto" style="max-width: 1400px;">
 
-                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div class="page-header-glass d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
                         <h2 class="page-section-title fw-bold mb-1">Incentives</h2>
-                        <p class="text-muted mb-0 small">Manage slabs and employee incentive slips.</p>
+                        <p id="page-desc" class="text-muted mb-0 small">Manage slabs and employee incentive slips.</p>
                     </div>
                     <div id="admin-header-actions" style="display:none;">
                         <button class="btn btn-outline-primary shadow-sm me-2" data-calc-all-btn onclick="calcAllIncentives()">
@@ -290,7 +282,7 @@
                         <div class="card stat-card border-0 h-100 p-3">
                             <div class="text-muted fw-bold text-uppercase mb-2" style="font-size:0.65rem; letter-spacing:0.08em;">Confirmed Incentive</div>
                             <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:42px; height:42px; background:rgba(22,163,74,0.12); color:#16a34a;">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:42px; height:42px; background:var(--success-light); color:var(--success-text);">
                                     <i class="bi bi-cash-stack fs-5"></i>
                                 </div>
                                 <div>
@@ -304,7 +296,7 @@
                         <div class="card stat-card border-0 h-100 p-3">
                             <div class="text-muted fw-bold text-uppercase mb-2" style="font-size:0.65rem; letter-spacing:0.08em;">Pending Incentive</div>
                             <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:42px; height:42px; background:rgba(245,158,11,0.12); color:#b45309;">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center" style="width:42px; height:42px; background:var(--warning-light); color:var(--warning-text);">
                                     <i class="bi bi-hourglass-split fs-5"></i>
                                 </div>
                                 <div>
@@ -362,8 +354,8 @@
                                 <span id="slab-msg" class="small d-none mt-2 d-block"></span>
                             </div>
 
-                            <!-- Slab table - fixed layout, no horizontal scroll -->
-                            <div class="no-scroll-table">
+                            <!-- Slab table - standard Bootstrap utility -->
+                            <div class="table-responsive">
                                 <table class="table table-hover align-middle small mb-0 slabs-table">
                                     <colgroup>
                                         <col style="width:28%">
@@ -401,7 +393,7 @@
                             </div>
 
                             <!-- Slips table -->
-                            <div class="slips-table-wrap">
+                            <div class="table-responsive">
                                 <table class="table table-hover align-middle mb-0 slips-table">
                                     <colgroup>
                                         <col class="col-employee">
@@ -410,21 +402,19 @@
                                         <col class="col-slab">
                                         <col class="col-rate">
                                         <col class="col-total">
-                                        <col style="width:14%;">
                                     </colgroup>
                                     <thead class="table-light">
                                         <tr>
                                             <th class="ps-3">Employee</th>
                                             <th>Period / Time</th>
-                                            <th class="text-center">Tasks</th>
+                                            <th class="ps-4">Tasks</th>
                                             <th>Slab</th>
                                             <th class="text-end">Per Task</th>
                                             <th class="pe-3 text-end">Total</th>
-                                            <th class="pe-3 text-end">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="slips-tbody">
-                                        <tr><td colspan="7" class="text-center py-5 text-muted">
+                                        <tr><td colspan="6" class="text-center py-5 text-muted">
                                             <span class="spinner-border spinner-border-sm me-2"></span>Loading...
                                         </td></tr>
                                     </tbody>
@@ -440,8 +430,8 @@
     </div>
 
     <!-- Calculate Incentive Modal (2-step: preview then save) -->
-    <div class="crm-overlay" id="calcModal">
-        <div class="crm-box" style="max-width:520px;">
+    <div class="srm-overlay" id="calcModal">
+        <div class="srm-box" style="max-width:520px;">
             <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                 <h5 class="fw-bold mb-0"><i class="bi bi-calculator text-success me-2"></i>Calculate Incentive</h5>
                 <button class="btn-close" onclick="closeCalcModal()"></button>
@@ -484,15 +474,15 @@
                     </div>
                     <div class="preview-row">
                         <span class="label">Confirmed Tasks <small class="text-muted">(active &amp; &gt;10 days)</small></span>
-                        <span class="value" id="prev-confirmed" style="color:#16a34a;">-</span>
+                        <span class="value" id="prev-confirmed" style="color:var(--success-text);">-</span>
                     </div>
                     <div class="preview-row">
                         <span class="label">Pending Tasks <small class="text-muted">(&le;10 days, at risk)</small></span>
-                        <span class="value" id="prev-pending" style="color:#b45309;">-</span>
+                        <span class="value" id="prev-pending" style="color:var(--warning-text);">-</span>
                     </div>
                     <div class="preview-row">
                         <span class="label">Refunded / Removed</span>
-                        <span class="value" id="prev-refunded" style="color:#dc2626;">-</span>
+                        <span class="value" id="prev-refunded" style="color:var(--danger-text);">-</span>
                     </div>
                     <div class="preview-row">
                         <span class="label">Applied Slab</span>
@@ -508,7 +498,7 @@
                     </div>
                     <div class="preview-row">
                         <span class="label">Slab Bonus</span>
-                        <span class="value" id="prev-slab-bonus" style="color:#7c3aed;">-</span>
+                        <span class="value" id="prev-slab-bonus" style="color:var(--primary);">-</span>
                     </div>
                 </div>
                 <div class="preview-total-row px-2">
@@ -534,8 +524,8 @@
     </div>
 
     <!-- Edit Slab Modal -->
-    <div class="crm-overlay" id="editSlabModal">
-        <div class="crm-box" style="max-width:460px;">
+    <div class="srm-overlay" id="editSlabModal">
+        <div class="srm-box" style="max-width:460px;">
             <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                 <h5 class="fw-bold mb-0"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Slab</h5>
                 <button class="btn-close" onclick="closeEditSlabModal()"></button>
@@ -704,12 +694,12 @@
                 }
                 const fmt = n => Number(n).toLocaleString('en-IN');
                 tbody.innerHTML = slabs.map(s => `<tr>
-                    <td class="ps-3 fw-semibold text-dark"><span class="slab-range-badge">${s.min_units}-${s.max_units}</span></td>
+                    <td class="ps-3 fw-semibold"><span class="slab-range-badge">${s.min_units}-${s.max_units}</span></td>
                     <td class="fw-bold text-primary">Rs ${fmt(s.incentive_per_unit)}</td>
                     <td class="fw-bold text-success">Rs ${fmt(s.slab_bonus)}</td>
                     ${canManageIncentive ? `<td class="pe-3 text-center">
-                        <button class="btn btn-sm py-0 px-2" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:0.72rem;border-radius:6px;" onclick="openEditSlab(${s.id},${s.min_units},${s.max_units},${s.incentive_per_unit},${s.slab_bonus})"><i class="bi bi-pencil"></i></button>
-                        <button class="btn btn-sm py-0 px-2 ms-1" style="background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;font-size:0.72rem;border-radius:6px;" onclick="deleteSlab(${s.id})"><i class="bi bi-trash"></i></button>
+                        <button class="btn btn-sm py-0 px-2" style="background:var(--primary-light);color:var(--primary);border:1px solid var(--primary-ring);font-size:0.72rem;border-radius:6px;" onclick="openEditSlab(${s.id},${s.min_units},${s.max_units},${s.incentive_per_unit},${s.slab_bonus})"><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-sm py-0 px-2 ms-1" style="background:var(--danger-light);color:var(--danger-text);border:1px solid var(--danger-ring);font-size:0.72rem;border-radius:6px;" onclick="deleteSlab(${s.id})"><i class="bi bi-trash"></i></button>
                     </td>` : ''}
                 </tr>`).join('');
             } catch (e) {
@@ -853,56 +843,50 @@
                 document.getElementById('stat-pending').innerText = 'Rs\u00a0' + fmt(pendingTotal);
                 document.getElementById('slip-filter-summary').innerText = `${slips.length} slip${slips.length === 1 ? '' : 's'}`;
 
+                if (!canManageIncentive) {
+                    const desc = document.querySelector('.page-content p.text-muted');
+                    if (desc) desc.textContent = 'View your personal tasks, achievements and incentive history.';
+                }
+
                 if (!slips.length) {
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">No incentive slips found.</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = slips.map(s => {
-                    const initials = (s.user_name || 'U').charAt(0).toUpperCase();
                     const name = s.user_name || ('Employee #' + s.user_id);
+                    const parts = name.split(' ');
+                    const firstName = parts[0];
+                    const lastName = parts.slice(1).join(' ');
                     const perTask = Number(s.amount_per_unit || 0);
                     const slabBonus = Number(s.slab_bonus_amount || 0);
                     const rawAppliedSlab = s.applied_slab == null ? '' : String(s.applied_slab).trim();
                     const hasValidSlab = rawAppliedSlab !== '' && rawAppliedSlab !== '0' && rawAppliedSlab !== '0.0' && rawAppliedSlab.toLowerCase() !== 'none';
                     const slabLabel = hasValidSlab ? rawAppliedSlab : 'No slab matched';
-                    const canRemark = (!canManageIncentive && Number(s.user_id) === Number(user?.id) && Boolean(s.is_visible_to_employee)) || canManageIncentive;
-                    const employeeRemarkEnc = encodeURIComponent(s.employee_remarks || '');
                     const managerRemarkEnc = encodeURIComponent(s.manager_remarks || '');
-                    const visibilityBtn = canManageIncentive
-                        ? `<button class="btn btn-sm btn-outline-secondary" title="${s.is_visible_to_employee ? 'Hide from employee' : 'Release to employee'}" onclick="toggleIncentiveVisibility(${s.id}, ${s.is_visible_to_employee ? 'false' : 'true'})"><i class="bi ${s.is_visible_to_employee ? 'bi-eye-slash' : 'bi-eye'}"></i></button>`
-                        : '';
-                    const remarksBtn = canRemark
-                        ? `<button class="btn btn-sm btn-outline-info" title="Remarks" onclick="openIncentiveRemarks(${s.id}, '${employeeRemarkEnc}', '${managerRemarkEnc}', ${canManageIncentive ? 'true' : 'false'})"><i class="bi bi-chat-left-text"></i></button>`
-                        : '';
                     return `<tr>
                         <td class="ps-3 slip-employee-cell">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="emp-avatar">${initials}</div>
-                                <span class="fw-semibold text-dark slip-employee-name" style="font-size:0.82rem;">${name}</span>
+                            <div class="d-flex flex-column">
+                                <span class="fw-bold text-dark" style="font-size:0.82rem; line-height:1.2;">${firstName}</span>
+                                ${lastName ? `<span class="text-muted" style="font-size:0.75rem; line-height:1.1;">${lastName}</span>` : ''}
                             </div>
                         </td>
-                        <td class="slip-period-cell" style="line-height:1.3;">
+                        <td class="slip-period-cell text-nowrap" style="line-height:1.3;">
                             <span class="fw-semibold text-dark" style="font-size:0.82rem;">${s.period}</span>
                             <span class="text-muted d-block" style="font-size:0.72rem;">${fmtDateTime(s.generated_at)}</span>
                         </td>
-                        <td class="text-center slip-task-cell">
+                        <td class="slip-task-cell text-nowrap ps-4">
                             <span class="fw-bold" style="font-size:0.88rem;">${s.achieved}</span>
-                            <span class="text-muted" style="font-size:0.72rem; display:block;">Completed tasks</span>
+                            <span class="text-muted" style="font-size:0.72rem; display:block;">Tasks</span>
                         </td>
                         <td>
-                            <span class="fw-semibold text-dark slip-slab-label" style="font-size:0.82rem;">${slabLabel}</span>
-                            <span class="text-muted d-block" style="font-size:0.72rem;">Bonus: Rs&nbsp;${fmt(slabBonus)}</span>
+                            <span class="fw-semibold text-dark slip-slab-label" style="font-size:0.75rem; display:block; line-height:1.2;">${slabLabel}</span>
+                            <span class="text-muted d-block" style="font-size:0.68rem;">Bonus: Rs&nbsp;${fmt(slabBonus)}</span>
                         </td>
-                        <td class="text-end slip-rate-cell">
+                        <td class="text-end slip-rate-cell text-nowrap">
                             <span class="text-primary fw-semibold">Rs&nbsp;${fmt(perTask)}</span>
                         </td>
-                        <td class="pe-3 text-end fw-bold slip-total-cell">Rs&nbsp;${fmt(s.total_incentive)}</td>
-                        <td class="pe-3 text-end">
-                            <div class="d-flex gap-1 justify-content-end">
-                                ${visibilityBtn}${remarksBtn}
-                            </div>
-                        </td>
+                        <td class="pe-3 text-end fw-bold slip-total-cell text-nowrap">Rs&nbsp;${fmt(s.total_incentive)}</td>
                     </tr>`;
                 }).join('');
             } catch (e) {

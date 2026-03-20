@@ -6,7 +6,7 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Leaves -- SRM AI SETU</title>
+    <title>Leaves — SRM AI SETU</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -15,20 +15,20 @@
 </head>
 
 <body class="bg-app">
-    <div class="d-flex" style="height:100vh;overflow:hidden;">
+    <div class="d-flex">
         <div id="sidebar"></div>
-        <div class="flex-grow-1" style="min-width:0;overflow-y:auto;">
-            <div class="page-content">
+        <div class="flex-grow-1 main-wrapper">
+            <div class="page-content mx-auto" style="width: 100%;">
                 <!-- Header -->
-                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                <!-- Header Section -->
+                <!-- Header Section -->
+                <div class="page-header-glass d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
-                        <h2 class="page-section-title">Leave Management</h2>
-                        <p class="text-muted mb-0" style="font-size:0.93rem;">Apply for leave, track status and manage
-                            approvals.</p>
+                        <h2 class="page-section-title fw-bold mb-1">Leave Management</h2>
+                        <p class="text-muted mb-0 small">Apply for leaves and track approval status.</p>
                     </div>
-                    <div class="d-flex gap-2">
-                        <button id="apply-leave-btn" class="btn btn-primary fw-semibold" style="border-radius:10px;"
-                            onclick="openLeaveModal()">
+                    <div class="d-flex align-items-center gap-3">
+                        <button id="apply-leave-btn" class="btn btn-primary fw-semibold shadow-sm" style="border-radius:10px;" onclick="openLeaveModal()">
                             <i class="bi bi-calendar-plus me-2"></i>Apply Leave
                         </button>
                     </div>
@@ -39,12 +39,15 @@
                     <div class="col-6 col-md-3">
                         <div class="grid-card p-3" style="border-left:4px solid #D97706;">
                             <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;background:#FEF3C7;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width:40px;height:40px;background:#FEF3C7;">
                                     <i class="bi bi-hourglass-split" style="color:#D97706;"></i>
                                 </div>
                                 <div>
-                                    <div class="text-muted small fw-semibold mb-0" style="font-size:0.78rem;letter-spacing:0.3px;">PENDING</div>
-                                    <div class="fw-bold" style="color:#D97706;font-size:1.5rem;line-height:1;" id="sum-pending">0</div>
+                                    <div class="text-muted small fw-semibold mb-0"
+                                        style="font-size:0.78rem;letter-spacing:0.3px;">PENDING</div>
+                                    <div class="fw-bold" style="color:#D97706;font-size:1.5rem;line-height:1;"
+                                        id="sum-pending">0</div>
                                 </div>
                             </div>
                         </div>
@@ -52,12 +55,15 @@
                     <div class="col-6 col-md-3">
                         <div class="grid-card p-3" style="border-left:4px solid #059669;">
                             <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;background:#D1FAE5;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width:40px;height:40px;background:#D1FAE5;">
                                     <i class="bi bi-check-circle" style="color:#059669;"></i>
                                 </div>
                                 <div>
-                                    <div class="text-muted small fw-semibold mb-0" style="font-size:0.78rem;letter-spacing:0.3px;">APPROVED</div>
-                                    <div class="fw-bold" style="color:#059669;font-size:1.5rem;line-height:1;" id="sum-approved">0</div>
+                                    <div class="text-muted small fw-semibold mb-0"
+                                        style="font-size:0.78rem;letter-spacing:0.3px;">APPROVED</div>
+                                    <div class="fw-bold" style="color:#059669;font-size:1.5rem;line-height:1;"
+                                        id="sum-approved">0</div>
                                 </div>
                             </div>
                         </div>
@@ -65,25 +71,31 @@
                     <div class="col-6 col-md-3">
                         <div class="grid-card p-3" style="border-left:4px solid #B91C1C;">
                             <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;background:#FEE2E2;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width:40px;height:40px;background:#FEE2E2;">
                                     <i class="bi bi-x-circle" style="color:#B91C1C;"></i>
                                 </div>
                                 <div>
-                                    <div class="text-muted small fw-semibold mb-0" style="font-size:0.78rem;letter-spacing:0.3px;">REJECTED</div>
-                                    <div class="fw-bold" style="color:#B91C1C;font-size:1.5rem;line-height:1;" id="sum-rejected">0</div>
+                                    <div class="text-muted small fw-semibold mb-0"
+                                        style="font-size:0.78rem;letter-spacing:0.3px;">REJECTED</div>
+                                    <div class="fw-bold" style="color:#B91C1C;font-size:1.5rem;line-height:1;"
+                                        id="sum-rejected">0</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="grid-card p-3" style="border-left:4px solid #4F46E5;">
+                        <div class="grid-card p-3" style="border-left:4px solid #2563eb;">
                             <div class="d-flex align-items-center gap-3">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;background:#EEF2FF;">
-                                    <i class="bi bi-calendar-check" style="color:#4F46E5;"></i>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style="width:40px;height:40px;background:#EEF2FF;">
+                                    <i class="bi bi-calendar-check" style="color:#2563eb;"></i>
                                 </div>
                                 <div>
-                                    <div class="text-muted small fw-semibold mb-0" style="font-size:0.78rem;letter-spacing:0.3px;">TOTAL DAYS</div>
-                                    <div class="fw-bold" style="color:#4F46E5;font-size:1.5rem;line-height:1;" id="sum-total">0</div>
+                                    <div class="text-muted small fw-semibold mb-0"
+                                        style="font-size:0.78rem;letter-spacing:0.3px;">TOTAL DAYS</div>
+                                    <div class="fw-bold" style="color:#2563eb;font-size:1.5rem;line-height:1;"
+                                        id="sum-total">0</div>
                                 </div>
                             </div>
                         </div>
@@ -102,7 +114,8 @@
                             </div>
                             <div class="filter-panel-head-meta">
                                 <div class="text-muted small" id="leave-count"></div>
-                                <button class="filter-toggle-btn" id="leave-filter-toggle-btn" type="button" onclick="toggleLeaveFilters(); event.stopPropagation();">
+                                <button class="filter-toggle-btn" id="leave-filter-toggle-btn" type="button"
+                                    onclick="toggleLeaveFilters(); event.stopPropagation();">
                                     <span id="leave-filter-toggle-label">Show</span>
                                     <i class="bi bi-chevron-down"></i>
                                 </button>
@@ -157,71 +170,26 @@
                     </div>
                 </div>
 
-                <div class="grid-card mb-4" id="my-attendance-card" style="display:none;">
-                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
-                        <div>
-                            <h6 class="fw-bold mb-0" style="color:#334155;"><i class="bi bi-clock-history me-2 text-primary"></i>My Attendance</h6>
-                            <div class="text-muted small">Daily punch in/out and total hours</div>
-                        </div>
-                    </div>
-                    <div class="p-3">
-                        <div class="row g-3 align-items-end mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold small">From</label>
-                                <input type="date" id="my-att-start" class="form-control">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold small">To</label>
-                                <input type="date" id="my-att-end" class="form-control">
-                            </div>
-                            <div class="col-md-4 d-grid">
-                                <button class="btn btn-primary" id="my-att-apply">Apply</button>
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div class="text-muted small" id="my-att-count">0 record(s)</div>
-                            <div class="fw-semibold" id="my-att-total">Total: 0.00 hrs</div>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle mb-0">
-                                <thead style="background:#f8fafc;">
-                                    <tr>
-                                        <th style="white-space:nowrap;">Date</th>
-                                        <th style="white-space:nowrap;">Punch In</th>
-                                        <th style="white-space:nowrap;">Punch Out</th>
-                                        <th style="white-space:nowrap;">Hours</th>
-                                        <th style="white-space:nowrap;">Status</th>
-                                        <th style="white-space:nowrap;">Leave</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="my-attendance-tbody">
-                                    <tr>
-                                        <td colspan="6" class="text-center py-4 text-muted">No data loaded.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                <!-- My Attendance Table Removed -->
 
                 <!-- Leaves Table -->
                 <div class="grid-card">
                     <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
-                        <h6 class="fw-bold mb-0" style="color:#334155;"><i class="bi bi-list-check me-2 text-primary"></i>Leave Applications</h6>
+                        <h6 class="fw-bold mb-0" style="color:#334155;"><i
+                                class="bi bi-list-check me-2 text-primary"></i>Leave Applications</h6>
                         <span id="leave-count-non-admin" class="text-muted small"></span>
                     </div>
                     <div class="table-responsive">
-                        <table class="table mb-0" style="font-size:0.875rem;">
+                        <table class="table table-sm mb-0" style="font-size:0.8rem;">
                             <thead style="background:#f8fafc;">
                                 <tr>
-                                    <th style="white-space:nowrap;min-width:120px;">Employee</th>
-                                    <th style="white-space:nowrap;min-width:90px;">Type</th>
-                                    <th style="white-space:nowrap;min-width:100px;">From</th>
-                                    <th style="white-space:nowrap;min-width:100px;">To</th>
-                                    <th style="white-space:nowrap;min-width:60px;">Days</th>
-                                    <th style="min-width:160px;">Reason</th>
-                                    <th style="white-space:nowrap;min-width:100px;">Status</th>
-                                    <th style="min-width:160px;">Actions / Remarks</th>
+                                    <th class="ps-4 text-uppercase small fw-bold text-muted" style="min-width: 150px;">Employee</th>
+                                    <th class="text-uppercase small fw-bold text-muted" style="min-width: 100px;">Type</th>
+                                    <th class="text-uppercase small fw-bold text-muted" style="min-width: 180px;">Period</th>
+                                    <th class="text-uppercase small fw-bold text-muted" style="min-width: 80px;">Days</th>
+                                    <th class="text-uppercase small fw-bold text-muted" style="min-width: 250px;">Reason & Remarks</th>
+                                    <th class="text-uppercase small fw-bold text-muted" style="min-width: 150px;">Status</th>
+                                    <th class="pe-4 text-end text-uppercase small fw-bold text-muted" style="min-width: 100px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="leaves-tbody">
@@ -239,8 +207,8 @@
     </div>
 
     <!-- Apply Leave Modal -->
-    <div class="crm-overlay" id="leaveModal">
-        <div class="crm-box" style="max-width:560px;">
+    <div class="srm-overlay" id="leaveModal">
+        <div class="srm-box" style="max-width:560px;">
             <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                 <h5 class="fw-bold mb-0"><i class="bi bi-calendar-minus text-primary me-2"></i>Apply for Leave</h5>
                 <button class="btn-close" onclick="closeLeaveModal()"></button>
@@ -267,13 +235,15 @@
                 <div class="col-12">
                     <label class="form-label fw-semibold small">Day Type <span class="text-danger">*</span></label>
                     <div class="d-flex gap-2">
-                        <label class="d-flex align-items-center gap-2 cursor-pointer px-3 py-2 rounded border" id="dt-full-lbl"
-                            style="flex:1; cursor:pointer; border-color:#4F46E5!important; background:#EEF2FF;">
-                            <input type="radio" name="day-type" id="dt-full" value="FULL" checked class="form-check-input m-0">
-                            <span class="fw-semibold small" style="color:#4F46E5;">Full Day</span>
+                        <label class="d-flex align-items-center gap-2 cursor-pointer px-3 py-2 rounded border"
+                            id="dt-full-lbl"
+                            style="flex:1; cursor:pointer; border-color:#2563eb!important; background:#EEF2FF;">
+                            <input type="radio" name="day-type" id="dt-full" value="FULL" checked
+                                class="form-check-input m-0">
+                            <span class="fw-semibold small" style="color:#2563eb;">Full Day</span>
                         </label>
-                        <label class="d-flex align-items-center gap-2 cursor-pointer px-3 py-2 rounded border" id="dt-half-lbl"
-                            style="flex:1; cursor:pointer;">
+                        <label class="d-flex align-items-center gap-2 cursor-pointer px-3 py-2 rounded border"
+                            id="dt-half-lbl" style="flex:1; cursor:pointer;">
                             <input type="radio" name="day-type" id="dt-half" value="HALF" class="form-check-input m-0">
                             <span class="fw-semibold small">Half Day</span>
                         </label>
@@ -290,7 +260,7 @@
 
             <!-- Day count preview -->
             <div id="leave-day-preview" class="mb-3 p-2 rounded border small text-center fw-semibold"
-                style="display:none; background:#EEF2FF; color:#4F46E5;"></div>
+                style="display:none; background:#EEF2FF; color:#2563eb;"></div>
 
             <div class="d-flex justify-content-end gap-2 pt-3 border-top">
                 <button class="btn btn-light border" onclick="closeLeaveModal()">Cancel</button>
@@ -301,21 +271,24 @@
     </div>
 
     <!-- Remarks Modal (Admin: Approve/Reject with remarks) -->
-    <div class="crm-overlay" id="remarksModal">
-        <div class="crm-box" style="max-width:440px;">
+    <div class="srm-overlay" id="remarksModal">
+        <div class="srm-box" style="max-width:440px;">
             <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-                <h5 class="fw-bold mb-0" id="remarks-modal-title"><i class="bi bi-chat-left-text text-primary me-2"></i>Action</h5>
+                <h5 class="fw-bold mb-0" id="remarks-modal-title"><i
+                        class="bi bi-chat-left-text text-primary me-2"></i>Action</h5>
                 <button class="btn-close" onclick="closeRemarksModal()"></button>
             </div>
             <div class="mb-3">
-                <label class="form-label fw-semibold small">Remarks <span class="text-muted fw-normal">(optional)</span></label>
+                <label class="form-label fw-semibold small">Remarks <span
+                        class="text-muted fw-normal">(optional)</span></label>
                 <textarea id="remarks-input" class="form-control" rows="3"
                     placeholder="Enter remarks for the employee..."></textarea>
                 <div class="form-text text-muted" id="remarks-helper" style="font-size:0.78rem;"></div>
             </div>
             <div class="d-flex justify-content-end gap-2 pt-3 border-top">
                 <button class="btn btn-light border" onclick="closeRemarksModal()">Cancel</button>
-                <button class="btn btn-danger px-4 fw-semibold" id="remarks-submit-btn" onclick="submitRemarksApproval()">Submit</button>
+                <button class="btn btn-danger px-4 fw-semibold" id="remarks-submit-btn"
+                    onclick="submitRemarksApproval()">Submit</button>
             </div>
         </div>
     </div>
@@ -356,7 +329,7 @@
                 const opts = emps.map(e => `<option value="${e.id}">${e.name || e.email}</option>`).join('');
                 document.getElementById('leave-user-filter').innerHTML = '<option value="">All Employees</option>' + opts;
                 updateLeaveFilterBadge();
-            }).catch(() => {});
+            }).catch(() => { });
         }
 
         const leaveFilterPanel = document.getElementById('admin-filter');
@@ -436,7 +409,7 @@
             document.getElementById('l-type').value = 'CASUAL';
             document.getElementById('leave-submit-btn').textContent = 'Submit Request';
             document.getElementById('dt-full').checked = true;
-            document.getElementById('dt-full-lbl').style.borderColor = '#4F46E5';
+            document.getElementById('dt-full-lbl').style.borderColor = '#2563eb';
             document.getElementById('dt-full-lbl').style.background = '#EEF2FF';
             document.getElementById('dt-half-lbl').style.borderColor = '';
             document.getElementById('dt-half-lbl').style.background = '';
@@ -457,11 +430,11 @@
                 document.getElementById('dt-half').checked = true;
                 document.getElementById('dt-full-lbl').style.borderColor = '';
                 document.getElementById('dt-full-lbl').style.background = '';
-                document.getElementById('dt-half-lbl').style.borderColor = '#4F46E5';
+                document.getElementById('dt-half-lbl').style.borderColor = '#2563eb';
                 document.getElementById('dt-half-lbl').style.background = '#EEF2FF';
             } else {
                 document.getElementById('dt-full').checked = true;
-                document.getElementById('dt-full-lbl').style.borderColor = '#4F46E5';
+                document.getElementById('dt-full-lbl').style.borderColor = '#2563eb';
                 document.getElementById('dt-full-lbl').style.background = '#EEF2FF';
                 document.getElementById('dt-half-lbl').style.borderColor = '';
                 document.getElementById('dt-half-lbl').style.background = '';
@@ -513,7 +486,7 @@
             document.getElementById('dt-half-lbl').style.borderColor = '';
             document.getElementById('dt-half-lbl').style.background = '';
             const active = this.id === 'dt-full' ? 'dt-full-lbl' : 'dt-half-lbl';
-            document.getElementById(active).style.borderColor = '#4F46E5';
+            document.getElementById(active).style.borderColor = '#2563eb';
             document.getElementById(active).style.background = '#EEF2FF';
         }));
 
@@ -532,73 +505,7 @@
             OTHER: 'Other',
         };
 
-        function formatTimeCell(value) {
-            if (!value) return '--';
-            const dt = new Date(value);
-            if (Number.isNaN(dt.getTime())) return '--';
-            return dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-        }
 
-        function attendanceStatusBadge(status) {
-            const map = {
-                PRESENT: 'bg-success-subtle text-success border',
-                HALF: 'bg-warning-subtle text-warning border',
-                ABSENT: 'bg-danger-subtle text-danger border',
-                OFF: 'bg-light text-muted border'
-            };
-            const cls = map[status] || 'bg-light text-muted border';
-            return `<span class="badge ${cls}" style="font-weight:500;">${status}</span>`;
-        }
-
-        function leaveBadge(status) {
-            if (!status) return '--';
-            const map = {
-                PENDING: 'badge-yellow-light',
-                APPROVED: 'badge-green-light',
-                REJECTED: 'badge-red-light'
-            };
-            const cls = map[status] || 'bg-secondary text-white border';
-            return `<span class="status-pill ${cls}">${status}</span>`;
-        }
-
-        async function loadMyAttendanceSummary() {
-            if (canManageLeave) return;
-
-            const tbody = document.getElementById('my-attendance-tbody');
-            const start = document.getElementById('my-att-start').value;
-            const end = document.getElementById('my-att-end').value;
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
-
-            try {
-                const data = await ApiClient.getAttendanceSummary({
-                    start_date: start,
-                    end_date: end,
-                    reconcile: true
-                });
-                const records = data.records || [];
-                document.getElementById('my-att-count').textContent = `${records.length} record(s)`;
-                document.getElementById('my-att-total').textContent = `Total: ${(data.total_hours || 0).toFixed(2)} hrs`;
-
-                if (!records.length) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No attendance records found.</td></tr>';
-                    return;
-                }
-
-                tbody.innerHTML = records.map(r => {
-                    const day = new Date(r.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                    return `<tr>
-                        <td style="white-space:nowrap;">${day}</td>
-                        <td>${formatTimeCell(r.first_punch_in)}</td>
-                        <td>${formatTimeCell(r.last_punch_out)}</td>
-                        <td>${(r.total_hours || 0).toFixed(2)}</td>
-                        <td>${attendanceStatusBadge(r.day_status)}</td>
-                        <td>${leaveBadge(r.leave_status)}</td>
-                    </tr>`;
-                }).join('');
-            } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Failed to load attendance.</td></tr>';
-            }
-        }
 
         // Load leaves
         async function loadLeaves() {
@@ -650,7 +557,7 @@
                 if (countNonAdmin) countNonAdmin.textContent = canManageLeave ? '' : countStr;
 
                 if (!leaves.length) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted">No leave requests found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">No leave requests found.</td></tr>';
                     return;
                 }
 
@@ -666,15 +573,27 @@
                     const typeCls = l.leave_type === 'UNPAID' ? 'bg-danger-subtle text-danger border' : 'bg-light text-dark border';
 
                     let lastCol;
+                    const isAutoLeave = (l.reason || '').includes('Auto leave');
+                    
                     if (canManageLeave && l.status === 'PENDING') {
                         lastCol = `<div class="d-flex gap-1 flex-wrap">
                            <button class="btn btn-sm btn-outline-success" title="Approve" onclick="approveLeaveWithRemarks(${l.id}, 'APPROVED')"><i class="bi bi-check-lg"></i> Approve</button>
                            <button class="btn btn-sm btn-outline-danger" title="Reject" onclick="approveLeaveWithRemarks(${l.id}, 'REJECTED')"><i class="bi bi-x-lg"></i> Reject</button>
                          </div>`;
                     } else if (!canManageLeave && canEditOwnLeave && l.status === 'PENDING' && String(l.user_id) === String(user?.id)) {
-                        lastCol = `<div class="d-flex gap-1 flex-wrap">
-                            <button class="btn btn-sm btn-outline-primary" title="Edit" onclick="openEditLeave(${l.id})"><i class="bi bi-pencil"></i> Edit</button>
-                            <button class="btn btn-sm btn-outline-danger" title="Cancel" onclick="cancelLeave(${l.id})"><i class="bi bi-x-circle"></i> Cancel</button>
+                        if (isAutoLeave) {
+                            lastCol = `<span class="text-muted small italic"><i class="bi bi-lock-fill me-1"></i>Auto leave restricted</span>`;
+                        } else {
+                            lastCol = `<div class="d-flex gap-1 flex-wrap">
+                                <button class="btn btn-sm btn-outline-primary" title="Edit" onclick="openEditLeave(${l.id})"><i class="bi bi-pencil"></i> Edit</button>
+                                <button class="btn btn-sm btn-outline-danger" title="Cancel" onclick="cancelLeave(${l.id})"><i class="bi bi-x-circle"></i> Cancel</button>
+                            </div>`;
+                        }
+                    } else if (canManageLeave && (l.status === 'APPROVED' || l.status === 'REJECTED')) {
+                        lastCol = `<div class="d-flex gap-1 justify-content-end">
+                            <button class="btn btn-sm btn-outline-secondary" style="font-size:0.7rem;" title="Edit Remarks" onclick="approveLeaveWithRemarks(${l.id}, '${l.status}')">
+                                <i class="bi bi-chat-left-text me-1"></i>Remark
+                            </button>
                         </div>`;
                     } else if (l.remarks) {
                         const remarksEsc = (l.remarks || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -685,15 +604,34 @@
                         lastCol = '<span class="text-muted small">--</span>';
                     }
 
+                    const createdStr = l.created_at ? new Date(l.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+                    const updatedStr = l.updated_at ? new Date(l.updated_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+                    const timeInfo = l.status === 'PENDING'
+                        ? `<div class="text-muted" style="font-size:0.65rem; margin-top:2px;">Applied: ${createdStr}</div>`
+                        : `<div class="text-muted" style="font-size:0.65rem; margin-top:2px;">Decided: ${updatedStr}</div>`;
+
+                    const reasonHtml = l.reason ? `<div class="mb-1"><strong>Reason:</strong> <span class="text-muted">${l.reason}</span></div>` : '';
+                    const remarksTheme = l.status === 'REJECTED' ? 'background:rgba(220,38,38,0.08); border:1px solid rgba(220,38,38,0.15); color:#991B1B;' : 'background:rgba(0,0,0,0.03); color:inherit;';
+                    const remarksHtml = l.remarks ? `<div class="p-2 rounded mt-1" style="${remarksTheme} font-size:0.75rem;"><strong>Admin Remark:</strong> ${l.remarks}</div>` : '';
+
                     return `<tr>
-                        <td class="fw-semibold text-dark" style="white-space:nowrap;">${l.user_name || 'User #' + l.user_id}</td>
-                        <td><span class="badge ${typeCls}" style="font-weight:500;white-space:nowrap;">${typeLabel}</span></td>
-                        <td class="text-muted" style="white-space:nowrap;">${start}</td>
-                        <td class="text-muted" style="white-space:nowrap;">${end}</td>
-                        <td class="fw-semibold" style="white-space:nowrap;">${displayDays}${dayTypeLabel}</td>
-                        <td class="text-muted text-truncate" style="max-width:200px;" title="${(l.reason || '').replace(/"/g, '&quot;')}">${l.reason || '--'}</td>
-                        <td><span class="status-pill ${st.cls}" style="white-space:nowrap;"><i class="bi ${st.icon} me-1"></i>${st.label}</span></td>
-                        <td>${lastCol}</td>
+                        <td class="ps-4 fw-semibold text-dark" style="white-space:nowrap; max-width:150px; overflow:hidden; text-overflow:ellipsis;" title="${l.user_name || ''}">${l.user_name || 'User #' + l.user_id}</td>
+                        <td><span class="badge ${typeCls}" style="font-weight:500;white-space:nowrap; font-size:0.75rem;">${typeLabel}</span></td>
+                        <td class="text-muted" style="white-space:nowrap; font-size:0.75rem;">${start} — ${end}</td>
+                        <td class="fw-semibold" style="white-space:nowrap; font-size:0.75rem;">${displayDays}${dayTypeLabel}</td>
+                        <td>
+                            <div style="font-size:0.75rem; line-height:1.3; min-width:200px;">
+                                ${reasonHtml}
+                                ${remarksHtml}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="status-pill ${st.cls}" style="white-space:nowrap; font-size:0.7rem;"><i class="bi ${st.icon} me-1"></i>${st.label}</span>
+                            ${timeInfo}
+                        </td>
+                        <td class="pe-4 text-end">
+                            ${lastCol}
+                        </td>
                     </tr>`;
                 }).join('');
             } catch (e) {
@@ -794,14 +732,7 @@
         start.setDate(end.getDate() - 6);
 
         if (!canManageLeave) {
-            document.getElementById('my-attendance-card').style.display = 'block';
-            document.getElementById('my-att-start').value = start.toISOString().slice(0, 10);
-            document.getElementById('my-att-end').value = end.toISOString().slice(0, 10);
-            document.getElementById('my-att-apply').addEventListener('click', async () => {
-                await loadMyAttendanceSummary();
-                loadLeaves();
-            });
-            loadMyAttendanceSummary().then(() => loadLeaves());
+            loadLeaves();
         } else {
             const reconStart = new Date();
             reconStart.setDate(end.getDate() - 30);
@@ -811,6 +742,7 @@
                 reconcile: true
             }).finally(loadLeaves);
         }
+        // end script
     </script>
 </body>
 

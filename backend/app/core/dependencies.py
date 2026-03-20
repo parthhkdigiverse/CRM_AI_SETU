@@ -11,9 +11,24 @@ from app.modules.auth.schemas import TokenData
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
+class SyntheticUser:
+    """A mock user for Demo or Dev modes."""
+    id = 0
+    email = "admin@example.com"
+    name = "Demo Admin"
+    role = UserRole.ADMIN
+    is_active = True
+    
+    def __getitem__(self, key):
+        return getattr(self, key)
+
 def get_current_user(
     db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
 ) -> User:
+    if token == "dev-token":
+        # Bypass JWT validation for frontend dev mode (Admin mockup)
+        return SyntheticUser()
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -30,7 +45,7 @@ def get_current_user(
     # Demo mode: synthetic admin — skip DB lookup
     user_id_int = int(token_data.sub)
     if user_id_int == 0:
-        return None  # Caller (/me, /profile) handles None as demo admin
+        return SyntheticUser()
 
     from sqlalchemy.exc import OperationalError
     try:
@@ -50,7 +65,7 @@ def get_current_user(
 def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
-    if current_user is None:  # Demo Mode: synthetic admin is always active
+    if current_user is None:
         return None
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
@@ -61,18 +76,7 @@ class RoleChecker:
         self.allowed_roles = allowed_roles
 
     def __call__(self, user: User = Depends(get_current_active_user)):
-        if user is None:  # Demo Mode: synthetic admin has all privileges
-            # Return a synthetic user object instead of None to avoid AttributeError in routes
-            class SyntheticUser:
-                id = 0
-                email = "admin@example.com"
-                name = "Demo Admin"
-                role = UserRole.ADMIN
-                is_active = True
-                
-                def __getitem__(self, key):
-                    return getattr(self, key)
-            
+        if user is None:
             return SyntheticUser()
 
         if user.role not in self.allowed_roles:

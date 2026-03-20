@@ -24,7 +24,6 @@ class Area(SoftDeleteMixin, Base):
     lat = Column(Float, nullable=True)
     lng = Column(Float, nullable=True)
     is_deleted = Column(Boolean, default=False, index=True)
-    is_deleted = Column(Boolean, default=False, index=True)
     
     assignment_status = Column(String, default="UNASSIGNED", nullable=False)
     

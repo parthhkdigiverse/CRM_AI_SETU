@@ -8,12 +8,13 @@ from sqlalchemy.exc import OperationalError
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import create_access_token, get_password_hash, verify_password
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, RoleChecker
 from app.modules.users.models import User, UserRole
 from app.modules.auth.schemas import Token, ChangePasswordRequest, UpdatePreferencesRequest
 from app.modules.users.schemas import UserCreate, UserRead, UserProfileUpdate
 from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
+from app.modules.settings.models import SystemSettings
 from fastapi import Request
 
 router = APIRouter()
@@ -205,7 +206,7 @@ def read_current_user(
 ) -> Any:
     if current_user is None:  # Demo mode: return synthetic admin
         return {
-            "id": 0, "email": _DEMO_EMAIL, "name": "Demo Admin",
+            "id": 0, "email": _DEMO_EMAIL, "name": "Tisha Admin",
             "role": "ADMIN", "is_active": True, "phone": None
         }
     return current_user
@@ -214,7 +215,7 @@ def read_current_user(
 def read_profile(current_user: User = Depends(get_current_user)) -> Any:
     if current_user is None:  # Demo mode: return synthetic admin
         return {
-            "id": 0, "email": _DEMO_EMAIL, "name": "Demo Admin",
+            "id": 0, "email": _DEMO_EMAIL, "name": "Tisha Admin",
             "role": "ADMIN", "is_active": True, "phone": None
         }
     return current_user
@@ -228,7 +229,7 @@ async def update_profile(
 ) -> Any:
     if current_user is None:
          return {
-            "id": 0, "email": _DEMO_EMAIL, "name": profile_in.name or "Demo Admin",
+            "id": 0, "email": _DEMO_EMAIL, "name": profile_in.name or "Tisha Admin",
             "role": "ADMIN", "is_active": True, "phone": profile_in.phone
         }
 

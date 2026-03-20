@@ -14,6 +14,8 @@ import uuid
 from datetime import date as dt_date
 import json
 from app.modules.salary.models import AppSetting
+from app.modules.settings.models import SystemSettings
+from sqlalchemy import func
 
 class UserStatusUpdate(BaseModel):
     is_active: bool
@@ -32,10 +34,10 @@ class RoleIncentiveEligibilityUpdate(BaseModel):
 DEFAULT_ACCESS_POLICY = {
     "page_access": {
         "ADMIN": ["*"],
-        "SALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "areas.html", "clients.html", "billing.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "issues.html", "incentives.html"],
-        "TELESALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "clients.html", "billing.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "issues.html", "incentives.html"],
-        "PROJECT_MANAGER": ["dashboard.html", "timetable.html", "todo.html", "projects.html", "projects_demo.html", "meetings.html", "issues.html", "clients.html", "billing.html", "feedback.html", "reports.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "incentives.html"],
-        "PROJECT_MANAGER_AND_SALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "areas.html", "projects.html", "projects_demo.html", "meetings.html", "issues.html", "clients.html", "billing.html", "feedback.html", "reports.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "incentives.html"],
+        "SALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "areas.html", "clients.html", "billing.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "issues.html", "incentives.html", "employees.html"],
+        "TELESALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "clients.html", "billing.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "issues.html", "incentives.html", "employees.html"],
+        "PROJECT_MANAGER": ["dashboard.html", "timetable.html", "todo.html", "projects.html", "projects_demo.html", "meetings.html", "issues.html", "clients.html", "billing.html", "feedback.html", "reports.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "incentives.html", "employees.html"],
+        "PROJECT_MANAGER_AND_SALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "areas.html", "projects.html", "projects_demo.html", "meetings.html", "issues.html", "clients.html", "billing.html", "feedback.html", "reports.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "incentives.html", "employees.html"],
         "CLIENT": ["dashboard.html"]
     },
     "feature_access": {
@@ -69,11 +71,11 @@ def _normalize_role_list(roles: Any, fallback: list[str]) -> list[str]:
 
 
 def _load_access_policy(db: Session) -> dict:
-    row = db.query(AppSetting).filter(AppSetting.key == "ui_access_policy").first()
-    if not row or not row.value:
+    row = db.query(SystemSettings).first()
+    if not row or not row.access_policy:
         return DEFAULT_ACCESS_POLICY
     try:
-        data = json.loads(row.value)
+        data = row.access_policy
         if not isinstance(data, dict):
             return DEFAULT_ACCESS_POLICY
         page_access = data.get("page_access") or {}
@@ -105,12 +107,12 @@ def _load_access_policy(db: Session) -> dict:
 
 
 def _save_access_policy(db: Session, policy: dict) -> None:
-    row = db.query(AppSetting).filter(AppSetting.key == "ui_access_policy").first()
-    payload = json.dumps(policy)
+    row = db.query(SystemSettings).first()
     if row:
-        row.value = payload
+        row.access_policy = policy
+        row.policy_version = (row.policy_version or 1) + 1
     else:
-        db.add(AppSetting(key="ui_access_policy", value=payload))
+        db.add(SystemSettings(access_policy=policy, policy_version=2))
     db.commit()
 
 
@@ -138,6 +140,22 @@ router = APIRouter()
 admin_checker = RoleChecker([UserRole.ADMIN])
 
 
+@router.get("/access-policy/status")
+def get_access_policy_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+) -> Any:
+    row = db.query(SystemSettings).first()
+    version = row.policy_version if row else 1
+    role = current_user.role.value if hasattr(current_user.role, "value") else str(current_user.role)
+    return {
+        "policy_version": version,
+        "role": role,
+        "user_id": current_user.id,
+        "is_active": current_user.is_active
+    }
+
+
 @router.get("/access-policy")
 def get_access_policy(
     db: Session = Depends(get_db),
@@ -160,6 +178,8 @@ def update_access_policy(
 
     normalized_page_access = {}
     valid_roles = {r.value for r in UserRole}
+    if not page_access:
+        page_access = {}
     for role, pages in page_access.items():
         role_name = str(role).upper()
         if role_name not in valid_roles:
@@ -396,7 +416,7 @@ async def admin_update_user_profile(
 
     return user
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{user_id:int}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     user_id: int,
     request: Request,

@@ -319,7 +319,7 @@ window._discoverShops = async function (areaId, locationParams, radiusMeters = 5
             // Pass place.id (new API) so we can fetch rich details on demand
             const addBtn = document.createElement('button');
             addBtn.className = 'btn btn-sm btn-outline-primary fw-semibold';
-            addBtn.textContent = 'Add to CRM';
+            addBtn.textContent = 'Add to SRM';
             addBtn.onclick = () => window.prepareGoogleShop(addBtn, place.id, areaId);
 
             actionCell.appendChild(addBtn);
@@ -370,7 +370,7 @@ window.prepareGoogleShop = async function (btnEl, place_id, areaId) {
     } catch (error) {
         console.error('getDetails failed:', error);
         btnEl.disabled = false;
-        btnEl.textContent = 'Add to CRM';
+        btnEl.textContent = 'Add to SRM';
         alert('Could not retrieve shop details. Please try again.');
     }
 };

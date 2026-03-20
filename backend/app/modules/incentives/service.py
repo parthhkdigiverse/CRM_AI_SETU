@@ -113,12 +113,19 @@ class IncentiveService:
         else:
             # Period is based on 10-day eligibility date, not client creation month.
             period_start, next_month_start = self._get_period_bounds(calc_in.period)
+            
+            # 10-day break period: Client must be created before (now - 10 days) to be eligible for payout.
+            # 7-day refund policy: If client is deactivated (refunded) within 7 days (or any time), they are excluded.
+            # In practice, since we only count clients who are at least 10 days old AND currently active,
+            # anything refunded within 7 days is automatically excluded.
+            
             eligibility_start = period_start - timedelta(days=10)
             eligibility_end = next_month_start - timedelta(days=10)
             ten_days_ago = datetime.now(UTC) - timedelta(days=10)
 
             query = self.db.query(Client).filter(
                 Client.is_active == True,
+                Client.is_deleted == False,
                 Client.created_at >= eligibility_start,
                 Client.created_at < eligibility_end,
                 Client.created_at <= ten_days_ago
@@ -151,7 +158,7 @@ class IncentiveService:
             existing_slip.amount_per_unit = incentive_per_unit
             existing_slip.slab_bonus_amount = slab_bonus
             existing_slip.total_incentive = round(total_incentive, 2)
-            existing_slip.is_visible_to_employee = bool(getattr(existing_slip, "is_visible_to_employee", False))
+            existing_slip.is_visible_to_employee = True
             existing_slip.generated_at = datetime.now(UTC)
             db_slip = existing_slip
         else:
@@ -164,7 +171,7 @@ class IncentiveService:
                 applied_slab=applied_slab_label,
                 amount_per_unit=incentive_per_unit,
                 slab_bonus_amount=slab_bonus,
-                is_visible_to_employee=False,
+                is_visible_to_employee=True,
                 total_incentive=round(total_incentive, 2),
                 generated_at=datetime.now(UTC)
             )
@@ -253,6 +260,7 @@ class IncentiveService:
         ten_days_ago = datetime.now(UTC) - timedelta(days=10)
 
         base_query = self.db.query(Client).filter(
+            Client.is_deleted == False,
             Client.created_at >= eligibility_start,
             Client.created_at < eligibility_end
         )
@@ -409,12 +417,6 @@ class IncentiveService:
             try:
                 rows = [r for r in self._get_slip_rows_fallback(user_id=user_id) if bool(r.get("is_visible_to_employee"))]
                 return self._serialize_slip_rows(rows)
-            except Exception:
-                return []
-        except Exception:
-            self.db.rollback()
-            try:
-                return self._serialize_slip_rows(self._get_slip_rows_fallback(user_id=user_id))
             except Exception:
                 return []
 

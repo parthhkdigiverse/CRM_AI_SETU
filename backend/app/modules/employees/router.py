@@ -30,9 +30,9 @@ def list_employees(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
-    """List employees with optional filters. Non-admin sees only own profile."""
-    if current_user.role != UserRole.ADMIN:
-        return [current_user]
+    """List employees with optional filters. Client sees nothing. Employee sees list but sensitive info hidden for others."""
+    if current_user.role == UserRole.CLIENT:
+        return []
 
     q = db.query(User).filter(User.is_deleted == False)
     
@@ -49,7 +49,17 @@ def list_employees(
         
     if limit:
         q = q.limit(limit)
-    return q.all()
+    
+    results = q.all()
+    
+    # If not admin, mask sensitive data for others
+    if current_user.role != UserRole.ADMIN:
+        for u in results:
+            if u.id != current_user.id:
+                u.base_salary = None
+                u.target = None
+                
+    return results
 
 
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
