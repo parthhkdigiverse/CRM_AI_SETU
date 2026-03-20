@@ -558,6 +558,7 @@
                                         <th style="white-space:nowrap;">Hours</th>
                                         <th style="white-space:nowrap;">Status</th>
                                         <th style="white-space:nowrap;">Leave</th>
+                                        <th style="white-space:nowrap; text-align:right;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="attendance-admin-tbody">
@@ -570,58 +571,6 @@
                     </div>
                 </div>
 
-                <div class="mt-4" id="employee-self-card" style="display:none;">
-
-                    <!-- Professional Attendance Widget -->
-                    <div class="pro-att-widget">
-                        <!-- Left Zone: Date + Greeting -->
-                        <div class="pro-att-left">
-                            <div class="pro-att-date" id="pro-att-self-date">--</div>
-                            <div class="pro-att-greeting-line" id="pro-att-self-greeting-line">Good Evening,</div>
-                            <div class="pro-att-name punched-out" id="pro-att-self-name">User</div>
-                            <div class="pro-att-live-badge offline" id="pro-att-self-live-badge">
-                                <span class="pro-att-pulse-dot" id="pro-att-self-pulse" style="display:none;"></span>
-                                <span id="pro-att-self-live-text">Offline</span>
-                            </div>
-                        </div>
-
-                        <!-- Vertical Separator -->
-                        <div class="pro-att-sep"></div>
-
-                        <!-- Right Zone: Profile + Punch Info -->
-                        <div class="pro-att-right">
-                            <!-- Row 1: Avatar + Name + Punch Badge -->
-                            <div class="pro-att-user-row">
-                                <div class="pro-att-avatar-wrap">
-                                    <div class="pro-att-avatar" id="pro-att-self-avatar">--</div>
-                                    <div class="pro-att-status-dot offline" id="pro-att-self-dot"></div>
-                                </div>
-                                <div class="pro-att-user-info">
-                                    <div class="pro-att-user-name" id="pro-att-self-uname">User</div>
-                                    <div class="pro-att-punch-badge out" id="pro-att-self-punch-badge">Not Punched</div>
-                                </div>
-                            </div>
-
-                            <!-- Row 2: Info Cells + Button -->
-                            <div class="pro-att-bottom-row">
-                                <div class="pro-att-info-cells">
-                                    <div class="pro-att-info-cell">
-                                        <div class="pro-att-info-label">Punch In</div>
-                                        <div class="pro-att-info-val" id="pro-att-self-first-in">--:--</div>
-                                    </div>
-                                    <div class="pro-att-info-cell">
-                                        <div class="pro-att-info-label">Duration</div>
-                                        <div class="pro-att-timer-val">
-                                            <span id="att-v2-self-hh">--</span><span class="att-sep">:</span><span id="att-v2-self-mm">--</span><span class="att-sep">:</span><span id="att-v2-self-ss">--</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button class="pro-att-btn punch-in" id="self-main-punch-btn">
-                                    Punch<br>In
-                                </button>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Attendance History Card -->
                     <div class="grid-card">
@@ -646,6 +595,7 @@
                                             <th style="white-space:nowrap;">Hours</th>
                                             <th style="white-space:nowrap;">Status</th>
                                             <th style="white-space:nowrap;">Leave</th>
+                                            <th style="white-space:nowrap; text-align:right;">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody id="self-attendance-tbody">
@@ -1092,6 +1042,11 @@
                         <td>${(r.total_hours || 0).toFixed(2)}</td>
                         <td>${statusBadge(r.day_status)}</td>
                         <td>${leaveBadge(r.leave_status)}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-light border p-1 px-2" onclick="viewPunchLogs('${r.date}')" title="View Details">
+                                <i class="bi bi-eye text-primary"></i>
+                            </button>
+                        </td>
                     </tr>`;
                 }).join('');
             } catch (err) {
@@ -1138,50 +1093,34 @@
             return `<span class="status-pill ${cls}">${status}</span>`;
         }
 
-        async function viewEmployeeAttendance(userId, userName) {
-            const modalEl = document.getElementById('attendanceHistoryModal');
-            if (!modalEl) {
-                console.error("Attendance history modal not found");
-                return;
-            }
+        async function viewPunchLogs(dateStr, userId = null) {
+            const modalEl = document.getElementById('punchDetailModal');
+            if (!modalEl) return;
             const modal = new bootstrap.Modal(modalEl);
-            document.getElementById('att-hist-user-name').textContent = userName;
-            const tbody = document.getElementById('att-hist-tbody');
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+            const tbody = document.getElementById('punch-detail-tbody');
+            const titleDate = document.getElementById('punch-detail-date');
+            
+            titleDate.textContent = new Date(dateStr).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>Loading logs...</td></tr>';
             modal.show();
 
             try {
-                const end = new Date();
-                const start = new Date();
-                start.setDate(end.getDate() - 30); // Last 30 days
-                
-                const data = await ApiClient.getAttendanceSummary({
-                    user_id: userId,
-                    start_date: start.toISOString().slice(0, 10),
-                    end_date: end.toISOString().slice(0, 10),
-                    reconcile: true
-                });
-                
-                const records = data.records || [];
-                if (!records.length) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No attendance records found for the last 30 days.</td></tr>';
+                const logs = await ApiClient.getAttendanceLogs(userId, dateStr);
+                if (!logs || !logs.length) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No punch logs found for this day.</td></tr>';
                     return;
                 }
-
-                tbody.innerHTML = records.map(r => {
-                    const day = new Date(r.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                    return `<tr>
-                        <td style="white-space:nowrap;" class="ps-3">${day}</td>
-                        <td>${formatTimeCell(r.first_punch_in)}</td>
-                        <td>${formatTimeCell(r.last_punch_out)}</td>
-                        <td>${(r.total_hours || 0).toFixed(2)}</td>
-                        <td>${statusBadge(r.day_status)}</td>
-                        <td class="pe-3 text-end">${leaveBadge(r.leave_status)}</td>
-                    </tr>`;
-                }).join('');
+                tbody.innerHTML = logs.map((l, idx) => `
+                    <tr>
+                        <td class="ps-3 fw-medium">${idx + 1}</td>
+                        <td>${formatTimeCell(l.punch_in)}</td>
+                        <td>${formatTimeCell(l.punch_out)}</td>
+                        <td class="pe-3 text-end fw-semibold text-primary">${(l.total_hours || 0).toFixed(2)} hrs</td>
+                    </tr>
+                `).join('');
             } catch (err) {
-                console.error('Failed to load employee attendance history', err);
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Failed to load history.</td></tr>';
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Failed to load detailed logs.</td></tr>';
             }
         }
 
@@ -1219,6 +1158,11 @@
                         <td>${(r.total_hours || 0).toFixed(2)}</td>
                         <td>${statusBadge(r.day_status)}</td>
                         <td>${leaveBadge(r.leave_status)}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-light border p-1 px-2" onclick="viewPunchLogs('${r.date}', ${r.user_id})" title="View Details">
+                                <i class="bi bi-eye text-primary"></i>
+                            </button>
+                        </td>
                     </tr>`;
                 }).join('');
             } catch (err) {
@@ -1487,6 +1431,41 @@
         }
 
     </script>
+    <!-- Punch Detail Modal -->
+    <div class="modal fade" id="punchDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark">Daily Punch Logs</h5>
+                        <p class="text-muted small mb-0" id="punch-detail-date">--</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover table-sm mb-0 align-middle">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3 py-2">#</th>
+                                    <th class="py-2">Punch In</th>
+                                    <th class="py-2">Punch Out</th>
+                                    <th class="pe-3 py-2 text-end">Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody id="punch-detail-tbody" style="font-size:0.85rem;">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-primary fw-semibold w-100" data-bs-dismiss="modal" style="border-radius:10px;">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Attendance History Modal (Admin Only) -->
     <div class="modal fade" id="attendanceHistoryModal" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered">

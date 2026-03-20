@@ -151,7 +151,8 @@ window.renderSidebar = function (active) {
     };
 
     const sbSection = (id, title, icon, items) => {
-        const filteredItems = items.filter(item => canShowPage(item.href));
+        // Show all items regardless of canShowPage for a "Same like Admin" sidebar
+        const filteredItems = items; 
         if (filteredItems.length === 0) return '';
         const isAnyActive = filteredItems.some(item => item.id === active);
         const isOpen = isAnyActive; // Auto-open if active item is inside
@@ -478,6 +479,11 @@ window.injectTopHeader = function (pageTitle) {
     // Inject overlay if not present
     if (!document.getElementById('sb-overlay')) {
         document.body.insertAdjacentHTML('beforeend', '<div id="sb-overlay" class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>');
+    }
+
+    // Run access check
+    if (typeof window.checkPageAccess === 'function') {
+        window.checkPageAccess();
     }
 }
 
@@ -1261,3 +1267,72 @@ document.addEventListener('DOMContentLoaded', function () {
         icon.className = isDark ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
     }
 });
+// ─── ACCESS CONTROL OVERLAY ──────────────────────────────────────────
+window.checkPageAccess = function() {
+    const u = getUser();
+    if (!u) return; // Not logged in yet
+    
+    // Skip check for basic pages
+    const path = window.location.pathname.split('/').pop() || 'index.html';
+    if (['index.html', 'login.html', 'dashboard.html', 'profile.html', 'notifications.html', 'search.html'].includes(path)) {
+        return;
+    }
+
+    // Reuse the logic from renderSidebar's canShowPage equivalent
+    const roleName = String(u.role || '').toUpperCase();
+    if (roleName === 'ADMIN') return; // Admins see everything
+
+    const fallbackPages = {
+        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
+        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
+        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
+        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
+        CLIENT: ['dashboard.html']
+    };
+
+    const effectivePolicy = window.__crmEffectiveAccessPolicy;
+    const allowedPages = Array.isArray(effectivePolicy?.allowed_pages)
+        ? effectivePolicy.allowed_pages
+        : (effectivePolicy?.policy?.page_access?.[roleName] || fallbackPages[roleName] || []);
+
+    if (!allowedPages.includes(path) && !allowedPages.includes('*')) {
+        showAccessDenied(path);
+    }
+};
+
+window.showAccessDenied = function(pageName) {
+    // Remove existing content to prevent interaction
+    const mainWrapper = document.querySelector('.main-wrapper');
+    if (!mainWrapper) return;
+
+    const nicePageName = pageName.replace('.html', '').replace(/_/g, ' ').toUpperCase();
+
+    mainWrapper.innerHTML = `
+        <div class="d-flex flex-column align-items-center justify-content-center text-center p-5" style="min-height: 80vh;">
+            <div class="mb-4" style="width: 120px; height: 120px; background: rgba(239, 68, 68, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 50px;">
+                <i class="bi bi-shield-lock"></i>
+            </div>
+            <h1 class="fw-bold mb-2" style="font-family: 'Outfit', sans-serif; color: var(--text-1);">Access Restricted</h1>
+            <p class="text-muted mb-4" style="max-width: 450px;">
+                You don't have enough permission to access the <strong>${nicePageName}</strong> module. 
+                Please contact your supervisor or administrator if you believe this is an error.
+            </p>
+            <div class="d-flex gap-3">
+                <a href="dashboard.html" class="btn btn-primary px-4 py-2" style="border-radius: 10px; font-weight: 600;">
+                    <i class="bi bi-house me-2"></i> Back to Dashboard
+                </a>
+                <button onclick="window.location.reload()" class="btn btn-outline-secondary px-4 py-2" style="border-radius: 10px; font-weight: 600;">
+                    <i class="bi bi-arrow-clockwise me-2"></i> Retry
+                </button>
+            </div>
+            <div class="mt-5 pt-4 border-top w-100" style="max-width: 400px; opacity: 0.6; font-size: 0.8rem;">
+                <p class="mb-1">Access Policy: <strong>${getUser()?.role || 'Guest'}</strong></p>
+                <p>Module ID: <code>${pageName}</code></p>
+            </div>
+        </div>
+    `;
+    
+    // Also remove the "Add New" button if present
+    const addBtn = document.querySelector('.nav-add');
+    if (addBtn) addBtn.style.display = 'none';
+};

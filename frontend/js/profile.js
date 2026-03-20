@@ -138,8 +138,11 @@ async function loadProfile() {
     // Account Info Rows
     renderAccountInfo(u, roleLabel);
     
-    // Stats
-    renderStats(u);
+    // Stats - Removed as per user request
+    // renderStats(u);
+
+    // Quick Links
+    renderQuickLinks(u);
 }
 
 /**
@@ -208,7 +211,7 @@ async function renderStats(u) {
             statCards = [
                 { value: stats.total_leads || 0, label: 'Leads', link: 'leads.html' },
                 { value: stats.active_clients || 0, label: 'Clients', link: 'clients.html' },
-                { value: stats.ongoing_projects || 0, label: 'Projects', link: 'projects.html' }
+                { value: stats.open_issues || 0, label: 'Open Issues', link: 'issues.html' }
             ];
         } else {
             statCards = [
@@ -225,6 +228,55 @@ async function renderStats(u) {
             </a>`).join('');
     } catch (e) {
         console.error('Stats load failed', e);
+    }
+}
+
+/**
+ * ── Render Quick Links ──────────────────────────────────────────────────────
+ */
+function renderQuickLinks(u) {
+    const container = document.getElementById('quick-actions-container');
+    const list = document.getElementById('quick-links-list');
+    if (!container || !list) return;
+
+    const role = (u.role || '').toUpperCase();
+    const isAdmin = role === 'ADMIN';
+    const isSales = role === 'SALES' || role === 'PROJECT_MANAGER_AND_SALES' || role === 'TELESALES';
+    const isPM = role === 'PROJECT_MANAGER' || role === 'PROJECT_MANAGER_AND_SALES';
+
+    let links = [];
+
+    if (isAdmin) {
+        links = [
+            { label: 'Manage Employees', desc: 'Add or update team members', icon: 'bi-people', link: 'admin.html', color: '#6366f1' },
+            { label: 'Business Reports', desc: 'View revenue and activity analytics', icon: 'bi-graph-up-arrow', link: 'reports.html', color: '#10b981' },
+            { label: 'System Settings', desc: 'Configure platform preferences', icon: 'bi-sliders', link: 'settings.html', color: '#64748b' }
+        ];
+    } else {
+        if (isSales) {
+            links.push({ label: 'Add New Lead', desc: 'Create a new business opportunity', icon: 'bi-person-plus', link: 'leads.html?add=true', color: '#2563eb' });
+            links.push({ label: 'Log New Visit', desc: 'Record a field activity', icon: 'bi-geo-alt', link: 'visits.html?add=true', color: '#10b981' });
+        }
+        if (isPM) {
+            links.push({ label: 'New Project', desc: 'Setup a new client project', icon: 'bi-briefcase', link: 'projects.html?add=true', color: '#6366f1' });
+        }
+        links.push({ label: 'My Attendance', desc: 'View punch logs and leave status', icon: 'bi-calendar-check', link: 'leaves.html', color: '#f59e0b' });
+    }
+
+    if (links.length > 0) {
+        container.style.display = 'block';
+        list.innerHTML = links.map(l => `
+            <a href="${l.link}" class="quick-action-item">
+                <div class="qai-icon" style="background: ${l.color}15; color: ${l.color};">
+                    <i class="bi ${l.icon}"></i>
+                </div>
+                <div class="qai-content">
+                    <div class="qai-label">${l.label}</div>
+                    <div class="qai-desc">${l.desc}</div>
+                </div>
+                <i class="bi bi-chevron-right qai-arrow"></i>
+            </a>
+        `).join('');
     }
 }
 

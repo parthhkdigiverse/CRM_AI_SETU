@@ -41,18 +41,22 @@
                             <div class="text-muted" id="hero-email" style="font-size:0.9rem; font-weight: 500;">—</div>
                         </div>
                     </div>
-                    <div class="d-flex gap-3" id="stats-row">
-                        <!-- Stats loaded via JS -->
-                        <div class="stat-pill placeholder-glow" style="min-width: 100px;">
-                            <span class="placeholder col-6"></span>
-                        </div>
-                    </div>
                 </div>
 
-                <div class="row g-4">
+                <div id="profile-content" style="display: none;">
+                    <div class="row g-4">
+                        <!-- Left Column -->
+                        <div class="col-md-5">
+                            <!-- Quick Actions -->
+                            <div id="quick-actions-container" style="display: none;">
+                                <div class="info-card mb-4">
+                                    <div class="info-card-title"><i class="bi bi-lightning-charge text-warning"></i> Quick Actions</div>
+                                    <div id="quick-links-list" class="quick-actions-list">
+                                        <!-- Links loaded via JS -->
+                                    </div>
+                                </div>
+                            </div>
 
-                    <!-- Left Column -->
-                    <div class="col-md-5">
                         <!-- Account Info -->
                         <div class="info-card mb-4">
                             <div class="info-card-title"><i class="bi bi-person-badge text-primary"></i> Account Details</div>

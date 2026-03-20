@@ -98,8 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
             const submitBtn = loginForm.querySelector('button');
 
             submitBtn.disabled = true;
@@ -189,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function renderDashboard() {
+        const user = window.ApiClient.getCurrentUser();
         let stats = { total_clients: 0, open_issues: 0, total_visits: 0, total_shops: 0 };
         let shops = [], visits = [], clients = [], todos = [];
         try {
@@ -217,6 +218,28 @@ async function renderDashboard() {
                 </div>`;
         }).join('') : `<div class="text-muted" style="padding:10px;">No pending tasks!</div>`;
 
+        // Dynamic KPI data based on role
+        const role = (user?.role || '').toUpperCase();
+        const isAdmin = role === 'ADMIN';
+        
+        const kpi3 = isAdmin ? {
+            title: 'Open Issues',
+            value: stats.open_issues || 0,
+            trend: '<i class="fa-solid fa-triangle-exclamation"></i> High Priority',
+            trendClass: 'trend-down', // using red for alert
+            icon: 'fa-solid fa-circle-exclamation',
+            iconClass: 'icon-yellow',
+            view: 'issues'
+        } : {
+            title: 'Ongoing Projects',
+            value: '28', // Placeholder or from stats if available
+            trend: '<i class="fa-solid fa-arrow-trend-down"></i> -2.1% <span>vs last month</span>',
+            trendClass: 'trend-down',
+            icon: 'fa-solid fa-briefcase',
+            iconClass: 'icon-yellow',
+            view: 'projects'
+        };
+
         mainContent.innerHTML = `
         <!-- Row 1: Greeting -->
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -228,7 +251,7 @@ async function renderDashboard() {
         
         <!-- Row 2: KPI Grid of 4 (Lovable Style) -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-bottom: 24px;">
-            <div class="stat-card">
+            <div class="stat-card" onclick="loadView('leads')" style="cursor:pointer;">
                 <div class="stat-content-left">
                     <div class="stat-title">Total Leads</div>
                     <div class="stat-value">1,284</div>
@@ -239,7 +262,7 @@ async function renderDashboard() {
                 </div>
             </div>
             
-            <div class="stat-card">
+            <div class="stat-card" onclick="loadView('clients')" style="cursor:pointer;">
                 <div class="stat-content-left">
                     <div class="stat-title">Active Clients</div>
                     <div class="stat-value">342</div>
@@ -250,25 +273,25 @@ async function renderDashboard() {
                 </div>
             </div>
             
-            <div class="stat-card">
+            <div class="stat-card" onclick="loadView('${kpi3.view}')" style="cursor:pointer;">
                 <div class="stat-content-left">
-                    <div class="stat-title">Ongoing Projects</div>
-                    <div class="stat-value">28</div>
-                    <div class="stat-trend trend-down"><i class="fa-solid fa-arrow-trend-down"></i> -2.1% <span>vs last month</span></div>
+                    <div class="stat-title">${kpi3.title}</div>
+                    <div class="stat-value">${kpi3.value}</div>
+                    <div class="stat-trend ${kpi3.trendClass}">${kpi3.trend}</div>
                 </div>
-                <div class="stat-icon-wrapper icon-yellow">
-                    <i class="fa-solid fa-briefcase"></i>
+                <div class="stat-icon-wrapper ${kpi3.iconClass}">
+                    <i class="${kpi3.icon}"></i>
                 </div>
             </div>
             
-            <div class="stat-card">
+            <div class="stat-card" onclick="loadView('billing')" style="cursor:pointer;">
                 <div class="stat-content-left">
                     <div class="stat-title">Revenue (MTD)</div>
                     <div class="stat-value">₹24.5L</div>
                     <div class="stat-trend trend-up"><i class="fa-solid fa-arrow-trend-up"></i> +18.7% <span>vs last month</span></div>
                 </div>
                 <div class="stat-icon-wrapper icon-green">
-                    <i class="fa-solid fa-dollar-sign"></i>
+                    <i class="fa-solid fa-indian-rupee-sign"></i>
                 </div>
             </div>
         </div>

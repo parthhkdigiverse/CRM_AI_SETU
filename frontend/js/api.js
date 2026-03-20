@@ -212,19 +212,13 @@ class ApiClient {
         return this.request('/attendance/punch', { method: 'POST' });
     }
     static async getAttendanceSummary(params = {}) {
-        let query = '';
-        if (typeof params === 'object') {
-            const queryParams = new URLSearchParams();
-            for (const [key, value] of Object.entries(params)) {
-                if (value !== undefined && value !== null) {
-                    queryParams.append(key, value);
-                }
-            }
-            query = queryParams.toString() ? `?${queryParams.toString()}` : '';
-        } else if (typeof params === 'string' && params) {
-            query = params.startsWith('?') ? params : `?${params}`;
-        }
-        return this.request(`/attendance/summary${query}`);
+        const query = new URLSearchParams(params).toString();
+        return this.request(`/attendance/summary?${query}`);
+    }
+
+    static async getAttendanceLogs(userId, date) {
+        const query = new URLSearchParams({ user_id: userId || '', date }).toString();
+        return this.request(`/attendance/logs?${query}`);
     }
 
     static async getAttendanceSettings() {

@@ -18,17 +18,28 @@ _display_host = "localhost" if HOST == "0.0.0.0" else HOST
 def kill_process_on_port(port):
     """Automatically find and kill any process holding the specified port on Windows."""
     import subprocess
-    import re
+    import os
     try:
         # Find the PID(s) using the port
         cmd = f'netstat -ano | findstr :{port}'
         output = subprocess.check_output(cmd, shell=True).decode()
-        pids = set(re.findall(r'\s+(\d+)$', output, re.MULTILINE))
+        
+        my_pid = os.getpid()
+        pids = set()
+        for line in output.strip().split('\n'):
+            line = line.strip()
+            if not line: continue
+            
+            # Typical netstat output: TCP  0.0.0.0:8000  0.0.0.0:0  LISTENING  P_ID
+            parts = line.split()
+            if len(parts) >= 2 and f":{port}" in parts[1]:
+                pid = parts[-1]
+                if pid.isdigit() and int(pid) != 0 and int(pid) != my_pid:
+                    pids.add(pid)
         
         for pid in pids:
-            if pid != '0':
-                print(f"[Cleanup] Terminating conflicting process PID: {pid} on port {port}...")
-                subprocess.run(f'taskkill /F /PID {pid}', shell=True, check=False)
+            print(f"[Cleanup] Terminating conflicting process PID: {pid} on port {port}...")
+            subprocess.run(f'taskkill /F /PID {pid}', shell=True, capture_output=True)
     except subprocess.CalledProcessError:
         # This happens if no process is found (findstr returns exit code 1)
         pass

@@ -29,10 +29,15 @@ def get_dashboard_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(dashboard_viewer)
 ):
+    # Enforce own data for non-admins
+    effective_user_id = user_id
+    if current_user.role != UserRole.ADMIN:
+        effective_user_id = current_user.id
+        
     stats = ReportService.get_dashboard_stats(
         db, 
         area_id=area_id, 
-        user_id=user_id, 
+        user_id=effective_user_id, 
         start_date=start_date, 
         end_date=end_date
     )

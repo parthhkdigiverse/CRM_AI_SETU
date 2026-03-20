@@ -254,17 +254,27 @@ def get_punch_status(db: Session = Depends(get_db), current_user = Depends(get_c
         models.Attendance.date >= month_start
     ).scalar() or 0.0
     
-    return {
-        "is_punched_in": is_punched_in,
-        "last_punch": last_punch,
-        "last_punch_ts": last_punch.timestamp() * 1000 if last_punch else None,
-        "first_punch_in": first_punch_in,
-        "first_punch_in_ts": first_punch_in.timestamp() * 1000 if first_punch_in else None,
-        "today_hours": today_hours,
-        "today_hours_secs": today_hours * 3600,
-        "week_hours": week_hours,
         "month_hours": month_hours
     }
+
+
+@router.get("/logs", response_model=List[schemas.AttendanceLog])
+def get_attendance_logs(
+    date: date,
+    user_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Determine which user's logs to show
+    target_user_id = user_id if user_id and current_user.role == UserRole.ADMIN else current_user.id
+    
+    logs = db.query(models.Attendance).filter(
+        models.Attendance.user_id == target_user_id,
+        models.Attendance.date == date,
+        models.Attendance.is_deleted == False
+    ).order_by(models.Attendance.punch_in.asc()).all()
+    
+    return logs
 
 
 @router.get("/settings", response_model=schemas.AttendanceSettings)

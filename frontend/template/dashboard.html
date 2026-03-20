@@ -162,11 +162,13 @@
 
         /* ── Professional Attendance Widget (Dashboard) ── */
         .pro-att-widget {
-            background: linear-gradient(135deg, #0d1f5c 0%, #102272 40%, #0f1e6a 70%, #0a1550 100%);
-            border-radius: 16px;
-            border: 1px solid rgba(99, 102, 241, 0.25);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-            padding: 22px 24px;
+            background: linear-gradient(135deg, rgba(13, 31, 92, 0.8) 0%, rgba(16, 34, 114, 0.7) 40%, rgba(15, 30, 106, 0.7) 70%, rgba(10, 21, 80, 0.8) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+            padding: 24px 28px;
             display: flex;
             align-items: center;
             gap: 0;
@@ -1406,6 +1408,59 @@
         }
 
         updateHeaderContext();
+        
+        // ── Role-Specific KPI Setup ──────────────────────────────────
+        function setupRoleKPIs() {
+            const flags = getRoleFlags(currentUser?.role);
+            
+            if (flags.isSales || flags.isTelesales) {
+                // Sales / Telesales View
+                document.getElementById('kpi-visits-label').textContent = 'My Visits';
+                document.getElementById('kpi-clients-label').textContent = 'My Leads';
+                document.getElementById('kpi-employees-label').textContent = 'My Incentive';
+                document.getElementById('kpi-revenue-label').textContent = 'Pending Tasks';
+
+                // Update Icons & Colors
+                document.querySelector('[data-widget-id="kpi-employees"] .kpi-icon-wrapper').innerHTML = '<i class="bi bi-award"></i>';
+                document.querySelector('[data-widget-id="kpi-employees"] .kpi-icon-wrapper').style.background = '#fef3c7';
+                document.querySelector('[data-widget-id="kpi-employees"] .kpi-icon-wrapper').style.color = '#d97706';
+                
+                document.querySelector('[data-widget-id="kpi-revenue"] .kpi-icon-wrapper').innerHTML = '<i class="bi bi-check2-square"></i>';
+                
+                // Update Links
+                document.querySelector('[data-widget-id="kpi-visits"] a').href = 'visits.html';
+                document.querySelector('[data-widget-id="kpi-clients"] a').href = 'clients.html';
+                document.querySelector('[data-widget-id="kpi-employees"] a').href = 'incentives.html';
+                document.querySelector('[data-widget-id="kpi-revenue"] a').href = 'todo.html';
+            } 
+            else if (flags.isPM) {
+                // Project Manager View
+                document.getElementById('kpi-visits-label').textContent = 'Active Projects';
+                document.getElementById('kpi-clients-label').textContent = 'My Clients';
+                document.getElementById('kpi-employees-label').textContent = 'Today\'s Meetings';
+                document.getElementById('kpi-revenue-label').textContent = 'Open Issues';
+
+                // Update Icons
+                document.querySelector('[data-widget-id="kpi-visits"] .kpi-icon-wrapper').innerHTML = '<i class="bi bi-kanban"></i>';
+                document.querySelector('[data-widget-id="kpi-employees"] .kpi-icon-wrapper').innerHTML = '<i class="bi bi-calendar-event"></i>';
+                document.querySelector('[data-widget-id="kpi-employees"] .kpi-icon-wrapper').style.background = '#f0f9ff';
+                document.querySelector('[data-widget-id="kpi-employees"] .kpi-icon-wrapper').style.color = '#0369a1';
+                
+                document.querySelector('[data-widget-id="kpi-revenue"] .kpi-icon-wrapper').innerHTML = '<i class="bi bi-exclamation-triangle"></i>';
+                document.querySelector('[data-widget-id="kpi-revenue"] .kpi-icon-wrapper').style.background = '#fef2f2';
+                document.querySelector('[data-widget-id="kpi-revenue"] .kpi-icon-wrapper').style.color = '#dc2626';
+
+                // Update Links
+                document.querySelector('[data-widget-id="kpi-visits"] a').href = 'projects.html';
+                document.querySelector('[data-widget-id="kpi-clients"] a').href = 'clients.html';
+                document.querySelector('[data-widget-id="kpi-employees"] a').href = 'meetings.html';
+                document.querySelector('[data-widget-id="kpi-revenue"] a').href = 'issues.html';
+            }
+            // Admin is the default from HTML
+        }
+
+        setupRoleKPIs();
+
         if (!isAdmin) {
             initAttendance().then(refreshDashboardKPIs);
         }
