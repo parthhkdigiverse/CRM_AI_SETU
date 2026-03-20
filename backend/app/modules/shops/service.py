@@ -133,7 +133,14 @@ class ShopService:
             query = query.filter(Shop.is_deleted == False)
         
         if owner_id:
-            query = query.filter(Shop.owner_id == owner_id)
+            from sqlalchemy import or_
+            query = query.filter(
+                or_(
+                    Shop.owner_id == owner_id,
+                    Shop.project_manager_id == owner_id,
+                    Shop.created_by_id == owner_id
+                )
+            )
         if source and source not in {"ALL", "all"}:
             query = query.filter(Shop.source == source)
             

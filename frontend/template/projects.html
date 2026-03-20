@@ -300,6 +300,79 @@
         .outcome-full-width i {
             font-size: 1.4rem;
         }
+
+        /* ── Training Sessions UI ── */
+        .training-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .training-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: #cbd5e1;
+        }
+
+        .training-card.completed::before {
+            background: #10b981;
+        }
+
+        .training-card.scheduled::before {
+            background: #3b82f6;
+        }
+
+        .training-card.cancelled::before {
+            background: #ef4444;
+        }
+
+        .training-card.pending {
+            border: 2px dashed #cbd5e1;
+            background: #f8fafc;
+        }
+
+        .training-card.pending::before {
+            display: none;
+        }
+
+        .session-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .completed .session-icon {
+            background: #ecfdf5;
+            color: #10b981;
+        }
+
+        .scheduled .session-icon {
+            background: #eff6ff;
+            color: #3b82f6;
+        }
+
+        .cancelled .session-icon {
+            background: #fef2f2;
+            color: #ef4444;
+        }
+
+        .pending .session-icon {
+            background: #f1f5f9;
+            color: #94a3b8;
+        }
     </style>
 </head>
 
@@ -313,34 +386,49 @@
                     <h5 class="fw-bold mb-0">Performance Queue</h5>
                     <!-- Drop DOWN for sorting -->
                     <div class="dropdown">
-                        <button class="btn btn-sm shadow-sm d-flex align-items-center gap-2 fw-bold" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.8rem; color: #334155; padding: 6px 14px; transition: all 0.2s;">
+                        <button class="btn btn-sm shadow-sm d-flex align-items-center gap-2 fw-bold" type="button"
+                            data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                            style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 0.8rem; color: #334155; padding: 6px 14px; transition: all 0.2s;">
                             <i class="bi bi-sliders2 text-primary"></i> View Options
                         </button>
-                        <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-3" style="width: 320px; border-radius: 16px; margin-top: 10px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
-                            
-                            <h6 class="fw-bold text-uppercase mb-2" style="font-size: 0.65rem; letter-spacing: 1px; color: #94a3b8;">Sort Pipeline</h6>
+                        <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-3"
+                            style="width: 320px; border-radius: 16px; margin-top: 10px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+
+                            <h6 class="fw-bold text-uppercase mb-2"
+                                style="font-size: 0.65rem; letter-spacing: 1px; color: #94a3b8;">Sort Pipeline</h6>
                             <div class="d-flex flex-column gap-2 mb-3">
-                                <button class="btn btn-sm w-100 text-start sort-option shadow-sm" onclick="applySort('id', 'desc', this)" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 8px; font-weight: 600;">
+                                <button class="btn btn-sm w-100 text-start sort-option shadow-sm"
+                                    onclick="applySort('id', 'desc', this)"
+                                    style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 8px; font-weight: 600;">
                                     <i class="bi bi-sort-numeric-down me-2"></i>Newest First (Highest ID)
                                 </button>
-                                <button class="btn btn-sm w-100 text-start sort-option" onclick="applySort('id', 'asc', this)" style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 500;">
+                                <button class="btn btn-sm w-100 text-start sort-option"
+                                    onclick="applySort('id', 'asc', this)"
+                                    style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 500;">
                                     <i class="bi bi-sort-numeric-up me-2"></i>Oldest First (Lowest ID)
                                 </button>
-                                <button class="btn btn-sm w-100 text-start sort-option" onclick="applySort('status', 'asc', this)" style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 500;">
+                                <button class="btn btn-sm w-100 text-start sort-option"
+                                    onclick="applySort('status', 'asc', this)"
+                                    style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 500;">
                                     <i class="bi bi-funnel me-2"></i>Stage: Lead ➔ Maintenance
                                 </button>
-                                <button class="btn btn-sm w-100 text-start sort-option" onclick="applySort('status', 'desc', this)" style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 500;">
+                                <button class="btn btn-sm w-100 text-start sort-option"
+                                    onclick="applySort('status', 'desc', this)"
+                                    style="background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 500;">
                                     <i class="bi bi-funnel-fill me-2"></i>Stage: Maintenance ➔ Lead
                                 </button>
                             </div>
 
                             <hr class="border-light my-3">
 
-                            <h6 class="fw-bold text-uppercase mb-2" style="font-size: 0.65rem; letter-spacing: 1px; color: #94a3b8;">Filter By PM</h6>
-                            <select id="pm-filter-select" class="form-select form-select-sm shadow-sm" onchange="applyPmFilter(this.value)" style="border-radius: 8px; font-weight: 500; color: #334155; border-color: #cbd5e1; cursor: pointer;">
+                            <h6 class="fw-bold text-uppercase mb-2"
+                                style="font-size: 0.65rem; letter-spacing: 1px; color: #94a3b8;">Filter By PM</h6>
+                            <select id="pm-filter-select" class="form-select form-select-sm shadow-sm"
+                                onchange="applyPmFilter(this.value)"
+                                style="border-radius: 8px; font-weight: 500; color: #334155; border-color: #cbd5e1; cursor: pointer;">
                                 <option value="ALL">All Project Managers</option>
                                 <option value="Unassigned">Unassigned Leads</option>
-                                </select>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -488,12 +576,62 @@
             </div>
         </div>
     </div>
+    <!-- 3 step training model -->
+    <div class="modal fade" id="trainingScheduleModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                <div class="modal-header border-0 pb-0"
+                    style="background: linear-gradient(135deg, #f8fafc, #eef2ff); padding: 24px;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                            <i class="bi bi-calendar-plus fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-1 text-dark">Schedule Training</h5>
+                            <p class="text-muted small mb-0 fw-medium" id="training-pm-name">Fetching PM availability...
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"
+                        style="margin-top: -20px;"></button>
+                </div>
+                <div class="modal-body p-4 bg-white">
+                    <input type="hidden" id="train-shop-id">
+                    <input type="hidden" id="train-pm-id">
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark"><i
+                                class="bi bi-calendar3 text-primary me-2"></i>Select Date</label>
+                        <input type="date" class="form-control form-control-lg border-2 shadow-sm" id="train-date"
+                            onchange="fetchTrainingSlots()" style="border-radius: 12px; font-size: 1rem;">
+                    </div>
+
+                    <label class="form-label fw-bold text-dark mb-2"><i
+                            class="bi bi-clock-history text-primary me-2"></i>Available Slots</label>
+                    <div id="train-slots-container" class="d-flex flex-wrap gap-2 mb-2">
+                        <div class="text-muted small w-100 text-center py-4 border rounded"
+                            style="background: #f8fafc; border-style: dashed !important;">Select a date to view slots
+                        </div>
+                    </div>
+                    <input type="hidden" id="train-selected-time">
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0 bg-white d-flex justify-content-between">
+                    <button class="btn btn-light fw-bold px-4 rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary fw-bold px-4 rounded-pill shadow-sm" id="train-submit-btn"
+                        onclick="submitTrainingSchedule()" disabled>
+                        <i class="bi bi-check2-circle me-2"></i>Book Session
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- --------------- -->
 
     <script src="../js/api.js"></script>
     <script src="../js/ui_components.js"></script>
     <script src="../js/auth.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/projects.js"></script>
+    <script src="../js/projects.js?v=3"></script>
     <script>
         // ========================================================
         // 🚀 SMART SCHEDULING ENGINE (Performance Hub Edition)
@@ -638,7 +776,7 @@
 
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
-            
+
             try {
                 const scheduledAt = new Date(`${date}T${time}:00`).toISOString();
 
@@ -646,20 +784,20 @@
                     method: 'POST',
                     body: { pm_id: parseInt(pmId), demo_scheduled_at: scheduledAt }
                 });
-                
+
                 const modalEl = document.getElementById('smartScheduleModal');
                 const modalInst = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
                 modalInst.hide();
-                
+
                 if (typeof loadHubData === 'function') {
-                    await loadHubData(); 
+                    await loadHubData();
                     if (typeof selectLead === 'function') {
                         selectLead(shopId); // This will now perfectly match the integer!
                     }
                 } else {
-                    window.location.reload(); 
+                    window.location.reload();
                 }
-                
+
             } catch (e) {
                 console.error("CRITICAL ERROR during scheduling:", e);
                 alert('Backend Error: ' + (e?.data?.detail || e?.message || JSON.stringify(e)));
@@ -668,6 +806,128 @@
                 btn.innerHTML = '<i class="bi bi-send-fill me-2 text-warning"></i> Confirm & Transfer';
             }
         };
+
+        // ========================================================
+        // 🚀 POST-SALES TRAINING SCHEDULING ENGINE
+        // ========================================================
+
+        window.openTrainingScheduleModal = (shopId) => {
+            const project = allProjects.find(p => p.id === shopId);
+            if (!project) return;
+
+            // Extract the PM assigned to this converted client
+            const pmId = project.project_manager_id || project.pm_id || project.owner_id;
+            const pmName = project.project_manager_name || project.pm_name || (project.project_manager && project.project_manager.name) || 'Assigned Manager';
+
+            if (!pmId) {
+                alert("No Project Manager assigned! Please assign one in the Clients tab first.");
+                return;
+            }
+
+            document.getElementById('train-shop-id').value = shopId;
+            document.getElementById('train-pm-id').value = pmId;
+            document.getElementById('training-pm-name').innerHTML = `Checking <strong>${pmName}'s</strong> Calendar`;
+
+            document.getElementById('train-selected-time').value = '';
+            document.getElementById('train-submit-btn').disabled = true;
+
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('train-date');
+            dateInput.value = today;
+            dateInput.min = today;
+
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('trainingScheduleModal')).show();
+            fetchTrainingSlots(); // Auto-fetch for today
+        };
+
+        window.fetchTrainingSlots = async () => {
+            const pmId = document.getElementById('train-pm-id').value;
+            const date = document.getElementById('train-date').value;
+            const container = document.getElementById('train-slots-container');
+
+            document.getElementById('train-selected-time').value = '';
+            document.getElementById('train-submit-btn').disabled = true;
+
+            if (!pmId || !date) return;
+
+            container.innerHTML = '<div class="w-100 text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
+
+            try {
+                const response = await window.ApiClient.request(`/users/${pmId}/availability?date=${date}`, { method: 'GET' });
+                const slots = response.slots || [];
+
+                if (!slots.length) {
+                    container.innerHTML = '<div class="text-muted small w-100 text-center py-3 border rounded" style="background: #fef2f2; border-color: #fecaca !important; color: #ef4444 !important;">No working hours configured.</div>';
+                    return;
+                }
+
+                let html = '';
+                slots.forEach(slot => {
+                    if (slot.hour24 >= 18 || slot.hour24 === 13) return; // Skip overtime and lunch
+
+                    const timeValue24 = String(slot.hour24).padStart(2, '0') + ':00';
+                    const displayLabel = slot.hour24 > 12 ? `${slot.hour24 - 12}:00 PM` : (slot.hour24 === 12 ? '12:00 PM' : `${slot.hour24}:00 AM`);
+
+                    if (slot.is_available) {
+                        html += `<button class="btn btn-outline-primary train-slot-btn fw-bold px-3 py-2" style="border-radius: 10px;" onclick="selectTrainingSlot(this, '${timeValue24}')">${displayLabel}</button>`;
+                    } else {
+                        html += `<button class="btn btn-light text-muted fw-bold px-3 py-2" style="border-radius: 10px; text-decoration: line-through; opacity: 0.5;" disabled>${displayLabel}</button>`;
+                    }
+                });
+                container.innerHTML = html || '<div class="text-muted small w-100 text-center py-3">No suitable working hours found.</div>';
+            } catch (err) {
+                container.innerHTML = '<div class="text-danger small w-100 text-center py-3">Failed to load calendar.</div>';
+            }
+        };
+
+        window.selectTrainingSlot = (btnEl, timeValue) => {
+            document.querySelectorAll('.train-slot-btn').forEach(b => {
+                b.classList.remove('btn-primary', 'text-white', 'shadow-sm');
+                b.classList.add('btn-outline-primary');
+            });
+            btnEl.classList.remove('btn-outline-primary');
+            btnEl.classList.add('btn-primary', 'text-white', 'shadow-sm');
+
+            document.getElementById('train-selected-time').value = timeValue;
+            document.getElementById('train-submit-btn').disabled = false;
+        };
+
+        window.submitTrainingSchedule = async () => {
+            const shopId = document.getElementById('train-shop-id').value;
+            const date = document.getElementById('train-date').value;
+            const time = document.getElementById('train-selected-time').value;
+            const btn = document.getElementById('train-submit-btn');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Booking...';
+
+            try {
+                // 🚀 Send this straight to the Meetings table!
+                await window.ApiClient.request(`/clients/${shopId}/meetings`, {
+                    method: 'POST',
+                    body: {
+                        title: "Client Onboarding & Training",
+                        date: `${date}T${time}:00`,
+                        meeting_type: "Virtual",
+                        status: "OPEN",
+                        content: "Automated onboarding session scheduled directly from the Performance Hub."
+                    }
+                });
+
+                bootstrap.Modal.getInstance(document.getElementById('trainingScheduleModal')).hide();
+
+                // 🚀 Magic trick: Reload the timeline instantly to show the new node!
+                await loadHubData();
+                selectLead(parseInt(shopId));
+
+            } catch (e) {
+                alert('Failed to book session: ' + (e?.data?.detail || e?.message));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check2-circle me-2"></i>Book Session';
+            }
+        };
+
     </script>
 </body>
 

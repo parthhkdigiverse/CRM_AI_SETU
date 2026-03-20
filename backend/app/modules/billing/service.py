@@ -477,7 +477,11 @@ class BillingService:
         if shop_id is not None:
             q = q.filter(Bill.shop_id == shop_id)
 
-        return q.order_by(Bill.created_at.desc()).offset(skip).limit(limit).all()
+        from sqlalchemy.orm import joinedload
+        q = q.options(joinedload(Bill.created_by))
+        
+        bills = q.order_by(Bill.created_at.desc()).offset(skip).limit(limit).all()
+        return bills
 
     def verify_invoice(self, bill_id: int, current_user: User) -> Bill:
         """Verify invoice. Allowed roles are controlled by invoice settings."""
@@ -1203,28 +1207,25 @@ class BillingService:
             try:
                 from app.modules.shops.models import Shop
                 from app.modules.projects.models import Project
-                from app.core.enums import GlobalTaskStatus
-                
+                from app.core.enums import GlobalTaskStatus, MasterPipelineStage
+
                 shop = self.db.query(Shop).filter(Shop.id == bill.shop_id).first()
-                
-                # Safely update shop status if the enum exists
-                if shop and hasattr(GlobalTaskStatus, 'COMPLETED') and shop.status != GlobalTaskStatus.COMPLETED:
-                    shop.status = GlobalTaskStatus.COMPLETED
+
+                # Move shop to MAINTENANCE stage when invoice is dispatched
+                if shop and shop.pipeline_stage != MasterPipelineStage.MAINTENANCE:
+                    shop.pipeline_stage = MasterPipelineStage.MAINTENANCE
                     self.db.commit()
 
                     resolved_pm_id = shop.project_manager_id or current_user.id
                     existing_project = self.db.query(Project).filter(Project.client_id == bill.client_id).first()
-                    
-                    if not existing_project:
-                        # Fallback to a safe string if IN_PROGRESS enum doesn't exist
-                        safe_status = GlobalTaskStatus.IN_PROGRESS if hasattr(GlobalTaskStatus, 'IN_PROGRESS') else "IN_PROGRESS"
-                        
+
+                    if not existing_project and bill.client_id:
                         new_project = Project(
                             name=f"{shop.name} Implementation",
                             description=f"Project auto-created on deal close. Invoice: {bill.invoice_number}.",
                             client_id=bill.client_id,
                             pm_id=resolved_pm_id,
-                            status=safe_status,
+                            status=GlobalTaskStatus.IN_PROGRESS,
                         )
                         self.db.add(new_project)
                         self.db.commit()
@@ -1246,6 +1247,66 @@ class BillingService:
             "wa_url": None,
             "phonepe_payment_link": phonepe_payment_link,
         }
+
+    async def force_sent(self, bill_id: int, current_user: User) -> Bill:
+        """
+        Fallback bypass: Mark invoice as SENT and execute pipeline advancement
+        when the Meta WhatsApp API fails but the user sent it manually.
+        """
+        if not self._can_verify_or_send(current_user):
+            raise HTTPException(status_code=403, detail="You do not have permission to send invoices")
+            
+        bill = self.get_bill(bill_id)
+        if not bill:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        if bill.is_archived:
+            raise HTTPException(status_code=400, detail="Archived invoice cannot be sent")
+        if bill.invoice_status not in {"VERIFIED","SENT"}:
+            raise HTTPException(status_code=400, detail="Invoice must be VERIFIED before sending")
+
+        # Auto-create client if not already linked
+        if not bill.client_id:
+            client = self._ensure_client(bill, current_user)
+            bill.client_id = client.id
+
+        # UPDATE INVOICE STATUS
+        bill.invoice_status = "SENT"
+        bill.status = "PENDING"
+        bill.whatsapp_sent = True
+        self.db.commit()
+        self.db.refresh(bill)
+
+        # AUTO-CONVERT
+        if bill.shop_id:
+            try:
+                from app.modules.shops.models import Shop
+                from app.modules.projects.models import Project
+                from app.core.enums import GlobalTaskStatus, MasterPipelineStage
+
+                shop = self.db.query(Shop).filter(Shop.id == bill.shop_id).first()
+
+                # Move shop to MAINTENANCE stage when invoice is dispatched
+                if shop and shop.pipeline_stage != MasterPipelineStage.MAINTENANCE:
+                    shop.pipeline_stage = MasterPipelineStage.MAINTENANCE
+                    self.db.commit()
+
+                    resolved_pm_id = shop.project_manager_id or current_user.id
+                    existing_project = self.db.query(Project).filter(Project.client_id == bill.client_id).first()
+
+                    if not existing_project and bill.client_id:
+                        new_project = Project(
+                            name=f"{shop.name} Implementation",
+                            description=f"Project auto-created on deal close. Invoice: {bill.invoice_number}.",
+                            client_id=bill.client_id,
+                            pm_id=resolved_pm_id,
+                            status=GlobalTaskStatus.IN_PROGRESS,
+                        )
+                        self.db.add(new_project)
+                        self.db.commit()
+            except Exception as e:
+                print(f"⚠️ AUTO-CONVERT WARNING (FORCE-SENT): {str(e)}")
+
+        return bill
 
     def _ensure_client(self, bill: Bill, current_user: User) -> Client:
         """Find or create a Client record from the invoice's client snapshot."""
@@ -1273,6 +1334,7 @@ class BillingService:
             organization=bill.invoice_client_org,
             address=bill.invoice_client_address,
             owner_id=current_user.id,
+            referred_by_id=current_user.id,
             is_active=True,
         )
         self.db.add(client)

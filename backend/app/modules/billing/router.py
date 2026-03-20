@@ -395,6 +395,18 @@ async def send_invoice_whatsapp(
         "client_id": bill.client_id,
     }
 
+@router.patch("/{bill_id}/force-sent", response_model=BillRead)
+async def force_sent_invoice(
+    bill_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_access),
+) -> Any:
+    """
+    Fallback bypass: Mark invoice as SENT manually if Meta API fails.
+    Executes the identical pipeline advancement logic to ensure clients aren't stuck.
+    """
+    return await BillingService(db).force_sent(bill_id, current_user)
+
 
 
 # ──────────────────── Printable Invoice HTML ──────────────────────────────────

@@ -46,18 +46,37 @@ async function loadHubData() {
     document.getElementById('queue-list').innerHTML = `<div class="p-4 text-center text-muted"><div class="spinner-border spinner-border-sm mb-2"></div><br>Loading...</div>`;
     try {
         const res = await window.ApiClient.request('/shops/');
-        allProjects = (res || []).map(p => ({
-            ...p,
-            pipeline_stage: p.pipeline_stage || p.status || 'LEAD',
-            assignment_status: p.assignment_status || 'PENDING',
-            name: p.name || p.shop_name || 'Unnamed Client',
-            area_name: p.area_name || (p.area && p.area.name) || 'No Area Assigned',
-            contact_person: p.contact_person || 'No Contact Person',
-            phone: p.phone || 'No Phone'
-        }));
+        
+        allProjects = (res || []).map(p => {
+            let stage = p.pipeline_stage || p.status || 'LEAD';
+            
+            // 🚀 THE ULTIMATE FAILSAFE: If the backend says the deal is won, FORCE the UI to Maintenance!
+            if (p.status === 'CONVERTED' || p.status === 'COMPLETED' || stage === 'CONVERTED' || stage === 'COMPLETED') {
+                stage = 'MAINTENANCE';
+            }
+
+            return {
+                ...p,
+                pipeline_stage: stage,
+                assignment_status: p.assignment_status || 'PENDING',
+                name: p.name || p.shop_name || 'Unnamed Client',
+                area_name: p.area_name || (p.area && p.area.name) || 'No Area Assigned',
+                contact_person: p.contact_person || 'No Contact Person',
+                phone: p.phone || 'No Phone'
+            };
+        });
+        
         populatePmFilterDropdown();
         filterQueue();
-        if (allProjects.length > 0 && !currentProject) selectLead(allProjects[0].id);
+        
+        // Don't auto-switch if we are already viewing a specific project
+        if (allProjects.length > 0 && !currentProject) {
+            selectLead(allProjects[0].id);
+        } else if (currentProject) {
+            // Force a re-render of the currently selected lead to update its progress bar!
+            selectLead(currentProject.id); 
+        }
+        
     } catch (err) {
         console.error("Load failed:", err);
         document.getElementById('queue-list').innerHTML = `<div class="p-3 text-danger text-center">Failed to load data</div>`;
@@ -149,6 +168,7 @@ function renderQueue(projects) {
         if (p.pipeline_stage === "PITCHING") badgeColor = "bg-warning text-dark";
         if (p.pipeline_stage === "NEGOTIATION") badgeColor = "bg-info text-dark";
         if (p.pipeline_stage === "DELIVERY") badgeColor = "bg-success";
+        if (p.pipeline_stage === "MAINTENANCE") badgeColor = "bg-dark";
 
         const needsAccept = (p.pipeline_stage === 'LEAD' && p.assignment_status !== 'ACCEPTED');
         const acceptBadge = needsAccept ? `<span class="badge bg-danger rounded-pill" style="font-size:0.6rem;"><i class="bi bi-lightning-charge-fill"></i> Claim</span>` : '';
@@ -251,6 +271,12 @@ function renderActionCenter(project) {
                         <p class="text-muted mb-4">This deal is won. Click below to generate an invoice and collect payment.</p>
                         <a href="billing.html?close_shop_id=${project.id}" class="btn btn-success px-5 fw-bold"><i class="bi bi-currency-rupee me-2"></i>Generate Invoice</a>
                     </div>`;
+    } else if (project.pipeline_stage === "MAINTENANCE") {
+        actionContainer.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-success mb-3" role="status"></div>
+                        <h5 class="fw-bold text-muted">Loading Live Billing Tracker...</h5>
+                    </div>`;
     } else {
         actionContainer.innerHTML = `<div class="text-center py-4"><h4 class="fw-bold">${project.pipeline_stage} Stage</h4></div>`;
     }
@@ -293,10 +319,15 @@ async function loadVisitHistory(shopId) {
         }
 
         // 🚀 OVERRIDE THE UI: If an invoice exists, morph the Action Center into the Live Tracker!
+        // FIX: We now check for DELIVERY *OR* MAINTENANCE
         if (currentProject && currentProject.pipeline_stage === "DELIVERY" && invoices.length > 0) {
-            // Sort to ensure we grab the absolute latest invoice
             const sortedInvs = [...invoices].sort((a, b) => new Date(b.created_at || new Date()) - new Date(a.created_at || new Date()));
             updateActionCenterForExistingInvoice(sortedInvs[0]);
+        } 
+        else if (currentProject && currentProject.pipeline_stage === "MAINTENANCE") {
+            // NOTE: We will hook this up to an actual /meetings API call in the next step.
+            // For now, we pass an empty array to show the "Schedule Session 1" UI!
+            renderTrainingTracker(currentProject, []); 
         }
 
         let totalInteractions = visits.length + invoices.length;
@@ -872,6 +903,175 @@ function updateActionCenterForExistingInvoice(inv) {
                     Open Billing Dashboard <i class="bi bi-arrow-right ms-2"></i>
                 </button>
             </div>
+        </div>
+    `;
+
+    actionContainer.innerHTML = html;
+}
+
+// 🚀 NEW: Post-Sales Training & Onboarding Dashboard
+function renderTrainingTracker(project, meetings = []) {
+    const actionContainer = document.querySelector('.action-center');
+    if (!actionContainer) return;
+
+    // 1. Dynamically fetch the Assigned PM
+    const pmName = project.project_manager_name || project.pm_name || 
+                  (project.project_manager && (project.project_manager.name || project.project_manager.full_name)) || 
+                  'Admin / Pending Assignment';
+
+    // 2. Sort meetings oldest to newest
+    const sortedMeetings = [...meetings].sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    // 3. Progress Math
+    const targetSessions = 3; 
+    let successCount = 0;
+    let scheduledCount = 0;
+    let nodes = [];
+
+    // Build timeline nodes based on actual meetings
+    sortedMeetings.forEach((m, idx) => {
+        if (m.status === 'RESOLVED') {
+            nodes.push({ num: idx + 1, label: 'Successful', color: '#10b981', icon: 'bi-check-lg', bg: '#ecfdf5', border: '#10b981' });
+            successCount++;
+        } else if (m.status === 'CANCELLED' || m.status === 'CANCEL') {
+            nodes.push({ num: idx + 1, label: 'Rescheduled', color: '#ef4444', icon: 'bi-x-lg', bg: '#fef2f2', border: '#ef4444' });
+        } else {
+            nodes.push({ num: idx + 1, label: 'Scheduled', color: '#3b82f6', icon: 'bi-clock', bg: '#eff6ff', border: '#3b82f6' });
+            scheduledCount++;
+        }
+    });
+
+    // Add "Pending" nodes to guarantee we show the path to 3 successes
+    let needed = targetSessions - successCount;
+    let pendingToAdd = Math.max(0, needed - scheduledCount);
+
+    for (let i = 0; i < pendingToAdd; i++) {
+        nodes.push({ num: nodes.length + 1, label: 'Pending', color: '#94a3b8', icon: 'bi-dash', bg: '#f8fafc', border: '#cbd5e1' });
+    }
+
+    const isFullyOnboarded = successCount >= targetSessions;
+
+    // 4. Generate the Progress Bar HTML
+    let stepperHtml = `
+        <div class="position-relative mb-5 mt-4 px-2">
+            <div class="position-absolute" style="top: 16px; left: 8%; right: 8%; height: 3px; background: #e2e8f0; z-index: 0;"></div>
+
+            <div class="d-flex justify-content-between position-relative" style="z-index: 1;">
+    `;
+
+    nodes.forEach(node => {
+        stepperHtml += `
+                <div class="text-center position-relative" style="flex: 1;">
+                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2 shadow-sm"
+                         style="width: 34px; height: 34px; background: ${node.bg}; color: ${node.color}; border: 2px solid ${node.border}; transition: all 0.3s;">
+                        <i class="bi ${node.icon} fw-bold"></i>
+                    </div>
+                    <div class="fw-bold text-uppercase" style="font-size: 0.65rem; color: ${node.color}; letter-spacing: 0.5px;">${node.label}</div>
+                    <div class="text-muted" style="font-size: 0.6rem; font-weight: 700;">Sess ${node.num}</div>
+                </div>
+        `;
+    });
+
+    stepperHtml += `
+            </div>
+        </div>
+    `;
+
+    // 5. Build the Full UI
+    let html = `
+        <div class="text-start p-4 rounded-4 shadow-sm" style="background: #ffffff; border: 1px solid #e2e8f0;">
+            <div class="d-flex justify-content-between align-items-center mb-2 pb-3 border-bottom">
+                <div>
+                    <h5 class="fw-bold mb-1" style="color: #0f172a;">
+                        <i class="bi bi-rocket-takeoff text-primary me-2"></i>Client Onboarding Tracker
+                    </h5>
+                    <div class="small text-muted fw-medium">
+                        <i class="bi bi-person-badge me-1"></i>Assigned Manager: <span class="text-dark fw-bold">${pmName}</span>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div class="badge ${isFullyOnboarded ? 'bg-success' : 'bg-primary'} bg-opacity-10 text-${isFullyOnboarded ? 'success' : 'primary'} border border-${isFullyOnboarded ? 'success' : 'primary'} px-3 py-2 rounded-pill" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        <i class="bi ${isFullyOnboarded ? 'bi-check-circle-fill' : 'bi-arrow-repeat'} me-1"></i>
+                        ${isFullyOnboarded ? 'ONBOARDING COMPLETE' : `${successCount} / ${targetSessions} SESSIONS DONE`}
+                    </div>
+                </div>
+            </div>
+
+            ${stepperHtml}
+
+            <div class="sessions-container mt-3">
+    `;
+
+    let sessionCounter = 1;
+    let hasPendingSchedule = false;
+
+    // 6. Render the List of Meetings
+    sortedMeetings.forEach((m) => {
+        const dateStr = new Date(m.date).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        
+        let statusClass = 'scheduled';
+        let icon = 'bi-calendar-event';
+        let statusBadge = `<span class="badge bg-primary bg-opacity-10 text-primary border border-primary"><i class="bi bi-clock me-1"></i>Scheduled</span>`;
+        
+        if (m.status === 'RESOLVED') {
+            statusClass = 'completed'; icon = 'bi-check-lg';
+            statusBadge = `<span class="badge bg-success text-white"><i class="bi bi-check2-all me-1"></i>Completed</span>`;
+        } else if (m.status === 'CANCELLED' || m.status === 'CANCEL') {
+            statusClass = 'cancelled'; icon = 'bi-x-lg';
+            statusBadge = `<span class="badge bg-danger text-white"><i class="bi bi-x-circle me-1"></i>Cancelled</span>`;
+        } else {
+            hasPendingSchedule = true;
+        }
+
+        html += `
+            <div class="training-card ${statusClass} shadow-sm">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="session-icon"><i class="bi ${icon}"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-1" style="color: #1e293b;">Session ${sessionCounter}: ${m.title || 'Product Training'}</h6>
+                            <div class="small text-muted"><i class="bi bi-camera-video me-1"></i>${m.meeting_type || 'Virtual'} • ${dateStr}</div>
+                        </div>
+                    </div>
+                    <div>${statusBadge}</div>
+                </div>
+            </div>
+        `;
+        sessionCounter++;
+    });
+
+    // 7. Render Next Available Slot
+    if (!isFullyOnboarded && !hasPendingSchedule) {
+        html += `
+            <div class="training-card pending d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="session-icon"><i class="bi bi-calendar-plus"></i></div>
+                    <div>
+                        <h6 class="fw-bold mb-1 text-dark">Session ${sessionCounter}: Pending Schedule</h6>
+                        <div class="small text-muted">Awaiting PM Availability</div>
+                    </div>
+                </div>
+                <button class="btn btn-primary fw-bold shadow-sm" onclick="openTrainingScheduleModal(${project.id})">
+                    <i class="bi bi-calendar-plus me-2"></i>Schedule Session
+                </button>
+            </div>
+        `;
+    }
+
+    // 8. Optional 4th+ Session
+    if (isFullyOnboarded && !hasPendingSchedule) {
+        html += `
+            <div class="text-center mt-4 pt-3 border-top">
+                <p class="text-muted small mb-2"><i class="bi bi-info-circle me-1"></i>Client has completed the mandatory 3 sessions.</p>
+                <button class="btn btn-outline-secondary btn-sm fw-bold rounded-pill px-4" onclick="openTrainingScheduleModal(${project.id})">
+                    <i class="bi bi-plus-lg me-1"></i>Schedule Optional Session ${sessionCounter}
+                </button>
+            </div>
+        `;
+    }
+
+    html += `
+            </div> 
         </div>
     `;
 
