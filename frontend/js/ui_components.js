@@ -129,13 +129,14 @@ window.renderSidebar = function (active) {
         }, 0);
     }
 
+    window.__lastSidebarActive = active;
     const roleName = String(role || '').toUpperCase();
     const fallbackPages = {
         ADMIN: ['*'],
-        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
-        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
-        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
-        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
+        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
+        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
+        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
         CLIENT: ['dashboard.html']
     };
     const effectivePolicy = window.__crmEffectiveAccessPolicy;
@@ -151,8 +152,7 @@ window.renderSidebar = function (active) {
     };
 
     const sbSection = (id, title, icon, items) => {
-        // Show all items regardless of canShowPage for a "Same like Admin" sidebar
-        const filteredItems = items; 
+        const filteredItems = items.filter(item => canShowPage(item.href));
         if (filteredItems.length === 0) return '';
         const isAnyActive = filteredItems.some(item => item.id === active);
         const isOpen = isAnyActive; // Auto-open if active item is inside
@@ -314,6 +314,7 @@ window.toggleSbSection = function (id) {
 // ─── TOP HEADER ───────────────────────────────────────────────────────
 window.injectTopHeader = function (pageTitle) {
     if (document.querySelector('.top-header')) return;
+    window.__lastPageTitle = pageTitle;
     const u = getUser();
     const role = (u?.role || '').replace(/_/g, ' ');
     const initials = window.getInitials(u?.name || u?.email || 'AD');
@@ -384,7 +385,7 @@ window.injectTopHeader = function (pageTitle) {
     <div class="top-header">
         <div class="top-header-left">
             <button class="btn btn-dark-soft d-lg-none me-1" onclick="toggleMobileSidebar()" style="width: 38px; height: 38px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.1); border-radius: 8px;">
-                <i class="bi bi-list" style="font-size: 1.4rem; color: #2563eb;"></i>
+                <i class="bi bi-list" style="font-size: 1.4rem; color: var(--primary);"></i>
             </button>
             ${logoHtml}
             <div class="nav-breadcrumb">
@@ -399,7 +400,7 @@ window.injectTopHeader = function (pageTitle) {
                     <button class="btn p-0 position-absolute text-muted search-btn" style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 10;" onclick="const val = document.getElementById('global-search-input').value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val);">
                         <i class="bi bi-search" style="color: var(--nav-text-muted);"></i>
                     </button>
-                    <input type="text" id="global-search-input" class="form-control" placeholder="Search..." style="padding-left: 38px; border-radius: 20px; height: 38px; background: rgba(37, 99, 235, 0.03); border: 1px solid rgba(37, 99, 235, 0.1); color: #1e40af; font-weight: 500;">
+                    <input type="text" id="global-search-input" class="form-control" placeholder="Search..." style="padding-left: 38px; border-radius: 20px; height: 38px; background: rgba(37, 99, 235, 0.03); border: 1px solid rgba(37, 99, 235, 0.1); color: var(--title-color); font-weight: 500;">
                     <div id="live-search-dropdown" class="search-results-dropdown"></div>
                 </div>
             </div>
@@ -413,7 +414,7 @@ window.injectTopHeader = function (pageTitle) {
 
             <!-- Add New Gradient Button -->
             <div class="dropdown d-none d-sm-block nav-add">
-                <button class="btn d-flex align-items-center gap-2 px-3 dropdown-toggle shadow-sm" type="button" id="addNewDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:13px; font-weight:700; border-radius: 10px; height: 40px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff !important; border: 1px solid rgba(255,255,255,0.2); padding: 10px 18px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
+                <button class="btn d-flex align-items-center gap-2 px-3 dropdown-toggle shadow-sm" type="button" id="addNewDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:13px; font-weight:700; border-radius: 10px; height: 40px; background: var(--accent-gradient); color: #ffffff !important; border: 1px solid rgba(255,255,255,0.2); padding: 10px 18px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
                     <i class="bi bi-plus-lg" style="color: #ffffff !important;"></i> <span style="color: #ffffff !important;">Add New</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.85rem; border-radius:12px; padding:8px; min-width:200px; background: var(--bg-surface); border: 1px solid var(--border) !important;">
@@ -423,7 +424,7 @@ window.injectTopHeader = function (pageTitle) {
 
             <!-- Notifications Bell -->
             <div class="dropdown">
-                <div class="position-relative d-flex align-items-center justify-content-center hover-hit-target" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer; width:40px; height:40px; border-radius: 50%; color: #2563eb; background: rgba(37, 99, 235, 0.05);">
+                <div class="position-relative d-flex align-items-center justify-content-center hover-hit-target" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer; width:40px; height:40px; border-radius: 50%; color: var(--primary); background: var(--primary-soft);">
                     <i class="bi bi-bell" style="font-size: 1.1rem;"></i>
                     ${alertsRedDot}
                 </div>
@@ -444,7 +445,7 @@ window.injectTopHeader = function (pageTitle) {
             <div class="d-flex align-items-center gap-2 ps-2 dropdown border-start ms-1" style="border-color: var(--border) !important;">
                 <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width:36px; height:36px; font-size:11px; border: 1px solid var(--border); background: var(--primary-soft); color: var(--primary);">${initials}</div>
                 <div class="d-flex align-items-center dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer;">
-                    <div class="d-none d-xl-block fw-bold mb-0 nav-uname" style="font-size:13px; line-height:1; color: #2563eb;">${u?.name || 'User'}</div>
+                    <div class="d-none d-xl-block fw-bold mb-0 nav-uname" style="font-size:13px; line-height:1; color: var(--primary);">${u?.name || 'User'}</div>
                 </div>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" aria-labelledby="profileDropdown" style="border-radius:12px; min-width:180px; font-size:0.85rem; background: var(--bg-surface); border: 1px solid var(--border) !important;">
                     <li class="px-2 pt-1 pb-2">
@@ -486,6 +487,29 @@ window.injectTopHeader = function (pageTitle) {
         window.checkPageAccess();
     }
 }
+
+// ─── AUTO-REFRESH UI ON PERMISSIONS CHANGE ──────────────────────────
+document.addEventListener('permissions-changed', () => {
+    console.log('UI Components: Permissions changed, refreshing sidebar and header...');
+    
+    // Re-render sidebar if container exists
+    const sbContainer = document.getElementById('sidebar');
+    if (sbContainer && window.renderSidebar && window.__lastSidebarActive) {
+        sbContainer.innerHTML = window.renderSidebar(window.__lastSidebarActive);
+    }
+    
+    // Re-render top header if breadcrumb exists
+    const topHeader = document.querySelector('.top-header');
+    if (topHeader) {
+        topHeader.remove(); // Remove old one
+        if (window.injectTopHeader && window.__lastPageTitle) {
+            window.injectTopHeader(window.__lastPageTitle);
+        }
+    }
+    
+    // Also update any quick-add items if the dropdown is open or stored
+    // (They are re-rendered as part of injectTopHeader)
+});
 
 window.getInitials = function (name) {
     if (!name) return '??';
@@ -1021,20 +1045,73 @@ window.updateHeaderContext = function () {
     const nameEls = document.querySelectorAll('.nav-uname');
     nameEls.forEach(el => el.textContent = u.name || u.username || 'User');
 
-    // 2. Update Dashboard/Page Greetings
+    const firstName = (u.name || u.username || 'User').split(' ')[0];
     const now = new Date();
     const hours = now.getHours();
-    let greeting = "Good Morning";
-    if (hours >= 12 && hours < 17) greeting = "Good Afternoon";
-    else if (hours >= 17) greeting = "Good Evening";
+    
+    // Determine period
+    let period = 'night';
+    if (hours < 12) period = 'morning';
+    else if (hours < 17) period = 'afternoon';
+    else if (hours < 21) period = 'evening';
+
+    // 16 Warm & Professional Motivational Greetings
+    const GREETINGS_DB = {
+        morning: [
+            { main: "Good Morning", sub: "A fresh day, a clean slate. Let's make progress that matters." },
+            { main: "Rise and Shine", sub: "The morning sun brings new opportunities. Seize them." },
+            { main: "New Beginnings", sub: "Every sunrise is an invitation to be your best self." },
+            { main: "Focused Start", sub: "Clarity in the first hours sets the tone for a productive day." }
+        ],
+        afternoon: [
+            { main: "Good Afternoon", sub: "Halfway through. Everything you do from here compounds." },
+            { main: "Keep Moving", sub: "The midday momentum is your biggest asset. Stay steady." },
+            { main: "Stay Diligent", sub: "Consistency now defines a successful finish. You've got this." },
+            { main: "Midday Pulse", sub: "Take a breath, refocus, and push through the peak of the day." }
+        ],
+        evening: [
+            { main: "Good Evening", sub: "The day's final stretch. Finish what you started." },
+            { main: "Strong Finish", sub: "A strong finish defines the day. You're almost there." },
+            { main: "Great Progress", sub: "Consistency in the final hours is what separates good from great." },
+            { main: "Steady Hands", sub: "Stay focused. The quality of your work tonight shows your character." }
+        ],
+        night: [
+            { main: "Working Late", sub: "Your commitment doesn't go unnoticed. Finish strong and rest well." },
+            { main: "Still at It", sub: "Dedication like yours moves the whole team forward." },
+            { main: "Late Session", sub: "The extra effort you put in tonight will show tomorrow's results." },
+            { main: "Good Night", sub: "You've given today everything. Log off knowing it was worth it." }
+        ]
+    };
+
+    const options = GREETINGS_DB[period];
+    const pick = options[Math.floor(Math.random() * options.length)];
 
     const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
-    // Handle multiple possible IDs used across different page versions
+    
+    // Update Premium Header (Commonly used IDs)
+    const premiumDateEl = document.getElementById('att-v2-date');
+    if (premiumDateEl) premiumDateEl.textContent = dateStr.toUpperCase();
+    
+    // Also populate Admin-specific date if it exists
+    const adminDateEl = document.getElementById('att-v2-date-admin');
+    if (adminDateEl) adminDateEl.textContent = dateStr.toUpperCase();
+    
+    const premiumGreetLineEl = document.getElementById('att-v2-greeting-line');
+    if (premiumGreetLineEl) {
+        // Use innerHTML safely if we want to preserve sub-elements, or just rebuild it
+        premiumGreetLineEl.innerHTML = `${pick.main}, <span class="header-name" id="att-v2-left-name">${firstName}</span>`;
+    }
+    
+    const motivationalEl = document.getElementById('att-v2-motivational-msg');
+    if (motivationalEl) {
+        motivationalEl.textContent = pick.sub;
+    }
+    
+    // Fallback for non-premium greeting IDs
     const greetingIds = ['dash-greeting', 'dash-greeting-v2', 'greetingUser'];
     greetingIds.forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.textContent = `${greeting}, ${u.name || 'User'}`;
+        if (el) el.textContent = `${pick.main}, ${firstName}`;
     });
 
     const dateIds = ['dash-date', 'dash-date-v2', 'dash-date-header'];
@@ -1070,26 +1147,16 @@ window.initAttendance = async function () {
     if (!widget) return Promise.resolve();
 
     widget.classList.remove('d-none');
+    
+    // Hide basic greeting to avoid duplicates
+    const basicHeader = document.querySelector('.dash-header-left');
+    if (basicHeader) basicHeader.classList.add('d-none');
 
     const u = window.ApiClient ? window.ApiClient.getCurrentUser() : null;
     if (!u) return Promise.resolve();
 
-    // 1. Populate Left Zone: Date + Greeting
-    const now = new Date();
-    const hrs = now.getHours();
-    let greeting = 'Good Morning';
-    if (hrs >= 12 && hrs < 17) greeting = 'Good Afternoon';
-    else if (hrs >= 17) greeting = 'Good Evening';
-
-    const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
-    const firstName = (u.name || 'User').split(' ')[0];
-
-    const dateEl        = document.getElementById('att-v2-date');
-    const greetLineEl   = document.getElementById('att-v2-greeting-line');
-    const leftNameEl    = document.getElementById('att-v2-left-name');
-    if (dateEl)      dateEl.textContent = dateStr;
-    if (greetLineEl) greetLineEl.textContent = greeting + ',';
-    if (leftNameEl)  leftNameEl.textContent = firstName;
+    // 1. Greeting & Name are now handled globally by updateHeaderContext()
+    // to ensure unique motivational messages are preserved.
 
     // 2. Populate Right Zone: Avatar + Name
     const nameEl   = document.getElementById('att-v2-name');
@@ -1157,7 +1224,7 @@ window.initAttendance = async function () {
         if (window._attTimer) clearInterval(window._attTimer);
         
         const tick = () => {
-            let totalSec = s.today_hours_secs || 0;
+            let totalSec = s.completed_hours_secs || 0;
             if (s.is_punched_in && s.last_punch_ts) {
                 const elapsed = Math.max(0, (Date.now() - s.last_punch_ts) / 1000);
                 totalSec += elapsed;
@@ -1172,7 +1239,7 @@ window.initAttendance = async function () {
             if (ss) ss.textContent = sec.toString().padStart(2, '0');
         };
 
-        if (s.is_punched_in || (s.today_hours_secs > 0)) {
+        if (s.is_punched_in || (s.completed_hours_secs > 0)) {
             tick();
             if (s.is_punched_in) {
                 window._attTimer = setInterval(tick, 1000);
@@ -1274,7 +1341,7 @@ window.checkPageAccess = function() {
     
     // Skip check for basic pages
     const path = window.location.pathname.split('/').pop() || 'index.html';
-    if (['index.html', 'login.html', 'dashboard.html', 'profile.html', 'notifications.html', 'search.html'].includes(path)) {
+    if (['index.html', 'login.html', 'dashboard.html', 'profile.html', 'notifications.html', 'search.html', 'employees.html'].includes(path)) {
         return;
     }
 
@@ -1283,10 +1350,10 @@ window.checkPageAccess = function() {
     if (roleName === 'ADMIN') return; // Admins see everything
 
     const fallbackPages = {
-        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
-        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
-        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
-        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html'],
+        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
+        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
+        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
         CLIENT: ['dashboard.html']
     };
 

@@ -1,12 +1,12 @@
 /* frontend/css/settings.css */
 
 .settings-section {
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 14px;
     padding: 24px;
     margin-bottom: 20px;
-    box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05);
+    box-shadow: var(--shadow-sm);
     display: none; /* Hide all by default for tab system */
 }
 
@@ -29,10 +29,10 @@
 .group-title {
     font-size: 0.85rem;
     font-weight: 700;
-    color: #475569;
+    color: var(--text-1);
     margin: 24px 0 12px 0;
     padding-bottom: 8px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border);
 }
 
 .setting-row {
@@ -40,7 +40,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 0;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border);
 }
 
 .setting-row:last-child {
@@ -51,7 +51,7 @@
 .setting-label {
     font-size: 0.875rem;
     font-weight: 600;
-    color: #0f172a;
+    color: var(--text-1);
 }
 
 .setting-desc {
@@ -78,7 +78,7 @@
     position: absolute;
     cursor: pointer;
     inset: 0;
-    background: #e2e8f0;
+    background: var(--border);
     border-radius: 24px;
     transition: background 0.2s;
 }
@@ -109,8 +109,8 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: var(--bg-app);
+    border: 1px solid var(--border);
     border-radius: 14px;
     padding: 12px;
     position: sticky;
@@ -131,8 +131,8 @@
 }
 
 .settings-nav a:hover {
-    background: #f1f5f9;
-    color: #0f172a;
+    background: var(--bg-surface);
+    color: var(--text-1);
 }
 
 .settings-nav a.active {
@@ -164,12 +164,12 @@
 }
 
 .select-clean {
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     border-radius: 9px;
     padding: 8px 12px;
     font-size: 0.85rem;
-    color: #0f172a;
-    background: #fff;
+    color: var(--text-1);
+    background: var(--surface);
     cursor: pointer;
     transition: border-color 0.2s;
     outline: none;
@@ -197,8 +197,8 @@
 }
 
 .danger-zone {
-    border: 1px solid #fecaca;
-    background: #fff;
+    border: 1px solid var(--danger-light);
+    background: var(--surface);
     border-radius: 14px;
     padding: 24px;
 }
@@ -238,12 +238,12 @@
 
 .theme-card {
     cursor: pointer;
-    border: 2px solid #e2e8f0;
+    border: 2px solid var(--border);
     border-radius: 12px;
     padding: 12px;
     text-align: center;
     transition: all 0.2s ease;
-    background: #fff;
+    background: var(--surface);
     position: relative;
     overflow: hidden;
 }
@@ -254,8 +254,8 @@
 }
 
 .theme-card.active {
-    border-color: #2563eb;
-    background: #f8faff;
+    border-color: var(--primary);
+    background: var(--primary-soft);
 }
 
 .theme-card.active::after {
@@ -313,7 +313,7 @@
 .theme-label {
     font-size: 0.8rem;
     font-weight: 600;
-    color: #475569;
+    color: var(--text-2);
 }
 
 .theme-card.active .theme-label {

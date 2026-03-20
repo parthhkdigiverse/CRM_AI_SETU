@@ -25,4 +25,4 @@ def read_activity_logs(
         )
     
     logger = ActivityLogger(db)
-    return logger.get_logs(skip=skip, limit=limit)
+    return logger.get_logs(skip=skip, limit=limit, current_user=current_user)

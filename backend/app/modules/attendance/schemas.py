@@ -35,6 +35,8 @@ class PunchStatus(BaseModel):
     first_punch_in: Optional[datetime] = None
     first_punch_in_ts: Optional[float] = None  # Epoch milliseconds
     today_hours: float = 0.0
+    today_hours_secs: float = 0.0
+    completed_hours_secs: float = 0.0
     week_hours: float = 0.0
     month_hours: float = 0.0
 

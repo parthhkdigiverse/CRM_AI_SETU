@@ -107,9 +107,9 @@
     padding: 8px 16px 8px 42px;
     border: none;
     border-radius: 8px;
-    background-color: #F1F5F9;
+    background-color: var(--bg-app);
     font-size: 14px;
-    color: #334155;
+    color: var(--text-1);
     transition: all 0.2s;
 }
 
@@ -127,7 +127,7 @@
     position: relative;
     cursor: pointer;
     font-size: 18px;
-    color: #64748B;
+    color: var(--text-2);
     transition: color 0.2s;
     display: flex;
     align-items: center;
@@ -150,7 +150,7 @@
     height: 8px;
     background-color: #EF4444;
     border-radius: 50%;
-    border: 2px solid white;
+    border: 2px solid var(--surface);
 }
 
 .profile-dropdown {
@@ -169,7 +169,7 @@
 .avatar {
     font-weight: 600;
     font-size: 14px;
-    border: 2px solid white;
+    border: 2px solid var(--surface);
     box-shadow: var(--shadow-card);
 }
 

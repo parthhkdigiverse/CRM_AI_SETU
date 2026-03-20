@@ -143,7 +143,7 @@
         .kpi-value {
             font-size: 22px;
             font-weight: 800;
-            color: #1e40af; /* Blue value */
+            color: var(--title-color); /* Theme-aware blue */
             font-family: 'Inter', sans-serif;
         }
 
@@ -586,7 +586,7 @@
         .page-section-title {
             font-size: 28px;
             font-weight: 800;
-            color: #1e40af; /* Vibrant Blue */
+            color: var(--title-color); /* Theme-aware Blue */
             margin-bottom: 2px;
             letter-spacing: -0.02em;
         }
@@ -993,7 +993,183 @@
                 margin-top: 2px;
             }
         }
+        /* Standard alignment for Dashboard Overview */
+        .main-wrapper { padding-top: 0 !important; }
+
+        /* PREMIUM HEADER REDESIGN - ENHANCED PROPORTIONS */
+        .header-outer { 
+            border-radius: 20px; 
+            padding: 1px; 
+            background: linear-gradient(135deg, rgba(99,102,241,0.8), rgba(30,80,220,0.6), rgba(14,45,120,0.8)); 
+            margin-bottom: 2rem;
+            margin-top: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .header-inner { 
+            border-radius: 19px; 
+            background: linear-gradient(135deg, #0d1f5c, #102272, #0f1e6a, #0a1550); 
+            padding: 25px 35px; /* Reduced vertical padding */
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            position: relative; 
+            overflow: hidden; 
+            min-height: 160px; /* Reduced highly from 340px */
+        }
+        
+        .header-left { flex: 1; }
+        .header-date { 
+            font-size: 16px; 
+            font-weight: 600; 
+            color: rgba(255,255,255,0.5); 
+            letter-spacing: 0.12em; 
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        .header-greeting { 
+            font-size: 22px; 
+            color: #fff; 
+            line-height: 1.2; 
+            font-weight: 400; 
+        }
+        .header-name { 
+            font-size: 38px; /* Reduced from 64px */
+            font-weight: 800;
+            background: linear-gradient(90deg,#c7d7ff,#a5b8ff,#dde6ff); 
+            background-clip: text;
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            display: inline-block;
+            margin-top: 4px;
+            letter-spacing: -0.02em;
+        }
+        
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulse-green 2s infinite;
+        }
+        @keyframes pulse-green {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .header-divider {
+            width: 1px;
+            height: 80px;
+            background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.2), transparent);
+            margin: 0 40px;
+        }
+
+        .header-right { 
+            flex-shrink: 0;
+            min-width: 380px; 
+        }
+        
+        .punch-user-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .punch-avatar-wrapper { position: relative; }
+        .punch-avatar {
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .online-dot {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border: 2px solid #0d1f5c;
+            border-radius: 50%;
+        }
+        .punch-name { font-size: 18px; font-weight: 600; color: #fff; }
+        .punch-status-badge {
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .punch-in-time {
+            margin-left: auto;
+            text-align: right;
+        }
+        .punch-in-label { font-size: 12px; color: rgba(255,255,255,0.5); }
+        .punch-in-val { font-size: 16px; font-weight: 600; color: #fff; }
+
+        .punch-bottom-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.05);
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .duration-label { font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 2px; }
+        .duration-timer { 
+            font-family: 'JetBrains Mono', 'DM Mono', monospace; 
+            font-size: 32px; 
+            font-weight: 300; 
+            color: #fff; 
+            letter-spacing: .06em; 
+        }
+        .colon { animation: colon 1s step-start infinite; }
+        @keyframes colon { 0%,49%{opacity:1} 50%,99%{opacity:.15} }
+
+        .pro-att-btn {
+            background: #fff;
+            color: #0d1f5c !important;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            line-height: 1.2;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .pro-att-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,255,255,0.2); }
+        .pro-att-btn.punch-in { background: #10b981 !important; color: #fff !important; }
+        .pro-att-btn.punch-out { background: linear-gradient(150deg, #b91c1c, #ef4444) !important; color: #fff !important; box-shadow: 0 4px 14px rgba(239,68,68,0.35); }
     </style>
+
+
 </head>
 
 <body class="bg-light">
@@ -1002,61 +1178,68 @@
         <div class="flex-grow-1 main-wrapper">
             <div class="page-content mx-auto">
                 <!-- Header Section -->
-                <div class="dash-header d-flex align-items-center justify-content-between flex-wrap gap-4 mb-4">
-                    <div class="dash-header-left">
-                        <div class="dash-date-text" id="dash-date">--</div>
-                        <div class="dash-greeting" id="dash-greeting">Good Afternoon, User</div>
-                        <div class="dash-live-dot">Live</div>
-                    </div>
-
-                    <!-- Attendance Widget (Professional Two-Zone) -->
-                    <div id="employee-header-widget" class="pro-att-widget d-none">
-                        <!-- Left Zone: Date + Greeting -->
-                        <div class="pro-att-left">
-                            <div class="pro-att-date" id="att-v2-date">--</div>
-                            <div class="pro-att-greeting-line" id="att-v2-greeting-line">Good Evening,</div>
-                            <div class="pro-att-name punched-out" id="att-v2-left-name">User</div>
-                            <div class="pro-att-live-badge offline" id="att-v2-live-badge">
-                                <span class="pro-att-pulse-dot" id="att-v2-pulse" style="display:none;"></span>
-                                <span id="att-v2-live-text">Offline</span>
-                            </div>
+                <!-- Premium Header Section -->
+                <div class="header-outer" id="employee-header-widget">
+                  <div class="header-inner">
+                
+                    <!-- LEFT: Greeting & Motivation -->
+                    <div class="header-left d-flex flex-column align-items-start flex-grow-1">
+                      <div class="header-greeting mb-0" id="att-v2-greeting-line" style="font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800; letter-spacing: -0.02em; text-shadow: 0 2px 10px rgba(0,0,0,0.15);">
+                        Good Afternoon, <span class="header-name" id="att-v2-left-name" style="background: linear-gradient(90deg, #c7d7ff, #e0e7ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">User</span>
+                      </div>
+                      <div id="att-v2-motivational-msg" class="header-sub-greeting" style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500; opacity: 0.7; margin-top: 8px; max-width: 500px; line-height: 1.5;">
+                        Make today count.
+                      </div>
+                      
+                      <!-- Employee Status Zone (Shown only when NOT an admin) -->
+                      <div id="employee-status-zone" class="mt-4">
+                        <div class="header-date" id="att-v2-date" style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; opacity: 0.5; text-transform: uppercase;">--</div>
+                        <div class="live-badge mt-2" id="att-v2-live-badge">
+                          <span class="live-dot" id="att-v2-pulse"></span> <span id="att-v2-live-text">LIVE</span>
                         </div>
-
-                        <!-- Vertical Separator -->
-                        <div class="pro-att-sep"></div>
-
-                        <!-- Right Zone: Profile + Punch Info -->
-                        <div class="pro-att-right">
-                            <div class="pro-att-user-row">
-                                <div class="pro-att-avatar-wrap">
-                                    <div class="pro-att-avatar" id="att-v2-avatar">--</div>
-                                    <div class="pro-att-status-dot offline" id="att-v2-status-dot"></div>
-                                </div>
-                                <div class="pro-att-user-info">
-                                    <div class="pro-att-user-name" id="att-v2-name">User Name</div>
-                                    <div class="pro-att-punch-badge out" id="att-v2-badge">Not Punched</div>
-                                </div>
-                            </div>
-                            <div class="pro-att-bottom-row">
-                                <div class="pro-att-info-cells">
-                                    <div class="pro-att-info-cell">
-                                        <div class="pro-att-info-label">Punch In</div>
-                                        <div class="pro-att-info-val" id="att-v2-first-in">--:--</div>
-                                    </div>
-                                    <div class="pro-att-info-cell">
-                                        <div class="pro-att-info-label">Duration</div>
-                                        <div class="pro-att-timer-val">
-                                            <span id="att-v2-hh">--</span><span class="att-sep">:</span><span id="att-v2-mm">--</span><span class="att-sep">:</span><span id="att-v2-ss">--</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button id="header-punch-btn-new" class="pro-att-btn punch-in">
-                                    Punch<br>In
-                                </button>
-                            </div>
-                        </div>
+                      </div>
                     </div>
+                
+                    <div class="header-divider" id="header-divider"></div>
+                
+                    <!-- RIGHT: Status (for Admin) or Punch Card (for Employee) -->
+                    <div class="header-right" id="punch-card-container">
+                      <!-- Admin Status Zone (Shown only for Admins) -->
+                      <div id="admin-status-zone" class="d-none text-end d-flex flex-column align-items-end gap-3">
+                         <div class="header-date mb-0" id="att-v2-date-admin" style="font-size: 10px; opacity: 0.4; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">--</div>
+                         <div class="live-badge d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill" style="background: rgba(74, 222, 128, 0.08); border: 1px solid rgba(74, 222, 128, 0.2); color: #4ade80; font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">
+                            <span class="live-dot" style="width: 7px; height: 7px; background: #4ade80; border-radius: 50%; box-shadow: 0 0 10px #4ade80;"></span>
+                            <span>LIVE</span>
+                         </div>
+                      </div>
+                      <div class="punch-user-row">
+                        <div class="punch-avatar-wrapper">
+                            <div class="punch-avatar" id="att-v2-avatar">--</div>
+                            <span class="online-dot" id="att-v2-status-dot"></span>
+                        </div>
+                        <div class="punch-name-col">
+                          <div class="punch-name" id="att-v2-name">User Name</div>
+                          <div class="punch-status-badge" id="att-v2-badge">Not Punched</div>
+                        </div>
+                        <div class="punch-in-time">
+                          <div class="punch-in-label">In at</div>
+                          <div class="punch-in-val" id="att-v2-first-in">--:--</div>
+                        </div>
+                      </div>
+                      <div class="punch-bottom-row">
+                        <div class="duration-box">
+                          <div class="duration-label">Duration</div>
+                          <div class="duration-timer" id="att-v2-timer">
+                            <span id="att-v2-hh">00</span><span class="colon">:</span><span id="att-v2-mm">00</span><span class="colon">:</span><span id="att-v2-ss">00</span>
+                          </div>
+                        </div>
+                        <button class="pro-att-btn" id="header-punch-btn-new">Punch<br>Out</button>
+                      </div>
+                    </div>
+                
+                  </div>
                 </div>
+
 
 
 
@@ -1394,6 +1577,41 @@
 
         document.getElementById('sidebar').innerHTML = renderSidebar('dashboard');
         injectTopHeader('Overview');
+
+        // ── Adjust Header based on Role (Greeting Redesign) ──
+        if (isAdmin) {
+            const employeeStatus = document.getElementById('employee-status-zone');
+            if (employeeStatus) employeeStatus.classList.add('d-none');
+            
+            const divider = document.getElementById('header-divider');
+            if (divider) divider.style.setProperty('display', 'none', 'important');
+            
+            const adminStatus = document.getElementById('admin-status-zone');
+            if (adminStatus) adminStatus.classList.remove('d-none');
+            
+            // Hide ALL punch block contents for a clean Admin view
+            const punchContainer = document.getElementById('punch-card-container');
+            if (punchContainer) {
+                // Hide children that are NOT the admin-status-zone
+                Array.from(punchContainer.children).forEach(child => {
+                    if (child.id !== 'admin-status-zone') {
+                        child.classList.add('d-none');
+                    }
+                });
+                // Remove background/border from the container for admins to make it transparent
+                punchContainer.style.background = 'none';
+                punchContainer.style.border = 'none';
+                punchContainer.style.boxShadow = 'none';
+            }
+        } else {
+            // Ensure employee status is shown
+            const employeeStatus = document.getElementById('employee-status-zone');
+            if (employeeStatus) employeeStatus.classList.remove('d-none');
+            
+            // Ensure admin status is hidden
+            const adminStatus = document.getElementById('admin-status-zone');
+            if (adminStatus) adminStatus.classList.add('d-none');
+        }
 
         async function refreshDashboardKPIs() {
             try {
@@ -2069,39 +2287,50 @@
 
                     // Update KPIs (with null guards since non-admin dashboard may differ)
                     // Update KPIs (with null guards since non-admin dashboard may differ)
+                    const flags = getRoleFlags(currentUser?.role);
+                    
+                    // Card 1: Visits / Active Projects
                     const kpiLeads = document.getElementById('kpi-leads');
+                    const val1 = flags.isPM ? stats.ongoing_projects : stats.total_visits;
+                    if (kpiLeads) kpiLeads.textContent = (val1 || 0).toLocaleString('en-IN');
                     const kpiLeadsTrend = document.getElementById('kpi-leads-trend');
-                    const kpiRevenue = document.getElementById('kpi-revenue');
-                    const kpiRevenueTrend = document.getElementById('kpi-revenue-trend');
+                    if (kpiLeadsTrend) kpiLeadsTrend.innerHTML = formatTrend(flags.isPM ? stats.projects_mom_pct : stats.visits_mom_pct || 0);
+
+                    // Card 2: Clients / Leads
                     const kpiClients = document.getElementById('kpi-clients');
-                    const kpiClientsTrend = document.getElementById('kpi-clients-trend');
-                    const kpiEmployees = document.getElementById('kpi-employees');
-                    const kpiEmployeesTrend = document.getElementById('kpi-employees-trend');
-                    const kpiUserPresence = document.getElementById('kpi-user-presence');
-                    const kpiUserPresenceTrend = document.getElementById('kpi-user-presence-trend');
-
-                    if (kpiLeads) kpiLeads.textContent = (stats.total_visits || 0).toLocaleString('en-IN');
-                    if (kpiLeadsTrend) kpiLeadsTrend.innerHTML = formatTrend(stats.visits_mom_pct || 0);
-
-                    // Format Revenue (e.g. 24.5L, 300K, etc.)
-                    const rev = stats.revenue_mtd || 0;
-                    let revText = '₹' + rev.toLocaleString('en-IN');
-                    if (rev >= 100000) {
-                        revText = '₹' + (rev / 100000).toFixed(1) + 'L';
-                    } else if (rev >= 1000) {
-                        revText = '₹' + (rev / 1000).toFixed(1) + 'K';
-                    }
-                    if (kpiRevenue) kpiRevenue.textContent = revText;
-                    if (kpiRevenueTrend) kpiRevenueTrend.innerHTML = formatTrend(stats.revenue_mom_pct || 0);
-
                     if (kpiClients) kpiClients.textContent = (stats.active_clients || 0).toLocaleString('en-IN');
+                    const kpiClientsTrend = document.getElementById('kpi-clients-trend');
                     if (kpiClientsTrend) kpiClientsTrend.innerHTML = formatTrend(stats.clients_mom_pct || 0);
 
-                    if (kpiEmployees) kpiEmployees.textContent = (stats.employees_present || 0).toLocaleString('en-IN');
+                    // Card 3: Employees / Incentive / Meetings
+                    const kpiEmployees = document.getElementById('kpi-employees');
+                    let val3 = stats.employees_present;
+                    let val3Suffix = '';
+                    if (flags.isSales || flags.isTelesales) {
+                        val3 = stats.total_incentive;
+                        val3Suffix = '₹';
+                    } else if (flags.isPM) {
+                        val3 = stats.meetings_today;
+                    }
+                    if (kpiEmployees) kpiEmployees.textContent = val3Suffix + (val3 || 0).toLocaleString('en-IN');
+                    const kpiEmployeesTrend = document.getElementById('kpi-employees-trend');
                     if (kpiEmployeesTrend) kpiEmployeesTrend.innerHTML = formatTrend(stats.presence_mom_pct || 0);
-                    
-                    if (kpiUserPresence) kpiUserPresence.textContent = (stats.employees_present || 0).toLocaleString('en-IN');
-                    if (kpiUserPresenceTrend) kpiUserPresenceTrend.innerHTML = formatTrend(stats.presence_mom_pct || 0);
+
+                    // Card 4: Revenue / Todos / Issues
+                    const kpiRevenue = document.getElementById('kpi-revenue');
+                    const kpiRevenueTrend = document.getElementById('kpi-revenue-trend');
+                    if (flags.isAdmin) {
+                        const rev = stats.revenue_mtd || 0;
+                        let revText = '₹' + rev.toLocaleString('en-IN');
+                        if (rev >= 100000) revText = '₹' + (rev / 100000).toFixed(1) + 'L';
+                        else if (rev >= 1000) revText = '₹' + (rev / 1000).toFixed(1) + 'K';
+                        if (kpiRevenue) kpiRevenue.textContent = revText;
+                        if (kpiRevenueTrend) kpiRevenueTrend.innerHTML = formatTrend(stats.revenue_mom_pct || 0);
+                    } else {
+                        const val4 = flags.isPM ? stats.open_issues : stats.pending_todos;
+                        if (kpiRevenue) kpiRevenue.textContent = (val4 || 0).toLocaleString('en-IN');
+                        if (kpiRevenueTrend) kpiRevenueTrend.innerHTML = '—';
+                    }
 
                     // Charts
                     initCharts(stats);
@@ -2290,11 +2519,27 @@
             const periodBadge = document.getElementById('period-context-badge');
             if (periodBadge) periodBadge.textContent = meta.badge;
 
-            // Update KPI labels
+            // Update KPI labels (Role-Aware)
+            const rolePrefixes = {
+                SALES: ['My Visits', 'My Leads', 'My Incentive', 'Pending Tasks'],
+                TELESALES: ['My Visits', 'My Leads', 'My Incentive', 'Pending Tasks'],
+                PROJECT_MANAGER: ['Active Projects', 'My Clients', 'Today\'s Meetings', 'Open Issues'],
+                ADMIN: ['Total Visits', 'Active Clients', 'Present Employees', 'Total Revenue']
+            };
+            const role = currentUser?.role || 'ADMIN';
+            const prefixes = rolePrefixes[role] || rolePrefixes.ADMIN;
+            
+            const suffixes = {
+                today: ' (Today)', week: ' (This Week)', month: ' (MTD)',
+                last_3_months: ' (3M)', last_6_months: ' (6M)',
+                this_year: ' (YTD)', last_year: ' (Last Yr)', all: ''
+            };
+            const suffix = suffixes[period] || '';
+
             var kpiIds = ['kpi-visits-label', 'kpi-clients-label', 'kpi-employees-label', 'kpi-revenue-label'];
             kpiIds.forEach(function (id, i) {
                 var el = document.getElementById(id);
-                if (el) el.textContent = meta.labels[i];
+                if (el) el.textContent = prefixes[i] + suffix;
             });
 
             updateFilterPills();

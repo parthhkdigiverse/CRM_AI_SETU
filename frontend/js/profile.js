@@ -84,65 +84,81 @@ function initAvatarUpload() {
  * ── Load profile data ───────────────────────────────────────────────────────
  */
 async function loadProfile() {
+    console.log('Profile: Loading started');
     const u = JSON.parse(sessionStorage.getItem('srm_user') || '{}');
-    let name = u?.name || u?.email || 'User';
-    const rawRole = u?.role || 'USER';
-    const roleLabel = rawRole.replace(/_/g, ' ');
     
-    // Fetch fresh data
     try {
-        const profile = await apiGet('/auth/profile');
-        if (profile) {
-            Object.assign(u, profile);
-            sessionStorage.setItem('srm_user', JSON.stringify(u));
+        let name = u?.name || u?.email || 'User';
+        const rawRole = u?.role || 'USER';
+        const roleLabel = rawRole.replace(/_/g, ' ');
+        
+        // Fetch fresh data
+        try {
+            const profile = await apiGet('/auth/profile');
+            if (profile) {
+                Object.assign(u, profile);
+                sessionStorage.setItem('srm_user', JSON.stringify(u));
+            }
+        } catch (e) { 
+            console.warn('Profile: Fresh fetch failed, using local data', e); 
         }
-    } catch (e) { console.warn('Using local profile data'); }
 
-    // Update Hero UI
-    const initials = window.getInitials(u.name || name);
-    const avatarImg = document.getElementById('profile-img');
-    const avatarInitials = document.getElementById('profile-initials');
-    
-    if (u.profile_img) {
-        if (avatarImg) {
-            avatarImg.src = u.profile_img;
-            avatarImg.style.display = 'block';
+        // Update Hero UI
+        const initials = window.getInitials(u.name || name);
+        const avatarImg = document.getElementById('profile-img');
+        const avatarInitials = document.getElementById('profile-initials');
+        
+        if (u.profile_img) {
+            if (avatarImg) {
+                avatarImg.src = u.profile_img;
+                avatarImg.style.display = 'block';
+            }
+            if (avatarInitials) avatarInitials.style.display = 'none';
+        } else {
+            if (avatarImg) avatarImg.style.display = 'none';
+            if (avatarInitials) {
+                avatarInitials.textContent = initials;
+                avatarInitials.style.display = 'block';
+            }
         }
-        if (avatarInitials) avatarInitials.style.display = 'none';
-    } else {
-        if (avatarImg) avatarImg.style.display = 'none';
-        if (avatarInitials) {
-            avatarInitials.textContent = initials;
-            avatarInitials.style.display = 'block';
+
+        if (document.getElementById('hero-name')) document.getElementById('hero-name').textContent = u.name || name;
+        if (document.getElementById('hero-role')) document.getElementById('hero-role').innerHTML = `<i class="bi bi-shield-check"></i> ${roleLabel}`;
+        if (document.getElementById('hero-email')) document.getElementById('hero-email').innerHTML = `<i class="bi bi-envelope me-1"></i>${u.email || '—'}`;
+
+        // Pre-fill Form (with existence checks)
+        const fields = {
+            'edit-name': u.name || '',
+            'edit-email': u.email || '',
+            'edit-phone': u.phone || '',
+            'edit-dept': u.department || roleLabel,
+            'edit-summary': u.summary || ''
+        };
+        for (const [id, val] of Object.entries(fields)) {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
         }
+        
+        // Social Links
+        if (u.social_links) {
+            if (u.social_links.linkedin && document.getElementById('edit-linkedin')) document.getElementById('edit-linkedin').value = u.social_links.linkedin;
+            if (u.social_links.twitter && document.getElementById('edit-twitter')) document.getElementById('edit-twitter').value = u.social_links.twitter;
+            if (u.social_links.github && document.getElementById('edit-github')) document.getElementById('edit-github').value = u.social_links.github;
+        }
+
+        // Account Info Rows
+        console.log('Profile: Rendering info and links');
+        renderAccountInfo(u, roleLabel);
+        renderQuickLinks(u);
+
+    } catch (err) {
+        console.error('Profile: Critical error during load', err);
+    } finally {
+        // Show content regardless of any non-fatal UI errors
+        console.log('Profile: Showing content container');
+        const content = document.getElementById('profile-content');
+        if (content) content.style.display = 'block';
     }
-
-    document.getElementById('hero-name').textContent = u.name || name;
-    document.getElementById('hero-role').innerHTML = `<i class="bi bi-shield-check"></i> ${roleLabel}`;
-    document.getElementById('hero-email').innerHTML = `<i class="bi bi-envelope me-1"></i>${u.email || '—'}`;
-
-    // Pre-fill Form
-    document.getElementById('edit-name').value = u.name || '';
-    document.getElementById('edit-email').value = u.email || '';
-    document.getElementById('edit-phone').value = u.phone || '';
-    document.getElementById('edit-dept').value = u.department || roleLabel;
-    document.getElementById('edit-summary').value = u.summary || '';
-    
-    // Social Links
-    if (u.social_links) {
-        if (u.social_links.linkedin) document.getElementById('edit-linkedin').value = u.social_links.linkedin;
-        if (u.social_links.twitter) document.getElementById('edit-twitter').value = u.social_links.twitter;
-        if (u.social_links.github) document.getElementById('edit-github').value = u.social_links.github;
-    }
-
-    // Account Info Rows
-    renderAccountInfo(u, roleLabel);
-    
-    // Stats - Removed as per user request
-    // renderStats(u);
-
-    // Quick Links
-    renderQuickLinks(u);
 }
 
 /**

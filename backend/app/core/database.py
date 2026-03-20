@@ -66,6 +66,8 @@ def init_db():
             cols = [c['name'] for c in inspector.get_columns('system_settings')]
             if 'access_policy' not in cols:
                 conn.execute(text("ALTER TABLE system_settings ADD COLUMN access_policy JSON DEFAULT '{}'"))
+            if 'policy_version' not in cols:
+                conn.execute(text("ALTER TABLE system_settings ADD COLUMN policy_version INTEGER DEFAULT 1"))
 
         # 5. Global Deletion Policy & Soft Delete Column Checks
         tables_to_check = [
@@ -82,10 +84,12 @@ def init_db():
                 if 'is_deleted' not in cols:
                     conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE"))
         
-        # 5. Initialize Delete Policy if missing
-        res = conn.execute(text("SELECT key FROM app_settings WHERE key = 'delete_policy'")).first()
-        if not res:
-            conn.execute(text("INSERT INTO app_settings (key, value) VALUES ('delete_policy', 'SOFT')"))
+        # 6. activity_logs (nullable user_id for system/synthetic logs)
+        if inspector.has_table("activity_logs"):
+            cols = inspector.get_columns('activity_logs')
+            target_col = next((c for c in cols if c['name'] == 'user_id'), None)
+            if target_col and not target_col.get('nullable', True):
+                conn.execute(text("ALTER TABLE activity_logs ALTER COLUMN user_id DROP NOT NULL"))
 
         conn.commit()
 

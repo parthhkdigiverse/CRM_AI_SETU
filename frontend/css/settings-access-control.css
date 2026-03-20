@@ -12,16 +12,16 @@
   min-width: 140px;
 }
 .role-chip {
-  background: #eff6ff;
-  color: #2563eb;
+  background: var(--primary-soft);
+  color: var(--primary);
   font-weight: 600;
   font-size: 0.92rem;
   border-radius: 8px;
   padding: 8px 18px;
   margin-bottom: 2px;
-  box-shadow: 0 1px 4px rgba(37,99,235,0.07);
+  box-shadow: 0 1px 4px rgba(99, 102, 241, 0.07);
   cursor: pointer;
-  border: 1px solid #bfdbfe;
+  border: 1px solid var(--primary-soft);
   transition: background 0.18s, color 0.18s, box-shadow 0.18s;
 }
 .role-chip:hover {
@@ -35,7 +35,7 @@
 .page-access-title {
   font-size: 0.93rem;
   font-weight: 700;
-  color: #475569;
+  color: var(--text-1);
   margin-bottom: 8px;
 }
 .page-chip-list {
@@ -45,13 +45,13 @@
   margin-bottom: 10px;
 }
 .page-chip {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-app);
+  color: var(--text-1);
   font-size: 0.89rem;
   font-weight: 500;
   border-radius: 6px;
   padding: 6px 14px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: background 0.13s, color 0.13s, border-color 0.13s;
 }
@@ -71,9 +71,9 @@
   border-radius: 7px;
   padding: 0 12px;
   font-size: 0.93rem;
-  color: #374151;
+  color: var(--text-1);
   outline: none;
-  background: #fff;
+  background: var(--surface);
   transition: border-color 0.13s, box-shadow 0.13s;
 }
 .add-page-input:focus {
@@ -101,7 +101,7 @@
 .matrix-title {
   font-size: 0.93rem;
   font-weight: 700;
-  color: #475569;
+  color: var(--text-1);
   margin-bottom: 8px;
 }
 .permission-matrix {
@@ -114,29 +114,29 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #9ca3af;
+  color: var(--text-3);
   padding: 8px 10px;
-  background: #fafafa;
-  border-bottom: 1px solid #f3f4f6;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
   text-align: left;
 }
 .permission-matrix th:not(:first-child) { text-align: center; }
 .permission-matrix td {
   padding: 9px 10px;
-  border-bottom: 1px solid #f9fafb;
+  border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 .permission-matrix tr:last-child td { border-bottom: none; }
 .permission-matrix tbody tr:hover td { background: #fafafa; }
-.matrix-action-name { font-size: 0.95rem; font-weight: 600; color: #374151; }
-.matrix-action-sub  { font-size: 0.82rem; color: #9ca3af; margin-top: 2px; }
+.matrix-action-name { font-size: 0.95rem; font-weight: 600; color: var(--text-1); }
+.matrix-action-sub  { font-size: 0.82rem; color: var(--text-3); margin-top: 2px; }
 .matrix-cell { display: flex; align-items: center; justify-content: center; }
 .matrix-toggle {
   width: 20px;
   height: 20px;
   border-radius: 6px;
-  border: 1.5px solid #d1d5db;
-  background: #fff;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -159,14 +159,14 @@
   flex-direction: column;
   gap: 16px;
   padding: 24px;
-  background: #f4f5f7;
+  background: var(--bg-app);
   min-height: 100%;
 }
 
 /* Section card */
 .ac-section {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -175,19 +175,19 @@
   align-items: center;
   justify-content: space-between;
   padding: 13px 18px;
-  background: #fafafa;
-  border-bottom: 1px solid #f3f4f6;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
 }
 .ac-section-title {
   font-size: 11.5px;
   font-weight: 700;
-  color: #374151;
+  color: var(--text-1);
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
 .ac-section-desc {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--text-3);
 }
 .ac-section-body { padding: 18px; }
 .ac-section-body--table { padding: 0; }
@@ -208,8 +208,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 9px 13px;
-  background: #f9fafb;
-  border-bottom: 1px solid #f3f4f6;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
 }
 
 /* Role badges */
@@ -247,9 +247,9 @@
   font-weight: 500;
   padding: 3px 8px;
   border-radius: 4px;
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-app);
+  color: var(--text-1);
+  border: 1px solid var(--border);
   cursor: pointer;
   transition: background 0.12s, color 0.12s, border-color 0.12s, opacity 0.15s, transform 0.15s;
   user-select: none;
@@ -317,8 +317,8 @@
   gap: 7px;
   padding: 7px 13px;
   border-radius: 8px;
-  border: 1.5px solid #e5e7eb;
-  background: #fff;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
   cursor: pointer;
   transition: all 0.13s;
   user-select: none;
@@ -329,8 +329,8 @@
   width: 16px;
   height: 16px;
   border-radius: 4px;
-  border: 1.5px solid #d1d5db;
-  background: #fff;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -385,8 +385,8 @@
   width: 18px;
   height: 18px;
   border-radius: 5px;
-  border: 1.5px solid #d1d5db;
-  background: #fff;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -408,8 +408,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 18px;
-  background: #fafafa;
-  border-top: 1px solid #f3f4f6;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
 }
 .ac-save-hint { font-size: 11.5px; color: #9ca3af; }
 .ac-save-btn {

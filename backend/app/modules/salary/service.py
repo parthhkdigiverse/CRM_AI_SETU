@@ -297,6 +297,7 @@ class SalaryService:
             raise HTTPException(status_code=400, detail="Only DRAFT slips can be confirmed")
 
         slip.status = "CONFIRMED"
+        slip.is_visible_to_employee = True
         slip.confirmed_by = confirmed_by_id
         slip.confirmed_at = datetime.now(UTC).date()
         self.db.commit()

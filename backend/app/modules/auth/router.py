@@ -326,39 +326,3 @@ async def logout(
             request=request
         )
     return {"message": "Logged out successfully"}
-
-# ── Access Policy (Admin) ─────────────────────────────────────────────────────
-
-@router.get("/access-policy")
-def get_access_policy(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Retrieve the global role-based access policy."""
-    settings_obj = db.query(SystemSettings).first()
-    if not settings_obj or not settings_obj.access_policy:
-        return {"page_access": {}, "feature_access": {}}
-    return settings_obj.access_policy
-
-@router.put("/access-policy")
-@router.post("/access-policy")
-def save_access_policy(
-    data: dict,
-    db: Session = Depends(get_db),
-    admin_user: User = Depends(RoleChecker([UserRole.ADMIN]))
-):
-    """Update the global role-based access policy (Admin only)."""
-    settings_obj = db.query(SystemSettings).first()
-    if not settings_obj:
-        settings_obj = SystemSettings(feature_flags={}, access_policy={})
-        db.add(settings_obj)
-    
-    settings_obj.access_policy = data
-    
-    # Flag JSON modified
-    from sqlalchemy.orm.attributes import flag_modified
-    flag_modified(settings_obj, "access_policy")
-    
-    db.commit()
-    db.refresh(settings_obj)
-    return settings_obj.access_policy

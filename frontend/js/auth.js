@@ -3,6 +3,32 @@
 // Config handled by ApiClient.initConfig() lazily or via explicit call
 if (window.ApiClient) window.ApiClient.initConfig();
 
+// Global fallback for feature access roles
+const FEATURE_ACCESS_FALLBACK = {
+    issue_create_roles: ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
+    issue_manage_roles: ['ADMIN', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES', 'SALES', 'TELESALES'],
+    invoice_creator_roles: ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER_AND_SALES'],
+    invoice_verifier_roles: ['ADMIN'],
+    leave_apply_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
+    leave_edit_own_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
+    leave_cancel_own_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
+    leave_manage_roles: ['ADMIN'],
+    salary_manage_roles: ['ADMIN'],
+    salary_view_all_roles: ['ADMIN'],
+    incentive_manage_roles: ['ADMIN'],
+    incentive_view_all_roles: ['ADMIN'],
+    employee_manage_roles: ['ADMIN'],
+};
+
+window.hasFeatureAccess = function(featureKey, roleInput) {
+    const roleName = String(roleInput || getUser()?.role || '').toUpperCase();
+    if (!roleName) return false;
+    const effective = window.__crmEffectiveAccessPolicy;
+    const featureAccess = effective?.feature_access || effective?.policy?.feature_access || FEATURE_ACCESS_FALLBACK;
+    const allowedRoles = featureAccess?.[featureKey] || FEATURE_ACCESS_FALLBACK[featureKey] || [];
+    return Array.isArray(allowedRoles) && allowedRoles.map(v => String(v).toUpperCase()).includes(roleName);
+};
+
 // Inject global theme styles (but NOT on the login page to avoid style degradation)
 const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/') || window.location.pathname === '';
 if (!isLoginPage) {
@@ -100,39 +126,16 @@ function requireAuth() {
     // --- ROLE BASED ROUTING GUARD ---
     const ROLE_PERMISSIONS_FALLBACK = {
         'ADMIN': ['*'],
-        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
-        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html'],
-        'PROJECT_MANAGER': ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html'],
-        'PROJECT_MANAGER_AND_SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html'],
-        'CLIENT': ['dashboard.html']
+        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
+        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
+        'PROJECT_MANAGER': ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        'PROJECT_MANAGER_AND_SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        'CLIENT': ['dashboard.html', 'projects.html', 'billing.html', 'feedback.html', 'profile.html']
     };
+
 
     window.__crmEffectiveAccessPolicy = window.__crmEffectiveAccessPolicy || null;
 
-    const FEATURE_ACCESS_FALLBACK = {
-        issue_create_roles: ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
-        issue_manage_roles: ['ADMIN', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES', 'SALES', 'TELESALES'],
-        invoice_creator_roles: ['ADMIN', 'SALES', 'TELESALES', 'PROJECT_MANAGER_AND_SALES'],
-        invoice_verifier_roles: ['ADMIN'],
-        leave_apply_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
-        leave_edit_own_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
-        leave_cancel_own_roles: ['SALES', 'TELESALES', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'],
-        leave_manage_roles: ['ADMIN'],
-        salary_manage_roles: ['ADMIN'],
-        salary_view_all_roles: ['ADMIN'],
-        incentive_manage_roles: ['ADMIN'],
-        incentive_view_all_roles: ['ADMIN'],
-        employee_manage_roles: ['ADMIN'],
-    };
-
-    window.hasFeatureAccess = function(featureKey, roleInput) {
-        const roleName = String(roleInput || getUser()?.role || '').toUpperCase();
-        if (!roleName) return false;
-        const effective = window.__crmEffectiveAccessPolicy;
-        const featureAccess = effective?.feature_access || effective?.policy?.feature_access || FEATURE_ACCESS_FALLBACK;
-        const allowedRoles = featureAccess?.[featureKey] || FEATURE_ACCESS_FALLBACK[featureKey] || [];
-        return Array.isArray(allowedRoles) && allowedRoles.map(v => String(v).toUpperCase()).includes(roleName);
-    };
 
     function getAllowedPagesForRole(role) {
         const roleName = (role || '').toUpperCase();
@@ -147,10 +150,11 @@ function requireAuth() {
         return ROLE_PERMISSIONS_FALLBACK[roleName] || [];
     }
 
-    function enforceRoleAccess(role) {
+    // Exported to window for use in syncAccessControl
+    window.enforceRoleAccess = function(role) {
         if (!role || role === 'ADMIN') return true;
-        const path = window.location.pathname.split('/').pop();
-        if (!path || path === 'index.html') return true;
+        const path = window.location.pathname.split('/').pop() || 'index.html';
+        if (path === 'index.html' || path === 'login.html') return true;
 
         const allowed = getAllowedPagesForRole(role);
         if (!allowed.includes(path) && !allowed.includes('*')) {
@@ -158,7 +162,7 @@ function requireAuth() {
             return false;
         }
         return true;
-    }
+    };
 
     // --- OPTIMISTIC UI ---
     // If we have a user in session, show the page IMMEDIATELY.
@@ -218,6 +222,9 @@ function requireAuth() {
             const el = document.getElementById('username-display');
             if (el) el.textContent = profile.name || 'User';
 
+            // Initial sync to set version
+            syncAccessControl(true);
+
             // Fetch and check for critical issues across the app
             if (typeof checkCriticalIssues === 'function') checkCriticalIssues();
         })
@@ -225,6 +232,74 @@ function requireAuth() {
             console.warn('Background auth check failed:', err);
             document.body.style.visibility = 'visible';
         });
+}
+
+// --- AUTOMATIC ACCESS SYNC ---
+async function syncAccessControl(isInitial = false) {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+        const response = await fetch(`${window.API}/users/access-policy/status`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) {
+            if (response.status === 401) logout();
+            return;
+        }
+        const status = await response.json();
+        
+        const cachedUser = getUser();
+        const cachedVersion = sessionStorage.getItem('policy_version');
+        
+        // Detect changes
+        const roleChanged = cachedUser && cachedUser.role !== status.role;
+        const policyChanged = cachedVersion && parseInt(cachedVersion) !== status.policy_version;
+        const deactivation = cachedUser && !status.is_active;
+
+        if (deactivation) {
+            alert('Your account has been deactivated. Logging out.');
+            logout();
+            return;
+        }
+
+        if (roleChanged || policyChanged || isInitial) {
+            sessionStorage.setItem('policy_version', status.policy_version);
+            
+            if (roleChanged || policyChanged) {
+                console.log('Access control update detected, refreshing permissions...');
+                
+                // Refetch full profile and policy
+                const profile = await window.ApiClient.getProfile();
+                const userData = { id: profile.id, name: profile.name || profile.email, email: profile.email, role: profile.role };
+                sessionStorage.setItem('srm_user', JSON.stringify(userData));
+
+                if (window.ApiClient && window.ApiClient.getEffectiveAccessPolicy) {
+                    const effective = await window.ApiClient.getEffectiveAccessPolicy();
+                    window.__crmEffectiveAccessPolicy = effective;
+                }
+
+                // Update UI: Dispatch event for SPA components to re-render
+                window.dispatchEvent(new CustomEvent('permissions-changed', { 
+                    detail: { role: userData.role, policy: window.__crmEffectiveAccessPolicy } 
+                }));
+                
+                // Re-enforce access for current page
+                if (window.enforceRoleAccess) {
+                    window.enforceRoleAccess(userData.role);
+                }
+                
+                if (typeof showToast === 'function') showToast('Permissions updated automatically', 'info');
+            }
+        }
+    } catch (e) {
+        console.warn('Access sync failed:', e);
+    }
+}
+
+// Set up background polling (every 30 seconds)
+if (!window.__accessSyncInterval) {
+    window.__accessSyncInterval = setInterval(() => syncAccessControl(), 30000);
 }
 
 

@@ -39,13 +39,16 @@ def update_settings(
         settings_obj = SystemSettings(feature_flags={"enable_soft_delete": True})
         db.add(settings_obj)
     
-    # Merge existing feature flags with new ones
-    current_flags = settings_obj.feature_flags or {}
-    new_flags = {**current_flags, **settings_in.feature_flags}
-    settings_obj.feature_flags = new_flags
+    if settings_in.feature_flags is not None:
+        current_flags = settings_obj.feature_flags or {}
+        settings_obj.feature_flags = {**current_flags, **settings_in.feature_flags}
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(settings_obj, "feature_flags")
     
-    from sqlalchemy.orm.attributes import flag_modified
-    flag_modified(settings_obj, "feature_flags")
+    if settings_in.access_policy is not None:
+        settings_obj.access_policy = settings_in.access_policy
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(settings_obj, "access_policy")
     
     db.commit()
     db.refresh(settings_obj)
@@ -57,10 +60,9 @@ def get_access_control(
     current_user: User = Depends(get_current_user)
 ):
     settings_obj = db.query(SystemSettings).first()
-    if not settings_obj or not settings_obj.feature_flags:
-        return {"rolePages": {}, "actionMatrix": {}}
-    ac = settings_obj.feature_flags.get("access_control", {})
-    return ac
+    if not settings_obj:
+        return {"page_access": {}, "feature_access": {}}
+    return settings_obj.access_policy or {}
 
 @router.post("/access-control")
 def set_access_control(
@@ -70,13 +72,12 @@ def set_access_control(
 ):
     settings_obj = db.query(SystemSettings).first()
     if not settings_obj:
-        settings_obj = SystemSettings(feature_flags={})
+        settings_obj = SystemSettings(feature_flags={}, access_policy={})
         db.add(settings_obj)
-    flags = settings_obj.feature_flags or {}
-    flags["access_control"] = data
-    settings_obj.feature_flags = flags
+    
+    settings_obj.access_policy = data
     from sqlalchemy.orm.attributes import flag_modified
-    flag_modified(settings_obj, "feature_flags")
+    flag_modified(settings_obj, "access_policy")
     db.commit()
     db.refresh(settings_obj)
     return JSONResponse(content=data)

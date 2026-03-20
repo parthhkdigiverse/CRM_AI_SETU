@@ -76,6 +76,26 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
 
+        .todo-table-container .table-responsive {
+            overflow-x: auto !important;
+            display: block;
+            width: 100%;
+        }
+        .table-premium {
+            min-width: 1000px;
+        }
+
+        @media (max-width: 575.98px) {
+            .btn-premium-action {
+                width: 100%;
+                justify-content: center;
+            }
+            .d-flex.gap-3 {
+                flex-direction: column;
+                width: 100%;
+            }
+        }
+
         .todo-row {
             transition: all 0.2s;
         }
@@ -141,18 +161,30 @@
         }
 
         .btn-my-tasks-new {
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-            color: #2563eb;
+            background: #fff;
+            color: #4f46e5;
             border: 1px solid #e2e8f0;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
 
+        .btn-my-tasks-new.active {
+            background: var(--primary) !important;
+            color: white !important;
+            border-color: var(--primary) !important;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important;
+        }
+
         .btn-my-tasks-new:hover {
-            background: #fff;
-            color: #1d4ed8;
-            border-color: #c7d2fe;
             transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.1);
+        }
+
+        @media (max-width: 767.98px) {
+            .btn-premium-action {
+                padding: 0 16px;
+                font-size: 0.85rem;
+                height: 40px;
+            }
         }
 
         .btn-my-tasks-new i {
@@ -447,12 +479,23 @@
         }
 
         function filterMyTasks() {
+            const btn = document.querySelector('.btn-my-tasks-new');
             const u = getUser();
-            if (!u) return;
+            if (!u || !btn) return;
+            
             const myId = u.name || u.email;
-            handleFilterChange('assignee', myId);
-            const sel = document.getElementById('filter-assignee');
-            if (sel) sel.value = myId;
+            
+            if (btn.classList.contains('active')) {
+                btn.classList.remove('active');
+                handleFilterChange('assignee', 'ALL');
+                const sel = document.getElementById('filter-assignee');
+                if (sel) sel.value = 'ALL';
+            } else {
+                btn.classList.add('active');
+                handleFilterChange('assignee', myId);
+                const sel = document.getElementById('filter-assignee');
+                if (sel) sel.value = myId;
+            }
         }
 
         function configureTodoAssignmentUi() {
@@ -595,7 +638,7 @@
                                 </div>
                                 ${isAdmin ? `<div class="filter-field">
                                     <label>Operator</label>
-                                    <select id="filter-assignee" class="form-select filter-select shadow-none border-light-subtle" onchange="handleFilterChange('assignee', this.value)">
+                                    <select id="filter-assignee" class="form-select filter-select shadow-none border-light-subtle" style="min-width: 200px;" onchange="handleFilterChange('assignee', this.value)">
                                         <option value="ALL">All Operators</option>
                                     </select>
                                 </div>` : ''}

@@ -451,21 +451,76 @@
         <div class="flex-grow-1 main-wrapper">
             <div class="page-content mx-auto" style="max-width: 1400px;">
                 <!-- Header Section -->
-                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                <div class="page-header-glass d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
-                        <h2 class="page-section-title">Employees Directory</h2>
-                        <p class="text-muted mb-0" style="font-size:0.93rem;">Directory, department management and attendance tracking.</p>
+                        <h2 class="page-section-title fw-bold mb-1">Employees Directory</h2>
+                        <p class="text-muted mb-0 small">Directory, department management and attendance tracking.</p>
                     </div>
                 </div>
 
-                <!-- Filter Panel Wrapper -->
-                <div id="filter-wrapper"></div>
+                <!-- Global Filter Panel -->
+                <div id="global-filter-panel" class="mb-4">
+                    <div class="filter-panel">
+                        <div class="filter-panel-head" id="emp-filter-panel-toggle">
+                            <div class="filter-panel-head-main">
+                                <div class="filter-panel-head-left">
+                                    <i class="bi bi-sliders2"></i>
+                                    Filters
+                                </div>
+                                <div class="filter-active-pills" id="emp-filter-pills"></div>
+                            </div>
+                            <div class="filter-panel-head-meta">
+                                <div class="text-muted small" id="emp-result-count"></div>
+                                <button class="filter-toggle-btn" id="emp-filter-toggle-btn" type="button">
+                                    <span id="emp-filter-toggle-label">Show</span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="filter-panel-body" id="emp-filter-panel-body">
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label>Department</label>
+                                    <select id="filter-department" class="form-select">
+                                        <option value="">All Departments</option>
+                                    </select>
+                                </div>
+                                <div class="filter-field">
+                                    <label>Role</label>
+                                    <select id="filter-role" class="form-select">
+                                        <option value="">All Roles</option>
+                                        <option value="ADMIN">Admin</option>
+                                        <option value="SALES">Sales</option>
+                                        <option value="TELESALES">Telesales</option>
+                                        <option value="PROJECT_MANAGER">Project Manager</option>
+                                        <option value="PROJECT_MANAGER_AND_SALES">PM & Sales</option>
+                                    </select>
+                                </div>
+                                <div class="filter-field">
+                                    <label>Status</label>
+                                    <select id="filter-status" class="form-select">
+                                        <option value="">All Status</option>
+                                        <option value="true">Active</option>
+                                        <option value="false">Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="filter-actions">
+                                <button class="btn-filter-reset" type="button" onclick="clearEmpFilters()">
+                                    <i class="bi bi-x-circle"></i>Clear
+                                </button>
+                                <button class="btn-filter-apply" type="button" onclick="loadEmployees()">
+                                    <i class="bi bi-check2"></i>Apply Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Employees Table -->
                 <div class="grid-card">
                     <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center gap-3">
-                            <h6 class="fw-bold mb-0" style="color:#334155;">All Employees</h6>
                             <span class="badge bg-primary rounded-pill px-3 py-2" id="employee-count-badge">0
                                 Employees</span>
                         </div>
@@ -481,12 +536,12 @@
                                         <input type="checkbox" class="form-check-input" id="emp-select-all"
                                             onclick="toggleAllEmployees(this)">
                                     </th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted">Employee</th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted">Department & Code</th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted">Role</th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted">Contact</th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted">Status</th>
-                                    <th class="py-3 px-4 text-end text-uppercase small fw-bold text-muted">Actions</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 200px;">Employee</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 150px;">Department & Code</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 150px;">Role</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 150px;">Contact</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 120px;">Status</th>
+                                    <th class="py-3 px-4 text-end text-uppercase small fw-bold text-muted" style="min-width: 150px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="employees-tbody">
@@ -573,7 +628,7 @@
 
 
                     <!-- Attendance History Card -->
-                    <div class="grid-card">
+                    <div class="grid-card" id="self-attendance-card" style="display:none;">
                         <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="fw-bold mb-0" style="color:#334155;">My Attendance History</h6>
@@ -581,6 +636,33 @@
                             </div>
                         </div>
                         <div class="p-4" id="employee-self-body">
+                            <div class="row g-3 align-items-end mb-4">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">Quick Filters</label>
+                                    <select id="self-attendance-quick-filter" class="form-select">
+                                        <option value="last_7_days">Last 7 Days</option>
+                                        <option value="today">Today</option>
+                                        <option value="yesterday">Yesterday</option>
+                                        <option value="this_week">This Week</option>
+                                        <option value="last_week">Last Week</option>
+                                        <option value="this_month">This Month</option>
+                                        <option value="last_month">Last Month</option>
+                                        <option value="custom">Custom Range</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">From</label>
+                                    <input type="date" id="self-attendance-start" class="form-control">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">To</label>
+                                    <input type="date" id="self-attendance-end" class="form-control">
+                                </div>
+                                <div class="col-md-3 d-flex gap-2">
+                                    <button class="btn btn-primary flex-grow-1" id="self-attendance-apply">Apply</button>
+                                    <button class="btn btn-outline-secondary" id="self-attendance-reset">Reset</button>
+                                </div>
+                            </div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div class="text-muted small" id="self-attendance-count">0 record(s)</div>
                                 <div class="fw-semibold" id="self-attendance-total-hours">Total: 0.00 hrs</div>
@@ -710,8 +792,8 @@
 
         const currentUser = getUser();
         const isAdmin = currentUser?.role === 'ADMIN';
-        const canManageEmployees = window.hasFeatureAccess ? window.hasFeatureAccess('employee_manage_roles') : isAdmin;
         let employeesData = [];
+        const canManageEmployees = window.hasFeatureAccess ? window.hasFeatureAccess('employee_manage_roles') : isAdmin;
 
         // Modals
         function openEditModal(id) {
@@ -735,13 +817,71 @@
         function closeEditModal() { document.getElementById('editEmployeeModal').classList.remove('show'); }
 
         ['editEmployeeModal'].forEach(id => {
-            document.getElementById(id).addEventListener('click', function (e) {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('click', function (e) {
                 if (e.target === this) this.classList.remove('show');
             });
         });
 
+        // Filter Toggle Logic
+        const empFilterPanelBody = document.getElementById('emp-filter-panel-body');
+        const empFilterToggleBtn = document.getElementById('emp-filter-toggle-btn');
+        const empFilterToggleLabel = document.getElementById('emp-filter-toggle-label');
+
+        if (document.getElementById('emp-filter-panel-toggle')) {
+            document.getElementById('emp-filter-panel-toggle').addEventListener('click', toggleEmpFilters);
+        }
+
+        function toggleEmpFilters() {
+            const isOpen = empFilterPanelBody.classList.toggle('open');
+            empFilterToggleBtn.classList.toggle('open', isOpen);
+            empFilterToggleLabel.textContent = isOpen ? 'Hide' : 'Show';
+        }
+
+        function updateEmpFilterBadge() {
+            const pills = document.getElementById('emp-filter-pills');
+            const dept = document.getElementById('filter-department')?.value;
+            const role = document.getElementById('filter-role');
+            const status = document.getElementById('filter-status');
+            
+            const items = [];
+            if (dept) items.push({ label: 'Dept: ' + dept, inputId: 'filter-department' });
+            if (role?.value) items.push({ label: role.options[role.selectedIndex].text, inputId: 'filter-role' });
+            if (status?.value) items.push({ label: status.options[status.selectedIndex].text, inputId: 'filter-status' });
+
+            if (pills) {
+                pills.innerHTML = items.map(item => `
+                    <span class="filter-pill">${item.label}
+                        <button class="filter-pill-remove" type="button" data-input="${item.inputId}" title="Remove">&times;</button>
+                    </span>`).join('');
+
+                pills.querySelectorAll('.filter-pill-remove').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        document.getElementById(btn.dataset.input).value = '';
+                        updateEmpFilterBadge();
+                        loadEmployees();
+                    });
+                });
+            }
+        }
+
+        function clearEmpFilters() {
+            document.getElementById('filter-department').value = '';
+            document.getElementById('filter-role').value = '';
+            document.getElementById('filter-status').value = '';
+            updateEmpFilterBadge();
+            loadEmployees();
+        }
+
+        ['filter-department', 'filter-role', 'filter-status'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', updateEmpFilterBadge);
+        });
+
         async function loadEmployees() {
             const tbody = document.getElementById('employees-tbody');
+            if (!tbody) return; // Guard against null if section is hidden
             tbody.innerHTML = `
                 <tr class="stagger-fade-in">
                     <td colspan="7" class="py-4">
@@ -760,11 +900,11 @@
                     </td>
                 </tr>`;
             
-            const department = document.getElementById('filter-department').value;
-            const role = document.getElementById('filter-role').value;
-            const status = document.getElementById('filter-status').value;
-            const start = document.getElementById('filter-start').value;
-            const end = document.getElementById('filter-end').value;
+            const department = document.getElementById('filter-department')?.value || '';
+            const role = document.getElementById('filter-role')?.value || '';
+            const status = document.getElementById('filter-status')?.value || '';
+            const start = document.getElementById('filter-start')?.value || '';
+            const end = document.getElementById('filter-end')?.value || '';
 
             let query = '';
             if (department) query += `&department=${encodeURIComponent(department)}`;
@@ -874,162 +1014,106 @@
             if (ssEl) ssEl.textContent = s < 10 ? '0' + s : s;
         }
 
+        // NOTE: Punch widget is removed from this page. It belongs on Dashboard.
         async function loadMyEmployeeInsights() {
             if (canManageEmployees) return;
-            const selfCard = document.getElementById('employee-self-card');
-            if (selfCard) selfCard.style.display = 'block';
+            
+            // Hide admin sections for non-admin without management permission
+            const directoryCard = document.querySelector('.grid-card:has(#employees-table-container)');
+            if (directoryCard) directoryCard.style.display = 'none';
+            const adminAttCard = document.getElementById('attendance-admin-card');
+            if (adminAttCard) adminAttCard.style.display = 'none';
+            const filterWrapper = document.getElementById('filter-wrapper');
+            if (filterWrapper) filterWrapper.style.display = 'none';
 
-            // Populate Left Zone: Date + Greeting
-            const u = getUser();
-            const now = new Date();
-            const hours = now.getHours();
-            let greeting = 'Good Morning';
-            if (hours >= 12 && hours < 17) greeting = 'Good Afternoon';
-            else if (hours >= 17) greeting = 'Good Evening';
+            const selfAttCard = document.getElementById('self-attendance-card');
+            if (selfAttCard) selfAttCard.style.display = 'block';
 
-            const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
-            const firstName = (u.name || 'User').split(' ')[0];
+            // Setup self-attendance filters
+            const startInput = document.getElementById('self-attendance-start');
+            const endInput = document.getElementById('self-attendance-end');
+            const quickFilter = document.getElementById('self-attendance-quick-filter');
 
-            const dateEl = document.getElementById('pro-att-self-date');
-            const greetLineEl = document.getElementById('pro-att-self-greeting-line');
-            const nameEl = document.getElementById('pro-att-self-name');
-            if (dateEl) dateEl.textContent = dateStr;
-            if (greetLineEl) greetLineEl.textContent = greeting + ',';
-            if (nameEl) nameEl.textContent = firstName;
-
-            // Populate Right Zone: Avatar + Name
-            const avatarEl = document.getElementById('pro-att-self-avatar');
-            const unameEl  = document.getElementById('pro-att-self-uname');
-            if (unameEl) unameEl.textContent = u.name || 'User';
-
-            // Avatar: try profile photo, fallback to initials
-            if (avatarEl) {
-                const initials = window.getInitials ? window.getInitials(u.name || u.email) : (u.name || u.email || 'U').substring(0, 2).toUpperCase();
-                if (u.photo_url) {
-                    avatarEl.innerHTML = `<img src="${u.photo_url}" alt="${initials}" onerror="this.parentElement.innerHTML='${initials}'">`;
-                } else {
-                    avatarEl.textContent = initials;
-                }
+            if (!startInput || !endInput || !quickFilter) {
+                console.warn("Self-attendance filter elements not found.");
+                return;
             }
 
-            try {
-                const status = await ApiClient.getPunchStatus();
-                
-                const punchBtn    = document.getElementById('self-main-punch-btn');
-                const punchBadge  = document.getElementById('pro-att-self-punch-badge');
-                const liveBadge   = document.getElementById('pro-att-self-live-badge');
-                const livePulse   = document.getElementById('pro-att-self-pulse');
-                const liveText    = document.getElementById('pro-att-self-live-text');
-                const statusDot   = document.getElementById('pro-att-self-dot');
-                const leftName    = document.getElementById('pro-att-self-name');
-                const firstInEl   = document.getElementById('pro-att-self-first-in');
-
-                if (selfProductionInterval) clearInterval(selfProductionInterval);
-                selfAccumulatedSeconds = status.today_hours_secs || 0;
-
-                if (status.is_punched_in) {
-                    // Button
-                    if (punchBtn) {
-                        punchBtn.innerHTML = 'Punch<br>Out';
-                        punchBtn.className = 'pro-att-btn punch-out';
-                    }
-                    // Punch badge
-                    if (punchBadge) {
-                        punchBadge.textContent = 'Punched In';
-                        punchBadge.className = 'pro-att-punch-badge in';
-                    }
-                    // Live badge
-                    if (liveBadge) liveBadge.className = 'pro-att-live-badge live';
-                    if (livePulse) livePulse.style.display = '';
-                    if (liveText)  liveText.textContent = 'Live';
-                    // Status dot
-                    if (statusDot) { statusDot.className = 'pro-att-status-dot online'; }
-                    // Name gradient
-                    if (leftName) leftName.className = 'pro-att-name punched-in';
-                    
-                    // Start/resume timer
-                    selfPunchStartTime = status.last_punch_ts || null;
-                    selfUpdateLiveTimer();
-                    selfProductionInterval = setInterval(selfUpdateLiveTimer, 1000);
-                } else {
-                    // Button
-                    if (punchBtn) {
-                        punchBtn.innerHTML = 'Punch<br>In';
-                        punchBtn.className = 'pro-att-btn punch-in';
-                    }
-                    // Punch badge
-                    if (punchBadge) {
-                        punchBadge.textContent = 'Not Punched';
-                        punchBadge.className = 'pro-att-punch-badge out';
-                    }
-                    // Live badge
-                    if (liveBadge) liveBadge.className = 'pro-att-live-badge offline';
-                    if (livePulse) livePulse.style.display = 'none';
-                    if (liveText)  liveText.textContent = 'Offline';
-                    // Status dot
-                    if (statusDot) { statusDot.className = 'pro-att-status-dot offline'; }
-                    // Name muted
-                    if (leftName) leftName.className = 'pro-att-name punched-out';
-                    
-                    selfPunchStartTime = null;
-                    selfUpdateLiveTimer(); // Show accumulation even when out
-                }
-
-                // Punch-in time
-                if (status.first_punch_in) {
-                    const firstDate = new Date(status.first_punch_in);
-                    const firstStr = firstDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-                    if (firstInEl) firstInEl.textContent = firstStr;
-                } else {
-                    if (firstInEl) firstInEl.textContent = '--:--';
-                }
-
-                // Wire up punch button handler (avoiding duplicates)
-                if (punchBtn) {
-                    punchBtn.onclick = async () => {
-                        if (punchBtn.classList.contains('loading')) return;
-                        punchBtn.classList.add('loading');
-                        const originalHTML = punchBtn.innerHTML;
-                        punchBtn.textContent = '...';
-
-                        setTimeout(async () => {
-                            try {
-                                await ApiClient.punch();
-                                showToast('Attendance recorded');
-                                await loadMyEmployeeInsights();
-                            } catch (e) {
-                                console.error(e);
-                                showToast('Failed to record punch', 'error');
-                                punchBtn.innerHTML = originalHTML;
-                                punchBtn.classList.remove('loading');
-                            }
-                        }, 1200);
-                    };
-                }
-
-                if (punchBtn) punchBtn.classList.remove('loading');
-                
-            } catch (err) {
-                console.warn('Punch status load failed', err);
-            }
-
-            const tbody = document.getElementById('self-attendance-tbody');
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
-            try {
+            function setSelfRange(daysBack) {
                 const end = new Date();
                 const start = new Date();
-                start.setDate(end.getDate() - 6);
+                start.setDate(end.getDate() - daysBack);
+                if (startInput) startInput.value = start.toISOString().slice(0, 10);
+                if (endInput) endInput.value = end.toISOString().slice(0, 10);
+            }
+
+            // Default: last 7 days
+            setSelfRange(6);
+
+            quickFilter.addEventListener('change', (e) => {
+                const today = new Date();
+                const val = e.target.value;
+                if (val === 'today') {
+                    startInput.value = today.toISOString().slice(0, 10);
+                    endInput.value = today.toISOString().slice(0, 10);
+                } else if (val === 'yesterday') {
+                    const yest = new Date(today); yest.setDate(yest.getDate() - 1);
+                    startInput.value = yest.toISOString().slice(0, 10);
+                    endInput.value = yest.toISOString().slice(0, 10);
+                } else if (val === 'this_week') {
+                    const first = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1);
+                    const start = new Date(today.getFullYear(), today.getMonth(), first);
+                    startInput.value = start.toISOString().slice(0, 10);
+                    endInput.value = new Date().toISOString().slice(0, 10);
+                } else if (val === 'last_7_days') {
+                    setSelfRange(6);
+                } else if (val === 'this_month') {
+                    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+                    startInput.value = start.toISOString().slice(0, 10);
+                    endInput.value = today.toISOString().slice(0, 10);
+                } else if (val === 'last_month') {
+                    const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    const end = new Date(today.getFullYear(), today.getMonth(), 0);
+                    startInput.value = start.toISOString().slice(0, 10);
+                    endInput.value = end.toISOString().slice(0, 10);
+                }
+                if (val !== 'custom') loadSelfAttendance();
+            });
+
+            startInput.addEventListener('change', () => quickFilter.value = 'custom');
+            endInput.addEventListener('change', () => quickFilter.value = 'custom');
+
+            document.getElementById('self-attendance-apply').onclick = loadSelfAttendance;
+            document.getElementById('self-attendance-reset').onclick = () => {
+                quickFilter.value = 'last_7_days';
+                setSelfRange(6);
+                loadSelfAttendance();
+            };
+
+            await loadSelfAttendance();
+        }
+
+        async function loadSelfAttendance() {
+            const tbody = document.getElementById('self-attendance-tbody');
+            const startInput = document.getElementById('self-attendance-start');
+            const endInput = document.getElementById('self-attendance-end');
+            
+            if (!tbody || !startInput || !endInput) return;
+            
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+            
+            try {
                 const data = await ApiClient.getAttendanceSummary({
-                    start_date: start.toISOString().slice(0, 10),
-                    end_date: end.toISOString().slice(0, 10),
+                    start_date: startInput.value,
+                    end_date: endInput.value,
                     reconcile: true
                 });
-                const records = data.records || [];
+                const records = (data.records || []).sort((a, b) => new Date(b.date) - new Date(a.date));
                 document.getElementById('self-attendance-count').textContent = `${records.length} record(s)`;
                 document.getElementById('self-attendance-total-hours').textContent = `Total: ${(data.total_hours || 0).toFixed(2)} hrs`;
 
                 if (!records.length) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No attendance records found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No attendance records found.</td></tr>';
                     return;
                 }
 
@@ -1051,7 +1135,7 @@
                 }).join('');
             } catch (err) {
                 console.error('Self attendance load failed', err);
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Failed to load attendance.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Failed to load attendance.</td></tr>';
             }
         }
 
@@ -1133,13 +1217,15 @@
             tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
 
             try {
-                const data = await ApiClient.getAttendanceSummary({
+                const params = {
                     start_date: start,
                     end_date: end,
-                    user_id: userId || null,
                     reconcile: true
-                });
-                const records = data.records || [];
+                };
+                if (userId) params.user_id = userId;
+                
+                const data = await ApiClient.getAttendanceSummary(params);
+                const records = (data.records || []).sort((a, b) => new Date(b.date) - new Date(a.date));
                 document.getElementById('attendance-count').textContent = `${records.length} record(s)`;
                 document.getElementById('attendance-total-hours').textContent = `Total: ${(data.total_hours || 0).toFixed(2)} hrs`;
 
@@ -1266,50 +1352,30 @@
 
         // Initialize Filters
         function initFilters() {
-            renderFilterPanel({
-                containerId: 'filter-wrapper',
-                filters: [
-                    { type: 'select', label: 'Department', id: 'filter-department', options: [{ value: '', label: 'All Departments' }] },
-                    { type: 'select', label: 'Role', id: 'filter-role', options: [
-                        { value: '', label: 'All Roles' },
-                        { value: 'ADMIN', label: 'Admin' },
-                        { value: 'SALES', label: 'Sales' },
-                        { value: 'TELESALES', label: 'Telesales' },
-                        { value: 'PROJECT_MANAGER', label: 'Project Manager' },
-                        { value: 'PROJECT_MANAGER_AND_SALES', label: 'PM & Sales' }
-                    ]},
-                    { type: 'select', label: 'Status', id: 'filter-status', options: [
-                        { value: '', label: 'All Status' },
-                        { value: 'true', label: 'Active' },
-                        { value: 'false', label: 'Inactive' }
-                    ]},
-                    { type: 'date', label: 'Start Date', id: 'filter-start' },
-                    { type: 'date', label: 'End Date', id: 'filter-end' }
-                ],
-                onApply: (data) => {
-                    loadEmployees();
-                },
-                onReset: () => {
-                    loadEmployees();
-                }
-            });
+            // New global filter panel initialization
+            updateEmpFilterBadge();
         }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             updateHeaderContext();
-            initFilters();
+            if (isAdmin) {
+                initFilters();
+            }
             loadEmployees().then(() => {
                 if (isAdmin) {
                     loadAttendanceSummary();
                 } else {
-                    if (typeof initAttendance === 'function') initAttendance();
-                    if (typeof loadMyEmployeeInsights === 'function') loadMyEmployeeInsights();
+                    loadMyEmployeeInsights();
                 }
             });
 
             if (!canManageEmployees) {
-                document.getElementById('filter-wrapper').style.display = 'none';
+                const globalFilterPanel = document.getElementById('global-filter-panel');
+                if (globalFilterPanel) globalFilterPanel.style.display = 'none';
+                
+                const directoryCard = document.querySelector('.grid-card:has(#employees-table-container)');
+                if (directoryCard) directoryCard.style.display = 'none';
             }
 
             const empToggleBtn = document.getElementById('employees-toggle-btn');
@@ -1409,6 +1475,7 @@
 
         function populateDepartmentFilter() {
             const deptSel = document.getElementById('filter-department');
+            if (!deptSel) return;
             const currentVal = deptSel.value;
             
             // Collect unique departments from employeesData

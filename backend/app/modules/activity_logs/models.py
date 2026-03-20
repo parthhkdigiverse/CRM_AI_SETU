@@ -32,7 +32,7 @@ class ActivityLog(Base):
     __tablename__ = "activity_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     user_role = Column(String, nullable=False) # Store current role as string for audit stability
     action = Column(String, nullable=False)
     entity_type = Column(String, nullable=False)

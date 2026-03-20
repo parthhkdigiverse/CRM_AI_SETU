@@ -851,10 +851,10 @@ const AC_FEATURES = [
 const AC_DEFAULT_POLICY = {
     page_access: {
         ADMIN:                     ['*'],
-        SALES:                     ['dashboard.html','timetable.html','todo.html','leads.html','visits.html','areas.html','clients.html','billing.html','leaves.html','salary.html','search.html','notifications.html','profile.html','settings.html','issues.html','incentives.html'],
-        TELESALES:                 ['dashboard.html','timetable.html','todo.html','leads.html','visits.html','clients.html','billing.html','leaves.html','salary.html','search.html','notifications.html','profile.html','settings.html','issues.html','incentives.html'],
-        PROJECT_MANAGER:           ['dashboard.html','timetable.html','todo.html','projects.html','meetings.html','issues.html','clients.html','billing.html','feedback.html','reports.html','leaves.html','salary.html','search.html','notifications.html','profile.html','settings.html'],
-        PROJECT_MANAGER_AND_SALES: ['dashboard.html','timetable.html','todo.html','leads.html','visits.html','areas.html','projects.html','meetings.html','issues.html','clients.html','billing.html','feedback.html','reports.html','leaves.html','salary.html','search.html','notifications.html','profile.html','settings.html'],
+        SALES:                     ['dashboard.html','timetable.html','todo.html','leads.html','visits.html','areas.html','clients.html','billing.html','leaves.html','salary.html','search.html','notifications.html','profile.html','settings.html','issues.html','incentives.html','employees.html'],
+        TELESALES:                 ['dashboard.html','timetable.html','todo.html','leads.html','visits.html','clients.html','billing.html','leaves.html','salary.html','search.html','notifications.html','profile.html','settings.html','issues.html','incentives.html','employees.html'],
+        PROJECT_MANAGER:           ['dashboard.html','timetable.html','todo.html','projects.html','meetings.html','issues.html','clients.html','billing.html','feedback.html','reports.html','leaves.html','salary.html','search.html','notifications.html','profile.html','settings.html','employees.html'],
+        PROJECT_MANAGER_AND_SALES: ['dashboard.html','timetable.html','todo.html','leads.html','visits.html','areas.html','projects.html','meetings.html','issues.html','clients.html','billing.html','feedback.html','reports.html','leaves.html','salary.html','search.html','notifications.html','profile.html','settings.html','employees.html'],
     },
     feature_access: {
         issue_create_roles:     ['ADMIN','SALES','TELESALES','PROJECT_MANAGER','PROJECT_MANAGER_AND_SALES'],
@@ -875,7 +875,7 @@ let _acActiveRole = 'SALES'; // currently selected role tab
 
 async function initAccessControl() {
     try {
-        const fetched = await apiGet('/auth/access-policy').catch(() => null);
+        const fetched = await apiGet('/users/access-policy').catch(() => null);
         if (fetched && (fetched.page_access || fetched.feature_access)) {
             _acPolicy = {
                 page_access: { ...AC_DEFAULT_POLICY.page_access, ...(fetched.page_access || {}) },
@@ -1065,25 +1065,40 @@ async function saveAccessPolicy() {
 
     try {
         // Try to persist to backend
-        await apiPut('/auth/access-policy', _acPolicy).catch(async () => {
+        await apiPut('/users/access-policy', _acPolicy).catch(async () => {
             // Fallback: try POST
-            await apiPost('/auth/access-policy', _acPolicy).catch(() => {});
+            await apiPost('/users/access-policy', _acPolicy).catch(() => {});
         });
 
-        // Always save to localStorage as the effective policy
+        // Always save to localStorage as the fallback
         localStorage.setItem('crm_access_policy', JSON.stringify(_acPolicy));
 
-        // Update the global effective policy used by auth.js
-        window.__crmEffectiveAccessPolicy = {
-            role: JSON.parse(sessionStorage.getItem('srm_user') || '{}')?.role || 'ADMIN',
-            policy: _acPolicy
-        };
+        // Refetch profile and effective policy to keep session in sync
+        if (window.ApiClient && window.ApiClient.getProfile) {
+            const profile = await window.ApiClient.getProfile().catch(() => null);
+            if (profile) {
+                const userData = { id: profile.id, name: profile.name || profile.email, email: profile.email, role: profile.role };
+                sessionStorage.setItem('srm_user', JSON.stringify(userData));
+            }
+        }
+
+        if (window.ApiClient && window.ApiClient.getEffectiveAccessPolicy) {
+            const effective = await window.ApiClient.getEffectiveAccessPolicy().catch(() => null);
+            if (effective) {
+                window.__crmEffectiveAccessPolicy = effective;
+            }
+        }
+
+        // Trigger UI refresh
+        window.dispatchEvent(new CustomEvent('permissions-changed', { 
+            detail: { policy: _acPolicy } 
+        }));
 
         if (saveMsg) {
             saveMsg.classList.remove('d-none');
             setTimeout(() => saveMsg.classList.add('d-none'), 3000);
         }
-        showToast('Access policy saved!');
+        showToast('Access policy saved & synchronized!');
     } catch (e) {
         const msg = e?.message || 'Failed to save policy';
         if (errMsg) {

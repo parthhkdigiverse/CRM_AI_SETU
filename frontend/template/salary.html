@@ -20,8 +20,8 @@
         <div class="flex-grow-1 main-wrapper">
             <div class="page-content mx-auto" style="max-width: 1300px;">
                 <!-- Header Section -->
-                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-                    <div>
+                <div class="page-header-glass d-flex justify-content-between align-items-center">
+                    <div class="mb-3 mb-sm-0">
                         <h2 class="page-section-title">Salary Management</h2>
                         <p class="text-muted mb-0" style="font-size:0.93rem;">Generate, verify and manage employee salary slips and payroll history.</p>
                     </div>
@@ -90,21 +90,20 @@
                 <!-- Salary Table -->
                 <div id="tab-slips" class="grid-card">
                     <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
-                        <h6 class="fw-bold mb-0" style="color:#334155;"><i class="bi bi-receipt me-2 text-primary"></i>Salary Slips</h6>
+                        <h6 class="fw-bold mb-0" style="color:var(--primary);"><i class="bi bi-receipt me-2 text-primary"></i>Salary Slips</h6>
                     </div>
                     <div class="table-responsive" style="font-size:0.82rem;">
-                        <table class="table table-sm mb-0" style="width:100%; table-layout:fixed;">
-                            <colgroup>
-                                <col style="width:16%"> <!-- Name -->
-                                <col style="width:8%">  <!-- Month -->
-                                <col style="width:12%"> <!-- Base -->
-                                <col style="width:9%">  <!-- Leaves -->
-                                <col style="width:10%"> <!-- Bonus -->
-                                <col style="width:10%"> <!-- Deductions -->
-                                <col style="width:10%"> <!-- Net Pay -->
-                                <col style="width:11%"> <!-- Status (Increased) -->
-                                <col style="width:14%"> <!-- Actions (Increased) -->
-                            </colgroup>
+                        <table class="table table-sm mb-0">
+                            <style>
+                                .table-responsive {
+                                    overflow-x: auto !important;
+                                    display: block;
+                                    width: 100%;
+                                }
+                                #tab-slips .table {
+                                    min-width: 1100px;
+                                }
+                            </style>
                             <thead>
                                 <tr>
                                     <th style="padding:8px 10px;">Employee Name</th>
@@ -168,8 +167,8 @@
 
             <!-- Preview Panel (populated via API) -->
             <div id="salary-preview" style="display:none;" class="mb-3">
-                <div class="border rounded p-3" style="background:#FAFBFF;">
-                    <h6 class="fw-bold small mb-3" style="color:#334155; letter-spacing:0.3px;">SALARY BREAKDOWN</h6>
+                <div class="border rounded p-3" style="background:var(--bg-app); border-color:var(--border) !important;">
+                    <h6 class="fw-bold small mb-3" style="color:var(--primary); letter-spacing:0.3px;">SALARY BREAKDOWN</h6>
                     <div class="row g-2 small">
                         <div class="col-6 d-flex justify-content-between">
                             <span class="text-muted">Base Salary</span>
@@ -181,15 +180,15 @@
                         </div>
                         <div class="col-6 d-flex justify-content-between">
                             <span class="text-muted">Paid Leaves</span>
-                            <span class="fw-semibold" style="color:#059669;" id="pv-paid">--</span>
+                            <span class="fw-semibold" style="color:var(--success-text);" id="pv-paid">--</span>
                         </div>
                         <div class="col-6 d-flex justify-content-between">
                             <span class="text-muted">Unpaid Leaves</span>
-                            <span class="fw-semibold" style="color:#B91C1C;" id="pv-unpaid">--</span>
+                            <span class="fw-semibold" style="color:var(--danger-text);" id="pv-unpaid">--</span>
                         </div>
                         <div class="col-6 d-flex justify-content-between">
                             <span class="text-muted">Leave Deduction</span>
-                            <span class="fw-semibold" style="color:#B91C1C;" id="pv-leave-ded">--</span>
+                            <span class="fw-semibold" style="color:var(--danger-text);" id="pv-leave-ded">--</span>
                         </div>
                         <div class="col-6 d-flex justify-content-between">
                             <span class="text-muted">Incentive</span>
@@ -197,19 +196,19 @@
                         </div>
                         <div class="col-6 d-flex justify-content-between">
                             <span class="text-muted">Slab Bonus</span>
-                            <span class="fw-semibold" style="color:#059669;" id="pv-slab">--</span>
+                            <span class="fw-semibold" style="color:var(--success-text);" id="pv-slab">--</span>
                         </div>
                         <div class="col-6 d-flex justify-content-between">
                             <span class="text-muted">Extra Deduction</span>
-                            <span class="fw-semibold" style="color:#B91C1C;" id="pv-extra">--</span>
+                            <span class="fw-semibold" style="color:var(--danger-text);" id="pv-extra">--</span>
                         </div>
                     </div>
                     <hr class="my-2">
                     <div class="d-flex justify-content-between fw-bold" style="font-size:1.05rem;">
                         <span>Net Payable</span>
-                        <span style="color:#2563eb;" id="pv-final">--</span>
+                        <span style="color:var(--primary);" id="pv-final">--</span>
                     </div>
-                    <div id="pv-existing-warn" class="mt-2 small fw-semibold" style="display:none; color:#B91C1C;">
+                    <div id="pv-existing-warn" class="mt-2 small fw-semibold" style="display:none; color:var(--danger-text);">
                         A salary slip already exists for this employee/month.
                     </div>
                 </div>
@@ -484,12 +483,18 @@
                         const visibilityBtnClass = s.is_visible_to_employee ? 'btn-success' : 'btn-outline-secondary';
                         visibilityBtn = `<button class="btn btn-sm ${visibilityBtnClass}" title="${visibilityTitle}" onclick="toggleSalaryVisibility(${s.id}, ${!s.is_visible_to_employee})"><i class="bi ${visibilityIcon}"></i></button>`;
                         
-                        // Admin Remark Highlight: If user added a remark, show a RED ICON with emoji
-                        if (s.employee_remarks && s.employee_remarks.trim() && s.employee_remarks !== 'None') {
-                            remarkBtn = `<button class="btn btn-sm btn-danger text-white fw-bold px-2 py-1 shadow-sm d-flex align-items-center justify-content-center" style="border-radius: 50%; width: 28px; height: 28px; font-size: 0.8rem;" 
-                                            title="View Employee Remark: ${s.employee_remarks.substring(0, 50)}..." onclick="openSalaryRemarks(${s.id}, '${encodeURIComponent(s.employee_remarks)}', '${encodeURIComponent(s.manager_remarks || '')}', true)">
-                                            🚩
-                                         </button>`;
+                        // Admin Remark Highlight: Show dot only if employee has a remark AND admin hasn't replied yet
+                        const hasEmpRemark = !!(s.employee_remarks && s.employee_remarks.trim() && s.employee_remarks !== 'None');
+                        const hasMgrRemark = !!(s.manager_remarks && s.manager_remarks.trim() && s.manager_remarks !== 'None');
+                        
+                        if (hasEmpRemark) {
+                            const showDot = !hasMgrRemark;
+                            remarkBtn = `<button class="btn btn-sm btn-light border-0 p-1 position-relative" 
+                                            title="View Employee Remark: ${s.employee_remarks.substring(0, 50)}..." 
+                                            onclick="openSalaryRemarks(${s.id}, '${encodeURIComponent(s.employee_remarks)}', '${encodeURIComponent(s.manager_remarks || '')}', true)">
+                                        <i class="bi bi-chat-left-text ${showDot ? 'text-danger' : 'text-primary'}" style="font-size: 1.2rem;"></i>
+                                        ${showDot ? '<span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>' : ''}
+                                    </button>`;
                         }
                     } else {
                         // Employee Icons: Remark, Slip
@@ -509,31 +514,31 @@
                     const isPaid = (s.status || '').toUpperCase() === 'CONFIRMED';
                     const statusToggle = canManageSalary 
                         ? `<div class="d-flex flex-column align-items-center">
-                             <div class="form-check form-switch p-0 m-0 d-flex align-items-center bg-white rounded-pill px-2 py-0 border" style="min-width: 80px; height: 24px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
-                               <input class="form-check-input ms-0 mt-0" type="checkbox" style="cursor:pointer; width: 28px; height: 14px;" 
+                     <div class="form-check form-switch p-0 m-0 d-flex align-items-center bg-app rounded-pill px-2 py-0 border" style="min-width: 80px; height: 24px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); border-color:var(--border) !important;">
+                               <input class="form-check-input ms-0 mt-0" type="checkbox" style="cursor:pointer; width: 28px; height: 14px; background-color: var(--surface);" 
                                       ${isPaid ? 'checked disabled' : ''} 
                                       onchange="if(this.checked) confirmSlip(${s.id})">
                                <span class="ms-1" style="font-size: 0.62rem; font-weight: 800; color: ${isPaid ? '#059669' : '#64748b'};">
-                                  ${isPaid ? 'PAID' : 'DRAFT'}
+                               ${isPaid ? 'PAID' : 'DRAFT'}
                                </span>
                              </div>
-                             <div class="mt-1" style="font-size: 0.6rem; color: ${s.is_visible_to_employee ? '#10b981' : '#64748b'}; letter-spacing: 0.02em;">
+                             <div class="mt-1" style="font-size: 0.6rem; color: ${s.is_visible_to_employee ? 'var(--success-text)' : 'var(--text-muted)'}; letter-spacing: 0.02em;">
                                 ${s.is_visible_to_employee ? 'RELEASED' : 'HIDDEN'}
                              </div>
                            </div>`
                         : `<span class="status-pill ${statusCls} w-100 d-block text-center"><i class="bi ${statusIcon} me-1"></i>${statusLabel}</span>`;
 
                     return `<tr>
-                        <td class="fw-semibold text-dark" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${empName}">${empName}</td>
+                        <td class="fw-semibold" style="color:var(--text-main); overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${empName}">${empName}</td>
                         <td class="text-muted small">${s.month}</td>
                         <td class="small">${INR(s.base_salary)}</td>
                         <td class="small">
-                            <span style="color:#059669;">${s.paid_leaves}P</span>
+                            <span style="color:var(--success-text);">${s.paid_leaves}P</span>
                             <span class="text-muted mx-1">/</span>
-                            <span style="color:#B91C1C;">${s.unpaid_leaves}U</span>
+                            <span style="color:var(--danger-text);">${s.unpaid_leaves}U</span>
                         </td>
-                        <td style="color:#059669; font-weight:600;" class="small">+${INR(totalBonus)}</td>
-                        <td style="color:#B91C1C; font-weight:600;" class="small">-${INR(s.deduction_amount)}</td>
+                        <td style="color:var(--success-text); font-weight:600;" class="small">+${INR(totalBonus)}</td>
+                        <td style="color:var(--danger-text); font-weight:600;" class="small">-${INR(s.deduction_amount)}</td>
                         <td class="fw-bold small">${INR(s.final_salary)}</td>
                         <td>
                             ${statusToggle}
@@ -667,20 +672,56 @@
             const currentEmployeeRemarks = decodeURIComponent(currentEmployeeRemarksEnc || '');
             const currentManagerRemarks = decodeURIComponent(currentManagerRemarksEnc || '');
             
-            // For Managers (Admins), just show the remark, don't allow editing from here as requested
+            document.getElementById('remark-slip-id').value = slipId;
+            document.getElementById('admin-remark-view').value = currentManagerRemarks;
+            document.getElementById('employee-remark-input').value = currentEmployeeRemarks;
+            
+            const adminSection = document.getElementById('admin-remark-edit-section');
+            const adminInput = document.getElementById('admin-remark-input');
+            const employeeInput = document.getElementById('employee-remark-input');
+
             if (isManager) {
-                alert('EMPLOYEE REMARK:\n\n' + currentEmployeeRemarks);
-                return;
+                adminSection.style.display = 'block';
+                adminInput.value = currentManagerRemarks;
+                employeeInput.readOnly = true;
+                employeeInput.classList.add('bg-light');
+            } else {
+                adminSection.style.display = 'none';
+                employeeInput.readOnly = false;
+                employeeInput.classList.remove('bg-light');
             }
 
-            const newEmployeeRemarks = prompt('Your remarks for this salary slip:', currentEmployeeRemarks || '');
-            if (newEmployeeRemarks === null) return;
+            const modalEl = document.getElementById('salaryRemarksModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        }
+
+        async function saveSalaryRemarks() {
+            const id = document.getElementById('remark-slip-id').value;
+            const btn = document.getElementById('save-remarks-btn');
+            const isAdminMode = document.getElementById('admin-remark-edit-section').style.display !== 'none';
+            
+            const data = {};
+            if (isAdminMode) {
+                data.manager_remarks = document.getElementById('admin-remark-input').value;
+            } else {
+                data.employee_remarks = document.getElementById('employee-remark-input').value;
+            }
+
             try {
-                await ApiClient.updateSalarySlipRemarks(slipId, { employee_remarks: newEmployeeRemarks });
-                showToast('Remarks saved', 'success');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+                
+                await ApiClient.updateSalarySlipRemarks(id, data);
+                showToast('Remarks saved successfully', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('salaryRemarksModal')).hide();
                 loadSlips();
-            } catch (e) {
-                showToast(e.data?.detail || e.message || 'Failed to save remarks', 'error');
+            } catch (err) {
+                console.error('Save remark error', err);
+                showToast(err.message || 'Failed to save remarks', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Save Remarks';
             }
         }
 
@@ -699,6 +740,37 @@
         updateFilterBadge();
         loadSlips();
     </script>
+    <!-- Remarks Modal -->
+    <div class="modal fade" id="salaryRemarksModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark">Salary Slip Remarks</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="remark-slip-id">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Admin Remarks</label>
+                        <textarea id="admin-remark-view" class="form-control bg-light" rows="2" readonly placeholder="No admin remarks..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Your Remarks (Employee)</label>
+                        <textarea id="employee-remark-input" class="form-control" rows="3" placeholder="Add your query or remark here..."></textarea>
+                    </div>
+                    <div id="admin-remark-edit-section" style="display: none;">
+                        <label class="form-label small fw-bold text-muted">Update Admin Remarks</label>
+                        <textarea id="admin-remark-input" class="form-control" rows="3" placeholder="Update admin remarks..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-light border fw-semibold" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary fw-semibold px-4" id="save-remarks-btn" onclick="saveSalaryRemarks()">Save Remarks</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>

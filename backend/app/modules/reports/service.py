@@ -14,6 +14,8 @@ from app.modules.payments.models import Payment, PaymentStatus
 from app.modules.salary.models import SalarySlip
 from app.modules.incentives.models import IncentiveSlip
 from app.modules.attendance.models import Attendance
+from app.modules.todos.models import Todo, TodoStatus
+from app.modules.meetings.models import MeetingSummary
 import io
 import csv
 from typing import List
@@ -220,6 +222,33 @@ class ReportService:
             outcome_data = vo_query.all()
             visit_outcomes_breakdown = {str(s.value if hasattr(s, 'value') else s): c for s, c in outcome_data if s is not None}
 
+            # --- Role-Specific Calculations ---
+            total_incentive = 0.0
+            pending_todos = 0
+            meetings_today = 0
+
+            if user_id:
+                # 1. Total Incentive for current month
+                inc_val = db.query(func.sum(IncentiveSlip.total_incentive)).filter(
+                    IncentiveSlip.user_id == user_id,
+                    IncentiveSlip.period == f"{curr_year}-{curr_month:02d}"
+                ).scalar() or 0.0
+                total_incentive = float(inc_val)
+
+                # 2. Pending Todos
+                pending_todos = db.query(func.count(Todo.id)).filter(
+                    Todo.user_id == user_id,
+                    Todo.status != TodoStatus.COMPLETED,
+                    Todo.is_deleted == False
+                ).scalar() or 0
+
+                # 3. Meetings Today (for PM)
+                meetings_today = db.query(func.count(MeetingSummary.id)).join(Client).filter(
+                    Client.pm_id == user_id,
+                    func.date(MeetingSummary.date) == today_date,
+                    MeetingSummary.is_deleted == False
+                ).scalar() or 0
+
             return {
                 "total_visits": total_visits,
                 "active_clients": active_clients,
@@ -232,6 +261,9 @@ class ReportService:
                 "presence_mom_pct": presence_mom_pct,
                 "open_issues": open_issues,
                 "employees_present": employees_present,
+                "total_incentive": total_incentive,
+                "pending_todos": pending_todos,
+                "meetings_today": meetings_today,
                 "visits_chart_title": chart_title,
                 "visits_chart_data": visits_chart_data,
                 "revenue_by_month": revenue_by_month,
@@ -244,8 +276,26 @@ class ReportService:
             import traceback
             traceback.print_exc()
             return {
-                "open_issues": 0, "employees_present": 0, "visits_chart_title": "Visits by Month", "visits_chart_data": {}, "revenue_by_month": {}, 
-                "visit_status_breakdown": {}, "issue_severity_breakdown": {}, "visit_outcomes_breakdown": {}
+                "total_visits": 0,
+                "active_clients": 0,
+                "ongoing_projects": 0,
+                "revenue_mtd": 0.0,
+                "visits_mom_pct": 0.0,
+                "clients_mom_pct": 0.0,
+                "projects_mom_pct": 0.0,
+                "revenue_mom_pct": 0.0,
+                "presence_mom_pct": 0.0,
+                "open_issues": 0,
+                "employees_present": 0,
+                "total_incentive": 0.0,
+                "pending_todos": 0,
+                "meetings_today": 0,
+                "visits_chart_title": "Visits by Month",
+                "visits_chart_data": {},
+                "revenue_by_month": {},
+                "visit_status_breakdown": {},
+                "issue_severity_breakdown": {},
+                "visit_outcomes_breakdown": {}
             }
 
     @staticmethod

@@ -233,28 +233,53 @@ def get_punch_status(db: Session = Depends(get_db), current_user = Depends(get_c
     ).order_by(models.Attendance.punch_in.asc()).first()
     first_punch_in = first_record.punch_in if first_record else None
     
-    # 2. Today's total hours
-    today_hours = db.query(func.sum(models.Attendance.total_hours)).filter(
+    # 2. Today's total hours - Explicit Manual Sum for Robustness
+    today_records = db.query(models.Attendance).filter(
         models.Attendance.user_id == current_user.id,
         models.Attendance.date == today,
         models.Attendance.is_deleted == False
-    ).scalar() or 0.0
+    ).all()
+    
+    today_hours = sum(r.total_hours for r in today_records if r.total_hours)
     
     # 3. Weekly total hours (Last 7 days)
     week_ago = today - timedelta(days=7)
-    week_hours = db.query(func.sum(models.Attendance.total_hours)).filter(
+    week_hours = db.query(func.coalesce(func.sum(models.Attendance.total_hours), 0.0)).filter(
         models.Attendance.user_id == current_user.id,
-        models.Attendance.date >= week_ago
-    ).scalar() or 0.0
+        models.Attendance.date >= week_ago,
+        models.Attendance.is_deleted == False
+    ).scalar()
     
     # 4. Monthly total hours (Current month)
     month_start = today.replace(day=1)
-    month_hours = db.query(func.sum(models.Attendance.total_hours)).filter(
+    month_hours = db.query(func.coalesce(func.sum(models.Attendance.total_hours), 0.0)).filter(
         models.Attendance.user_id == current_user.id,
-        models.Attendance.date >= month_start
-    ).scalar() or 0.0
+        models.Attendance.date >= month_start,
+        models.Attendance.is_deleted == False
+    ).scalar()
     
-        "month_hours": month_hours
+    # if currently punched in, add ongoing duration to today_hours (for display)
+    # but keep completed_hours_secs as the base for the client timer
+    completed_hours_secs = round(today_hours * 3600)
+    if is_punched_in and last_record:
+        now = datetime.now()
+        ongoing_secs = (now - last_record.punch_in).total_seconds()
+        today_hours += (ongoing_secs / 3600)
+
+    last_punch_ts = last_punch.timestamp() * 1000 if last_punch else None
+    first_punch_in_ts = first_punch_in.timestamp() * 1000 if first_punch_in else None
+
+    return {
+        "is_punched_in": is_punched_in,
+        "last_punch": last_punch,
+        "last_punch_ts": last_punch_ts,
+        "first_punch_in": first_punch_in,
+        "first_punch_in_ts": first_punch_in_ts,
+        "today_hours": round(today_hours, 4),
+        "today_hours_secs": round(today_hours * 3600),
+        "completed_hours_secs": completed_hours_secs,
+        "week_hours": round(week_hours, 2),
+        "month_hours": round(month_hours, 2)
     }
 
 
