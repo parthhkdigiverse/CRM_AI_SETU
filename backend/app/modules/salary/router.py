@@ -426,7 +426,8 @@ def get_salary_invoice(
     if not slip:
         raise HTTPException(status_code=404, detail="Slip not found")
 
-    if current_user.role != UserRole.ADMIN and slip.user_id != current_user.id:
+    can_view_all = _current_role_name(current_user).upper() in _get_feature_roles(db, "salary_view_all_roles")
+    if not can_view_all and slip.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     # Non-admins can only view invoices for CONFIRMED slips

@@ -271,16 +271,19 @@ def whatsapp_health(
     return BillingService(db).check_whatsapp_health(current_user)
 
 
-@router.get("/{bill_id}", response_model=BillRead)
-def get_invoice(
+@router.get("/{bill_id}")
+def get_bill(
     bill_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_access),
-) -> Any:
+):
     svc = BillingService(db)
-    bill = svc.get_bill(bill_id)
+    bill = svc.get_bill(bill_id, current_user=current_user)
     if not bill:
-        raise HTTPException(status_code=404, detail="Invoice not found")
+        # If bill doesn't exist OR user has no access, we returning 404/403
+        # Service returns None for both to keep it simple, but we can differentiate if needed.
+        # For security, 404 is often better to avoid ID enumeration.
+        raise HTTPException(status_code=404, detail="Invoice not found or access denied")
     return bill
 
 
@@ -404,9 +407,9 @@ def get_invoice_html(
 ):
     """Return a print-ready A4 HTML invoice page."""
     svc = BillingService(db)
-    bill = svc.get_bill(bill_id)
+    bill = svc.get_bill(bill_id, current_user=current_user)
     if not bill:
-        raise HTTPException(status_code=404, detail="Invoice not found")
+        raise HTTPException(status_code=404, detail="Invoice not found or access denied")
     settings = svc.get_invoice_defaults()
     html = _build_invoice_html(bill, settings)
     return HTMLResponse(content=html)

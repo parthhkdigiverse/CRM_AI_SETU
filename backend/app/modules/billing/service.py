@@ -413,12 +413,38 @@ class BillingService:
         self.db.refresh(db_bill)
         return db_bill
 
-    def get_bill(self, bill_id: int) -> Bill | None:
+    def _can_view_bill(self, current_user: User, bill: Bill) -> bool:
+        """Check if user has permission to view this specific bill/invoice."""
+        if current_user.role == UserRole.ADMIN:
+            return True
+        
+        # Creator access
+        if bill.created_by_id == current_user.id:
+            return True
+            
+        # Client ownership access
+        if bill.client:
+            c = bill.client
+            if c.owner_id == current_user.id or c.pm_id == current_user.id or c.referred_by_id == current_user.id:
+                return True
+                
+        return False
+
+    def get_bill(self, bill_id: int, current_user: User = None) -> Bill | None:
+        """Fetch bill with optional ownership enforcement."""
         policy = self.db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
         query = self.db.query(Bill).filter(Bill.id == bill_id)
         if not policy or policy.value == "SOFT":
             query = query.filter(Bill.is_deleted == False)
-        return query.first()
+        
+        bill = query.first()
+        if not bill:
+            return None
+            
+        if current_user and not self._can_view_bill(current_user, bill):
+            return None
+            
+        return bill
 
     def get_all_bills(
         self,
@@ -431,22 +457,24 @@ class BillingService:
         gst_type: str | None = None,
         search: str | None = None,
     ):
-        """Return bills filtered by role."""
+        """Return bills filtered by role and client ownership."""
         policy = self.db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
         q = self.db.query(Bill)
         
         if not policy or policy.value == "SOFT":
             q = q.filter(Bill.is_deleted == False)
             
-        if current_user.role == UserRole.ADMIN:
-            pass  # see all
-        elif current_user.role in (UserRole.SALES, UserRole.TELESALES):
-            q = q.filter(Bill.created_by_id == current_user.id)
-        elif current_user.role == UserRole.PROJECT_MANAGER:
-            q = q.filter(Bill.created_by_id == current_user.id)
-        else:
-            q = q.filter(Bill.created_by_id == current_user.id)
-
+        if current_user.role != UserRole.ADMIN:
+            # Join with Client to filter by owner/PM/referrer
+            # We also include bills created by the user directly
+            q = q.outerjoin(Client, Bill.client_id == Client.id)
+            q = q.filter(or_(
+                Bill.created_by_id == current_user.id,
+                Client.owner_id == current_user.id,
+                Client.pm_id == current_user.id,
+                Client.referred_by_id == current_user.id
+            ))
+            
         archived_mode = (archived or "ACTIVE").upper()
         if archived_mode == "ARCHIVED":
             q = q.filter(Bill.is_archived.is_(True))

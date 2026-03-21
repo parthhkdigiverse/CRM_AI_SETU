@@ -66,10 +66,13 @@
             const errorBox  = document.getElementById('error-box');
 
             function showError(msg) {
-                loadingEl.style.display = 'none';
-                errorBox.style.display = 'block';
-                document.getElementById('error-msg').textContent = msg || '';
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (errorBox) errorBox.style.display = 'block';
+                const msgEl = document.getElementById('error-msg');
+                if (msgEl) msgEl.textContent = msg || '';
             }
+
+            if (window.__accessDenied) return;
 
             if (!slipId) { showError('No salary slip ID provided in the URL.'); return; }
 

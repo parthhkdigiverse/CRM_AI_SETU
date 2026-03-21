@@ -90,6 +90,16 @@
     --bs-form-control-bg: #F8FAFC;
     --bs-table-striped-bg: rgba(79, 70, 229, 0.03);
     --bs-table-hover-bg: rgba(79, 70, 229, 0.03);
+
+    /* ── Badge Themes (Light) ── */
+    --badge-admin-bg: #fef08a; --badge-admin-text: #854d0e;
+    --badge-sales-bg: #dbeafe; --badge-sales-text: #1e40af;
+    --badge-telesales-bg: #e0e7ff; --badge-telesales-text: #1e40af;
+    --badge-pm-bg: #dcfce7; --badge-pm-text: #166534;
+    --badge-pm-sales-bg: #fefce8; --badge-pm-sales-text: #a16207;
+    --badge-client-bg: #f3f4f6; --badge-client-text: #4b5563;
+    --badge-success-bg: #dcfce7; --badge-success-text: #16a34a;
+    --badge-danger-bg: #fee2e2; --badge-danger-text: #dc2626;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -283,7 +293,10 @@ a:hover {
     --sb-text-heading: var(--sb-name-color);
     --sb-transition: width 250ms cubic-bezier(0.4, 0, 0.2, 1);
 
-
+    /* ── Overview Page Header (Premium) ── */
+    --header-outer-bg: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(168, 85, 247, 0.15));
+    --header-inner-bg: linear-gradient(135deg, #2563eb 0%, #2563eb 60%, #a855f7 100%);
+    --header-name-gradient: linear-gradient(90deg, #ffffff, #e0e7ff);
 }
 
 [data-theme="dark"] {
@@ -318,6 +331,21 @@ a:hover {
     --sb-text: #94a3b8;
     --sb-text-muted: #64748b;
     --sb-text-heading: #f1f5f9;
+
+    /* ── Overview Page Header (Premium - Dark) ── */
+    --header-outer-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.08));
+    --header-inner-bg: linear-gradient(135deg, #1e293b, #0f172a);
+    --header-name-gradient: linear-gradient(90deg, #f8fafc, #94a3b8);
+
+    /* ── Badge Themes (Dark) ── */
+    --badge-admin-bg: #422006; --badge-admin-text: #fef08a;
+    --badge-sales-bg: #1e3a8a; --badge-sales-text: #dbeafe;
+    --badge-telesales-bg: #312e81; --badge-telesales-text: #e0e7ff;
+    --badge-pm-bg: #064e3b; --badge-pm-text: #dcfce7;
+    --badge-pm-sales-bg: #422006; --badge-pm-sales-text: #fefce8;
+    --badge-client-bg: #1f2937; --badge-client-text: #f3f4f6;
+    --badge-success-bg: #064e3b; --badge-success-text: #4ade80;
+    --badge-danger-bg: #7f1d1d; --badge-danger-text: #fecaca;
 }
 
 
@@ -1261,9 +1289,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 [data-theme="dark"] .page-header-glass {
-    background: rgba(15, 23, 42, 0.7); /* Darker, more contrasty */
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    background: rgba(15, 23, 42, 0.9); /* Darker and less transparent */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Dashboard Header Dark Mode ── */
