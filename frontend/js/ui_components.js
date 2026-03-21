@@ -197,9 +197,9 @@ window.renderSidebar = function (active) {
                 { id: 'admin', href: 'admin.html', icon: 'bi-people', label: 'Users & Roles' }
             ])}
             ${sbSection('fo', 'Field Operations', 'bi-geo-alt', [
-                { id: 'projects', href: 'projects.html', icon: 'bi-kanban', label: 'Projects' },
-                { id: 'visits', href: 'visits.html', icon: 'bi-geo-alt-fill', label: 'Visits' },
-                { id: 'areas', href: 'areas.html', icon: 'bi-shop', label: 'Areas & Shops' }
+                { id: 'leads', href: 'leads.html', icon: 'bi-kanban', label: 'Projects Overview' },
+                { id: 'areas', href: 'areas.html', icon: 'bi-shop', label: 'Areas & Shops' },
+                { id: 'visits', href: 'visits.html', icon: 'bi-geo-alt-fill', label: 'Visits' }
             ])}
             ${sbSection('pm', 'Project Management', 'bi-briefcase', [
                 { id: 'demo', href: 'projects_demo.html', icon: 'bi-play-circle', label: 'Demo' },
@@ -1299,9 +1299,11 @@ window.setTheme = function (mode) {
     if (applyDark) {
         document.documentElement.setAttribute('data-theme', 'dark');
         localStorage.setItem('srm-theme', 'dark');
+        localStorage.setItem('srm_setting_theme', 'dark');
     } else {
         document.documentElement.removeAttribute('data-theme');
         localStorage.setItem('srm-theme', 'light');
+        localStorage.setItem('srm_setting_theme', 'light');
     }
 
     const icon = document.getElementById('dark-mode-icon');
@@ -1322,6 +1324,7 @@ window.toggleDarkMode = function () {
             saveSetting('theme', newMode);
         }
     } else {
+        localStorage.setItem('srm-theme', newMode);
         localStorage.setItem('srm_setting_theme', newMode);
     }
 };
@@ -1363,6 +1366,14 @@ window.checkPageAccess = function() {
         : (effectivePolicy?.policy?.page_access?.[roleName] || fallbackPages[roleName] || []);
 
     if (!allowedPages.includes(path) && !allowedPages.includes('*')) {
+        // Dynamic access to sub-pages: 
+        // If current page is salary_slip_view.html, check if user has access to parent pages
+        if (path === 'salary_slip_view.html') {
+            if (allowedPages.includes('salary.html') || 
+                allowedPages.includes('incentives.html')) {
+                return; // Access granted dynamically
+            }
+        }
         showAccessDenied(path);
     }
 };

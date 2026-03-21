@@ -39,33 +39,28 @@
         }
 
         .role-ADMIN {
-            background: #fef08a;
-            color: #854d0e;
+            background: var(--badge-admin-bg);
+            color: var(--badge-admin-text);
         }
-
         .role-SALES {
-            background: #dbeafe;
-            color: #1e40af;
+            background: var(--badge-sales-bg);
+            color: var(--badge-sales-text);
         }
-
         .role-TELESALES {
-            background: #e0e7ff;
-            color: #1e40af;
+            background: var(--badge-telesales-bg);
+            color: var(--badge-telesales-text);
         }
-
         .role-PROJECT_MANAGER {
-            background: #dcfce7;
-            color: #166534;
+            background: var(--badge-pm-bg);
+            color: var(--badge-pm-text);
         }
-
         .role-PROJECT_MANAGER_AND_SALES {
-            background: #fefce8;
-            color: #a16207;
+            background: var(--badge-pm-sales-bg);
+            color: var(--badge-pm-sales-text);
         }
-
         .role-CLIENT {
-            background: #f3f4f6;
-            color: #4b5563;
+            background: var(--badge-client-bg);
+            color: var(--badge-client-text);
         }
 
         .status-badge {
@@ -79,13 +74,12 @@
         }
 
         .status-active {
-            background: #dcfce7;
-            color: #16a34a;
+            background: var(--badge-success-bg);
+            color: var(--badge-success-text);
         }
-
         .status-inactive {
-            background: #fee2e2;
-            color: #dc2626;
+            background: var(--badge-danger-bg);
+            color: var(--badge-danger-text);
         }
         
         @keyframes rotate-ring-emp {
@@ -435,11 +429,37 @@
 
         .pro-att-btn:active { transform: scale(0.97); }
 
-        .pro-att-btn.loading {
-            opacity: 0.50;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
+        @media (max-width: 768px) {
+            .pro-att-widget {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 16px;
+                gap: 16px;
+            }
+            .pro-att-left {
+                padding-right: 0;
+                text-align: center;
+            }
+            .pro-att-sep {
+                height: 1px;
+                width: 100%;
+                margin: 4px 0;
+            }
+            .pro-att-right {
+                padding-left: 0;
+                min-width: 0;
+                max-width: 100%;
+            }
+            .pro-att-bottom-row {
+                flex-direction: column;
+            }
+            .pro-att-btn {
+                width: 100%;
+                height: 44px;
+            }
+            
+            /* Responsive Table Columns */
+            .d-mobile-none { display: none !important; }
         }
 
 </style>
@@ -537,11 +557,11 @@
                                             onclick="toggleAllEmployees(this)">
                                     </th>
                                     <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 200px;">Employee</th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 150px;">Department & Code</th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 150px;">Role</th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 150px;">Contact</th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 120px;">Status</th>
-                                    <th class="py-3 px-4 text-end text-uppercase small fw-bold text-muted" style="min-width: 150px;">Actions</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted d-mobile-none" style="min-width: 150px;">Department & Code</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 120px;">Role</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted d-mobile-none" style="min-width: 150px;">Contact</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 100px;">Status</th>
+                                    <th class="py-3 px-4 text-end text-uppercase small fw-bold text-muted" style="min-width: 120px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="employees-tbody">
@@ -608,11 +628,11 @@
                                     <tr>
                                         <th style="white-space:nowrap;">Date</th>
                                         <th style="white-space:nowrap;">Employee</th>
-                                        <th style="white-space:nowrap;">Punch In</th>
-                                        <th style="white-space:nowrap;">Punch Out</th>
+                                        <th style="white-space:nowrap;" class="d-mobile-none">Punch In</th>
+                                        <th style="white-space:nowrap;" class="d-mobile-none">Punch Out</th>
                                         <th style="white-space:nowrap;">Hours</th>
                                         <th style="white-space:nowrap;">Status</th>
-                                        <th style="white-space:nowrap;">Leave</th>
+                                        <th style="white-space:nowrap;" class="d-mobile-none">Leave</th>
                                         <th style="white-space:nowrap; text-align:right;">Action</th>
                                     </tr>
                                 </thead>
@@ -672,11 +692,11 @@
                                     <thead class="bg-light">
                                         <tr>
                                             <th style="white-space:nowrap;">Date</th>
-                                            <th style="white-space:nowrap;">Punch In</th>
-                                            <th style="white-space:nowrap;">Punch Out</th>
+                                            <th style="white-space:nowrap;" class="d-mobile-none">Punch In</th>
+                                            <th style="white-space:nowrap;" class="d-mobile-none">Punch Out</th>
                                             <th style="white-space:nowrap;">Hours</th>
                                             <th style="white-space:nowrap;">Status</th>
-                                            <th style="white-space:nowrap;">Leave</th>
+                                            <th style="white-space:nowrap;" class="d-mobile-none">Leave</th>
                                             <th style="white-space:nowrap; text-align:right;">Action</th>
                                         </tr>
                                     </thead>
@@ -958,14 +978,14 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="px-4">
+                        <td class="px-4 d-mobile-none">
                             <div class="fw-semibold text-dark">${emp.department || '—'}</div>
                             <small class="text-muted">${emp.employee_code || 'No Code'}</small>
                         </td>
                         <td class="px-4">
                             <span class="role-badge role-${roleClass}">${(emp.role || 'Unknown').replace(/_/g, ' ')}</span>
                         </td>
-                        <td class="px-4 text-muted">
+                        <td class="px-4 text-muted d-mobile-none">
                             ${emp.phone ? `<i class="bi bi-telephone me-1"></i>${emp.phone}` : '—'}
                         </td>
                         <td class="px-4">
@@ -1121,11 +1141,11 @@
                     const day = new Date(r.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
                     return `<tr>
                         <td style="white-space:nowrap;">${day}</td>
-                        <td>${formatTimeCell(r.first_punch_in)}</td>
-                        <td>${formatTimeCell(r.last_punch_out)}</td>
+                        <td class="d-mobile-none">${formatTimeCell(r.first_punch_in)}</td>
+                        <td class="d-mobile-none">${formatTimeCell(r.last_punch_out)}</td>
                         <td>${(r.total_hours || 0).toFixed(2)}</td>
                         <td>${statusBadge(r.day_status)}</td>
-                        <td>${leaveBadge(r.leave_status)}</td>
+                        <td class="d-mobile-none">${leaveBadge(r.leave_status)}</td>
                         <td class="text-end">
                             <button class="btn btn-sm btn-light border p-1 px-2" onclick="viewPunchLogs('${r.date}')" title="View Details">
                                 <i class="bi bi-eye text-primary"></i>
@@ -1239,11 +1259,11 @@
                     return `<tr>
                         <td style="white-space:nowrap;">${day}</td>
                         <td style="white-space:nowrap;">${r.user_name || 'User #' + r.user_id}</td>
-                        <td>${formatTimeCell(r.first_punch_in)}</td>
-                        <td>${formatTimeCell(r.last_punch_out)}</td>
+                        <td class="d-mobile-none">${formatTimeCell(r.first_punch_in)}</td>
+                        <td class="d-mobile-none">${formatTimeCell(r.last_punch_out)}</td>
                         <td>${(r.total_hours || 0).toFixed(2)}</td>
                         <td>${statusBadge(r.day_status)}</td>
-                        <td>${leaveBadge(r.leave_status)}</td>
+                        <td class="d-mobile-none">${leaveBadge(r.leave_status)}</td>
                         <td class="text-end">
                             <button class="btn btn-sm btn-light border p-1 px-2" onclick="viewPunchLogs('${r.date}', ${r.user_id})" title="View Details">
                                 <i class="bi bi-eye text-primary"></i>

@@ -167,7 +167,12 @@ function requireAuth() {
     // --- OPTIMISTIC UI ---
     // If we have a user in session, show the page IMMEDIATELY.
     // Ensure background matches theme to avoid flash
-    const storedTheme = localStorage.getItem('theme') || 'light';
+    const storedTheme = localStorage.getItem('srm-theme') || 'light';
+    if (storedTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+    }
     const bgColor = storedTheme === 'dark' ? '#0f172a' : '#f0f5fb';
     document.body.style.backgroundColor = bgColor;
 

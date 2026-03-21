@@ -465,7 +465,7 @@
                     const canManageSalary = hasFeatureAccess('salary_manage_roles');
                     const statusCls = s.status === 'CONFIRMED' ? 'badge-green-light' : 'badge-yellow-light';
                     const statusIcon = s.status === 'CONFIRMED' ? 'bi-check-circle' : 'bi-hourglass-split';
-                    const statusLabel = s.status === 'CONFIRMED' ? 'PAID' : 'DRAFT / UNPAID';
+                    const statusLabel = s.status === 'CONFIRMED' ? 'PAID' : 'DRAFT';
                     const visibleLabel = s.is_visible_to_employee ? 'Visible' : 'Hidden';
 
                     let previewBtn = '';

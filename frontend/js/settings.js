@@ -41,7 +41,7 @@ window.addEventListener('hashchange', () => {
  */
 function initThemeCards() {
     const cards = document.querySelectorAll('.theme-card');
-    const currentTheme = localStorage.getItem('srm_setting_theme') || 'light';
+    const currentTheme = localStorage.getItem('srm-theme') || 'light';
     
     cards.forEach(card => {
         const theme = card.dataset.theme;
@@ -124,6 +124,9 @@ async function loadSettings() {
  */
 async function saveSetting(key, value) {
     // Save locally
+    if (key === 'theme') {
+        localStorage.setItem('srm-theme', value);
+    }
     localStorage.setItem('srm_setting_' + key, value);
 
     // Save to backend

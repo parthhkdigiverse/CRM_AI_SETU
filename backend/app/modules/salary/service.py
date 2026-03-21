@@ -630,7 +630,7 @@ class SalaryService:
         </div>
         <div class="meta-cell">
             <div class="meta-lbl">Status</div>
-            <div class="meta-val {'s-confirmed' if status_str == 'CONFIRMED' else 's-draft'}">{'&#10003; PAID' if status_str == 'CONFIRMED' else '&#9679; UNPAID / DRAFT'}</div>
+            <div class="meta-val {'s-confirmed' if status_str == 'CONFIRMED' else 's-draft'}">{'&#10003; PAID' if status_str == 'CONFIRMED' else '&#9679; DRAFT'}</div>
         </div>
         <div class="meta-cell">
             <div class="meta-lbl">Net Payable</div>
