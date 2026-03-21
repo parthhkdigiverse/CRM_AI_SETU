@@ -88,9 +88,10 @@ def read_shops(
     limit: int = 100,
     pipeline_stage: Optional[MasterPipelineStage] = None,
     owner_id: Optional[int] = None,
+    exclude_leads: bool = Query(False),
     current_user: User = Depends(staff_checker)
 ) -> Any:
-    return ShopService.list_shops(db, current_user, skip, limit, pipeline_stage, owner_id)
+    return ShopService.list_shops(db, current_user, skip, limit, pipeline_stage, owner_id, exclude_leads)
 
 @router.get("/suggest-pm")
 def suggest_pm(

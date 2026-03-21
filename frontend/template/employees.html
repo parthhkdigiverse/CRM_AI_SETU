@@ -13,8 +13,8 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
-    <link rel="stylesheet" href="../css/components.css?v=1772780188">
+    <link rel="stylesheet" href="../css/theme.css?v=20260321">
+    <link rel="stylesheet" href="../css/components.css?v=20260321">
     <style>
         .employee-avatar {
             width: 40px;
@@ -469,7 +469,7 @@
     <div class="d-flex">
         <div id="sidebar"></div>
         <div class="flex-grow-1 main-wrapper">
-            <div class="page-content mx-auto" style="max-width: 1400px;">
+            <div class="page-content-standard">
                 <!-- Header Section -->
                 <div class="page-header-glass d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
@@ -478,64 +478,8 @@
                     </div>
                 </div>
 
-                <!-- Global Filter Panel -->
-                <div id="global-filter-panel" class="mb-4">
-                    <div class="filter-panel">
-                        <div class="filter-panel-head" id="emp-filter-panel-toggle">
-                            <div class="filter-panel-head-main">
-                                <div class="filter-panel-head-left">
-                                    <i class="bi bi-sliders2"></i>
-                                    Filters
-                                </div>
-                                <div class="filter-active-pills" id="emp-filter-pills"></div>
-                            </div>
-                            <div class="filter-panel-head-meta">
-                                <div class="text-muted small" id="emp-result-count"></div>
-                                <button class="filter-toggle-btn" id="emp-filter-toggle-btn" type="button">
-                                    <span id="emp-filter-toggle-label">Show</span>
-                                    <i class="bi bi-chevron-down"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="filter-panel-body" id="emp-filter-panel-body">
-                            <div class="filter-grid">
-                                <div class="filter-field">
-                                    <label>Department</label>
-                                    <select id="filter-department" class="form-select">
-                                        <option value="">All Departments</option>
-                                    </select>
-                                </div>
-                                <div class="filter-field">
-                                    <label>Role</label>
-                                    <select id="filter-role" class="form-select">
-                                        <option value="">All Roles</option>
-                                        <option value="ADMIN">Admin</option>
-                                        <option value="SALES">Sales</option>
-                                        <option value="TELESALES">Telesales</option>
-                                        <option value="PROJECT_MANAGER">Project Manager</option>
-                                        <option value="PROJECT_MANAGER_AND_SALES">PM & Sales</option>
-                                    </select>
-                                </div>
-                                <div class="filter-field">
-                                    <label>Status</label>
-                                    <select id="filter-status" class="form-select">
-                                        <option value="">All Status</option>
-                                        <option value="true">Active</option>
-                                        <option value="false">Inactive</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="filter-actions">
-                                <button class="btn-filter-reset" type="button" onclick="clearEmpFilters()">
-                                    <i class="bi bi-x-circle"></i>Clear
-                                </button>
-                                <button class="btn-filter-apply" type="button" onclick="loadEmployees()">
-                                    <i class="bi bi-check2"></i>Apply Filters
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Standard Filter Wrapper -->
+                <div id="filter-wrapper" class="mb-4"></div>
 
                 <!-- Employees Table -->
                 <div class="grid-card">
@@ -550,7 +494,7 @@
                     </div>
                     <div class="table-responsive" id="employees-table-container">
                         <table class="table mb-0 align-middle">
-                            <thead class="bg-light">
+                            <thead style="background:var(--bg-app); border-bottom: 1px solid var(--border);">
                                 <tr>
                                     <th class="ps-4" style="width: 40px;">
                                         <input type="checkbox" class="form-check-input" id="emp-select-all"
@@ -578,7 +522,7 @@
                 <div class="grid-card mt-4" id="attendance-admin-card" style="display:none;">
                     <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="fw-bold mb-0" style="color:#334155;">Attendance Summary</h6>
+                            <h6 class="fw-bold mb-0">Attendance Summary</h6>
                             <div class="text-muted small">Daily punch in/out and total hours</div>
                         </div>
                         <button class="btn btn-sm btn-light border" id="attendance-toggle-btn" title="Collapse">
@@ -624,7 +568,7 @@
                         </div>
                         <div class="table-responsive">
                             <table class="table table-sm align-middle mb-0">
-                                <thead class="bg-light">
+                                <thead style="background:var(--bg-app); border-bottom: 1px solid var(--border);">
                                     <tr>
                                         <th style="white-space:nowrap;">Date</th>
                                         <th style="white-space:nowrap;">Employee</th>
@@ -637,7 +581,9 @@
                                     </tr>
                                 </thead>
                                 <tbody id="attendance-admin-tbody">
-                                    <tr>
+                        
+                                <tr>
+                                    
                                         <td colspan="7" class="text-center py-4 text-muted">No data loaded.</td>
                                     </tr>
                                 </tbody>
@@ -651,7 +597,7 @@
                     <div class="grid-card" id="self-attendance-card" style="display:none;">
                         <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="fw-bold mb-0" style="color:#334155;">My Attendance History</h6>
+                                <h6 class="fw-bold mb-0">My Attendance History</h6>
                                 <div class="text-muted small">Your punch timing and attendance records</div>
                             </div>
                         </div>
@@ -689,7 +635,7 @@
                             </div>
                             <div class="table-responsive">
                                 <table class="table table-sm align-middle mb-0">
-                                    <thead class="bg-light">
+                                    <thead style="background:var(--bg-app); border-bottom: 1px solid var(--border);">
                                         <tr>
                                             <th style="white-space:nowrap;">Date</th>
                                             <th style="white-space:nowrap;" class="d-mobile-none">Punch In</th>
@@ -796,18 +742,16 @@
     </div>
 
     <!-- Scripts -->
-    <script src="../js/utils.js?v=2.3"></script>
-    <script src="../js/api.js?v=2.3"></script>
-    <script src="../js/auth.js?v=2.3"></script>
-    <script src="../js/ui_components.js?v=20260312"></script>
-    <script src="../js/app.js?v=2.3"></script>
+    <script src="../js/utils.js?v=20260321"></script>
+    <script src="../js/api.js?v=20260321"></script>
+    <script src="../js/auth.js?v=20260321"></script>
+    <script src="../js/ui_components.js?v=20260321"></script>
+    <script src="../js/app.js?v=20260321"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
-        const sidebarElement = document.getElementById('sidebar');
-        if (sidebarElement) {
-            sidebarElement.innerHTML = renderSidebar('employees');
-        }
+        const sb = document.getElementById('sidebar');
+        if (sb) sb.innerHTML = renderSidebar('employees');
         injectTopHeader('Employees');
 
         const currentUser = getUser();
@@ -843,65 +787,66 @@
             });
         });
 
-        // Filter Toggle Logic
-        const empFilterPanelBody = document.getElementById('emp-filter-panel-body');
-        const empFilterToggleBtn = document.getElementById('emp-filter-toggle-btn');
-        const empFilterToggleLabel = document.getElementById('emp-filter-toggle-label');
+        // ── Filter Panel Integration ───────────────────────────
+        let lastFilters = {};
 
-        if (document.getElementById('emp-filter-panel-toggle')) {
-            document.getElementById('emp-filter-panel-toggle').addEventListener('click', toggleEmpFilters);
+        function initFilters(departments = []) {
+            renderFilterPanel({
+                containerId: 'filter-wrapper',
+                filters: [
+                    {
+                        type: 'text',
+                        label: 'Search',
+                        id: 'filter-search',
+                        placeholder: 'Name, email, or code...'
+                    },
+                    {
+                        type: 'select',
+                        label: 'Department',
+                        id: 'filter-dept',
+                        options: [
+                            { value: 'ALL', label: 'All Departments' },
+                            ...departments.map(d => ({ value: d, label: d }))
+                        ]
+                    },
+                    {
+                        type: 'select',
+                        label: 'Role',
+                        id: 'filter-role',
+                        options: [
+                            { value: 'ALL', label: 'All Roles' },
+                            { value: 'ADMIN', label: 'Admin' },
+                            { value: 'SALES', label: 'Sales' },
+                            { value: 'TELESALES', label: 'Telesales' },
+                            { value: 'PROJECT_MANAGER', label: 'Project Manager' },
+                            { value: 'PROJECT_MANAGER_AND_SALES', label: 'PM & Sales' }
+                        ]
+                    },
+                    {
+                        type: 'select',
+                        label: 'Status',
+                        id: 'filter-status',
+                        options: [
+                            { value: 'ALL', label: 'All Status' },
+                            { value: 'true', label: 'Active' },
+                            { value: 'false', label: 'Inactive' }
+                        ]
+                    }
+                ],
+                onApply: (data) => {
+                    lastFilters = data;
+                    loadEmployees(data);
+                },
+                onReset: () => {
+                    lastFilters = {};
+                    loadEmployees();
+                }
+            });
         }
 
-        function toggleEmpFilters() {
-            const isOpen = empFilterPanelBody.classList.toggle('open');
-            empFilterToggleBtn.classList.toggle('open', isOpen);
-            empFilterToggleLabel.textContent = isOpen ? 'Hide' : 'Show';
-        }
-
-        function updateEmpFilterBadge() {
-            const pills = document.getElementById('emp-filter-pills');
-            const dept = document.getElementById('filter-department')?.value;
-            const role = document.getElementById('filter-role');
-            const status = document.getElementById('filter-status');
-            
-            const items = [];
-            if (dept) items.push({ label: 'Dept: ' + dept, inputId: 'filter-department' });
-            if (role?.value) items.push({ label: role.options[role.selectedIndex].text, inputId: 'filter-role' });
-            if (status?.value) items.push({ label: status.options[status.selectedIndex].text, inputId: 'filter-status' });
-
-            if (pills) {
-                pills.innerHTML = items.map(item => `
-                    <span class="filter-pill">${item.label}
-                        <button class="filter-pill-remove" type="button" data-input="${item.inputId}" title="Remove">&times;</button>
-                    </span>`).join('');
-
-                pills.querySelectorAll('.filter-pill-remove').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        document.getElementById(btn.dataset.input).value = '';
-                        updateEmpFilterBadge();
-                        loadEmployees();
-                    });
-                });
-            }
-        }
-
-        function clearEmpFilters() {
-            document.getElementById('filter-department').value = '';
-            document.getElementById('filter-role').value = '';
-            document.getElementById('filter-status').value = '';
-            updateEmpFilterBadge();
-            loadEmployees();
-        }
-
-        ['filter-department', 'filter-role', 'filter-status'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener('change', updateEmpFilterBadge);
-        });
-
-        async function loadEmployees() {
+        async function loadEmployees(filters = {}) {
             const tbody = document.getElementById('employees-tbody');
-            if (!tbody) return; // Guard against null if section is hidden
+            if (!tbody) return;
             tbody.innerHTML = `
                 <tr class="stagger-fade-in">
                     <td colspan="7" class="py-4">
@@ -909,29 +854,19 @@
                             <div class="skeleton-box skeleton-avatar" style="width: 40px; height: 40px; border-radius: 8px;"></div>
                             <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium"></div><div class="skeleton-box skeleton-text short"></div></div>
                         </div>
-                        <div class="d-flex align-items-center gap-3 mb-3">
-                            <div class="skeleton-box skeleton-avatar" style="width: 40px; height: 40px; border-radius: 8px;"></div>
-                            <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium"></div><div class="skeleton-box skeleton-text short"></div></div>
-                        </div>
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="skeleton-box skeleton-avatar" style="width: 40px; height: 40px; border-radius: 8px;"></div>
-                            <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium"></div><div class="skeleton-box skeleton-text short"></div></div>
-                        </div>
                     </td>
                 </tr>`;
             
-            const department = document.getElementById('filter-department')?.value || '';
-            const role = document.getElementById('filter-role')?.value || '';
-            const status = document.getElementById('filter-status')?.value || '';
-            const start = document.getElementById('filter-start')?.value || '';
-            const end = document.getElementById('filter-end')?.value || '';
+            const department = (filters['filter-dept'] === 'ALL' ? '' : filters['filter-dept']) || '';
+            const role = (filters['filter-role'] === 'ALL' ? '' : filters['filter-role']) || '';
+            const status = (filters['filter-status'] === 'ALL' ? '' : filters['filter-status']) || '';
+            const search = filters['filter-search'] || '';
 
             let query = '';
             if (department) query += `&department=${encodeURIComponent(department)}`;
             if (role) query += `&role=${role}`;
             if (status) query += `&is_active=${status}`;
-            if (start) query += `&start_date=${start}`;
-            if (end) query += `&end_date=${end}`;
+            if (search) query += `&q=${encodeURIComponent(search)}`;
 
             if (query) query = '?' + query.substring(1);
 
@@ -945,8 +880,13 @@
                     return;
                 }
 
-                // Populate Department dropdown if not already set or filtering
-                populateDepartmentFilter();
+                // Collect and Initialize Department Filters if first load
+                const departments = [...new Set(employeesData.map(e => e.department).filter(d => d))].sort();
+                const filterWrapper = document.getElementById('filter-wrapper');
+                if (filterWrapper && filterWrapper.innerHTML === '' && isAdmin) {
+                    initFilters(departments);
+                }
+                
                 populateAttendanceEmployeeFilter();
 
                 tbody.innerHTML = employeesData.map(emp => {
@@ -1370,11 +1310,7 @@
             }
         }
 
-        // Initialize Filters
-        function initFilters() {
-            // New global filter panel initialization
-            updateEmpFilterBadge();
-        }
+        // Standardized filter init is handled within loadEmployees on first run
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -1493,29 +1429,7 @@
         });
 
 
-        function populateDepartmentFilter() {
-            const deptSel = document.getElementById('filter-department');
-            if (!deptSel) return;
-            const currentVal = deptSel.value;
-            
-            // Collect unique departments from employeesData
-            const departments = [...new Set(employeesData.map(e => e.department).filter(d => d))].sort();
-            
-            // Preserve "All Departments" and existing options
-            const existingOptions = Array.from(deptSel.options).map(o => o.value);
-            
-            departments.forEach(d => {
-                if (!existingOptions.includes(d)) {
-                    const opt = document.createElement('option');
-                    opt.value = d;
-                    opt.textContent = d;
-                    deptSel.appendChild(opt);
-                }
-            });
-            
-            // Restore selection if it was lost during population (though append doesn't lose it)
-            deptSel.value = currentVal;
-        }
+        // populateDepartmentFilter removed - handled by initFilters(departments)
 
     </script>
     <!-- Punch Detail Modal -->

@@ -12,6 +12,7 @@ from app.modules.users.models import User, UserRole
 from app.modules.shops.models import Shop
 from app.modules.feedback.models import Feedback
 from app.modules.clients.models import Client
+from app.core.enums import MasterPipelineStage
 from app.modules.billing.schemas import (
   BillCreate,
   BillRead,
@@ -96,41 +97,45 @@ def get_billing_autofill_sources(
   current_user: User = Depends(staff_access),
 ) -> Any:
   source_key = (source or "").strip().lower()
-  if source_key not in {"visit", "feedback"}:
-    raise HTTPException(status_code=400, detail="source must be 'visit' or 'feedback'")
+  if source_key not in {"visit", "feedback", "shop"}:
+    raise HTTPException(status_code=400, detail="source must be 'visit', 'feedback', or 'shop'")
 
   role = current_user.role
 
-  def _client_scope_filter(query):
-    if role == UserRole.ADMIN:
-      return query
-    if role in (UserRole.SALES, UserRole.TELESALES):
-      return query.filter(Client.owner_id == current_user.id)
-    if role == UserRole.PROJECT_MANAGER:
-      return query.filter(Client.pm_id == current_user.id)
-    return query.filter(
-      (Client.owner_id == current_user.id)
-      | (Client.pm_id == current_user.id)
-      | (Client.referred_by_id == current_user.id)
-    )
+  def _to_dict(s: Shop):
+    return {
+      "id": s.id,
+      "name": s.contact_person or s.name or "",
+      "phone": s.phone or "",
+      "email": s.email or "",
+      "org": s.name or "",
+      "address": s.address or "",
+      "label": (s.contact_person or s.name or "Shop") + ((f" · {s.name}") if s.contact_person and s.name else ""),
+    }
 
   if source_key == "visit":
-    q = db.query(Shop).filter(Shop.is_deleted == False)
+    from app.modules.visits.models import Visit
+    q = db.query(Shop).join(Visit, Visit.shop_id == Shop.id).filter(
+        Shop.is_deleted == False,
+        Shop.pipeline_stage != MasterPipelineStage.LEAD,
+        Visit.is_deleted == False
+    )
+    if role != UserRole.ADMIN:
+      q = q.filter(Visit.user_id == current_user.id)
+    
+    shops = q.distinct().order_by(Shop.id.desc()).limit(250).all()
+    return [_to_dict(s) for s in shops]
+
+  elif source_key == "shop":
+    q = db.query(Shop).filter(
+        Shop.is_deleted == False,
+        Shop.pipeline_stage != MasterPipelineStage.LEAD
+    )
     if role != UserRole.ADMIN:
       q = q.filter(Shop.owner_id == current_user.id)
-    shops = q.order_by(Shop.id.desc()).limit(250).all()
-    return [
-      {
-        "id": s.id,
-        "name": s.contact_person or s.name or "",
-        "phone": s.phone or "",
-        "email": s.email or "",
-        "org": s.name or "",
-        "address": s.address or "",
-        "label": (s.contact_person or s.name or "Shop") + ((f" · {s.name}") if s.contact_person and s.name else ""),
-      }
-      for s in shops
-    ]
+      
+    shops = q.order_by(Shop.name.asc()).limit(250).all()
+    return [_to_dict(s) for s in shops]
 
   q = db.query(Feedback, Client).join(Client, Client.id == Feedback.client_id, isouter=True)
   q = q.filter(Feedback.is_deleted == False)

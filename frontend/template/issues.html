@@ -10,16 +10,16 @@
     <title>Issues — SRM AI SETU</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
-    <link rel="stylesheet" href="../css/components.css?v=1772780188">
+    <link rel="stylesheet" href="../css/theme.css?v=20260321">
+    <link rel="stylesheet" href="../css/components.css?v=20260321">
 </head>
 
 <body class="bg-light">
     <div class="d-flex">
         <div id="sidebar"></div>
         <div class="flex-grow-1 main-wrapper">
-            <!-- The top header is automatically injected here by js/auth.js?v=2.3 -->
-            <div class="page-content mx-auto" style="max-width: 1300px; width: 100%;">
+            <!-- The top header is automatically injected here by js/auth.js?v=20260321 -->
+            <div class="page-content-standard">
                 <div class="page-header-glass d-flex justify-content-between align-items-center">
                     <div>
                         <h2 class="page-section-title">Issues</h2>
@@ -146,18 +146,16 @@
         </div>
     </div>
 
-    <script src="../js/utils.js?v=2.3"></script>
-    <script src="../js/api.js?v=2.3"></script>
-    <script src="../js/auth.js?v=2.3"></script>
-    <script src="../js/ui_components.js?v=20260312"></script>
-    <script src="../js/app.js?v=2.3"></script>
+    <script src="../js/utils.js?v=20260321"></script>
+    <script src="../js/api.js?v=20260321"></script>
+    <script src="../js/auth.js?v=20260321"></script>
+    <script src="../js/ui_components.js?v=20260321"></script>
+    <script src="../js/app.js?v=20260321"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
-        const sidebarElement = document.getElementById('sidebar');
-        if (sidebarElement) {
-            sidebarElement.innerHTML = renderSidebar('issues');
-        }
+        const sb = document.getElementById('sidebar');
+        if (sb) sb.innerHTML = renderSidebar('issues');
         injectTopHeader('Issues');
 
         // Custom soft styling logic

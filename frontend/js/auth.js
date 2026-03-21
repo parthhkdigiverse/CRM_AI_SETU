@@ -18,6 +18,7 @@ const FEATURE_ACCESS_FALLBACK = {
     incentive_manage_roles: ['ADMIN'],
     incentive_view_all_roles: ['ADMIN'],
     employee_manage_roles: ['ADMIN'],
+    project_demo_roles: ['ADMIN', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES', 'SALES', 'TELESALES'],
 };
 
 window.hasFeatureAccess = function(featureKey, roleInput) {
@@ -57,7 +58,7 @@ function getUser() {
 }
 
 function showAccessDeniedState(role, path) {
-    const target = document.getElementById('main-content') || document.querySelector('.page-content');
+    const target = document.getElementById('main-content') || document.querySelector('.page-content-standard');
     if (!target || document.getElementById('access-denied-state')) return;
 
     const roleLabel = (role || 'USER').replace(/_/g, ' ');
@@ -88,6 +89,21 @@ function showAccessDeniedState(role, path) {
         child.setAttribute('aria-hidden', 'true');
     });
     window.__accessDenied = true;
+}
+
+function hideAccessDeniedState() {
+    const card = document.getElementById('access-denied-state');
+    if (card) card.remove();
+    
+    const target = document.getElementById('main-content') || document.querySelector('.page-content-standard');
+    if (target) {
+        Array.from(target.children).forEach(child => {
+            child.style.opacity = '';
+            child.style.pointerEvents = '';
+            child.removeAttribute('aria-hidden');
+        });
+    }
+    window.__accessDenied = false;
 }
 
 // Guard: call on every protected page
@@ -126,10 +142,10 @@ function requireAuth() {
     // --- ROLE BASED ROUTING GUARD ---
     const ROLE_PERMISSIONS_FALLBACK = {
         'ADMIN': ['*'],
-        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
-        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
-        'PROJECT_MANAGER': ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
-        'PROJECT_MANAGER_AND_SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html', 'projects.html', 'projects_demo.html'],
+        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html', 'projects.html', 'projects_demo.html'],
+        'PROJECT_MANAGER': ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        'PROJECT_MANAGER_AND_SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
         'CLIENT': ['dashboard.html', 'projects.html', 'billing.html', 'feedback.html', 'profile.html']
     };
 
@@ -152,15 +168,28 @@ function requireAuth() {
 
     // Exported to window for use in syncAccessControl
     window.enforceRoleAccess = function(role) {
-        if (!role || role === 'ADMIN') return true;
+        if (!role || role === 'ADMIN') {
+            hideAccessDeniedState();
+            return true;
+        }
         const path = window.location.pathname.split('/').pop() || 'index.html';
-        if (path === 'index.html' || path === 'login.html') return true;
+        if (path === 'index.html' || path === 'login.html') {
+            hideAccessDeniedState();
+            return true;
+        }
 
         const allowed = getAllowedPagesForRole(role);
         if (!allowed.includes(path) && !allowed.includes('*')) {
+            // Explicitly allow common utility pages and sub-pages
+            if (['salary_slip_view.html'].includes(path)) {
+                hideAccessDeniedState();
+                return true;
+            }
             showAccessDeniedState(role, path);
             return false;
         }
+        
+        hideAccessDeniedState();
         return true;
     };
 

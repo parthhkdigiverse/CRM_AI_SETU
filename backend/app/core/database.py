@@ -91,6 +91,16 @@ def init_db():
             if target_col and not target_col.get('nullable', True):
                 conn.execute(text("ALTER TABLE activity_logs ALTER COLUMN user_id DROP NOT NULL"))
 
+        # 7. clients (PM and Owner assignments)
+        if inspector.has_table("clients"):
+            cols = [c['name'] for c in inspector.get_columns('clients')]
+            if 'pm_id' not in cols:
+                conn.execute(text("ALTER TABLE clients ADD COLUMN pm_id INTEGER REFERENCES users(id)"))
+            if 'pm_assigned_by_id' not in cols:
+                conn.execute(text("ALTER TABLE clients ADD COLUMN pm_assigned_by_id INTEGER REFERENCES users(id)"))
+            if 'owner_id' not in cols:
+                conn.execute(text("ALTER TABLE clients ADD COLUMN owner_id INTEGER REFERENCES users(id)"))
+
         conn.commit()
 
 def get_db():

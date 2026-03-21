@@ -25,7 +25,18 @@ class VisitService:
     def get_visit(self, visit_id: int):
         return self.db.query(Visit).filter(Visit.id == visit_id, Visit.is_deleted == False).first()
 
-    def get_visits(self, skip: int = 0, limit: int = 100, current_user: User = None, shop_id: int = None, user_id: int | None = None):
+    def get_visits(
+        self, 
+        skip: int = 0, 
+        limit: int = 100, 
+        current_user: User = None, 
+        shop_id: int = None, 
+        user_id: int | None = None,
+        area_id: int | None = None,
+        status: str | None = None,
+        start_date: dt_date | None = None,
+        end_date: dt_date | None = None
+    ):
         try:
             from app.modules.shops.models import Shop as ShopModel
             from sqlalchemy import or_
@@ -46,6 +57,14 @@ class VisitService:
             
             if user_id is not None:
                 query = query.filter(Visit.user_id == user_id)
+            if area_id is not None and str(area_id).upper() != "ALL":
+                query = query.filter(ShopModel.area_id == area_id)
+            if status is not None and status.upper() != "ALL":
+                query = query.filter(Visit.status == status.upper())
+            if start_date is not None:
+                query = query.filter(Visit.visit_date >= start_date)
+            if end_date is not None:
+                query = query.filter(Visit.visit_date < (end_date + timedelta(days=1)))
 
             # --- SECURITY ENFORCEMENT ---
             if current_user and current_user.role not in [UserRole.ADMIN]:

@@ -23,6 +23,7 @@
     --accent:       #3b82f6;
     --accent-hover: #1d4ed8;
     --accent-gradient: linear-gradient(135deg, #2563eb, #3b82f6);
+    --page-max-width: 1400px;
 
     /* ── Surface / Layering (Light Mode) ── */
     --surface:       #ffffff;
@@ -100,6 +101,14 @@
     --badge-client-bg: #f3f4f6; --badge-client-text: #4b5563;
     --badge-success-bg: #dcfce7; --badge-success-text: #16a34a;
     --badge-danger-bg: #fee2e2; --badge-danger-text: #dc2626;
+
+    /* ── Icon Backgrounds (Light) ── */
+    --icon-bg-purple: #eef2ff; --icon-text-purple: #4f46e5;
+    --icon-bg-teal: #ecfeff; --icon-text-teal: #0891b2;
+    --icon-bg-yellow: #fffbeb; --icon-text-yellow: #d97706;
+    --icon-bg-green: #ecfdf5; --icon-text-green: #059669;
+    --icon-bg-red: #fef2f2; --icon-text-red: #dc2626;
+    --icon-bg-blue: #eff6ff; --icon-text-blue: #2563eb;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -346,6 +355,14 @@ a:hover {
     --badge-client-bg: #1f2937; --badge-client-text: #f3f4f6;
     --badge-success-bg: #064e3b; --badge-success-text: #4ade80;
     --badge-danger-bg: #7f1d1d; --badge-danger-text: #fecaca;
+
+    /* ── Icon Backgrounds (Dark) ── */
+    --icon-bg-purple: rgba(79, 70, 229, 0.2); --icon-text-purple: #818cf8;
+    --icon-bg-teal: rgba(8, 145, 178, 0.2); --icon-text-teal: #22d3ee;
+    --icon-bg-yellow: rgba(217, 119, 6, 0.2); --icon-text-yellow: #fbbf24;
+    --icon-bg-green: rgba(5, 150, 105, 0.2); --icon-text-green: #34d399;
+    --icon-bg-red: rgba(220, 38, 38, 0.2); --icon-text-red: #f87171;
+    --icon-bg-blue: rgba(37, 99, 235, 0.2); --icon-text-blue: #60a5fa;
 }
 
 
@@ -888,11 +905,11 @@ a:hover {
     }
 }
 
-/* KPI Icon Backgrounds */
-.kpi-icon-bg-1 { background:#eef2ff; color:#4f46e5; }
-.kpi-icon-bg-2 { background:#ecfdf5; color:#059669; }
-.kpi-icon-bg-3 { background:#fff1f2; color:#e11d48; }
-.kpi-icon-bg-4 { background:#eff6ff; color:#2563eb; }
+/* KPI Icon Backgrounds — Updated to use Variables */
+.kpi-icon-bg-1 { background: var(--icon-bg-purple); color: var(--icon-text-purple); }
+.kpi-icon-bg-2 { background: var(--icon-bg-green); color: var(--icon-text-green); }
+.kpi-icon-bg-3 { background: var(--icon-bg-red); color: var(--icon-text-red); }
+.kpi-icon-bg-4 { background: var(--icon-bg-blue); color: var(--icon-text-blue); }
 
 .btn-primary:active {
     transform: translateY(0);
@@ -1499,36 +1516,13 @@ h1, h2, h3, h4, h5, h6 {
     flex-shrink: 0;
 }
 
-/* ── Icon Color Helpers ──────────────────────────────────────── */
-.icon-purple {
-    background: #EEF2FF;
-    color: #6366F1;
-}
-
-.icon-teal {
-    background: #ECFEFF;
-    color: #0891B2;
-}
-
-.icon-yellow {
-    background: #FFFBEB;
-    color: #D97706;
-}
-
-.icon-green {
-    background: #ECFDF5;
-    color: #059669;
-}
-
-.icon-red {
-    background: #FEF2F2;
-    color: #DC2626;
-}
-
-.icon-blue {
-    background: #EFF6FF;
-    color: #2563EB;
-}
+/* ── Icon Color Helpers — Updated to use Variables ────────────────── */
+.icon-purple { background: var(--icon-bg-purple); color: var(--icon-text-purple); }
+.icon-teal   { background: var(--icon-bg-teal);   color: var(--icon-text-teal); }
+.icon-yellow { background: var(--icon-bg-yellow); color: var(--icon-text-yellow); }
+.icon-green  { background: var(--icon-bg-green);  color: var(--icon-text-green); }
+.icon-red    { background: var(--icon-bg-red);    color: var(--icon-text-red); }
+.icon-blue   { background: var(--icon-bg-blue);   color: var(--icon-text-blue); }
 
 /* ═══════════════════════════════════════════════════════════════
    STATUS PILLS & BADGES

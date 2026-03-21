@@ -2,43 +2,77 @@
 requireAuth();
 const sidebarElement = document.getElementById('sidebar');
 if (sidebarElement) sidebarElement.innerHTML = renderSidebar('projects');
+if (typeof injectTopHeader === 'function') injectTopHeader('Projects');
 
 let allProjects = [];
 let currentProject = null;
 let visitTimerInterval = null;
 let visitSeconds = 0;
 let cameraStream = null;
-let currentSearch = "";
-let currentFilter = "ALL";
-let currentSortBy = 'id';
-let currentSortOrder = 'desc';
-let currentPmFilter = "ALL";
+let currentFilters = { 'sort-filter': 'id_desc', 'status-filter': 'ALL', 'pm-filter-select': 'ALL' };
 let storefrontBlob = null;
 let selfieBlob = null;
 
-// Smart PM Fatching from active Leads for sorting
-function populatePmFilterDropdown() {
-    const select = document.getElementById('pm-filter-select');
-    if (!select) return;
-
-    // Remember current selection
-    const currentVal = select.value;
-
-    // Extract unique PMs from the leads list
+function updateFiltersUI() {
     const pmSet = new Set();
     allProjects.forEach(p => {
         const pmName = p.project_manager_name || p.pm_name || (p.project_manager && (p.project_manager.name || p.project_manager.full_name || p.project_manager.email));
         if (pmName) pmSet.add(pmName);
     });
-
     const uniquePMs = Array.from(pmSet).sort();
 
-    let html = '<option value="ALL">All Project Managers</option>';
-    html += '<option value="Unassigned">Unassigned Leads</option>';
-    uniquePMs.forEach(pm => { html += `<option value="${pm}">${pm}</option>`; });
+    if (typeof window.renderFilterPanel !== 'function') return;
 
-    select.innerHTML = html;
-    select.value = currentPmFilter; // Restore previous selection if any
+    window.renderFilterPanel({
+        containerId: 'filter-wrapper',
+        filters: [
+            {
+                type: 'text',
+                label: 'Search',
+                id: 'hub-search',
+                placeholder: 'Search leads...'
+            },
+            {
+                type: 'select',
+                label: 'Status',
+                id: 'status-filter',
+                options: [
+                    { value: 'ALL', label: 'All Active' },
+                    { value: 'IN_PROGRESS', label: 'In Progress' },
+                    { value: 'DEMO_SET', label: 'Demo Set' }
+                ]
+            },
+            {
+                type: 'select',
+                label: 'Project Manager',
+                id: 'pm-filter-select',
+                options: [
+                    { value: 'ALL', label: 'All Project Managers' },
+                    { value: 'Unassigned', label: 'Unassigned Leads' },
+                    ...uniquePMs.map(pm => ({ value: pm, label: pm }))
+                ]
+            },
+            {
+                type: 'select',
+                label: 'Sort By',
+                id: 'sort-filter',
+                options: [
+                    { value: 'id_desc', label: 'Newest First' },
+                    { value: 'id_asc', label: 'Oldest First' },
+                    { value: 'status_asc', label: 'Stage: Lead ➔ Maintenance' },
+                    { value: 'status_desc', label: 'Stage: Maintenance ➔ Lead' }
+                ]
+            }
+        ],
+        onApply: (data) => {
+            currentFilters = data;
+            filterQueue();
+        },
+        onReset: () => {
+            currentFilters = { 'sort-filter': 'id_desc', 'status-filter': 'ALL', 'pm-filter-select': 'ALL' };
+            filterQueue();
+        }
+    });
 }
 
 // 1. Fetch
@@ -66,7 +100,7 @@ async function loadHubData() {
             };
         });
         
-        populatePmFilterDropdown();
+        updateFiltersUI();
         filterQueue();
         
         // Don't auto-switch if we are already viewing a specific project
@@ -83,62 +117,23 @@ async function loadHubData() {
     }
 }
 
-// 2. Filters & Sort
-function handleSearch(e) { currentSearch = e.target.value.toLowerCase(); filterQueue(); }
-
-function setFilter(filterType, element) {
-    currentFilter = filterType;
-    document.querySelectorAll('.filter-pill').forEach(el => { el.classList.remove('bg-dark', 'text-white'); el.classList.add('bg-light', 'text-dark', 'border'); });
-    element.classList.remove('bg-light', 'text-dark', 'border'); element.classList.add('bg-dark', 'text-white');
-    filterQueue();
-}
-
-// 🚀 New PM Filter Apply logic
-window.applyPmFilter = (pmName) => {
-    currentPmFilter = pmName;
-    filterQueue();
-};
-
-// 🚀 Upgraded Sort function to handle the new button styles
-window.applySort = (by, order, element) => {
-    currentSortBy = by;
-    currentSortOrder = order;
-
-    // Reset all buttons to default grey state
-    document.querySelectorAll('.sort-option').forEach(el => {
-        el.classList.remove('shadow-sm');
-        el.style.background = '#f8fafc';
-        el.style.color = '#475569';
-        el.style.borderColor = '#e2e8f0';
-        el.style.fontWeight = '500';
-    });
-
-    // Highlight the clicked button in primary blue
-    if (element) {
-        element.classList.add('shadow-sm');
-        element.style.background = '#eff6ff';
-        element.style.color = '#1d4ed8';
-        element.style.borderColor = '#bfdbfe';
-        element.style.fontWeight = '600';
-    }
-
-    filterQueue();
-};
-
-// 🚀 Upgraded master filter loop
 function filterQueue() {
+    let searchVal = (currentFilters['hub-search'] || "").toLowerCase();
+    let statusFilter = currentFilters['status-filter'] || "ALL";
+    let pmFilter = currentFilters['pm-filter-select'] || "ALL";
+    let sortVal = currentFilters['sort-filter'] || "id_desc";
+    
     let filtered = allProjects.filter(p => {
-        const matchesSearch = p.name.toLowerCase().includes(currentSearch) || p.contact_person.toLowerCase().includes(currentSearch) || p.phone.includes(currentSearch);
+        const matchesSearch = p.name.toLowerCase().includes(searchVal) || p.contact_person.toLowerCase().includes(searchVal) || p.phone.includes(searchVal);
 
         let matchesFilter = true;
-        if (currentFilter === 'IN_PROGRESS') matchesFilter = (p.pipeline_stage === 'PITCHING');
-        else if (currentFilter === 'DEMO_SET') matchesFilter = (p.demo_scheduled_at != null || p.pipeline_stage === 'NEGOTIATION');
+        if (statusFilter === 'IN_PROGRESS') matchesFilter = (p.pipeline_stage === 'PITCHING');
+        else if (statusFilter === 'DEMO_SET') matchesFilter = (p.demo_scheduled_at != null || p.pipeline_stage === 'NEGOTIATION');
 
-        // NEW: Check the PM Filter
         let matchesPm = true;
-        if (currentPmFilter !== "ALL") {
+        if (pmFilter !== "ALL") {
             const pmName = p.project_manager_name || p.pm_name || (p.project_manager && (p.project_manager.name || p.project_manager.full_name || p.project_manager.email)) || 'Unassigned';
-            matchesPm = (pmName === currentPmFilter);
+            matchesPm = (pmName === pmFilter);
         }
 
         return matchesSearch && matchesFilter && matchesPm && !p.is_deleted;
@@ -147,10 +142,10 @@ function filterQueue() {
     const stageOrder = ["LEAD", "PITCHING", "NEGOTIATION", "DELIVERY", "MAINTENANCE"];
     filtered.sort((a, b) => {
         let valA, valB;
-        if (currentSortBy === 'id') { valA = a.id; valB = b.id; }
-        else if (currentSortBy === 'status') { valA = stageOrder.indexOf(a.pipeline_stage); valB = stageOrder.indexOf(b.pipeline_stage); }
+        if (sortVal.startsWith('id')) { valA = a.id; valB = b.id; }
+        else if (sortVal.startsWith('status')) { valA = stageOrder.indexOf(a.pipeline_stage); valB = stageOrder.indexOf(b.pipeline_stage); }
         let comparison = (valA > valB) ? 1 : ((valA < valB) ? -1 : 0);
-        return currentSortOrder === 'desc' ? (comparison * -1) : comparison;
+        return sortVal.endsWith('desc') ? (comparison * -1) : comparison;
     });
 
     renderQueue(filtered);

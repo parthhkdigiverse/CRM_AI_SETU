@@ -133,11 +133,11 @@ window.renderSidebar = function (active) {
     const roleName = String(role || '').toUpperCase();
     const fallbackPages = {
         ADMIN: ['*'],
-        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html', 'projects.html'],
-        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html', 'projects.html'],
-        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
-        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
-        CLIENT: ['dashboard.html']
+        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html', 'projects.html', 'projects_demo.html'],
+        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html', 'projects.html', 'projects_demo.html'],
+        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        CLIENT: ['dashboard.html', 'projects.html', 'billing.html', 'feedback.html', 'profile.html']
     };
     const effectivePolicy = window.__crmEffectiveAccessPolicy;
     const allowedPages = Array.isArray(effectivePolicy?.allowed_pages)
@@ -322,6 +322,7 @@ window.injectTopHeader = function (pageTitle) {
     const pageToParent = {
         'Users & Roles': 'Administration',
         'Project Overview': 'Field Operations',
+        'Projects Overview': 'Field Operations',
         'Visits': 'Field Operations',
         'Areas & Shops': 'Field Operations',
         'Projects': 'Project Management',
@@ -331,8 +332,11 @@ window.injectTopHeader = function (pageTitle) {
         'Issues': 'Project Management',
         'Clients': 'Client Relations',
         'Billing & Invoices': 'Client Relations',
+        'Feedback': 'Client Relations',
         'Employees': 'HR & Payroll',
         'Salary': 'HR & Payroll',
+        'Salary & Payroll': 'HR & Payroll',
+        'Salary Slip': 'HR & Payroll',
         'Leaves': 'HR & Payroll',
         'Incentives': 'HR & Payroll',
         'Demo': 'Project Management',
@@ -363,11 +367,11 @@ window.injectTopHeader = function (pageTitle) {
     const chevronSvg = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity: 0.5;"><path d="M4.5 9L7.5 6L4.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     const breadcrumbHtml = parent ? `
         <div class="d-flex align-items-center gap-2" style="font-size: 15px;">
-            <span style="color: var(--text-2);">${parent}</span>
+            <span style="color: var(--text-2); font-weight: 500;">${parent}</span>
             ${chevronSvg}
-            <div class="fw-bold" style="color: var(--text-1);">${pageTitle}</div>
+            <h1 class="page-section-title mb-0" style="font-size: 1.15rem; display: inline-block;">${pageTitle}</h1>
         </div>
-    ` : `<div class="fw-bold" style="color: var(--text-1); font-size: 15px;">${pageTitle}</div>`;
+    ` : `<h1 class="page-section-title mb-0" style="font-size: 1.25rem;">${pageTitle}</h1>`;
 
     const alertsRedDot = '<span id="nav-notif-dot" class="position-absolute bg-danger border border-white rounded-circle d-none" style="width:8px;height:8px;top:8px;right:8px;"></span>';
 
@@ -400,7 +404,7 @@ window.injectTopHeader = function (pageTitle) {
                     <button class="btn p-0 position-absolute text-muted search-btn" style="left: 12px; top: 50%; transform: translateY(-50%); z-index: 10;" onclick="const val = document.getElementById('global-search-input').value.trim(); if(val) window.location.href = 'search.html?q=' + encodeURIComponent(val);">
                         <i class="bi bi-search" style="color: var(--nav-text-muted);"></i>
                     </button>
-                    <input type="text" id="global-search-input" class="form-control" placeholder="Search..." style="padding-left: 38px; border-radius: 20px; height: 38px; background: rgba(37, 99, 235, 0.03); border: 1px solid rgba(37, 99, 235, 0.1); color: var(--title-color); font-weight: 500;">
+                    <input type="text" id="global-search-input" class="form-control" placeholder="Search..." style="padding-left: 38px; border-radius: 20px; height: 38px; background: var(--bg-app); border: 1px solid var(--border); color: var(--text-main); font-weight: 500;">
                     <div id="live-search-dropdown" class="search-results-dropdown"></div>
                 </div>
             </div>
@@ -414,7 +418,7 @@ window.injectTopHeader = function (pageTitle) {
 
             <!-- Add New Gradient Button -->
             <div class="dropdown d-none d-sm-block nav-add">
-                <button class="btn d-flex align-items-center gap-2 px-3 dropdown-toggle shadow-sm" type="button" id="addNewDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:13px; font-weight:700; border-radius: 10px; height: 40px; background: var(--accent-gradient); color: #ffffff !important; border: 1px solid rgba(255,255,255,0.2); padding: 10px 18px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
+                <button class="btn d-flex align-items-center gap-2 px-3 dropdown-toggle shadow-sm" type="button" id="addNewDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:13px; font-weight:700; border-radius: 10px; height: 40px; background: var(--accent-gradient); color: #ffffff !important; border: 1px solid rgba(255,255,255,0.2); padding: 10px 18px;">
                     <i class="bi bi-plus-lg" style="color: #ffffff !important;"></i> <span style="color: #ffffff !important;">Add New</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="addNewDropdown" style="font-size: 0.85rem; border-radius:12px; padding:8px; min-width:200px; background: var(--bg-surface); border: 1px solid var(--border) !important;">
@@ -1353,11 +1357,11 @@ window.checkPageAccess = function() {
     if (roleName === 'ADMIN') return; // Admins see everything
 
     const fallbackPages = {
-        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
-        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
-        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
-        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
-        CLIENT: ['dashboard.html']
+        SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html', 'projects.html', 'projects_demo.html'],
+        TELESALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html', 'projects.html', 'projects_demo.html'],
+        PROJECT_MANAGER: ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        PROJECT_MANAGER_AND_SALES: ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        CLIENT: ['dashboard.html', 'projects.html', 'billing.html', 'feedback.html', 'profile.html']
     };
 
     const effectivePolicy = window.__crmEffectiveAccessPolicy;
@@ -1369,10 +1373,7 @@ window.checkPageAccess = function() {
         // Dynamic access to sub-pages: 
         // If current page is salary_slip_view.html, check if user has access to parent pages
         if (path === 'salary_slip_view.html') {
-            if (allowedPages.includes('salary.html') || 
-                allowedPages.includes('incentives.html')) {
-                return; // Access granted dynamically
-            }
+            return; // Allow authenticated users to view slips; backend handles ownership check
         }
         showAccessDenied(path);
     }

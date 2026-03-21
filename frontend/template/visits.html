@@ -9,15 +9,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
-    <link rel="stylesheet" href="../css/components.css?v=1772780188">
+    <link rel="stylesheet" href="../css/theme.css?v=20260321">
+    <link rel="stylesheet" href="../css/components.css?v=20260321">
+    <style>
+        .extra-small {
+            font-size: 0.75rem;
+        }
+        .uppercase {
+            text-transform: uppercase;
+            letter-spacing: 0.05rem;
+        }
+    </style>
 </head>
 
 <body>
     <div class="d-flex">
         <div id="sidebar"></div>
         <div class="flex-grow-1 main-wrapper">
-            <div class="page-content mx-auto" style="max-width: 1400px; width: 100%;">
+            <div class="page-content-standard">
                 <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                     <div>
                         <h2 class="page-section-title">Visits</h2>
@@ -36,7 +45,7 @@
                                 <div class="stat-label mb-2">Today's Visits</div>
                                 <div class="stat-value" id="stat-today">—</div>
                             </div>
-                            <div class="stat-icon bg-info-subtle text-info"><i class="bi bi-calendar-day"></i></div>
+                            <div class="stat-icon icon-blue"><i class="bi bi-calendar-day"></i></div>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -45,97 +54,79 @@
                                 <div class="stat-label mb-2">Accepted Leads</div>
                                 <div class="stat-value" id="stat-accepted">—</div>
                             </div>
-                            <div class="stat-icon" style="background:#f0fdf4; color:#16a34a;"><i
-                                    class="bi bi-check-circle"></i></div>
+                            <div class="stat-icon icon-green"><i class="bi bi-check-circle"></i></div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="stat-card">
+                        <div class="stat-card shadow-sm">
                             <div>
                                 <div class="stat-label mb-2">Declined</div>
                                 <div class="stat-value" id="stat-declined">—</div>
                             </div>
-                            <div class="stat-icon" style="background:#fef2f2; color:#ef4444;"><i
-                                    class="bi bi-x-circle"></i></div>
+                            <div class="stat-icon icon-red"><i class="bi bi-x-circle"></i></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="accordion shadow-sm" id="visitsAccordion">
+                <div id="filter-wrapper" class="mb-4"></div>
 
-                    <div class="accordion-item border-0 mb-3 rounded">
-                        <h2 class="accordion-header" id="headingOne">
-                            <button class="accordion-button fw-bold" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                                <i class="bi bi-person-check-fill text-success me-2"></i> Pending Visits
-                            </button>
-                        </h2>
-                        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
-                            data-bs-parent="#visitsAccordion">
-                            <div class="accordion-body p-0 border border-top-0 rounded-bottom">
-                                <div class="table-responsive">
-                                    <table class="table mb-0 align-middle">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Area</th>
-                                                <th>Shop</th>
-                                                <th id="dynamic-assign-header">Agent Info</th>
-                                                <th>Accepted Date & Time</th>
-                                                <th>STATUS</th>
-                                                <th>ACTIONS</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="accepted-leads-table">
-                                            <tr>
-                                                <td colspan="6" class="text-center py-4 text-muted">
-                                                    <span class="spinner-border spinner-border-sm me-2"></span>Loading
-                                                    history...
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                <div class="card border-0 shadow-sm mb-4 grid-card">
+                    <div class="card-header border-bottom-0 pt-4 pb-0" style="background:transparent;">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-person-check-fill text-success me-2"></i> Pending Visits</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead style="background:var(--bg-app); border-bottom: 1px solid var(--border);">
+                                    <tr>
+                                        <th class="ps-4 py-3 text-muted fw-bold extra-small uppercase">Area</th>
+                                        <th class="py-3 text-muted fw-bold extra-small uppercase">Shop</th>
+                                        <th class="py-3 text-muted fw-bold extra-small uppercase" id="dynamic-assign-header">Agent Info</th>
+                                        <th class="py-3 text-muted fw-bold extra-small uppercase">Accepted Date & Time</th>
+                                        <th class="py-3 text-muted fw-bold extra-small uppercase">STATUS</th>
+                                        <th class="pe-4 py-3 text-muted fw-bold extra-small uppercase">ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="accepted-leads-table">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">
+                                            <span class="spinner-border spinner-border-sm me-2"></span>Loading history...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
+                </div>
 
-                    <div class="accordion-item border-0 mb-3 rounded">
-                        <h2 class="accordion-header" id="headingTwo">
-                            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                                <i class="bi bi-list-ul text-primary me-2"></i> All Visit Records
-                            </button>
-                        </h2>
-                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo"
-                            data-bs-parent="#visitsAccordion">
-                            <div class="accordion-body p-0 border border-top-0 rounded-bottom">
-                                <div class="table-responsive">
-                                    <table class="table mb-0">
-                                        <thead>
-                                            <tr>
-                                                <th>Shop</th>
-                                                <th>Area</th>
-                                                <th>Agent</th>
-                                                <th>Date & Time</th>
-                                                <th>Outcome</th>
-                                                <th>Remarks</th>
-                                                <th>Photo</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="visits-table">
-                                            <tr>
-                                                <td colspan="7" class="text-center py-5 text-muted">
-                                                    <span class="spinner-border spinner-border-sm me-2"></span>Loading
-                                                    visits...
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                <div class="card border-0 shadow-sm mb-4 grid-card">
+                    <div class="card-header border-bottom-0 pt-4 pb-0" style="background:transparent;">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-list-ul text-primary me-2"></i> All Visit Records</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead style="background:var(--bg-app); border-bottom: 1px solid var(--border);">
+                                    <tr>
+                                        <th class="ps-4 py-3 text-muted fw-bold extra-small uppercase">Shop</th>
+                                        <th class="py-3 text-muted fw-bold extra-small uppercase">Area</th>
+                                        <th class="py-3 text-muted fw-bold extra-small uppercase">Agent</th>
+                                        <th class="py-3 text-muted fw-bold extra-small uppercase">Date & Time</th>
+                                        <th class="py-3 text-muted fw-bold extra-small uppercase">Outcome</th>
+                                        <th class="py-3 text-muted fw-bold extra-small uppercase">Remarks</th>
+                                        <th class="pe-4 py-3 text-muted fw-bold extra-small uppercase">Photo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="visits-table">
+                                    <tr>
+                                        <td colspan="7" class="text-center py-5 text-muted">
+                                            <span class="spinner-border spinner-border-sm me-2"></span>Loading visits...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-
                 </div>
 
             </div>
@@ -201,7 +192,7 @@
                     </div>
 
                     <div id="accept-infobox" class="outcome-info mb-3"
-                        style="display:none; background:#f0fdf4; color:#166534; border:1px solid #bbf7d0;">
+                        style="display:none; background:var(--success-light); color:var(--success-text); border:1px solid var(--success-border);">
                         <i class="bi bi-stars fs-5 mt-1"></i>
                         <div><strong>Lead Accepted!</strong><br>After saving, the system will begin the client
                             onboarding and payment flow.</div>
@@ -331,17 +322,15 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/utils.js?v=2.3"></script>
-    <script src="../js/api.js?v=2.3"></script>
-    <script src="../js/auth.js?v=2.3"></script>
-    <script src="../js/ui_components.js?v=20260312"></script>
-    <script src="../js/app.js?v=2.3"></script>
+    <script src="../js/utils.js?v=20260321"></script>
+    <script src="../js/api.js?v=20260321"></script>
+    <script src="../js/auth.js?v=20260321"></script>
+    <script src="../js/ui_components.js?v=20260321"></script>
+    <script src="../js/app.js?v=20260321"></script>
     <script>
         requireAuth();
-        const sidebarElement = document.getElementById('sidebar');
-        if (sidebarElement) {
-            sidebarElement.innerHTML = renderSidebar('visits');
-        }
+        const sb = document.getElementById('sidebar');
+        if (sb) sb.innerHTML = renderSidebar('visits');
         injectTopHeader('Visits');
 
         const user = getUser();
@@ -518,7 +507,7 @@
 
                     return `
                 <tr>
-                    <td class="fw-semibold text-dark">${v.shop_name || ('Shop #' + v.shop_id)}</td>
+                    <td class="fw-semibold text-dark ps-4">${v.shop_name || ('Shop #' + v.shop_id)}</td>
                     <td class="text-muted">${v.area_name || '—'}</td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
@@ -536,7 +525,7 @@
                         ${badgeHtml}
                     </td>
                     <td>${remarksHtml}</td>
-                    <td>${photoCell}</td>
+                    <td class="pe-4">${photoCell}</td>
                 </tr>`;
                 }).join('');
 
@@ -576,7 +565,7 @@
 
                     return `
                         <tr>
-                            <td class="text-muted"><i class="bi bi-geo-alt me-2"></i>${l.area_name || '—'}</td>
+                            <td class="text-muted ps-4"><i class="bi bi-geo-alt me-2"></i>${l.area_name || '—'}</td>
                             <td class="fw-semibold text-dark">${l.shop_name || '—'}</td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
@@ -599,7 +588,7 @@
                                     <label class="form-check-label text-warning small" for="switch-${l.id}">Pending</label>
                                 </div>
                             </td>
-                            <td>
+                            <td class="pe-4">
                                 <button class="btn btn-sm btn-outline-primary view-lead-btn"
                                     data-shop-id="${l.shop_id || l.id}"
                                     title="View Details">
@@ -775,7 +764,67 @@
             });
         }
 
+        // ── Initialize Filters ──────────────────────────────────
+        async function initFilters() {
+            try {
+                const [areas, emps] = await Promise.all([
+                    ApiClient.getAreas(),
+                    ApiClient.getEmployees()
+                ]);
+
+                renderFilterPanel({
+                    containerId: 'filter-wrapper',
+                    filters: [
+                        {
+                            type: 'select',
+                            label: 'Area',
+                            id: 'filter-area',
+                            options: [
+                                { value: 'ALL', label: 'All Areas' },
+                                ...areas.map(a => ({ value: a.id, label: a.name }))
+                            ]
+                        },
+                        {
+                            type: 'select',
+                            label: 'Agent',
+                            id: 'filter-user',
+                            options: [
+                                { value: 'ALL', label: 'All Agents' },
+                                ...emps.map(e => ({ value: e.id, label: e.name || e.email }))
+                            ]
+                        },
+                        {
+                            type: 'select',
+                            label: 'Outcome',
+                            id: 'filter-status',
+                            options: [
+                                { value: 'ALL', label: 'All Outcomes' },
+                                { value: 'SATISFIED', label: 'Satisfied' },
+                                { value: 'ACCEPT', label: 'Accepted' },
+                                { value: 'DECLINE', label: 'Declined' },
+                                { value: 'TAKE_TIME_TO_THINK', label: 'Thinking' },
+                                { value: 'OTHER', label: 'Other' }
+                            ]
+                        },
+                        { type: 'date', label: 'Start Date', id: 'filter-start' },
+                        { type: 'date', label: 'End Date', id: 'filter-end' }
+                    ],
+                    onApply: (data) => loadVisits({
+                        area: data['filter-area'],
+                        user: data['filter-user'],
+                        status: data['filter-status'],
+                        start: data['filter-start'],
+                        end: data['filter-end']
+                    }),
+                    onReset: () => loadVisits()
+                });
+            } catch (err) {
+                console.error("Filter init failed:", err);
+            }
+        }
+
         // Initialize
+        initFilters();
         loadVisits();
         loadAcceptedLeads();
     </script>

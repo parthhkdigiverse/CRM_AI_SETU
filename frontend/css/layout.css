@@ -53,94 +53,11 @@
     position: relative;
 }
 
-/* Top Navigation Bar (Header) */
-.topbar {
-    height: 52px;
-    background-color: var(--bg-surface);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 24px;
-    z-index: 10;
-    position: sticky;
-    top: 0;
-}
+/* Sidebar handled by Premium Sidebar system in theme.css */
 
-.breadcrumb {
-    font-size: 12px;
-    color: var(--text-2);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
+/* Top Navigation Bar (Header) - Handled by .top-header in theme.css */
 
-.breadcrumb i {
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
-.topbar-actions {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
-
-.search-box {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 400px;
-}
-
-.search-box i {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #9CA3AF;
-}
-
-.search-box input {
-    width: 100%;
-    height: 40px;
-    padding: 8px 16px 8px 42px;
-    border: none;
-    border-radius: 8px;
-    background-color: var(--bg-app);
-    font-size: 14px;
-    color: var(--text-1);
-    transition: all 0.2s;
-}
-
-.search-box input::placeholder {
-    color: #94A3B8;
-}
-
-.search-box input:focus {
-    background-color: #FFFFFF;
-    box-shadow: 0 0 0 2px #E2E8F0;
-    outline: none;
-}
-
-.notification-bell {
-    position: relative;
-    cursor: pointer;
-    font-size: 18px;
-    color: var(--text-2);
-    transition: color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-}
-
-.notification-bell:hover {
-    color: #1E293B;
-    background-color: #F8FAFC;
-}
+/* Legacy Topbar items removed - replaced by .top-header system */
 
 .bell-dot {
     position: absolute;
@@ -153,38 +70,36 @@
     border: 2px solid var(--surface);
 }
 
-.profile-dropdown {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 20px;
-    transition: background-color 0.2s;
-}
+/* Profile dropdown handled in theme.css & ui_components.js */
 
-.profile-dropdown:hover {
-    background-color: #F8FAFC;
-}
-
-.avatar {
-    font-weight: 600;
-    font-size: 14px;
-    border: 2px solid var(--surface);
-    box-shadow: var(--shadow-card);
-}
-
-/* Page Content Area */
-.page-content {
+/* Page Content Area - Final Standardized System */
+.page-content-standard, 
+.page-content, 
+.page-container {
     flex-grow: 1;
-    overflow-y: auto;
-    overflow-x: hidden; /* Prevent internal content from pushing it out */
-    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 32px; /* Standard Desktop Padding */
+    margin: 20px auto;
+    width: calc(100% - 40px);
+    max-width: var(--page-max-width, 1440px);
     transition: padding 0.3s ease;
+    min-height: 0; /* Allow flex children to shrink */
+}
+
+@media (max-width: 991.98px) {
+    .page-content-standard, .page-content, .page-container {
+        padding: 20px 24px;
+        margin: 16px auto;
+        width: calc(100% - 32px);
+    }
 }
 
 @media (max-width: 767.98px) {
-    .page-content {
-        padding: 16px 12px;
+    .page-content-standard, .page-content, .page-container {
+        padding: 16px 16px !important;
+        margin: 12px auto;
+        width: calc(100% - 24px);
     }
 }
 

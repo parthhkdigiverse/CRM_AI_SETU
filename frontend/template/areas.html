@@ -25,32 +25,27 @@
         }
 
         body {
-            background: #f8fafc;
+            background: var(--bg-app);
             margin: 0;
-            color: #1e293b;
+            color: var(--text-main);
         }
-
-        .page-wrapper {
-            display: flex;
-            min-height: 100vh;
-        }
-
 
         /* Split Panel Layout inside a single card */
         .split-panel {
             display: grid;
             grid-template-columns: 320px 1fr;
             min-height: 600px;
+            background: var(--surface);
         }
 
         .area-sidebar {
-            border-right: 1px solid #f1f5f9;
-            background: #fff;
+            border-right: 1px solid var(--border);
+            background: var(--surface);
         }
 
         .area-search-container {
             padding: 1.25rem;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid var(--border);
         }
 
         .area-search-container input {
@@ -61,7 +56,7 @@
             font-size: 0.875rem;
             font-weight: 500;
             outline: none;
-            background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E") no-repeat 14px center;
+            background: var(--bg-app) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E") no-repeat 14px center;
             transition: all 0.2s;
         }
 
@@ -79,14 +74,14 @@
 
         /* Shops Container */
         .shops-container {
-            background: #fff;
+            background: var(--surface);
             display: flex;
             flex-direction: column;
         }
 
         .shops-header {
             padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -104,11 +99,13 @@
         }
 
         .area-item:hover {
-            background: #f8fafc;
+            background: var(--bg-app);
+            opacity: 0.9;
         }
 
         .area-item.active {
-            background: #eef2ff;
+            background: var(--primary-soft);
+            border-left: 3px solid var(--primary);
         }
 
         .area-item .area-info {
@@ -117,37 +114,37 @@
             gap: 10px;
             font-size: 0.875rem;
             font-weight: 600;
-            color: #475569;
+            color: var(--text-2);
         }
 
         .area-item.active .area-info {
-            color: #2563eb;
+            color: var(--primary);
         }
 
         .area-item .area-info i {
             font-size: 0.95rem;
-            color: #94a3b8;
+            color: var(--text-3);
         }
 
         .area-item.active .area-info i {
-            color: #2563eb;
+            color: var(--primary);
         }
 
         .area-count-pill {
             font-size: 0.7rem;
             font-weight: 700;
-            color: #2563eb;
-            background: #fff;
+            color: var(--primary);
+            background: var(--surface);
             border-radius: 6px;
             padding: 3px 8px;
-            border: 1px solid rgba(79, 70, 229, 0.15);
+            border: 1px solid var(--primary-ring);
         }
 
         .shops-header h3 {
             margin: 0;
             font-size: 1.15rem;
             font-weight: 800;
-            color: #0f172a;
+            color: var(--text-1);
             letter-spacing: -0.02em;
             display: flex;
             align-items: center;
@@ -168,23 +165,23 @@
             font-size: 0.725rem;
 
             font-weight: 800;
-            color: #94a3b8;
+            color: var(--text-3);
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            background: #fff;
-            border-bottom: 1px solid #f8fafc;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border-subtle);
         }
 
         .shops-table tbody td {
             padding: 16px 20px;
             font-size: 0.875rem;
-            color: #475569;
-            border-bottom: 1px solid #f8fafc;
+            color: var(--text-2);
+            border-bottom: 1px solid var(--border-subtle);
         }
 
         .shop-name-primary {
             font-weight: 700;
-            color: #0f172a;
+            color: var(--text-1);
             display: block;
             letter-spacing: -0.01em;
         }
@@ -212,7 +209,7 @@
 
         .phone-link {
             text-decoration: none;
-            color: #64748b;
+            color: var(--text-muted);
             display: flex;
             align-items: center;
             gap: 6px;
@@ -319,20 +316,20 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
-    <link rel="stylesheet" href="../css/components.css?v=1772780188">
+    <link rel="stylesheet" href="../css/theme.css?v=20260321">
+    <link rel="stylesheet" href="../css/components.css?v=20260321">
 </head>
 
 <body>
     <div class="d-flex">
         <div id="sidebar"></div>
         <div class="flex-grow-1 main-wrapper">
-            <div class="page-content mx-auto" style="max-width: 1400px; width: 100%;">
-                <div class="px-0 d-flex flex-column flex-grow-1" style="min-height: 0;">
+            <div class="page-content-standard">
+                <div class="d-flex flex-column flex-grow-1" style="min-height: 0;">
                     <div class="d-flex justify-content-between align-items-center mb-4 pt-0 flex-shrink-0">
                         <div>
-                            <h2 class="page-section-title mb-1" style="font-weight: 800; color: #0f172a;">Areas &amp; Shops</h2>
-                            <span class="text-muted small" id="area-count-label">Loading areas...</span>
+                            <h2 class="page-section-title mb-1" style="font-weight: 800; color: var(--text-1);">Areas &amp; Shops</h2>
+                            <span class="text-muted small" id="area-count-label">Initializing areas...</span>
                         </div>
                         <div class="d-flex gap-2">
                             <div class="dropdown" id="btn-view-archive-container" style="display: none;">
@@ -354,33 +351,27 @@
                         </div>
                     </div>
 
+                    <div id="filter-wrapper" class="mb-4"></div>
+
                     <!-- Main Content Card -->
                     <div class="card shadow-sm border-0 flex-grow-1 d-flex flex-column mb-0" style="border-radius: 12px; overflow: hidden; min-height: 0;">
                         <div class="card-body p-0 d-flex flex-column h-100">
                             <div class="split-panel flex-grow-1 d-flex h-100" style="min-height: 0;">
                                 <!-- Left: Area Sidebar -->
-                                <div class="panel-sidebar d-flex flex-column" style="width: 320px; border-right: 1px solid var(--border); background: #fff; flex-shrink: 0;">
-                                    <div class="area-search-container flex-shrink-0"
-                                        style="padding: 1.25rem; border-bottom: 1px solid var(--border);">
-                                        <input type="text" id="area-search" placeholder="Search areas..."
-                                            style="width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px 9px 38px; font-size: 0.875rem; font-weight: 500; outline: none; background: var(--bg-app) url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E&quot;) no-repeat 14px center;">
-                                        <select id="sourceFilter" class="form-select form-select-sm mt-2"
-                                            style="font-size: 0.8rem; border-radius: 8px; border: 1px solid var(--border);">
-                                            <option value="ALL">All Leads</option>
-                                            <option value="ADMIN">Admin Assigned</option>
-                                            <option value="SELF">Self-Sourced</option>
-                                        </select>
-                                    </div>
+                                <div class="panel-sidebar d-flex flex-column" style="width: 320px; border-right: 1px solid var(--border); background: var(--surface); flex-shrink: 0;">
                                     <ul class="area-list flex-grow-1" id="area-list"
                                         style="list-style: none; padding: 10px; margin: 0; overflow-y: auto;">
-                                        <li class="area-list-empty p-4 text-center text-muted">Loading areas...</li>
+                                        <li class="area-list-empty p-4 text-center text-muted">
+                                            <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+                                            <div>Fetching workspaces...</div>
+                                        </li>
                                     </ul>
                                 </div>
 
                                 <!-- Right: Shops Area -->
                                 <div class="panel-content d-flex flex-column flex-grow-1" style="min-width: 0;">
                                     <div class="shops-header flex-shrink-0"
-                                        style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: #fff;">
+                                        style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface);">
                                         <h3 id="shops-panel-title" class="mb-0 fs-5"><i
                                                 class="bi bi-shop text-muted me-2"></i> Select an area</h3>
                                         <span id="shops-panel-count" class="text-muted small"></span>
@@ -398,8 +389,7 @@
                         </div>
                     </div>
                 </div>
-                </div>
-            </div><!-- /page-content -->
+            </div><!-- /page-content-standard -->
 
             <!-- Archived Data Offcanvas Removed in favor of generic ArchivedDataOffcanvas component -->
 
@@ -420,10 +410,10 @@
                     <!-- Tab Toggle -->
                     <div class="d-flex gap-2 mb-4">
                         <button class="btn btn-sm fw-semibold" id="tab-area-btn"
-                            style="border-radius:8px;background:#eef2ff;color:#2563eb;border:none;padding:7px 18px;"
+                            style="border-radius:8px;background:var(--primary-light);color:var(--primary);border:none;padding:7px 18px;"
                             onclick="switchModalTab('area')">New Area</button>
                         <button class="btn btn-sm fw-semibold" id="tab-shop-btn"
-                            style="border-radius:8px;background:#f1f5f9;color:#64748b;border:none;padding:7px 18px;"
+                            style="border-radius:8px;background:var(--bg-app);color:var(--text-muted);border:none;padding:7px 18px;"
                             onclick="switchModalTab('shop')">New Shop</button>
                     </div>
 
@@ -456,8 +446,8 @@
                                     <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i>Pin a
                                         location to base auto-discovery on.</p>
 
-                                    <hr class="my-4">
-                                    <h6 class="fw-bold mb-3" style="color:#0f172a;"><i
+                                    <hr class="my-4" style="border-color: var(--border);">
+                                    <h6 class="fw-bold mb-3" style="color: var(--text-1);"><i
                                             class="bi bi-crosshair me-2 text-primary"></i>Advanced Targeting</h6>
 
                                     <div class="mb-3">
@@ -517,10 +507,10 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-check form-switch mt-4 mb-2 border rounded p-3 bg-light">
+                                    <div class="form-check form-switch mt-4 mb-2 border rounded p-3 bg-app" style="border-color: var(--border) !important;">
                                         <input class="form-check-input ms-0 me-2 mt-1" type="checkbox"
                                             id="a-auto-discovery" style="cursor:pointer;" checked>
-                                        <label class="form-check-label fw-bold text-dark" for="a-auto-discovery"
+                                        <label class="form-check-label fw-bold text-main" for="a-auto-discovery"
                                             style="cursor:pointer;">Enable Auto-Discovery</label>
                                         <div class="small text-muted mt-1 lh-sm">Automatically fetch nearby shops
                                             bridging these categories within the radius when creating area.</div>
@@ -578,7 +568,7 @@
                         <div class="mb-3">
                             <label class="form-label">Area *</label>
                             <select id="s-area" class="form-select">
-                                <option value="">Loading areas...</option>
+                                <option value="">Fetching areas...</option>
                             </select>
                         </div>
                         <div class="row g-3">
@@ -704,19 +694,17 @@
         </div>
     </div>
 
-    <script src="../js/utils.js?v=20260312"></script>
-    <script src="../js/api.js?v=2.3"></script>
-    <script src="../js/auth.js?v=2.3"></script>
-    <script src="../js/ui_components.js?v=20260312"></script>
-    <script src="../js/app.js?v=2.3"></script>
+    <script src="../js/utils.js?v=20260321"></script>
+    <script src="../js/api.js?v=20260321"></script>
+    <script src="../js/auth.js?v=20260321"></script>
+    <script src="../js/ui_components.js?v=20260321"></script>
+    <script src="../js/app.js?v=20260321"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
         injectTopHeader('Areas & Shops');
-        const sidebarElement = document.getElementById('sidebar');
-        if (sidebarElement) {
-            sidebarElement.innerHTML = renderSidebar('areas');
-        }
+        const sb = document.getElementById('sidebar');
+        if (sb) sb.innerHTML = renderSidebar('areas');
 
         // ── Instantiate Generic Archive Component ──
         const areasArchiveOffcanvas = new ArchivedDataOffcanvas({
@@ -833,14 +821,49 @@
                 allUsers = allUsers || [];
             }
             renderAreaList();
-            populateAreaDropdown();
+        }
+
+        // ── Initialize Filters ──────────────────────────────────
+        let currentFilters = { search: '', source: 'ALL' };
+
+        function initFilters() {
+            renderFilterPanel({
+                containerId: 'filter-wrapper',
+                filters: [
+                    {
+                        type: 'text',
+                        label: 'Search Areas',
+                        id: 'filter-search',
+                        placeholder: 'Name or description...'
+                    },
+                    {
+                        type: 'select',
+                        label: 'Lead Source',
+                        id: 'filter-source',
+                        options: [
+                            { value: 'ALL', label: 'All Leads' },
+                            { value: 'ADMIN', label: 'Admin Assigned' },
+                            { value: 'SELF', label: 'Self-Sourced' }
+                        ]
+                    }
+                ],
+                onApply: (data) => {
+                    currentFilters.search = data['filter-search'] || '';
+                    currentFilters.source = data['filter-source'] || 'ALL';
+                    renderAreaList(currentFilters.search);
+                },
+                onReset: () => {
+                    currentFilters = { search: '', source: 'ALL' };
+                    renderAreaList();
+                }
+            });
         }
 
         // ── Render Area List ──
         function renderAreaList(filter = '') {
             const ul = document.getElementById('area-list');
             const currentUser = ApiClient.getCurrentUser();
-            const sourceFilter = document.getElementById('sourceFilter')?.value || 'ALL';
+            const sourceFilter = currentFilters.source;
 
             const filtered = allAreas.filter(a => {
                 // Text search
@@ -879,7 +902,7 @@
         // ── Select Area → Show Shops ──
         async function selectArea(areaId, areaName) {
             selectedAreaId = areaId;
-            renderAreaList(document.getElementById('area-search').value);
+            renderAreaList(currentFilters.search);
             const shops = allShops.filter(s => s.area_id === areaId);
             const user = ApiClient.getCurrentUser();
             const isAdmin = user && user.role && user.role.toUpperCase() === 'ADMIN';
@@ -1054,20 +1077,21 @@
         }
 
         // ── Search & Source Filter ──
-        document.getElementById('area-search').addEventListener('input', e => renderAreaList(e.target.value));
-        document.getElementById('sourceFilter').addEventListener('change', () => renderAreaList(document.getElementById('area-search').value));
+        // Search & Source Filter removed because they are handled by initFilters()
 
         // ── Modal Tab Switch ──
         function switchModalTab(tab) {
             modalTab = tab;
             document.getElementById('form-area').style.display = tab === 'area' ? '' : 'none';
             document.getElementById('form-shop').style.display = tab === 'shop' ? '' : 'none';
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            
             document.getElementById('tab-area-btn').style.cssText = tab === 'area'
-                ? 'border-radius:8px;background:#eef2ff;color:#2563eb;border:none;padding:7px 18px;'
-                : 'border-radius:8px;background:#f1f5f9;color:#64748b;border:none;padding:7px 18px;';
+                ? `border-radius:8px;background:var(--primary-soft);color:var(--primary);border:none;padding:7px 18px;`
+                : `border-radius:8px;background:var(--bg-app);color:var(--text-3);border:none;padding:7px 18px;`;
             document.getElementById('tab-shop-btn').style.cssText = tab === 'shop'
-                ? 'border-radius:8px;background:#eef2ff;color:#2563eb;border:none;padding:7px 18px;'
-                : 'border-radius:8px;background:#f1f5f9;color:#64748b;border:none;padding:7px 18px;';
+                ? `border-radius:8px;background:var(--primary-soft);color:var(--primary);border:none;padding:7px 18px;`
+                : `border-radius:8px;background:var(--bg-app);color:var(--text-3);border:none;padding:7px 18px;`;
             const saveBtn = document.getElementById('modal-save-btn');
             const discoverBtn = document.getElementById('modal-discover-btn');
             const backBtn = document.getElementById('modal-back-btn');
@@ -1452,10 +1476,10 @@
                     }
 
                     return `
-                        <div class="shop-card border p-2 rounded d-flex align-items-center gap-3" data-name="${s.name.toLowerCase()}" style="background:#fff;">
+                        <div class="shop-card border p-2 rounded d-flex align-items-center gap-3" data-name="${s.name.toLowerCase()}" style="background:var(--surface); border-color:var(--border) !important;">
                             <input class="form-check-input assign-shop-cb m-0" type="checkbox" value="${s.id}" id="chk-shop-${s.id}" checked style="width: 1.25rem; height: 1.25rem;">
                             <label class="d-flex flex-column mb-0 w-100" for="chk-shop-${s.id}" style="cursor:pointer;">
-                                <span class="fw-bold lh-1 mb-1" style="color:#0f172a;">${s.name}</span>
+                                <span class="fw-bold lh-1 mb-1" style="color:var(--text-1);">${s.name}</span>
                                 ${assignedHtml}
                             </label>
                         </div>
@@ -1536,7 +1560,7 @@
     </script>
     <script async
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBygpEQiPfF15EghJWMWFlmejZ19b3mVzE&loading=async&v=week&libraries=places,marker&callback=initMap"></script>
-    <script src="../js/areas.js"></script>
+    <script src="../js/areas.js?v=20260321"></script>
 </body>
 
 </html>

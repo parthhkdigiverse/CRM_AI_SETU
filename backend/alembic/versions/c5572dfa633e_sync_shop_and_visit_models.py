@@ -50,7 +50,7 @@ def upgrade() -> None:
     op.drop_index(op.f('ix_shops_status'), table_name='shops')
     op.create_index(op.f('ix_shops_is_deleted'), 'shops', ['is_deleted'], unique=False)
     op.create_index(op.f('ix_shops_pipeline_stage'), 'shops', ['pipeline_stage'], unique=False)
-    op.drop_constraint(op.f('fk_shops_archived_by_id'), 'shops', type_='foreignkey')
+    #op.drop_constraint(op.f('fk_shops_archived_by_id'), 'shops', type_='foreignkey')
     op.drop_column('shops', 'archived_by_id')
     op.drop_column('shops', 'is_archived')
     op.create_index(op.f('ix_timetable_events_is_deleted'), 'timetable_events', ['is_deleted'], unique=False)

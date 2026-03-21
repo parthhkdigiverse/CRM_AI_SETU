@@ -9,10 +9,13 @@
     <title>Timetable | SRM AI SETU</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
-    <link rel="stylesheet" href="../css/components.css?v=1772780188">
+    <link rel="stylesheet" href="../css/theme.css?v=20260321">
+    <link rel="stylesheet" href="../css/components.css?v=20260321">
     <style>
-        body {
+        .page-content-standard {
+            padding-top: 1.5rem !important;
+        }
+        .cal-toolbar {
             background: #f8fafc;
             overflow: auto !important;
         }
@@ -23,7 +26,6 @@
             justify-content: space-between;
             align-items: center;
             padding: 16px 24px;
-            background: #fff;
             border-bottom: 1px solid #e2e8f0;
             flex-shrink: 0;
             border-radius: 16px 16px 0 0;
@@ -872,7 +874,7 @@
     <div class="d-flex" style="min-height:100vh;">
         <div id="sidebar" style="flex-shrink:0;"></div>
         <div class="flex-grow-1 d-flex flex-column main-wrapper">
-            <div class="page-content mx-auto" style="display:flex; flex-direction:column; flex:1; width: 100%; max-width: 1400px;">
+            <div class="page-content-standard" style="display:flex; flex-direction:column; flex:1;">
                 <div id="main-content" class="card border-0 shadow-sm"
                     style="flex:1; display:flex; flex-direction:column; border-radius:16px; overflow:hidden;"></div>
             </div>
@@ -1037,20 +1039,18 @@
     </div>
 
     <!-- ─── Scripts ───────────────────────────────────────── -->
-    <script src="../js/utils.js?v=2.3"></script>
-    <script src="../js/api.js?v=2.3"></script>
-    <script src="../js/auth.js?v=2.3"></script>
-    <script src="../js/ui_components.js?v=20260312"></script>
-    <script src="../js/app.js?v=2.3"></script>
+    <script src="../js/utils.js?v=20260321"></script>
+    <script src="../js/api.js?v=20260321"></script>
+    <script src="../js/auth.js?v=20260321"></script>
+    <script src="../js/ui_components.js?v=20260321"></script>
+    <script src="../js/app.js?v=20260321"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         // ── Auth & Sidebar ──────────────────────────────────────
         requireAuth();
-        const sidebarElement = document.getElementById('sidebar');
-        if (sidebarElement) {
-            sidebarElement.innerHTML = renderSidebar('timetable');
-        }
+        const sb = document.getElementById('sidebar');
+        if (sb) sb.innerHTML = renderSidebar('timetable');
         injectTopHeader('Timetable');
 
         // ── Constants ───────────────────────────────────────────

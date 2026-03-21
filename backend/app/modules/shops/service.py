@@ -59,7 +59,7 @@ class ShopService:
         return shop
 
     @staticmethod
-    def list_shops(db: Session, current_user: User, skip: int = 0, limit: int = 100, pipeline_stage: MasterPipelineStage = None, owner_id: int = None):
+    def list_shops(db: Session, current_user: User, skip: int = 0, limit: int = 100, pipeline_stage: MasterPipelineStage = None, owner_id: int = None, exclude_leads: bool = False):
         from sqlalchemy.orm import selectinload
         from app.modules.salary.models import AppSetting
         policy = db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
@@ -78,6 +78,9 @@ class ShopService:
         if pipeline_stage:
             query = query.filter(Shop.pipeline_stage == pipeline_stage)
             
+        if exclude_leads:
+            query = query.filter(Shop.pipeline_stage != MasterPipelineStage.LEAD)
+
         # If Admin, return all shops
         if current_user.role != "ADMIN":
             # Sales/Telesales: Check the many-to-many relationship

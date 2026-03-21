@@ -8,8 +8,8 @@
     <title>Billing & Invoices — SRM AI SETU</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=3">
-    <link rel="stylesheet" href="../css/components.css?v=3">
+    <link rel="stylesheet" href="../css/theme.css?v=20260321">
+    <link rel="stylesheet" href="../css/components.css?v=20260321">
     <style>
         /* ── Status Pills ─────────────────────────────────────── */
         .inv-pill {
@@ -118,7 +118,7 @@
 
         /* ── Amount strip ─────────────────────────────────────── */
         .amount-strip {
-            background: linear-gradient(135deg, #0f172a 0%, #2e5b82 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             border-radius: 12px;
             padding: 16px 20px;
             display: flex;
@@ -135,10 +135,11 @@
 
         /* ── WA send dialog ────────────────────────────────────── */
         .wa-dialog {
-            background: #F0FDF4;
-            border: 1.5px solid #bbf7d0;
+            background: var(--success-light);
+            border: 1.5px solid var(--success-border);
             border-radius: 12px;
             padding: 16px 18px;
+            color: var(--success-text);
         }
 
         /* ── Table tweaks ─────────────────────────────────────── */
@@ -163,7 +164,7 @@
 <div class="d-flex">
     <div id="sidebar"></div>
     <div class="main-wrapper flex-grow-1">
-        <div class="page-content mx-auto" style="max-width: 1300px;">
+        <div class="page-content-standard">
 
             <!-- ── Page Header ──────────────────────────────────── -->
             <div class="page-header-glass d-flex justify-content-between align-items-center">
@@ -195,8 +196,7 @@
                                 <div class="stat-label">Pending</div>
                                 <div class="stat-value" id="stat-pending">—</div>
                             </div>
-                            <div class="stat-icon-wrapper" style="background:#FFF7ED;"><i class="bi bi-hourglass-split"
-                                    style="color:#C2410C;"></i></div>
+                            <div class="stat-icon-wrapper icon-orange"><i class="bi bi-hourglass-split"></i></div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
@@ -219,55 +219,25 @@
                     </div>
                 </div>
 
+                <div id="filter-wrapper" class="mb-4"></div>
+
                 <!-- ── Invoice Table ─────────────────────────────────── -->
-                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-                        <h6 class="fw-bold mb-0" style="color:var(--primary);">Invoice Registry</h6>
-                        <span class="text-muted small" id="billing-filter-summary">All invoices</span>
-                    </div>
-                    <div
-                        class="d-flex align-items-center justify-content-between flex-wrap gap-2 px-3 py-2 border-bottom">
-                        <div class="filter-tabs" id="filter-tabs">
-                            <span class="filter-tab active" data-filter="ALL">All</span>
-                            <span class="filter-tab" data-filter="PENDING_VERIFICATION">Pending</span>
-                            <span class="filter-tab" data-filter="VERIFIED">Verified</span>
-                            <span class="filter-tab" data-filter="SENT">Sent</span>
-                            <span class="filter-tab" data-filter="DRAFT">Draft</span>
-                            <span class="filter-tab" data-filter="ARCHIVED">Archived</span>
+                <div class="grid-card">
+                    <div class="d-flex justify-content-between align-items-center px-3 py-3 border-bottom flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-3">
+                            <h6 class="fw-bold mb-0" style="color:var(--primary);"><i class="bi bi-receipt me-2 text-primary"></i>Invoice Registry</h6>
+                            <span class="badge" style="background:var(--bg-app); color:var(--text-muted); border:1px solid var(--border);" id="billing-filter-summary">Loading...</span>
                         </div>
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <button id="archive-selected-btn" class="btn btn-sm"
-                                style="display:none;background:#fffbeb;color:#92400e;border:1px solid #fde68a;"
-                                onclick="archiveSelectedInvoices()">
+                        <div class="d-flex align-items-center gap-2">
+                            <button id="archive-selected-btn" class="btn btn-sm" style="display:none;background:#fffbeb;color:#92400e;border:1px solid #fde68a;" onclick="archiveSelectedInvoices()">
                                 <i class="bi bi-archive me-1"></i>Archive Selected
                             </button>
-                            <button id="delete-selected-btn" class="btn btn-sm"
-                                style="display:none;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;"
-                                onclick="deleteSelectedArchivedInvoices()">
+                            <button id="delete-selected-btn" class="btn btn-sm" style="display:none;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;" onclick="deleteSelectedArchivedInvoices()">
                                 <i class="bi bi-trash me-1"></i>Delete Selected
                             </button>
-                            <button id="clear-selected-btn" class="btn btn-sm btn-light" style="display:none;"
-                                onclick="clearSelectedInvoices()">
+                            <button id="clear-selected-btn" class="btn btn-sm btn-light" style="display:none;" onclick="clearSelectedInvoices()">
                                 Clear Selection
                             </button>
-                            <select id="payment-type-filter" class="field-input"
-                                style="width:180px;height:36px;padding:6px 10px;">
-                                <option value="ALL">All Payment Types</option>
-                                <option value="BUSINESS_ACCOUNT">Business Bank Account</option>
-                                <option value="PERSONAL_ACCOUNT">Personal Bank Account</option>
-                                <option value="CASH">Cash</option>
-                            </select>
-                            <select id="gst-type-filter" class="field-input"
-                                style="width:150px;height:36px;padding:6px 10px;">
-                                <option value="ALL">All GST</option>
-                                <option value="WITH_GST">With GST (18%)</option>
-                                <option value="WITHOUT_GST">Without GST (0%)</option>
-                            </select>
-                            <div class="position-relative" style="min-width:200px;max-width:260px;">
-                                <i class="bi bi-search position-absolute"
-                                    style="left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;"></i>
-                                <input type="text" id="inv-search" placeholder="Search invoice..." class="field-input"
-                                    style="padding-left:30px;width:100%;height:36px;">
-                            </div>
                         </div>
                     </div>
                     <div class="table-responsive">
@@ -334,7 +304,8 @@
                     <div class="d-flex justify-content-between align-items-center pb-2 border-bottom">
                         <div>
                             <span class="text-muted small me-2">Quick fill from:</span>
-                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill me-1" onclick="openAutofillPicker('visit')"><i class="bi bi-shop me-1"></i>Visit / Shop</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill me-1" onclick="openAutofillPicker('visit')"><i class="bi bi-geo-alt me-1"></i>Visits</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill me-1" onclick="openAutofillPicker('shop')"><i class="bi bi-shop me-1"></i>Shops</button>
                             <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" onclick="openAutofillPicker('feedback')"><i class="bi bi-chat-text me-1"></i>Feedback</button>
                         </div>
                         <div class="text-muted small fw-semibold bg-light px-2 py-1 rounded">
@@ -601,21 +572,21 @@
     </div>
 
     <div id="toast-container"></div>
-    <script src="../js/utils.js?v=2.3"></script>
-    <script src="../js/api.js?v=2.8"></script>
-    <script src="../js/auth.js?v=2.3"></script>
-    <script src="../js/ui_components.js?v=20260312"></script>
-    <script src="../js/app.js?v=2.3"></script>
+    <script src="../js/utils.js?v=20260321"></script>
+    <script src="../js/api.js?v=20260321"></script>
+    <script src="../js/auth.js?v=20260321"></script>
+    <script src="../js/ui_components.js?v=20260321"></script>
+    <script src="../js/app.js?v=20260321"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
-        const sidebarElement = document.getElementById('sidebar');
-        if (sidebarElement) { sidebarElement.innerHTML = renderSidebar('payment'); }
+        const sb = document.getElementById('sidebar');
+        if (sb) sb.innerHTML = renderSidebar('payment');
         injectTopHeader('Billing & Invoices');
 
         // ── State ─────────────────────────────────────────────────────────────────────
         let allBills = [];
-        let currentFilter = 'ALL';
+        let currentFilters = {};
         let defaultAmount = 12000;
         let personalWithoutGstDefaultAmount = 12000;
         let currentUser = null;
@@ -710,6 +681,7 @@
                     createBtn.title = 'You do not have permission to create invoices';
                 }
                 // ... existing init code ...
+                initFilters();
                 await loadBills();
 
                 // --- NEW: The Catch Logic ---
@@ -748,14 +720,18 @@
         async function loadBills() {
             document.getElementById('inv-tbody').innerHTML = `<tr><td colspan="9" class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading invoices...</td></tr>`;
             try {
-                const archivedMode = currentFilter === 'ARCHIVED' ? 'ARCHIVED' : 'ACTIVE';
-                const statusFilter = currentFilter === 'ARCHIVED' ? 'ALL' : currentFilter;
+                const statusVal = currentFilters['inv-status-filter'] || 'ALL';
+                const archivedMode = statusVal === 'ARCHIVED' ? 'ARCHIVED' : 'ACTIVE';
+                const statusFilter = statusVal === 'ARCHIVED' ? 'ALL' : statusVal;
+                
                 allBills = await ApiClient.getBills({
-                    status_filter: statusFilter, archived: archivedMode,
-                    payment_type: document.getElementById('payment-type-filter').value || 'ALL',
-                    gst_type: document.getElementById('gst-type-filter').value || 'ALL',
-                    search: document.getElementById('inv-search').value || '',
-                    skip: 0, limit: 200,
+                    status_filter: statusFilter, 
+                    archived: archivedMode,
+                    payment_type: currentFilters['payment-type-filter'] || 'ALL',
+                    gst_type: currentFilters['gst-type-filter'] || 'ALL',
+                    search: currentFilters['inv-search'] || '',
+                    skip: 0, 
+                    limit: 200,
                 });
                 invoiceActionsById = {};
                 if (Array.isArray(allBills) && allBills.length) {
@@ -774,7 +750,8 @@
 
         function updateBulkActionButtons() {
             const count = selectedBillIds.size;
-            const isArchiveView = currentFilter === 'ARCHIVED';
+            const statusVal = currentFilters['inv-status-filter'] || 'ALL';
+            const isArchiveView = statusVal === 'ARCHIVED';
             const archiveBtn = document.getElementById('archive-selected-btn');
             const deleteBtn = document.getElementById('delete-selected-btn');
             const clearBtn = document.getElementById('clear-selected-btn');
@@ -816,7 +793,8 @@
         function renderTable() {
             const tbody = document.getElementById('inv-tbody');
             const list = allBills;
-            const isArchiveView = currentFilter === 'ARCHIVED';
+            const statusVal = currentFilters['inv-status-filter'] || 'ALL';
+            const isArchiveView = statusVal === 'ARCHIVED';
             document.getElementById('billing-filter-summary').textContent = list.length + (isArchiveView ? ' archived invoice' : ' invoice') + (list.length === 1 ? '' : 's');
             if (!list.length) {
                 tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-muted"><i class="bi ${isArchiveView ? 'bi-archive' : 'bi-receipt'}" style="font-size:2rem;display:block;margin-bottom:8px;color:#cbd5e1;"></i>${isArchiveView ? 'No archived invoices found.' : 'No invoices found.'}</td></tr>`;
@@ -862,20 +840,62 @@
             syncSelectAllCheckbox(); updateBulkActionButtons();
         }
 
-        // ── Filter tabs ───────────────────────────────────────────────────────────────
-        document.getElementById('filter-tabs').addEventListener('click', e => {
-            const tab = e.target.closest('.filter-tab'); if (!tab) return;
-            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            currentFilter = tab.dataset.filter;
-            loadBills();
-        });
-        document.getElementById('payment-type-filter').addEventListener('change', loadBills);
-        document.getElementById('gst-type-filter').addEventListener('change', loadBills);
-        document.getElementById('inv-search').addEventListener('input', () => {
-            clearTimeout(searchDebounceTimer);
-            searchDebounceTimer = setTimeout(() => loadBills(), 280);
-        });
+        function initFilters() {
+            if (typeof window.renderFilterPanel !== 'function') return;
+            window.renderFilterPanel({
+                containerId: 'filter-wrapper',
+                filters: [
+                    {
+                        type: 'text',
+                        label: 'Search',
+                        id: 'inv-search',
+                        placeholder: 'Search invoice or client...'
+                    },
+                    {
+                        type: 'select',
+                        label: 'Status',
+                        id: 'inv-status-filter',
+                        options: [
+                            { value: 'ALL', label: 'All Invoices' },
+                            { value: 'PENDING_VERIFICATION', label: 'Pending' },
+                            { value: 'VERIFIED', label: 'Verified' },
+                            { value: 'SENT', label: 'Sent' },
+                            { value: 'DRAFT', label: 'Draft' },
+                            { value: 'ARCHIVED', label: 'Archived' }
+                        ]
+                    },
+                    {
+                        type: 'select',
+                        label: 'Payment Type',
+                        id: 'payment-type-filter',
+                        options: [
+                            { value: 'ALL', label: 'All Payment Types' },
+                            { value: 'BUSINESS_ACCOUNT', label: 'Business Bank Account' },
+                            { value: 'PERSONAL_ACCOUNT', label: 'Personal Bank Account' },
+                            { value: 'CASH', label: 'Cash' }
+                        ]
+                    },
+                    {
+                        type: 'select',
+                        label: 'GST Type',
+                        id: 'gst-type-filter',
+                        options: [
+                            { value: 'ALL', label: 'All GST' },
+                            { value: 'WITH_GST', label: 'With GST (18%)' },
+                            { value: 'WITHOUT_GST', label: 'Without GST (0%)' }
+                        ]
+                    }
+                ],
+                onApply: (data) => {
+                    currentFilters = data;
+                    loadBills();
+                },
+                onReset: () => {
+                    currentFilters = {};
+                    loadBills();
+                }
+            });
+        }
 
         // ── Wizard: open / close / step navigation ────────────────────────────────────
         function _setWizardStep(n) {
@@ -1106,8 +1126,9 @@
         // ── Autofill picker ───────────────────────────────────────────────────────────
         async function openAutofillPicker(source) {
             activeAutofillSource = source;
-            const titles = { visit: 'Fill from Visit / Shop', feedback: 'Fill from Feedback' };
-            document.getElementById('autofill-title').textContent = titles[source] || 'Select';
+            const titles = { visit: 'Fill from Visit / Shop', feedback: 'Fill from Feedback', shop: 'Fill from Shop Database' };
+            const titleEl = document.getElementById('autofill-title') || document.getElementById('autofillPickerTitle');
+            if (titleEl) titleEl.textContent = titles[source] || 'Select';
             document.getElementById('autofill-search').value = '';
             document.getElementById('autofill-list').innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm"></span></div>';
             document.getElementById('autofillModal').classList.remove('d-none');

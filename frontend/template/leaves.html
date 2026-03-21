@@ -10,15 +10,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
-    <link rel="stylesheet" href="../css/components.css?v=1772780188">
+    <link rel="stylesheet" href="../css/theme.css?v=20260321">
+    <link rel="stylesheet" href="../css/components.css?v=20260321">
 </head>
 
 <body class="bg-app">
     <div class="d-flex">
         <div id="sidebar"></div>
         <div class="flex-grow-1 main-wrapper">
-            <div class="page-content mx-auto" style="width: 100%;">
+            <div class="page-content-standard">
                 <!-- Header -->
                 <!-- Header Section -->
                 <!-- Header Section -->
@@ -37,64 +37,64 @@
                 <!-- Summary Cards (admin view) -->
                 <div id="leave-summary-bar" class="row g-3 mb-4" style="display:none;">
                     <div class="col-6 col-md-3">
-                        <div class="grid-card p-3" style="border-left:4px solid #D97706;">
+                        <div class="grid-card p-3" style="border-left:4px solid var(--warning);">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width:40px;height:40px;background:#FEF3C7;">
-                                    <i class="bi bi-hourglass-split" style="color:#D97706;"></i>
+                                    style="width:40px;height:40px;background:var(--warning-light);">
+                                    <i class="bi bi-hourglass-split" style="color:var(--warning-text);"></i>
                                 </div>
                                 <div>
                                     <div class="text-muted small fw-semibold mb-0"
                                         style="font-size:0.78rem;letter-spacing:0.3px;">PENDING</div>
-                                    <div class="fw-bold" style="color:#D97706;font-size:1.5rem;line-height:1;"
+                                    <div class="fw-bold" style="color:var(--warning-text);font-size:1.5rem;line-height:1;"
                                         id="sum-pending">0</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="grid-card p-3" style="border-left:4px solid #059669;">
+                        <div class="grid-card p-3" style="border-left:4px solid var(--success);">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width:40px;height:40px;background:#D1FAE5;">
-                                    <i class="bi bi-check-circle" style="color:#059669;"></i>
+                                    style="width:40px;height:40px;background:var(--success-light);">
+                                    <i class="bi bi-check-circle" style="color:var(--success-text);"></i>
                                 </div>
                                 <div>
                                     <div class="text-muted small fw-semibold mb-0"
                                         style="font-size:0.78rem;letter-spacing:0.3px;">APPROVED</div>
-                                    <div class="fw-bold" style="color:#059669;font-size:1.5rem;line-height:1;"
+                                    <div class="fw-bold" style="color:var(--success-text);font-size:1.5rem;line-height:1;"
                                         id="sum-approved">0</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="grid-card p-3" style="border-left:4px solid #B91C1C;">
+                        <div class="grid-card p-3" style="border-left:4px solid var(--danger);">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width:40px;height:40px;background:#FEE2E2;">
-                                    <i class="bi bi-x-circle" style="color:#B91C1C;"></i>
+                                    style="width:40px;height:40px;background:var(--danger-light);">
+                                    <i class="bi bi-x-circle" style="color:var(--danger-text);"></i>
                                 </div>
                                 <div>
                                     <div class="text-muted small fw-semibold mb-0"
                                         style="font-size:0.78rem;letter-spacing:0.3px;">REJECTED</div>
-                                    <div class="fw-bold" style="color:#B91C1C;font-size:1.5rem;line-height:1;"
+                                    <div class="fw-bold" style="color:var(--danger-text);font-size:1.5rem;line-height:1;"
                                         id="sum-rejected">0</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="grid-card p-3" style="border-left:4px solid #2563eb;">
+                        <div class="grid-card p-3" style="border-left:4px solid var(--primary);">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                    style="width:40px;height:40px;background:#EEF2FF;">
-                                    <i class="bi bi-calendar-check" style="color:#2563eb;"></i>
+                                    style="width:40px;height:40px;background:var(--primary-soft);">
+                                    <i class="bi bi-calendar-check" style="color:var(--primary);"></i>
                                 </div>
                                 <div>
                                     <div class="text-muted small fw-semibold mb-0"
                                         style="font-size:0.78rem;letter-spacing:0.3px;">TOTAL DAYS</div>
-                                    <div class="fw-bold" style="color:#2563eb;font-size:1.5rem;line-height:1;"
+                                    <div class="fw-bold" style="color:var(--primary);font-size:1.5rem;line-height:1;"
                                         id="sum-total">0</div>
                                 </div>
                             </div>
@@ -102,73 +102,7 @@
                     </div>
                 </div>
 
-                <div id="admin-filter-toolbar" style="display:none;" class="mb-2">
-                    <div class="filter-panel">
-                        <div class="filter-panel-head" id="leave-filter-panel-toggle">
-                            <div class="filter-panel-head-main">
-                                <div class="filter-panel-head-left">
-                                    <i class="bi bi-sliders2"></i>
-                                    Filters
-                                </div>
-                                <div class="filter-active-pills" id="leave-filter-pills"></div>
-                            </div>
-                            <div class="filter-panel-head-meta">
-                                <div class="text-muted small" id="leave-count"></div>
-                                <button class="filter-toggle-btn" id="leave-filter-toggle-btn" type="button"
-                                    onclick="toggleLeaveFilters(); event.stopPropagation();">
-                                    <span id="leave-filter-toggle-label">Show</span>
-                                    <i class="bi bi-chevron-down"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="filter-panel-body" id="admin-filter">
-                            <div class="filter-grid">
-                                <div class="filter-field">
-                                    <label>Employee</label>
-                                    <select id="leave-user-filter" class="form-select">
-                                        <option value="">All Employees</option>
-                                    </select>
-                                </div>
-                                <div class="filter-field">
-                                    <label>Status</label>
-                                    <select id="leave-status-filter" class="form-select">
-                                        <option value="">All Statuses</option>
-                                        <option value="PENDING">Pending</option>
-                                        <option value="APPROVED">Approved</option>
-                                        <option value="REJECTED">Rejected</option>
-                                    </select>
-                                </div>
-                                <div class="filter-field">
-                                    <label>Leave Type</label>
-                                    <select id="leave-type-filter" class="form-select">
-                                        <option value="">All Types</option>
-                                        <option value="ANNUAL">Annual</option>
-                                        <option value="SICK">Sick</option>
-                                        <option value="CASUAL">Casual</option>
-                                        <option value="UNPAID">Unpaid</option>
-                                        <option value="OTHER">Other</option>
-                                    </select>
-                                </div>
-                                <div class="filter-field">
-                                    <label>From Date</label>
-                                    <input type="date" id="leave-from-filter" class="form-control">
-                                </div>
-                                <div class="filter-field">
-                                    <label>To Date</label>
-                                    <input type="date" id="leave-to-filter" class="form-control">
-                                </div>
-                            </div>
-                            <div class="filter-actions">
-                                <button class="btn-filter-reset" type="button" onclick="clearLeaveFilters()">
-                                    <i class="bi bi-x-circle"></i>Clear
-                                </button>
-                                <button class="btn-filter-apply" type="button" onclick="loadLeaves()">
-                                    <i class="bi bi-check2"></i>Apply Filters
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div id="filter-wrapper" style="display:none;" class="mb-2"></div>
 
                 <!-- My Attendance Table Removed -->
 
@@ -181,7 +115,7 @@
                     </div>
                     <div class="table-responsive">
                         <table class="table table-sm mb-0" style="font-size:0.8rem;">
-                            <thead style="background:#f8fafc;">
+                            <thead style="background:var(--bg-app); border-bottom: 1px solid var(--border);">
                                 <tr>
                                     <th class="ps-4 text-uppercase small fw-bold text-muted" style="min-width: 150px;">Employee</th>
                                     <th class="text-uppercase small fw-bold text-muted" style="min-width: 100px;">Type</th>
@@ -293,18 +227,16 @@
         </div>
     </div>
 
-    <script src="../js/utils.js?v=2.3"></script>
-    <script src="../js/api.js?v=2.3"></script>
-    <script src="../js/auth.js?v=2.3"></script>
-    <script src="../js/ui_components.js?v=20260312"></script>
-    <script src="../js/app.js?v=2.3"></script>
+    <script src="../js/utils.js?v=20260321"></script>
+    <script src="../js/api.js?v=20260321"></script>
+    <script src="../js/auth.js?v=20260321"></script>
+    <script src="../js/ui_components.js?v=20260321"></script>
+    <script src="../js/app.js?v=20260321"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
-        const sidebarElement = document.getElementById('sidebar');
-        if (sidebarElement) {
-            sidebarElement.innerHTML = renderSidebar('leaves');
-        }
+        const sb = document.getElementById('sidebar');
+        if (sb) sb.innerHTML = renderSidebar('leaves');
         injectTopHeader('Leaves');
 
         const user = getUser();
@@ -321,80 +253,47 @@
             applyBtn.style.display = 'none';
         }
 
-        if (canManageLeave) {
-            document.getElementById('leave-summary-bar').style.display = 'flex';
-            document.getElementById('admin-filter-toolbar').style.display = 'block';
-            // Populate employee dropdown
-            ApiClient.getEmployees().then(emps => {
-                const opts = emps.map(e => `<option value="${e.id}">${e.name || e.email}</option>`).join('');
-                document.getElementById('leave-user-filter').innerHTML = '<option value="">All Employees</option>' + opts;
-                updateLeaveFilterBadge();
-            }).catch(() => { });
-        }
+        let currentFilters = {};
 
-        const leaveFilterPanel = document.getElementById('admin-filter');
-        const leaveFilterToggleBtn = document.getElementById('leave-filter-toggle-btn');
-        const leaveFilterToggleLabel = document.getElementById('leave-filter-toggle-label');
-
-        function setLeaveFilterPanelState(isOpen) {
-            leaveFilterPanel.classList.toggle('open', isOpen);
-            leaveFilterToggleBtn.classList.toggle('open', isOpen);
-            leaveFilterToggleLabel.textContent = isOpen ? 'Hide' : 'Show';
-        }
-
-        // Keep filters collapsed by default for better first-load UX.
-        setLeaveFilterPanelState(false);
-
-        document.getElementById('leave-filter-panel-toggle').addEventListener('click', toggleLeaveFilters);
-        ['leave-user-filter', 'leave-status-filter', 'leave-type-filter', 'leave-from-filter', 'leave-to-filter'].forEach(id => {
-            document.getElementById(id).addEventListener('change', updateLeaveFilterBadge);
-        });
-
-        function toggleLeaveFilters() {
-            const isOpen = !leaveFilterPanel.classList.contains('open');
-            setLeaveFilterPanelState(isOpen);
-        }
-
-        function updateLeaveFilterBadge() {
-            const pills = document.getElementById('leave-filter-pills');
-            if (!pills) return;
-            const user = document.getElementById('leave-user-filter');
-            const status = document.getElementById('leave-status-filter');
-            const type = document.getElementById('leave-type-filter');
-            const from = document.getElementById('leave-from-filter')?.value;
-            const to = document.getElementById('leave-to-filter')?.value;
-            const items = [];
-            if (user?.value) items.push({ label: user.options[user.selectedIndex].text, inputId: 'leave-user-filter' });
-            if (status?.value) items.push({ label: status.options[status.selectedIndex].text, inputId: 'leave-status-filter' });
-            if (type?.value) items.push({ label: type.options[type.selectedIndex].text, inputId: 'leave-type-filter' });
-            if (from) items.push({ label: 'From: ' + from, inputId: 'leave-from-filter' });
-            if (to) items.push({ label: 'To: ' + to, inputId: 'leave-to-filter' });
-
-            pills.innerHTML = items.map(item => '<span class="filter-pill">' + item.label +
-                '<button class="filter-pill-remove" type="button" data-input="' + item.inputId + '" title="Remove">&times;</button></span>'
-            ).join('');
-
-            pills.querySelectorAll('.filter-pill-remove').forEach(btn => {
-                btn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    document.getElementById(btn.dataset.input).value = '';
-                    updateLeaveFilterBadge();
+        function initFilters(employees) {
+            renderFilterPanel({
+                containerId: 'filter-wrapper',
+                filters: [
+                    { type: 'select', label: 'Employee', id: 'filter-user', options: [{ value: 'ALL', label: 'All Employees' }, ...employees.map(e => ({ value: e.id, label: e.name || e.email }))] },
+                    { type: 'select', label: 'Status', id: 'filter-status', options: [
+                        { value: 'ALL', label: 'All Statuses' },
+                        { value: 'PENDING', label: 'Pending' },
+                        { value: 'APPROVED', label: 'Approved' },
+                        { value: 'REJECTED', label: 'Rejected' }
+                    ]},
+                    { type: 'select', label: 'Leave Type', id: 'filter-type', options: [
+                        { value: 'ALL', label: 'All Types' },
+                        { value: 'ANNUAL', label: 'Annual' },
+                        { value: 'SICK', label: 'Sick' },
+                        { value: 'CASUAL', label: 'Casual' },
+                        { value: 'UNPAID', label: 'Unpaid' },
+                        { value: 'OTHER', label: 'Other' }
+                    ]},
+                    { type: 'date', label: 'From Date', id: 'filter-from' },
+                    { type: 'date', label: 'To Date', id: 'filter-to' }
+                ],
+                onApply: (data) => {
+                    currentFilters = data;
                     loadLeaves();
-                });
+                },
+                onReset: () => {
+                    currentFilters = {};
+                    loadLeaves();
+                }
             });
         }
 
-        function clearLeaveFilters() {
-            const uf = document.getElementById('leave-user-filter');
-            if (uf) uf.value = '';
-            document.getElementById('leave-status-filter').value = '';
-            document.getElementById('leave-type-filter').value = '';
-            const ff = document.getElementById('leave-from-filter');
-            const tf = document.getElementById('leave-to-filter');
-            if (ff) ff.value = '';
-            if (tf) tf.value = '';
-            updateLeaveFilterBadge();
-            loadLeaves();
+        if (canManageLeave) {
+            document.getElementById('leave-summary-bar').style.display = 'flex';
+            document.getElementById('filter-wrapper').style.display = 'block';
+            ApiClient.getEmployees().then(emps => {
+                initFilters(emps);
+            }).catch(() => { });
         }
 
         // Modal controls
@@ -523,16 +422,19 @@
                 currentLeaveRows = leaves;
 
                 // Apply filters (admin only)
-                const userF = canManageLeave ? document.getElementById('leave-user-filter')?.value : '';
-                const statusF = canManageLeave ? document.getElementById('leave-status-filter').value : '';
-                const typeF = canManageLeave ? document.getElementById('leave-type-filter').value : '';
-                const fromF = canManageLeave ? document.getElementById('leave-from-filter')?.value : '';
-                const toF = canManageLeave ? document.getElementById('leave-to-filter')?.value : '';
-                if (userF) leaves = leaves.filter(l => String(l.user_id) === String(userF));
-                if (statusF) leaves = leaves.filter(l => l.status === statusF);
-                if (typeF) leaves = leaves.filter(l => (l.leave_type || 'CASUAL') === typeF);
-                if (fromF) leaves = leaves.filter(l => l.start_date >= fromF);
-                if (toF) leaves = leaves.filter(l => l.end_date <= toF);
+                if (canManageLeave) {
+                    const userF = currentFilters['user'];
+                    const statusF = currentFilters['status'];
+                    const typeF = currentFilters['type'];
+                    const fromF = currentFilters['from'];
+                    const toF = currentFilters['to'];
+
+                    if (userF && userF !== 'ALL') leaves = leaves.filter(l => String(l.user_id) === String(userF));
+                    if (statusF && statusF !== 'ALL') leaves = leaves.filter(l => l.status === statusF);
+                    if (typeF && typeF !== 'ALL') leaves = leaves.filter(l => (l.leave_type || 'CASUAL') === typeF);
+                    if (fromF) leaves = leaves.filter(l => l.start_date >= fromF);
+                    if (toF) leaves = leaves.filter(l => l.end_date <= toF);
+                }
 
                 // Summary counts (admin) — uses unfiltered allLeaves saved before filter was applied
                 if (canManageLeave) {
