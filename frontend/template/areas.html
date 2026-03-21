@@ -960,11 +960,8 @@
                 return;
             }
             body.innerHTML = `<table class="shops-table">
-                <thead><tr><th>Shop Details</th><th>Assigned To</th><th>Location</th><th>Last Visit</th><th></th></tr></thead>
+                <thead><tr><th>Shop Details</th><th>Assigned To</th><th>Location</th><th>Contact</th><th></th></tr></thead>
                 <tbody>${shops.map(s => {
-                const lastVisit = s.last_visit_date
-                    ? new Date(s.last_visit_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                    : 'Not visited';
                 let assignedHtml = '';
                 if (s.assigned_users && s.assigned_users.length > 0) {
                     const primaryUser = s.assigned_users[0].name;
@@ -1023,7 +1020,18 @@
                                 <i class="bi bi-map-fill"></i> Map
                             </a>
                         </td>
-                        <td class="text-muted small">${lastVisit}</td>
+                        <td>
+                            ${s.phone ? `
+                                <div class="d-flex flex-column gap-1">
+                                    <a href="tel:${s.phone}" class="text-decoration-none fw-bold text-primary mb-1 d-inline-flex align-items-center gap-2" title="Call Shop">
+                                        <i class="bi bi-telephone-outbound"></i>${s.phone}
+                                    </a>
+                                    <a href="https://wa.me/${s.phone.replace(/[^0-9]/g, '')}" target="_blank" class="text-success small fw-medium text-decoration-none d-inline-flex align-items-center gap-2" title="WhatsApp Shop">
+                                        <i class="bi bi-whatsapp"></i>WhatsApp
+                                    </a>
+                                </div>
+                            ` : `<span class="text-muted small fst-italic">No number logged</span>`}
+                        </td>
                         <td>
                             <div class="d-flex justify-content-end gap-2">
                                 ${isPendingShop && !isAdmin ? `

@@ -19,9 +19,8 @@ class ShopService:
         db_shop = Shop(**shop_in.model_dump())
         db_shop.created_by_id = current_user.id
         
-        # Auto-assign the creator as the PM/Sales owner if no one else is assigned
-        pm_id = getattr(shop_in, 'project_manager_id', None) or current_user.id
-        db_shop.project_manager_id = pm_id
+        # Only assign a PM if explicitly provided during creation. Default to None.
+        db_shop.project_manager_id = getattr(shop_in, 'project_manager_id', None)
         
         # Auto-Assign if not Admin
         if current_user.role != UserRole.ADMIN:
@@ -97,7 +96,11 @@ class ShopService:
             shop_data["area_name"] = shop.area.name if getattr(shop, 'area', None) else None
             shop_data["archived_by_name"] = None
             shop_data["created_by_name"] = shop.creator.name if getattr(shop, 'creator', None) else None
-            shop_data["project_manager_name"] = shop.project_manager.name if getattr(shop, 'project_manager', None) else None
+            pm = getattr(shop, 'project_manager', None)
+            shop_data["project_manager_name"] = pm.name if pm else None
+            # Include nested PM object + alias so frontend can use both .pm_name and .project_manager.name
+            shop_data["pm_name"] = pm.name if pm else None
+            shop_data["project_manager"] = {"id": pm.id, "name": pm.name, "email": pm.email} if pm else None
             shop_data.pop("_sa_instance_state", None)
             
             # Map assigned owners for frontend UI
@@ -130,7 +133,14 @@ class ShopService:
             query = query.filter(Shop.is_deleted == False)
         
         if owner_id:
-            query = query.filter(Shop.owner_id == owner_id)
+            from sqlalchemy import or_
+            query = query.filter(
+                or_(
+                    Shop.owner_id == owner_id,
+                    Shop.project_manager_id == owner_id,
+                    Shop.created_by_id == owner_id
+                )
+            )
         if source and source not in {"ALL", "all"}:
             query = query.filter(Shop.source == source)
             
@@ -400,12 +410,13 @@ class ShopService:
 
     # ── Assign PM to a CONTACTED lead ──
     @staticmethod
-    def assign_pm(db: Session, shop_id: int, pm_id: int, current_user: User):
+    def assign_pm(db: Session, shop_id: int, body: 'AssignPMRequest', current_user: User):
         from app.modules.users.models import UserRole
         shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_deleted == False).first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
 
+        pm_id = body.pm_id
         pm = db.query(User).filter(User.id == pm_id).first()
         if not pm:
             raise HTTPException(status_code=404, detail="User not found")
@@ -413,6 +424,10 @@ class ShopService:
             raise HTTPException(status_code=400, detail="Selected user is not a Project Manager or Admin")
 
         shop.project_manager_id = pm_id
+        shop.pipeline_stage = MasterPipelineStage.NEGOTIATION
+        if body.demo_scheduled_at:
+            shop.demo_scheduled_at = body.demo_scheduled_at
+
         db.commit()
         db.refresh(shop)
 
@@ -473,6 +488,7 @@ class ShopService:
         selected_pm = next((pm for pm in pms if pm.id == selected_pm_id), None)
         
         shop.project_manager_id = selected_pm_id
+        shop.pipeline_stage = MasterPipelineStage.NEGOTIATION
         db.commit()
         db.refresh(shop)
 
@@ -536,16 +552,53 @@ class ShopService:
     # ── Mark a demo as completed, auto-advance to MEETING_SET on first completion ──
     @staticmethod
     def complete_demo(db: Session, shop_id: int, current_user: User):
+        from app.modules.visits.models import Visit, VisitStatus
+        from app.modules.timetable.models import TimetableEvent
+        from datetime import timedelta
+
         shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_deleted == False).first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
 
-        shop.demo_stage = (shop.demo_stage or 0) + 1
-        shop.demo_scheduled_at = None  # Reset after completion
+        # ── Step 1: Archive the demo to permanent history before wiping it ──
+        demo_time = shop.demo_scheduled_at
+        pm_id = shop.project_manager_id or (current_user.id if current_user else None)
+        pm_name = None
+        if getattr(shop, 'project_manager', None):
+            pm_name = shop.project_manager.name or shop.project_manager.email
+        elif current_user:
+            pm_name = current_user.name or current_user.email
 
-        # First completed demo → advance status to MEETING_SET
+        if demo_time and pm_id:
+            # Create a permanent Visit record for the Lead Timeline
+            archive_visit = Visit(
+                shop_id=shop.id,
+                user_id=pm_id,
+                status=VisitStatus.COMPLETED,
+                remarks="Product Demo Session Completed Successfully.",
+                visit_date=demo_time,
+                duration_seconds=3600
+            )
+            db.add(archive_visit)
+
+            # Create a permanent TimetableEvent record for the Calendar
+            tt_event = TimetableEvent(
+                user_id=pm_id,
+                title=f"Demo: {shop.name}",
+                assignee_name=pm_name or "Project Manager",
+                date=demo_time.date(),
+                start_time=demo_time.time(),
+                end_time=(demo_time + timedelta(hours=1)).time(),
+                location=getattr(shop, 'demo_meet_link', None) or "Completed Demo"
+            )
+            db.add(tt_event)
+
+        shop.demo_stage = (shop.demo_stage or 0) + 1
+        shop.demo_scheduled_at = None  # Safely clear after archiving
+
+        # First completed demo → advance pipeline stage
         if shop.demo_stage == 1:
-            shop.pipeline_stage = MasterPipelineStage.PITCHING
+            shop.pipeline_stage = MasterPipelineStage.NEGOTIATION
 
         db.commit()
         db.refresh(shop)
@@ -568,9 +621,46 @@ class ShopService:
     # ── Cancel a scheduled demo on the shop ──
     @staticmethod
     def cancel_demo(db: Session, shop_id: int, current_user: User):
+        from app.modules.visits.models import Visit, VisitStatus
+        from app.modules.timetable.models import TimetableEvent
+        from datetime import timedelta
+
         shop = db.query(Shop).filter(Shop.id == shop_id, Shop.is_deleted == False).first()
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
+
+        # ── Archive the cancelled demo before wiping it ──
+        demo_time = shop.demo_scheduled_at
+        pm_id = shop.project_manager_id or (current_user.id if current_user else None)
+        pm_name = None
+        if getattr(shop, 'project_manager', None):
+            pm_name = shop.project_manager.name or shop.project_manager.email
+        elif current_user:
+            pm_name = current_user.name or current_user.email
+
+        if demo_time and pm_id:
+            # Permanent Visit record for the Lead Timeline
+            archive_visit = Visit(
+                shop_id=shop.id,
+                user_id=pm_id,
+                status=VisitStatus.CANCELLED,
+                remarks="Product Demo Session was Cancelled.",
+                visit_date=demo_time,
+                duration_seconds=0
+            )
+            db.add(archive_visit)
+
+            # Permanent TimetableEvent record for the Calendar
+            tt_event = TimetableEvent(
+                user_id=pm_id,
+                title=f"Demo: {shop.name} (Cancelled)",
+                assignee_name=pm_name or "Project Manager",
+                date=demo_time.date(),
+                start_time=demo_time.time(),
+                end_time=(demo_time + timedelta(hours=1)).time(),
+                location=getattr(shop, 'demo_meet_link', None) or "Cancelled Demo"
+            )
+            db.add(tt_event)
 
         shop.demo_scheduled_at = None
         shop.demo_title = None
@@ -608,6 +698,10 @@ class ShopService:
         shop.demo_title = payload.title
         shop.demo_type = payload.demo_type
         shop.demo_notes = payload.notes
+
+        # Self-assign PM if the shop has no PM yet (ensures Timetable sync works)
+        if not shop.project_manager_id and current_user:
+            shop.project_manager_id = current_user.id
 
         # Generate real Google Meet link if requested
         if payload.demo_type == "Google Meet":

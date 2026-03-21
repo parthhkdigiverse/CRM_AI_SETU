@@ -24,15 +24,17 @@ async def create_visit(
     status: str = Form(...),
     visit_date: Optional[str] = Form(None),
     decline_remarks: Optional[str] = Form(None),
-    photo: Optional[UploadFile] = File(None),
+    duration_seconds: int = Form(0),
+    storefront_photo: Optional[UploadFile] = File(None),
+    selfie_photo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(create_access)
 ) -> Any:
     """
-    Create a visit. Accepts multipart/form-data (required for photo upload).
+    Create a visit. Accepts multipart/form-data.
     """
-    if current_user.role in [UserRole.SALES, UserRole.PROJECT_MANAGER_AND_SALES] and not photo:
-        raise HTTPException(status_code=400, detail="Shop photo is mandatory for Sales visits")
+    if current_user.role in [UserRole.SALES, UserRole.PROJECT_MANAGER_AND_SALES] and not (storefront_photo or selfie_photo):
+        raise HTTPException(status_code=400, detail="At least one photo (Storefront or Selfie) is mandatory for Sales visits")
 
     # Parse visit_date string → datetime
     from datetime import datetime, UTC
@@ -54,11 +56,18 @@ async def create_visit(
         visit_date=parsed_date,
         remarks=remarks,
         decline_remarks=decline_remarks,
-        status=status_enum
+        status=status_enum,
+        duration_seconds=duration_seconds
     )
 
     service = VisitService(db)
-    return await service.create_visit(visit_in, current_user, request, photo=photo)
+    return await service.create_visit(
+        visit_in, 
+        current_user, 
+        request, 
+        storefront_photo=storefront_photo, 
+        selfie_photo=selfie_photo
+    )
 
 @router.get("/", response_model=List[VisitRead])
 def read_visits(

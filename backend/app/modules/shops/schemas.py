@@ -42,6 +42,7 @@ class ShopUpdate(BaseModel):
 
 class AssignPMRequest(BaseModel):
     pm_id: int
+    demo_scheduled_at: Optional[datetime] = None
 
 
 class AssignedUser(BaseModel):

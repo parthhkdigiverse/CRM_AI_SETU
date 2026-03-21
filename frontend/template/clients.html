@@ -1,5 +1,5 @@
-<!DOCTYPE html>
 <!-- frontend/template/clients.html -->
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -24,7 +24,6 @@
                         <h2 class="page-section-title">Clients</h2>
                         <div class="d-flex align-items-center gap-3">
                             <small class="text-muted" id="client-count"></small>
-                            <button class="btn btn-warning btn-sm" onclick="forceBalancePMs()"><i class="bi bi-magic me-2"></i>Force Balance Stuck Clients</button>
                         </div>
                     </div>
                 </div>
@@ -120,6 +119,14 @@
                                 class="form-control" placeholder="+91 XXXX XXX XXX"></div>
                         <div class="mb-3"><label class="form-label">Organization</label><input id="edit-c-org"
                                 class="form-control" placeholder="Company Name"></div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label fw-semibold">Assigned Project Manager</label>
+                            <select id="edit-client-pm" class="form-select border-2 shadow-sm">
+                                <option value="">Loading PMs...</option>
+                            </select>
+                            <div class="form-text small text-muted"><i class="bi bi-info-circle me-1"></i>Changing this
+                                will override the auto-assignment algorithm.</div>
+                        </div>
                         <div class="mb-3"><label class="form-label">Address</label><textarea id="edit-c-addr"
                                 class="form-control" rows="2" placeholder="Full Address"></textarea></div>
                     </div>
@@ -200,7 +207,7 @@
                     const params = new URLSearchParams();
                     if (filters.status) params.append('status', filters.status);
                     if (filters.pm) params.append('pm_id', filters.pm);
-                    
+
                     clients = await apiGet(`/clients/?${params.toString()}`);
                 } catch (err) {
                     throw new Error("Failed to load clients: " + err.message);
@@ -252,13 +259,24 @@
                         </div>
                     </td>
                     <td>${c.organization || '—'}</td>
+                    
                     <td>
                         <div class="d-flex align-items-center gap-2">
                             ${c.pm_id ? `
                                 <div>
-                                    <span class="text-success fw-semibold"><i class="bi bi-person-check me-1"></i> PM Auto-Assigned</span>
-                                    <br>
-                                    <span class="small text-muted">${pmMap[String(c.pm_id)] || `ID: ${c.pm_id}`}</span>
+                                    ${(() => {
+                                        const assignerName = c.pm_assigned_by_name; 
+                                        const assignerBadgeText = assignerName ? 'Assigned by: ' + assignerName : 'PM Auto-Assigned';
+                                        const bgColor = assignerName ? '#eff6ff' : '#ecfdf5';
+                                        const pmName = pmMap[String(c.pm_id)] || 'ID: ' + c.pm_id;
+                                        const themeColor = assignerName ? 'primary' : 'success';
+                                        const icon = assignerName ? 'bi-person-gear' : 'bi-robot';
+                                        
+                                        return '<span class="badge" style="background:' + bgColor + ';color:var(--bs-' + themeColor + ');font-size:0.65rem;">' +
+                                                    '<i class="bi ' + icon + ' me-1"></i>' + assignerBadgeText +
+                                                '</span><br>' +
+                                                '<span class="small text-dark fw-bold mt-1 d-inline-block">' + pmName + '</span>';
+                                    })()}
                                 </div>
                             ` : `
                                 <div>
@@ -267,6 +285,7 @@
                             `}
                         </div>
                     </td>
+
                     <td><span class="badge bg-success-subtle text-success border border-success-subtle">Active</span></td>
                     <td>
                         <div class="btn-group">
@@ -276,8 +295,8 @@
                             <a href="issues.html?client_id=${c.id}" class="btn btn-sm btn-outline-warning" title="Client Issues"><i class="bi bi-exclamation-square"></i></a>
                             <button class="btn btn-sm btn-outline-danger" onclick="deleteClient(${c.id})" title="Delete Client"><i class="bi bi-trash"></i></button>
                         </div>
-                    </td>
-                </tr>`).join('');
+                    </td >
+                </tr > `).join('');
             }
 
             window.openPaymentModal = (id, name) => {
@@ -293,7 +312,7 @@
                 const amount = document.getElementById('p-amount').value;
                 if (!amount) return showToast('Please enter an amount', 'error');
 
-                document.getElementById('bill-amount-display').textContent = `₹${parseFloat(amount).toLocaleString('en-IN')}`;
+                document.getElementById('bill-amount-display').textContent = `₹${ parseFloat(amount).toLocaleString('en-IN') }`;
 
                 const btn = document.getElementById('gen-bill-btn');
                 btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Simulating Verification...';
@@ -314,15 +333,44 @@
                 bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
             });
 
+            // 🚀 NEW: Load PMs into dropdown
+            async function populateEditModalWithPMs(currentPmId) {
+                const pmSelect = document.getElementById('edit-client-pm');
+                if (!pmSelect) return;
+                try {
+                    let pms = [];
+                    try {
+                        // Try the specialized workload endpoint first
+                        pms = await window.ApiClient.request('/clients/pm-workload');
+                    } catch (e) {
+                        console.warn("Workload API failed, falling back to general PM list");
+                        // Fallback to the general PM list used in leads.html
+                        const res = await window.ApiClient.request('/users/project-managers');
+                        pms = (res || []).map(u => ({ pm_id: u.id, pm_name: u.name || u.email, active_client_count: '?' }));
+                    }
+
+                    pmSelect.innerHTML = '<option value="">-- Unassigned --</option>' + 
+                        pms.map(pm => `<option value="${pm.pm_id}">${pm.pm_name} (${pm.active_client_count} active clients)</option>`).join('');
+                        
+                    if (currentPmId) pmSelect.value = currentPmId;
+                } catch (err) {
+                    console.error("Critical failure loading PMs:", err);
+                    pmSelect.innerHTML = '<option value="">Error loading staff list</option>';
+                }
+            }
+
             window.openEditModal = async (id) => {
                 try {
-                    const client = await apiGet(`/clients/${id}`);
+                    const client = await window.ApiClient.request(`/clients/${id}`);
                     document.getElementById('edit-c-id').value = client.id;
                     document.getElementById('edit-c-name').value = client.name || '';
                     document.getElementById('edit-c-email').value = client.email || '';
                     document.getElementById('edit-c-phone').value = client.phone || '';
                     document.getElementById('edit-c-org').value = client.organization || '';
                     document.getElementById('edit-c-addr').value = client.address || '';
+                    
+                    await populateEditModalWithPMs(client.pm_id); // 🚀 NEW
+
                     new bootstrap.Modal(document.getElementById('editClientModal')).show();
                 } catch (e) {
                     showToast('Failed to fetch client details', 'error');
@@ -346,7 +394,8 @@
                         email: document.getElementById('edit-c-email').value,
                         phone: phone,
                         organization: document.getElementById('edit-c-org').value,
-                        address: document.getElementById('edit-c-addr').value
+                        address: document.getElementById('edit-c-addr').value,
+                        pm_id: parseInt(document.getElementById('edit-client-pm').value) || null
                     });
                     bootstrap.Modal.getInstance(document.getElementById('editClientModal')).hide();
                     showToast('Client updated successfully', 'success');
@@ -407,11 +456,13 @@
                     renderFilterPanel({
                         containerId: 'filter-wrapper',
                         filters: [
-                            { type: 'select', label: 'Status', id: 'filter-status', options: [
-                                { value: 'ALL', label: 'All Status' },
-                                { value: 'active', label: 'Active' },
-                                { value: 'inactive', label: 'Inactive' }
-                            ]},
+                            {
+                                type: 'select', label: 'Status', id: 'filter-status', options: [
+                                    { value: 'ALL', label: 'All Status' },
+                                    { value: 'active', label: 'Active' },
+                                    { value: 'inactive', label: 'Inactive' }
+                                ]
+                            },
                             { type: 'select', label: 'Project Manager', id: 'filter-pm', options: [{ value: 'ALL', label: 'All PMs' }, ...pms.map(u => ({ value: u.id, label: u.name || u.email }))] }
                         ],
                         onApply: (data) => loadClients({

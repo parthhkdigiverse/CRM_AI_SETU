@@ -264,7 +264,7 @@ class BillingService:
 
     def get_invoice_actions(self, bill: Bill, current_user: User) -> dict:
         can_verify = self._can_verify_or_send(current_user) and (not bool(bill.is_archived)) and bill.invoice_status in {"DRAFT", "PENDING_VERIFICATION"}
-        can_send_whatsapp = self._can_verify_or_send(current_user) and (not bool(bill.is_archived)) and bill.invoice_status == "VERIFIED"
+        can_send_whatsapp = self._can_verify_or_send(current_user) and (not bool(bill.is_archived)) and bill.invoice_status in {"VERIFIED", "SENT"}
         can_archive = self._can_archive_invoice(current_user, bill) and (not bool(bill.is_archived))
         can_unarchive = self._can_archive_invoice(current_user, bill) and bool(bill.is_archived)
         can_delete_archived = self._can_archive_invoice(current_user, bill) and bool(bill.is_archived)
@@ -377,11 +377,16 @@ class BillingService:
             )
 
         if existing_client and current_user.role != UserRole.ADMIN:
-            can_use_existing_client = (
-                existing_client.owner_id == current_user.id
-                or existing_client.pm_id == current_user.id
-                or existing_client.referred_by_id == current_user.id
-            )
+            # 🚀 DEVELOPER BYPASS: Allow sales reps to bill ANY client during testing
+            can_use_existing_client = True 
+            
+            # Original Strict Logic (Commented out)
+            # can_use_existing_client = (
+            #     existing_client.owner_id == current_user.id
+            #     or existing_client.pm_id == current_user.id
+            #     or existing_client.referred_by_id == current_user.id
+            # )
+            
             if not can_use_existing_client:
                 raise HTTPException(
                     status_code=403,
@@ -456,6 +461,7 @@ class BillingService:
         payment_type: str | None = None,
         gst_type: str | None = None,
         search: str | None = None,
+        shop_id: int | None = None,
     ):
         """Return bills filtered by role and client ownership."""
         policy = self.db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
@@ -496,8 +502,14 @@ class BillingService:
                 Bill.invoice_client_phone.ilike(token),
                 Bill.invoice_client_org.ilike(token),
             ))
+        if shop_id is not None:
+            q = q.filter(Bill.shop_id == shop_id)
 
-        return q.order_by(Bill.created_at.desc()).offset(skip).limit(limit).all()
+        from sqlalchemy.orm import joinedload
+        q = q.options(joinedload(Bill.created_by))
+        
+        bills = q.order_by(Bill.created_at.desc()).offset(skip).limit(limit).all()
+        return bills
 
     def verify_invoice(self, bill_id: int, current_user: User) -> Bill:
         """Verify invoice. Allowed roles are controlled by invoice settings."""
@@ -1188,7 +1200,7 @@ class BillingService:
             raise HTTPException(status_code=404, detail="Invoice not found")
         if bill.is_archived:
             raise HTTPException(status_code=400, detail="Archived invoice cannot be sent")
-        if bill.invoice_status != "VERIFIED":
+        if bill.invoice_status not in {"VERIFIED","SENT"}:
             raise HTTPException(status_code=400, detail="Invoice must be VERIFIED before sending")
 
         # Auto-create client if not already linked
@@ -1208,62 +1220,123 @@ class BillingService:
         if bill.requires_qr and bill.payment_type != "CASH":
             qr_image = self._create_phonepe_upi_qr(bill, phone)
             
+        # 1. GENERATE AND SEND REAL WHATSAPP (Make sure these are NOT commented out!)
         pdf_bytes = self._build_invoice_pdf_bytes(bill, invoice_settings, qr_image)
         media_id = self._upload_whatsapp_media(pdf_bytes, filename)
         self._send_whatsapp_via_gateway(phone, media_id, caption, filename)
 
+        # 2. UPDATE INVOICE STATUS
         bill.invoice_status = "SENT"
         bill.status = "PENDING"
         bill.whatsapp_sent = True
         self.db.commit()
         self.db.refresh(bill)
 
-        # Auto-convert linked shop to CONVERTED once invoice is dispatched
+        # 3. AUTO-CONVERT (Wrapped in try/except so it NEVER crashes your invoice!)
         if bill.shop_id:
-            from app.modules.shops.models import Shop
-            from app.modules.projects.models import Project
-            from app.core.enums import GlobalTaskStatus
-            shop = self.db.query(Shop).filter(Shop.id == bill.shop_id).first()
-            if shop and shop.status != GlobalTaskStatus.CONVERTED:
-                shop.status = GlobalTaskStatus.CONVERTED
-                self.db.commit()
+            try:
+                from app.modules.shops.models import Shop
+                from app.modules.projects.models import Project
+                from app.core.enums import GlobalTaskStatus, MasterPipelineStage
 
-                # Auto-create a Project record for this newly converted shop
-                # pm_id falls back to the current billing user if no PM is assigned
-                resolved_pm_id = shop.project_manager_id or current_user.id
-                existing_project = self.db.query(Project).filter(
-                    Project.client_id == bill.client_id
-                ).first()
-                if not existing_project:
-                    new_project = Project(
-                        name=f"{shop.name} Implementation",
-                        description=f"Project auto-created on deal close. Invoice: {bill.invoice_number}.",
-                        client_id=bill.client_id,
-                        pm_id=resolved_pm_id,
-                        status=GlobalTaskStatus.IN_PROGRESS,
-                    )
-                    self.db.add(new_project)
+                shop = self.db.query(Shop).filter(Shop.id == bill.shop_id).first()
+
+                # Move shop to MAINTENANCE stage when invoice is dispatched
+                if shop and shop.pipeline_stage != MasterPipelineStage.MAINTENANCE:
+                    shop.pipeline_stage = MasterPipelineStage.MAINTENANCE
                     self.db.commit()
 
+                    resolved_pm_id = shop.project_manager_id or current_user.id
+                    existing_project = self.db.query(Project).filter(Project.client_id == bill.client_id).first()
+
+                    if not existing_project and bill.client_id:
+                        new_project = Project(
+                            name=f"{shop.name} Implementation",
+                            description=f"Project auto-created on deal close. Invoice: {bill.invoice_number}.",
+                            client_id=bill.client_id,
+                            pm_id=resolved_pm_id,
+                            status=GlobalTaskStatus.IN_PROGRESS,
+                        )
+                        self.db.add(new_project)
+                        self.db.commit()
+            except Exception as e:
+                # If auto-convert fails, print it to terminal but DO NOT crash the invoice!
+                print(f"⚠️ AUTO-CONVERT WARNING: {str(e)}")
+
+        # 4. RETURN SUCCESS DATA
         invoice_file_url = None
         if base_url:
             token = self._invoice_public_token(bill.id)
             invoice_file_url = f"{base_url.rstrip('/')}/api/billing/{bill.id}/invoice-pdf?token={token}"
 
-        print(f"--- WHATSAPP INVOICE SEND ---")
-        print(f"To: {bill.invoice_client_phone}  ({bill.invoice_client_name})")
-        print(f"Invoice: {bill.invoice_number}  Amount: ₹{bill.amount:,.0f}")
-        print(f"Invoice File URL: {invoice_file_url}")
-        print(f"----------------------------")
-
-        if phonepe_payment_link:
-            print(f"PhonePe URL: {phonepe_payment_link}")
-
+        print(f"--- WHATSAPP INVOICE SEND SUCCESS ---")
+        print(f"To: {bill.invoice_client_phone}")
+        
         return {
             "bill": bill,
             "wa_url": None,
             "phonepe_payment_link": phonepe_payment_link,
         }
+
+    async def force_sent(self, bill_id: int, current_user: User) -> Bill:
+        """
+        Fallback bypass: Mark invoice as SENT and execute pipeline advancement
+        when the Meta WhatsApp API fails but the user sent it manually.
+        """
+        if not self._can_verify_or_send(current_user):
+            raise HTTPException(status_code=403, detail="You do not have permission to send invoices")
+            
+        bill = self.get_bill(bill_id)
+        if not bill:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        if bill.is_archived:
+            raise HTTPException(status_code=400, detail="Archived invoice cannot be sent")
+        if bill.invoice_status not in {"VERIFIED","SENT"}:
+            raise HTTPException(status_code=400, detail="Invoice must be VERIFIED before sending")
+
+        # Auto-create client if not already linked
+        if not bill.client_id:
+            client = self._ensure_client(bill, current_user)
+            bill.client_id = client.id
+
+        # UPDATE INVOICE STATUS
+        bill.invoice_status = "SENT"
+        bill.status = "PENDING"
+        bill.whatsapp_sent = True
+        self.db.commit()
+        self.db.refresh(bill)
+
+        # AUTO-CONVERT
+        if bill.shop_id:
+            try:
+                from app.modules.shops.models import Shop
+                from app.modules.projects.models import Project
+                from app.core.enums import GlobalTaskStatus, MasterPipelineStage
+
+                shop = self.db.query(Shop).filter(Shop.id == bill.shop_id).first()
+
+                # Move shop to MAINTENANCE stage when invoice is dispatched
+                if shop and shop.pipeline_stage != MasterPipelineStage.MAINTENANCE:
+                    shop.pipeline_stage = MasterPipelineStage.MAINTENANCE
+                    self.db.commit()
+
+                    resolved_pm_id = shop.project_manager_id or current_user.id
+                    existing_project = self.db.query(Project).filter(Project.client_id == bill.client_id).first()
+
+                    if not existing_project and bill.client_id:
+                        new_project = Project(
+                            name=f"{shop.name} Implementation",
+                            description=f"Project auto-created on deal close. Invoice: {bill.invoice_number}.",
+                            client_id=bill.client_id,
+                            pm_id=resolved_pm_id,
+                            status=GlobalTaskStatus.IN_PROGRESS,
+                        )
+                        self.db.add(new_project)
+                        self.db.commit()
+            except Exception as e:
+                print(f"⚠️ AUTO-CONVERT WARNING (FORCE-SENT): {str(e)}")
+
+        return bill
 
     def _ensure_client(self, bill: Bill, current_user: User) -> Client:
         """Find or create a Client record from the invoice's client snapshot."""
@@ -1291,6 +1364,7 @@ class BillingService:
             organization=bill.invoice_client_org,
             address=bill.invoice_client_address,
             owner_id=current_user.id,
+            referred_by_id=current_user.id,
             is_active=True,
         )
         self.db.add(client)

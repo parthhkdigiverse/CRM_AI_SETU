@@ -104,3 +104,79 @@ class UserService:
                 self.db.add(AppSetting(key=key, value=val))
         self.db.commit()
         return {"enabled": enabled, "prefix": prefix, "next_seq": next_seq}
+
+    def suggest_pm(self):
+        from app.modules.shops.models import Shop
+        from app.modules.users.models import UserRole
+        from app.core.enums import MasterPipelineStage
+        from sqlalchemy import func
+
+        pm_roles = [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]
+        active_stages = [MasterPipelineStage.NEGOTIATION, MasterPipelineStage.MAINTENANCE]
+        
+        pms = self.db.query(User).filter(
+            User.role.in_(pm_roles), 
+            User.is_active == True, 
+            User.is_deleted == False
+        ).all()
+        
+        if not pms:
+            return None
+            
+        best_pm = None
+        lowest_workload = float('inf')
+        
+        for pm in pms:
+            workload = self.db.query(func.count(Shop.id)).filter(
+                Shop.project_manager_id == pm.id,
+                Shop.pipeline_stage.in_(active_stages),
+                Shop.is_deleted == False
+            ).scalar()
+            
+            if workload < lowest_workload:
+                lowest_workload = workload
+                best_pm = pm
+                
+        if best_pm:
+            return {
+                "user_id": best_pm.id,
+                "name": best_pm.name,
+                "workload": lowest_workload
+            }
+        return None
+
+    def get_pm_availability(self, pm_id: int, target_date):
+        from sqlalchemy import cast, Date
+        from app.modules.shops.models import Shop
+        
+        pm = self.db.query(User).filter(User.id == pm_id).first()
+        if not pm:
+            return None
+            
+        shops_with_demos = self.db.query(Shop).filter(
+            Shop.project_manager_id == pm_id,
+            cast(Shop.demo_scheduled_at, Date) == target_date,
+            Shop.is_deleted == False
+        ).all()
+        
+        booked_hours = []
+        for shop in shops_with_demos:
+            if shop.demo_scheduled_at:
+                # Store the hour
+                booked_hours.append(shop.demo_scheduled_at.hour)
+                
+        slots = []
+        # Standard hours 10 AM (10) to 6 PM (18) includes 10,11,12,13,14,15,16,17,18
+        for h in range(10, 19):
+            time_str = f"{h if h <= 12 else h - 12}:00 {'AM' if h < 12 else 'PM'}"
+            slots.append({
+                "time": time_str,
+                "hour24": h,
+                "is_available": h not in booked_hours
+            })
+            
+        return {
+            "pm_id": pm_id,
+            "date": target_date.isoformat(),
+            "slots": slots
+        }

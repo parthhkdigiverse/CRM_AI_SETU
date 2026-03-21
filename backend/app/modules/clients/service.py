@@ -11,6 +11,7 @@ from app.modules.notifications.service import EmailService
 from sqlalchemy import func, or_
 from typing import List, Dict
 
+
 class ClientService:
     def __init__(self, db: Session):
         self.db = db
@@ -34,33 +35,38 @@ class ClientService:
         referred_by_id: int | None = None,
         scoped_user_id: int | None = None,
         scoped_mode: str | None = None,
+        current_user: User | None = None,
     ):
         try:
             query = self.db.query(Client).filter(Client.is_deleted == False)
+            active_conds = []
             if is_active is True:
-                query = query.filter(Client.is_active == True)
+                active_conds = [Client.is_active == True]
             elif is_active is False:
-                query = query.filter(Client.is_active == False)
+                active_conds = [Client.is_active == False]
             elif not include_inactive:
-                query = query.filter(Client.is_active == True)
-            if pm_id:
-                query = query.filter(Client.pm_id == pm_id)
-            if owner_id:
-                query = query.filter(Client.owner_id == owner_id)
-            if referred_by_id:
-                query = query.filter(Client.referred_by_id == referred_by_id)
-            if scoped_user_id and scoped_mode:
-                mode = str(scoped_mode).lower()
-                if mode == "owner":
-                    query = query.filter(Client.owner_id == scoped_user_id)
-                elif mode == "pm":
-                    query = query.filter(Client.pm_id == scoped_user_id)
-                elif mode == "mixed":
-                    query = query.filter(or_(
-                        Client.owner_id == scoped_user_id,
-                        Client.pm_id == scoped_user_id,
-                        Client.referred_by_id == scoped_user_id,
-                    ))
+                active_conds = [Client.is_active == True]
+
+            if current_user and current_user.role != UserRole.ADMIN:
+                from sqlalchemy import select, and_, or_
+                from app.modules.billing.models import Bill
+                
+                # Bridge via Phone Number (Bulletproof link even before WA dispatch)
+                billed_client_phones = select(Bill.invoice_client_phone).where(Bill.created_by_id == current_user.id)
+                
+                query = query.filter(
+                    or_(
+                        and_(
+                            Client.owner_id == current_user.id,
+                            Client.is_active == True
+                        ),
+                        Client.pm_id == current_user.id,  # RESTORED: PMs can see their clients
+                        Client.phone.in_(billed_client_phones)  # RESTORED: Reps see who they billed
+                    )
+                )
+            else:
+                for c in active_conds:
+                    query = query.filter(c)
             if search:
                 search_pattern = f"%{search}%"
                 query = query.filter(
@@ -95,7 +101,13 @@ class ClientService:
     async def create_client(self, client: ClientCreate, current_user: User, request: Request):
         db_client = Client(**client.model_dump())
 
-        # --- Workload-balanced PM Auto-Assignment ---
+        # --- Advanced Capacity-Based PM Auto-Assignment ---
+        from app.modules.shops.models import Shop
+        from app.modules.meetings.models import MeetingSummary
+        from app.core.enums import GlobalTaskStatus
+        from datetime import datetime, UTC
+        import random
+
         active_pms = self.db.query(User).filter(
             User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]),
             User.is_active == True
@@ -105,29 +117,44 @@ class ClientService:
 
         if active_pms:
             pm_ids = [pm.id for pm in active_pms]
+            now = datetime.now(UTC)
 
-            # Count active clients per PM
+            # 1. Count Active Clients
             client_counts = self.db.query(
-                Client.pm_id,
-                func.count(Client.id).label("client_count")
+                Client.pm_id, func.count(Client.id).label("cnt")
+            ).filter(Client.pm_id.in_(pm_ids), Client.is_active == True).group_by(Client.pm_id).all()
+            c_map = {row.pm_id: row.cnt for row in client_counts}
+
+            # 2. Count Upcoming Demos (From Shops)
+            demo_counts = self.db.query(
+                Shop.project_manager_id, func.count(Shop.id).label("cnt")
             ).filter(
+                Shop.project_manager_id.in_(pm_ids),
+                Shop.demo_scheduled_at >= now,
+                Shop.is_deleted == False
+            ).group_by(Shop.project_manager_id).all()
+            d_map = {row.project_manager_id: row.cnt for row in demo_counts}
+
+            # 3. Count Upcoming Meetings (Joined via Client)
+            meeting_counts = self.db.query(
+                Client.pm_id, func.count(MeetingSummary.id).label("cnt")
+            ).join(MeetingSummary, MeetingSummary.client_id == Client.id).filter(
                 Client.pm_id.in_(pm_ids),
-                Client.is_active == True
+                MeetingSummary.date >= now,
+                MeetingSummary.status.in_([GlobalTaskStatus.OPEN, GlobalTaskStatus.IN_PROGRESS]),
+                MeetingSummary.is_deleted == False
             ).group_by(Client.pm_id).all()
+            m_map = {row.pm_id: row.cnt for row in meeting_counts}
 
-            count_map = {row.pm_id: row.client_count for row in client_counts}
-
-            # Build list of (pm, workload)
-            pm_workloads = [(pm, count_map.get(pm.id, 0)) for pm in active_pms]
+            # Calculate combined workload score (Lower is better)
+            pm_workloads = []
+            for pm in active_pms:
+                total_load = c_map.get(pm.id, 0) + d_map.get(pm.id, 0) + m_map.get(pm.id, 0)
+                pm_workloads.append((pm, total_load))
             
-            # Find the minimum workload
+            # Pick the PM with the lowest total load
             min_load = min(w[1] for w in pm_workloads)
-            
-            # Filter all PMs who have this minimum load
             least_loaded_pms = [w[0] for w in pm_workloads if w[1] == min_load]
-            
-            # Randomly pick one among the least loaded to distribute fairly
-            import random
             assigned_pm = random.choice(least_loaded_pms)
 
             db_client.pm_id = assigned_pm.id
@@ -164,6 +191,13 @@ class ClientService:
                 except Exception as e:
                     print(f"[PM Notify] Email failed (non-fatal): {e}")
                     
+                # Sync PM Assignment back to the Shop (Lead) for the Maintenance Hub
+                if assigned_pm and db_client.phone:
+                    shop = self.db.query(Shop).filter(Shop.phone == db_client.phone).first()
+                    if shop:
+                        shop.project_manager_id = assigned_pm.id
+                        self.db.commit()
+                    
         except IntegrityError:
             self.db.rollback()
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Client with this phone number or email already exists.")
@@ -188,7 +222,7 @@ class ClientService:
     def get_pm_workload(self) -> List[Dict]:
         """Return a list of all active PMs with their current active-client counts."""
         active_pms = self.db.query(User).filter(
-            User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]),
+            User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES, UserRole.ADMIN]),
             User.is_active == True
         ).all()
 
@@ -293,12 +327,27 @@ class ClientService:
 
         update_data = client_update.model_dump(exclude_unset=True)
 
+        pm_changed = "pm_id" in update_data and update_data["pm_id"] != getattr(db_client, "pm_id", None)
+        new_pm_id = update_data.get("pm_id")
+        
+        if pm_changed:
+            db_client.pm_assigned_by_id = current_user.id
+
         for key, value in update_data.items():
             setattr(db_client, key, value)
 
         try:
             self.db.commit()
             self.db.refresh(db_client)
+            
+            # Sync the PM assignment to the frontend Performance Hub (Shop table)
+            if pm_changed and db_client.phone:
+                from app.modules.shops.models import Shop
+                shop = self.db.query(Shop).filter(Shop.phone == db_client.phone).first()
+                if shop:
+                    shop.project_manager_id = new_pm_id
+                    self.db.commit()
+                    
         except IntegrityError:
             self.db.rollback()
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Client with this phone number or email already exists.")

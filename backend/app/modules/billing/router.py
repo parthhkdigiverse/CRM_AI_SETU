@@ -246,6 +246,7 @@ def list_invoices(
     payment_type: Optional[str] = None,
     gst_type: Optional[str] = None,
     search: Optional[str] = None,
+    shop_id: Optional[int] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(staff_access),
 ) -> Any:
@@ -259,6 +260,7 @@ def list_invoices(
     payment_type=payment_type,
     gst_type=gst_type,
     search=search,
+    shop_id=shop_id,
   )
 
 
@@ -394,6 +396,18 @@ async def send_invoice_whatsapp(
         "invoice_status": bill.invoice_status,
         "client_id": bill.client_id,
     }
+
+@router.patch("/{bill_id}/force-sent", response_model=BillRead)
+async def force_sent_invoice(
+    bill_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(staff_access),
+) -> Any:
+    """
+    Fallback bypass: Mark invoice as SENT manually if Meta API fails.
+    Executes the identical pipeline advancement logic to ensure clients aren't stuck.
+    """
+    return await BillingService(db).force_sent(bill_id, current_user)
 
 
 
