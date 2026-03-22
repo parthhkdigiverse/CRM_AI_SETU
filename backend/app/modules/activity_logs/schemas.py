@@ -5,7 +5,7 @@ from datetime import datetime
 from app.modules.activity_logs.models import ActionType, EntityType
 
 class ActivityLogBase(BaseModel):
-    user_id: int
+    user_id: Optional[int] = None
     user_role: str
     action: ActionType
     entity_type: EntityType

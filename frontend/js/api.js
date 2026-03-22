@@ -111,8 +111,10 @@ class ApiClient {
         } catch (error) {
             // Check if it's a network error (server down)
             if (error instanceof TypeError && error.message === 'Failed to fetch') {
-                console.warn("Server appears to be offline:", error);
+                console.warn("Server appears to be offline or connection was reset:", error);
                 if (window.showOfflineBanner) window.showOfflineBanner(true);
+                // Wrap error to make it more descriptive
+                throw new Error("Network error: Could not connect to server. It might be down or your connection was reset.");
             }
             console.error("Network or parsing error:", error);
             throw error;

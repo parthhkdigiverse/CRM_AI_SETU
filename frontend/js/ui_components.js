@@ -177,13 +177,9 @@ window.renderSidebar = function (active) {
 
     return `
     <div id="sidebar-container">
-        <div class="sidebar-brand">
-            <div class="sidebar-brand-icon">
-                <div class="sidebar-logo-ai"></div>
-            </div>
-            <div class="ms-2 d-flex flex-column">
-                <span>SRM AI SETU</span>
-            </div>
+        <div class="sidebar-brand d-flex align-items-center" style="gap: 20px; padding: 0 24px; height: 68px;">
+            <div class="sidebar-logo-ai" style="width: 42px; height: 42px; flex-shrink: 0;"></div>
+            <span style="font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; background: linear-gradient(90deg, #0f172a, #4338ca); -webkit-background-clip: text; -webkit-text-fill-color: transparent; white-space: nowrap; line-height: 1; display: inline-block;">SRM AI SETU</span>
         </div>
 
         <div class="sb-scroll-area">
@@ -340,6 +336,7 @@ window.injectTopHeader = function (pageTitle) {
         'Leaves': 'HR & Payroll',
         'Incentives': 'HR & Payroll',
         'Demo': 'Project Management',
+        'Demo Pipeline': 'Project Management',
         'Reports': 'Reports & Analytics',
         'Timetable': 'Dashboard',
         'Timetable & Schedule': 'Dashboard',
@@ -378,11 +375,9 @@ window.injectTopHeader = function (pageTitle) {
     const quickAddItems = renderQuickAddItems(u?.role);
 
     const logoHtml = `
-        <div class="nav-logo align-items-center gap-2 me-2 d-none" style="cursor: pointer;" onclick="window.location.href='dashboard.html'">
-            <div class="sidebar-brand-icon" style="width: 32px; height: 32px; border-radius: 8px; background: var(--nav-search-bg);">
-                <div class="sidebar-logo-ai"></div>
-            </div>
-            <span class="fw-bold" style="font-family: 'Outfit', sans-serif; font-size: 16px; letter-spacing: -0.02em; color: var(--nav-text-active);">SRM AI SETU</span>
+        <div class="nav-logo align-items-center d-none" style="cursor: pointer; gap: 20px;" onclick="window.location.href='dashboard.html'">
+            <div class="sidebar-logo-ai" style="width: 32px; height: 32px; flex-shrink: 0;"></div>
+            <span class="fw-bold" style="font-family: 'Outfit', sans-serif; font-size: 16px; letter-spacing: -0.02em; background: linear-gradient(90deg, #0f172a, #4338ca); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; line-height: 1; display: inline-block;">SRM AI SETU</span>
         </div>`;
 
     const headerHtml = `

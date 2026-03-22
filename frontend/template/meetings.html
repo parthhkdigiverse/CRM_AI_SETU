@@ -65,16 +65,18 @@
             <!-- Top header injected by auth.js -->
 
             <div class="page-content-standard">
-                <header class="d-flex justify-content-between align-items-center mb-5">
-                    <div>
-                        <h2 class="page-section-title">Meetings</h2>
-                        <p class="text-muted mb-0" id="meeting-count">Analyzing scheduled sessions...</p>
+                <div class="page-header-glass d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div class="mb-3 mb-sm-0">
+                        <h2 class="page-section-title fw-bold mb-1">Meetings</h2>
+                        <p class="text-muted mb-0" id="meeting-count" style="font-size:0.93rem;">Analyzing scheduled sessions...</p>
                     </div>
-                    <button class="btn btn-primary d-flex align-items-center gap-2 rounded-pill px-4"
-                        data-bs-toggle="modal" data-bs-target="#addMeetingModal">
-                        <i class="bi bi-plus-lg"></i>
-                        Schedule Session
-                    </button>
+                    <div class="d-flex align-items-center gap-3">
+                        <button class="btn btn-primary d-flex align-items-center gap-2 fw-semibold px-4" style="border-radius:10px;"
+                            data-bs-toggle="modal" data-bs-target="#addMeetingModal">
+                            <i class="bi bi-plus-lg"></i>
+                            Schedule Session
+                        </button>
+                    </div>
                 </header>
                 <!-- Filter Panel Wrapper -->
                 <div id="filter-wrapper"></div>

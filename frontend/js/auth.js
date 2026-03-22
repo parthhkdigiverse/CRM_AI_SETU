@@ -38,26 +38,26 @@ if (!isLoginPage) {
     document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/global.css?v=2.6">');
 }
 
-function getToken() {
+window.getToken = function() {
     const t = sessionStorage.getItem('access_token');
     if (!t || t === 'null' || t === 'undefined' || t === '') return null;
     return t;
 }
-function setTokens(a, r) {
+window.setTokens = function(a, r) {
     sessionStorage.setItem('access_token', a);
     if (r) sessionStorage.setItem('refresh_token', r);
 }
-function clearTokens() {
+window.clearTokens = function() {
     sessionStorage.removeItem('access_token');
     sessionStorage.removeItem('refresh_token');
     sessionStorage.removeItem('srm_user');
     sessionStorage.removeItem('current_user'); // Added based on snippet
 }
-function getUser() {
+window.getUser = function() {
     try { return JSON.parse(sessionStorage.getItem('srm_user')); } catch { return null; }
 }
 
-function showAccessDeniedState(role, path) {
+window.showAccessDeniedState = function(role, path) {
     const target = document.getElementById('main-content') || document.querySelector('.page-content-standard');
     if (!target || document.getElementById('access-denied-state')) return;
 
@@ -91,7 +91,7 @@ function showAccessDeniedState(role, path) {
     window.__accessDenied = true;
 }
 
-function hideAccessDeniedState() {
+window.hideAccessDeniedState = function() {
     const card = document.getElementById('access-denied-state');
     if (card) card.remove();
     
@@ -107,15 +107,17 @@ function hideAccessDeniedState() {
 }
 
 // Guard: call on every protected page
-function requireAuth() {
+window.requireAuth = function() {
+    console.log('requireAuth called, location:', window.location.href);
     window.__accessDenied = false;
     const params = new URLSearchParams(window.location.search);
     const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
     const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
 
     if (params.get('dev') === 'true' && isLocal) {
+        console.log('requireAuth: Dev mode detected');
         // Mock an ADMIN user for testing dev mode features if no session exists or if explicitly requested via dev=admin
-        if (!sessionStorage.getItem('srm_user') || params.get('dev_role') === 'ADMIN') {
+        if (!window.getUser() || params.get('dev_role') === 'ADMIN') {
             sessionStorage.setItem('access_token', 'dev-token');
             sessionStorage.setItem('srm_user', JSON.stringify({
                 id: 1, 
@@ -125,14 +127,16 @@ function requireAuth() {
             }));
         }
         document.body.style.visibility = 'visible';
+        document.body.style.opacity = '1';
         let pageName = document.title.split('—')[0].trim();
         if (!pageName || pageName === 'SRM AI SETU') pageName = 'Dashboard';
-        if (typeof injectTopHeader === 'function') injectTopHeader(pageName);
+        if (typeof window.injectTopHeader === 'function') window.injectTopHeader(pageName);
+        console.log('requireAuth: Dev mode setup complete, returning early');
         return;
     }
 
     const token = getToken();
-    const user = getUser();
+    let user = getUser();
 
     if (!token) {
         if (!isLoginPage) window.location.replace('index.html');
@@ -196,6 +200,7 @@ function requireAuth() {
     // --- OPTIMISTIC UI ---
     // If we have a user in session, show the page IMMEDIATELY.
     // Ensure background matches theme to avoid flash
+    user = window.getUser();
     const storedTheme = localStorage.getItem('srm-theme') || 'light';
     if (storedTheme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
@@ -251,8 +256,11 @@ function requireAuth() {
             }
 
             enforceRoleAccess(userData.role);
-            document.body.style.visibility = 'visible';
-            document.body.style.opacity = '1';
+            if (document.body) {
+                document.body.style.visibility = 'visible';
+                document.body.style.opacity = '1';
+            }
+            console.log('Background auth check successful');
             const el = document.getElementById('username-display');
             if (el) el.textContent = profile.name || 'User';
 
@@ -264,7 +272,10 @@ function requireAuth() {
         })
         .catch((err) => {
             console.warn('Background auth check failed:', err);
-            document.body.style.visibility = 'visible';
+            if (document.body) {
+                document.body.style.visibility = 'visible';
+                document.body.style.opacity = '1';
+            }
         });
 }
 
@@ -370,19 +381,17 @@ window.addEventListener('pageshow', (event) => {
 });
 
 // Logout
-function logout() {
+window.logout = function() {
     if (window.ApiClient && typeof window.ApiClient.clearTokens === 'function') {
         window.ApiClient.clearTokens();
     } else {
-        sessionStorage.removeItem('access_token');
-        sessionStorage.removeItem('refresh_token');
-        sessionStorage.removeItem('srm_user');
+        window.clearTokens();
     }
     window.location.href = 'index.html?msg=logged_out';
 }
 
 // Global Critical Issue Check
-async function checkCriticalIssues() {
+window.checkCriticalIssues = async function() {
     // Only check if we are on a valid inner page
     const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
     if (isLoginPage) return;

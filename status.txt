@@ -1,0 +1,16 @@
+﻿On branch tisha
+Your branch is up to date with 'origin/tisha'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   backend/app/modules/activity_logs/schemas.py
+	modified:   frontend/css/theme.css
+	modified:   frontend/js/ui_components.js
+	modified:   frontend/template/projects_demo.html
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	status.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")

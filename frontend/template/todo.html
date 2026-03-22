@@ -574,12 +574,12 @@
             if (container.innerHTML === '') {
                 container.innerHTML = `
                 <div>
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <h2 class="page-section-title">${isAdmin ? 'TO-DO List' : 'My To-Do List'}</h2>
-                            <p class="text-muted mb-0">${isAdmin ? 'Track and manage SRM workspace objectives with precision' : 'Track tasks, meetings, and follow-ups assigned to you.'}</p>
+                    <div class="page-header-glass d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="mb-3 mb-sm-0">
+                            <h2 class="page-section-title fw-bold mb-1">${isAdmin ? 'TO-DO List' : 'My To-Do List'}</h2>
+                            <p class="text-muted mb-0" style="font-size:0.93rem;">${isAdmin ? 'Track and manage SRM workspace objectives with precision' : 'Track tasks, meetings, and follow-ups assigned to you.'}</p>
                         </div>
-                        <div class="d-flex gap-3">
+                        <div class="d-flex align-items-center gap-3">
                             ${isAdmin ? `<button class="btn-premium-action btn-my-tasks-new" onclick="filterMyTasks()">
                                 <i class="bi bi-person-circle"></i> View My Tasks
                             </button>` : ''}

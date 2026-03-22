@@ -410,10 +410,10 @@ a:hover {
 
 .sidebar-brand {
     height: 68px; /* Match navbar height exactly */
-    padding: 0 20px;
+    padding: 0 24px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 20px;
     border-bottom: 1px solid var(--sb-border);
     transition: var(--sb-transition);
     overflow: hidden;
@@ -433,24 +433,25 @@ a:hover {
 .sidebar-logo-ai {
     width: 100%;
     height: 100%;
-    background-image: url('../images/logo.png');
-    background-size: 380%;
-    background-position: -8px center;
+    background-image: url('../images/AI_logo.png');
+    background-size: contain;
+    background-position: center;
     background-repeat: no-repeat;
     transition: var(--sb-transition);
 }
 
 [data-theme="dark"] .sidebar-logo-ai {
-    background-image: url('../images/white logo.png');
+    background-image: url('../images/AI_logo.png');
 }
 
 .sidebar-brand span {
     font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-    font-size: 18px; /* Slightly larger */
-    color: var(--sb-text-heading);
+    font-weight: 800;
+    font-size: 18px;
     letter-spacing: -0.02em;
-    line-height: 1.2;
+    line-height: 1;
+    display: flex;
+    align-items: center;
 }
 
 .sidebar-brand-sub {
@@ -832,7 +833,9 @@ a:hover {
         padding: 0 16px;
     }
 
-    .page-content {
+    .page-content,
+    .page-content-standard,
+    .page-container {
         padding: 20px 16px !important;
     }
 }
@@ -1240,7 +1243,9 @@ a:hover {
    PAGE STRUCTURE
    ═══════════════════════════════════════════════════════════════ */
 
-.page-content {
+.page-content,
+.page-content-standard,
+.page-container {
     flex: 1;
     padding: 24px 32px; /* Balanced padding */
     max-width: 1440px;
@@ -1995,7 +2000,9 @@ label {
     :root {
         --sb-width: 220px; /* Reduced from 260px */
     }
-    .page-content {
+    .page-content,
+    .page-content-standard,
+    .page-container {
         padding: 12px 16px !important; /* Even more compact */
     }
     .table th, .table td {

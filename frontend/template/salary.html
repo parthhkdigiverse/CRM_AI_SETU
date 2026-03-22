@@ -9,6 +9,40 @@
     <title>Salary | SRM AI SETU</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <script>
+        // CRITICAL: Global Error Handling (Placed in HEAD to catch early script failures)
+        window.__loadedScripts = [];
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('CRITICAL ERROR:', msg, url, lineNo, columnNo, error);
+            const errorDivId = 'emergency-error-display';
+            if (document.getElementById(errorDivId)) return false;
+
+            const errorHtml = `
+                <div id="${errorDivId}" style="position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:99999; width:90%; max-width:600px; background:#fee2e2; border:2px solid #ef4444; border-radius:12px; padding:20px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); color:#991b1b; font-family:sans-serif;">
+                    <h3 style="margin-top:0; font-size:1.25rem;">⚠️ Application Error</h3>
+                    <p style="font-size:0.9rem;">A critical script error occurred while loading the page.</p>
+                    <div style="background:#fef2f2; padding:10px; border-radius:6px; margin:10px 0; font-family:monospace; font-size:0.8rem; border:1px solid #fecaca; white-space:pre-wrap; word-break:break-all;">${msg}\nAt: ${url}\nLine: ${lineNo}</div>
+                    <p style="font-size:0.8rem; margin-bottom:15px;">Scripts loaded: ${window.__loadedScripts.join(', ') || 'None'}</p>
+                    <button onclick="location.reload()" style="background:#ef4444; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;">Reload Page</button>
+                </div>
+            `;
+            
+            // Force body visible so we can see the error
+            if (document.body) {
+                document.body.style.visibility = 'visible';
+                document.body.style.opacity = '1';
+                document.body.insertAdjacentHTML('afterbegin', errorHtml);
+            } else {
+                // If body isn't ready, wait a bit
+                setTimeout(() => {
+                    document.body.style.visibility = 'visible';
+                    document.body.style.opacity = '1';
+                    document.body.insertAdjacentHTML('afterbegin', errorHtml);
+                }, 500);
+            }
+            return false;
+        };
+    </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/theme.css?v=20260321">
     <link rel="stylesheet" href="../css/components.css?v=20260321">
@@ -32,7 +66,7 @@
 </head>
 
 <body class="bg-app">
-    <div class="app-container">
+    <div class="d-flex">
         <div id="sidebar"></div>
         <div class="main-wrapper flex-grow-1">
             <div class="page-content-standard">
@@ -188,20 +222,20 @@
         </div>
     </div>
 
-    <script src="../js/utils.js?v=20260321"></script>
-    <script src="../js/api.js?v=20260321"></script>
-    <script src="../js/auth.js?v=20260321"></script>
-    <script src="../js/ui_components.js?v=20260321"></script>
-    <script src="../js/app.js?v=20260321"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/utils.js?v=20260321" onload="window.__loadedScripts.push('utils.js')"></script>
+    <script src="../js/api.js?v=20260321" onload="window.__loadedScripts.push('api.js')"></script>
+    <script src="../js/auth.js?v=20260321" onload="window.__loadedScripts.push('auth.js')"></script>
+    <script src="../js/ui_components.js?v=20260321" onload="window.__loadedScripts.push('ui_components.js')"></script>
+    <script src="../js/app.js?v=20260321" onload="window.__loadedScripts.push('app.js')"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" onload="window.__loadedScripts.push('bootstrap.js')"></script>
     <script>
-        requireAuth();
+        if (typeof window.requireAuth === 'function') window.requireAuth();
         const sb = document.getElementById('sidebar');
         if (sb) sb.innerHTML = renderSidebar('salary');
         injectTopHeader('Salary & Payroll');
 
 
-        const user = getUser();
+        const user = window.getUser ? window.getUser() : null;
         const isAdmin = user?.role === 'ADMIN';
         const canManageSalary = window.hasFeatureAccess ? window.hasFeatureAccess('salary_manage_roles') : isAdmin;
         const canViewAllSalary = window.hasFeatureAccess ? window.hasFeatureAccess('salary_view_all_roles') : isAdmin;
@@ -422,7 +456,7 @@
                 }
 
                 tbody.innerHTML = slips.map(s => {
-                    const canManageSalary = hasFeatureAccess('salary_manage_roles');
+                    const canManageSalary = window.hasFeatureAccess ? window.hasFeatureAccess('salary_manage_roles') : isAdmin;
                     const statusCls = s.status === 'CONFIRMED' ? 'badge-green-light' : 'badge-yellow-light';
                     const statusIcon = s.status === 'CONFIRMED' ? 'bi-check-circle' : 'bi-hourglass-split';
                     const statusLabel = s.status === 'CONFIRMED' ? 'PAID' : 'DRAFT';
@@ -722,6 +756,22 @@
         </div>
     </div>
 
+    <script>
+        console.log('Final inline script running');
+        // Final fallback to ensure visibility
+        setTimeout(() => {
+            console.log('Final visibility check (instant)');
+            document.body.style.visibility = 'visible';
+            document.body.style.opacity = '1';
+            const mw = document.querySelector('.main-wrapper');
+            if (mw) {
+                mw.style.visibility = 'visible';
+                mw.style.display = 'block';
+                mw.style.opacity = '1';
+            }
+            console.log('Body visibility forced to visible');
+        }, 0);
+    </script>
 </body>
 
 </html>

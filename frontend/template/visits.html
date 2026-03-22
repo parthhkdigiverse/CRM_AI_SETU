@@ -27,15 +27,16 @@
         <div id="sidebar"></div>
         <div class="flex-grow-1 main-wrapper">
             <div class="page-content-standard">
-                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-                    <div>
-                        <h2 class="page-section-title">Visits</h2>
-                        <p class="text-muted small mb-0">Track field visits, call outcomes, and shop conversion status.
-                        </p>
+                <div class="page-header-glass d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div class="mb-3 mb-sm-0">
+                        <h2 class="page-section-title fw-bold mb-1">Visits</h2>
+                        <p class="text-muted mb-0" style="font-size:0.93rem;">Track field visits, call outcomes, and shop conversion status.</p>
                     </div>
-                    <button id="add-visit-btn" class="btn btn-primary" onclick="openVisitModal()">
-                        <i class="bi bi-plus-lg me-2"></i>Add New Visit
-                    </button>
+                    <div class="d-flex align-items-center gap-3">
+                        <button id="add-visit-btn" class="btn btn-primary fw-semibold" style="border-radius:10px;" onclick="openVisitModal()">
+                            <i class="bi bi-plus-lg me-2"></i>Add New Visit
+                        </button>
+                    </div>
                 </div>
 
                 <div class="row g-3 mb-4" id="stats-row">
