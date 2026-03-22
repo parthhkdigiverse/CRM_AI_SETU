@@ -204,7 +204,8 @@ def refresh_token(
 def read_current_user(
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    if current_user is None:  # Demo mode: return synthetic admin
+    # Demo mode: return synthetic admin if current_user is None or ID is 0
+    if current_user is None or getattr(current_user, 'id', None) == 0:
         return {
             "id": 0, "email": _DEMO_EMAIL, "name": "Tisha Admin",
             "role": "ADMIN", "is_active": True, "phone": None
@@ -213,7 +214,8 @@ def read_current_user(
 
 @router.get("/profile", response_model=UserRead)
 def read_profile(current_user: User = Depends(get_current_user)) -> Any:
-    if current_user is None:  # Demo mode: return synthetic admin
+    # Demo mode: return synthetic admin if current_user is None or ID is 0
+    if current_user is None or getattr(current_user, 'id', None) == 0:
         return {
             "id": 0, "email": _DEMO_EMAIL, "name": "Tisha Admin",
             "role": "ADMIN", "is_active": True, "phone": None
@@ -227,7 +229,8 @@ async def update_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> Any:
-    if current_user is None:
+    # Demo mode: return synthetic admin if current_user is None or ID is 0
+    if current_user is None or getattr(current_user, 'id', None) == 0:
          return {
             "id": 0, "email": _DEMO_EMAIL, "name": profile_in.name or "Tisha Admin",
             "role": "ADMIN", "is_active": True, "phone": profile_in.phone
@@ -266,7 +269,8 @@ async def change_password(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user is None:
+    # Demo mode: check if current_user is None or ID is 0
+    if current_user is None or getattr(current_user, 'id', None) == 0:
         raise HTTPException(status_code=400, detail="Demo account cannot change password")
         
     if not verify_password(body.old_password, current_user.hashed_password):
@@ -294,7 +298,8 @@ async def update_preferences(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user is None:
+    # Demo mode: check if current_user is None or ID is 0
+    if current_user is None or getattr(current_user, 'id', None) == 0:
         return {"message": "Preferences updated (Demo Mode)"}
         
     # Merge preferences

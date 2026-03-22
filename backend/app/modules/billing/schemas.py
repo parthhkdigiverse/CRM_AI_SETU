@@ -63,6 +63,7 @@ class BillRead(BaseModel):
 
     shop_name: Optional[str] = None
     client_name: Optional[str] = None
+    creator_name: Optional[str] = None
 
     created_by_id: Optional[int] = None
     verified_by_id: Optional[int] = None

@@ -9,16 +9,67 @@
     <title>Salary | SRM AI SETU</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <script>
+        // CRITICAL: Global Error Handling (Placed in HEAD to catch early script failures)
+        window.__loadedScripts = [];
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('CRITICAL ERROR:', msg, url, lineNo, columnNo, error);
+            const errorDivId = 'emergency-error-display';
+            if (document.getElementById(errorDivId)) return false;
+
+            const errorHtml = `
+                <div id="${errorDivId}" style="position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:99999; width:90%; max-width:600px; background:#fee2e2; border:2px solid #ef4444; border-radius:12px; padding:20px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); color:#991b1b; font-family:sans-serif;">
+                    <h3 style="margin-top:0; font-size:1.25rem;">⚠️ Application Error</h3>
+                    <p style="font-size:0.9rem;">A critical script error occurred while loading the page.</p>
+                    <div style="background:#fef2f2; padding:10px; border-radius:6px; margin:10px 0; font-family:monospace; font-size:0.8rem; border:1px solid #fecaca; white-space:pre-wrap; word-break:break-all;">${msg}\nAt: ${url}\nLine: ${lineNo}</div>
+                    <p style="font-size:0.8rem; margin-bottom:15px;">Scripts loaded: ${window.__loadedScripts.join(', ') || 'None'}</p>
+                    <button onclick="location.reload()" style="background:#ef4444; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;">Reload Page</button>
+                </div>
+            `;
+            
+            // Force body visible so we can see the error
+            if (document.body) {
+                document.body.style.visibility = 'visible';
+                document.body.style.opacity = '1';
+                document.body.insertAdjacentHTML('afterbegin', errorHtml);
+            } else {
+                // If body isn't ready, wait a bit
+                setTimeout(() => {
+                    document.body.style.visibility = 'visible';
+                    document.body.style.opacity = '1';
+                    document.body.insertAdjacentHTML('afterbegin', errorHtml);
+                }, 500);
+            }
+            return false;
+        };
+    </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../css/theme.css?v=1772780188">
-    <link rel="stylesheet" href="../css/components.css?v=1772780188">
+    <link rel="stylesheet" href="../css/theme.css?v=20260321">
+    <link rel="stylesheet" href="../css/components.css?v=20260321">
+
+    <style>
+        .table-responsive {
+            overflow-x: auto !important;
+            display: block;
+            width: 100%;
+            scrollbar-width: thin;
+        }
+        #tab-slips .table {
+            min-width: 900px;
+        }
+        @media (max-width: 1200px) {
+            #tab-slips .table {
+                min-width: 850px;
+            }
+        }
+    </style>
 </head>
 
 <body class="bg-app">
     <div class="d-flex">
         <div id="sidebar"></div>
-        <div class="flex-grow-1 main-wrapper">
-            <div class="page-content mx-auto" style="max-width: 1300px;">
+        <div class="main-wrapper flex-grow-1">
+            <div class="page-content-standard">
                 <!-- Header Section -->
                 <div class="page-header-glass d-flex justify-content-between align-items-center">
                     <div class="mb-3 mb-sm-0">
@@ -36,74 +87,16 @@
                     </div>
                 </div>
 
-                <div id="filter-panel-wrapper">
-                    <div class="filter-panel">
-                        <div class="filter-panel-head" id="salary-filter-panel-toggle">
-                            <div class="filter-panel-head-main">
-                                <div class="filter-panel-head-left">
-                                    <i class="bi bi-sliders2"></i>
-                                    Filters
-                                </div>
-                                <div class="filter-active-pills" id="salary-filter-pills"></div>
-                            </div>
-                            <div class="filter-panel-head-meta">
-                                <div class="text-muted small" id="slip-count"></div>
-                                <button class="filter-toggle-btn" id="salary-filter-toggle-btn" type="button" onclick="toggleFilters(); event.stopPropagation();">
-                                    <span id="salary-filter-toggle-label">Show</span>
-                                    <i class="bi bi-chevron-down"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="filter-panel-body" id="salary-filter-panel-body">
-                            <div class="filter-grid">
-                                <div class="filter-field">
-                                    <label>Employee</label>
-                                    <select id="slip-user-filter" class="form-select">
-                                        <option value="">All Employees</option>
-                                    </select>
-                                </div>
-                                <div class="filter-field">
-                                    <label>Status</label>
-                                    <select id="slip-status-filter" class="form-select">
-                                        <option value="">All Statuses</option>
-                                        <option value="DRAFT">Draft</option>
-                                        <option value="CONFIRMED">Paid</option>
-                                    </select>
-                                </div>
-                                <div class="filter-field">
-                                    <label>Month</label>
-                                    <input type="month" id="slip-month-filter" class="form-control">
-                                </div>
-                            </div>
-                            <div class="filter-actions">
-                                <button class="btn-filter-reset" type="button" onclick="clearFilters()">
-                                    <i class="bi bi-x-circle"></i>Clear
-                                </button>
-                                <button class="btn-filter-apply" type="button" onclick="loadSlips()">
-                                    <i class="bi bi-check2"></i>Apply Filters
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div id="filter-wrapper" class="mb-4"></div>
 
                 <!-- Salary Table -->
                 <div id="tab-slips" class="grid-card">
-                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom" style="background: var(--bg-app);">
                         <h6 class="fw-bold mb-0" style="color:var(--primary);"><i class="bi bi-receipt me-2 text-primary"></i>Salary Slips</h6>
+                        <span class="badge" style="background:var(--bg-app); color:var(--text-muted); border:1px solid var(--border);" id="slip-count"></span>
                     </div>
                     <div class="table-responsive" style="font-size:0.82rem;">
                         <table class="table table-sm mb-0">
-                            <style>
-                                .table-responsive {
-                                    overflow-x: auto !important;
-                                    display: block;
-                                    width: 100%;
-                                }
-                                #tab-slips .table {
-                                    min-width: 1100px;
-                                }
-                            </style>
                             <thead>
                                 <tr>
                                     <th style="padding:8px 10px;">Employee Name</th>
@@ -229,21 +222,20 @@
         </div>
     </div>
 
-    <script src="../js/utils.js?v=2.3"></script>
-    <script src="../js/api.js?v=2.3"></script>
-    <script src="../js/auth.js?v=2.3"></script>
-    <script src="../js/ui_components.js?v=20260312"></script>
-    <script src="../js/app.js?v=2.3"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/utils.js?v=20260321" onload="window.__loadedScripts.push('utils.js')"></script>
+    <script src="../js/api.js?v=20260321" onload="window.__loadedScripts.push('api.js')"></script>
+    <script src="../js/auth.js?v=20260321" onload="window.__loadedScripts.push('auth.js')"></script>
+    <script src="../js/ui_components.js?v=20260321" onload="window.__loadedScripts.push('ui_components.js')"></script>
+    <script src="../js/app.js?v=20260321" onload="window.__loadedScripts.push('app.js')"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" onload="window.__loadedScripts.push('bootstrap.js')"></script>
     <script>
-        requireAuth();
-        const sidebarElement = document.getElementById('sidebar');
-        if (sidebarElement) {
-            sidebarElement.innerHTML = renderSidebar('salary');
-        }
-        injectTopHeader('Salary');
+        if (typeof window.requireAuth === 'function') window.requireAuth();
+        const sb = document.getElementById('sidebar');
+        if (sb) sb.innerHTML = renderSidebar('salary');
+        injectTopHeader('Salary & Payroll');
 
-        const user = getUser();
+
+        const user = window.getUser ? window.getUser() : null;
         const isAdmin = user?.role === 'ADMIN';
         const canManageSalary = window.hasFeatureAccess ? window.hasFeatureAccess('salary_manage_roles') : isAdmin;
         const canViewAllSalary = window.hasFeatureAccess ? window.hasFeatureAccess('salary_view_all_roles') : isAdmin;
@@ -254,50 +246,49 @@
             aa.classList.add('d-flex');
         } else {
             // Employee viewer mode: hide filter toolbar unless allowed to view all
-            const ft = document.getElementById('filter-panel-wrapper');
+            const ft = document.getElementById('filter-wrapper');
             if (ft && !canViewAllSalary) ft.style.display = 'none';
         }
 
-        const salaryFilterPanelBody = document.getElementById('salary-filter-panel-body');
-        const salaryFilterToggleBtn = document.getElementById('salary-filter-toggle-btn');
-        const salaryFilterToggleLabel = document.getElementById('salary-filter-toggle-label');
+        let currentFilters = {};
 
-        document.getElementById('salary-filter-panel-toggle').addEventListener('click', toggleFilters);
-        ['slip-user-filter', 'slip-status-filter', 'slip-month-filter'].forEach(id => {
-            document.getElementById(id).addEventListener('change', updateFilterBadge);
-        });
-
-        function toggleFilters() {
-            const isOpen = salaryFilterPanelBody.classList.toggle('open');
-            salaryFilterToggleBtn.classList.toggle('open', isOpen);
-            salaryFilterToggleLabel.textContent = isOpen ? 'Hide' : 'Show';
-        }
-
-        function updateFilterBadge() {
-            const pills = document.getElementById('salary-filter-pills');
-            if (!pills) return;
-            const user = document.getElementById('slip-user-filter');
-            const status = document.getElementById('slip-status-filter');
-            const userValue = user?.value;
-            const statusValue = status?.value;
-            const monthValue = document.getElementById('slip-month-filter')?.value;
-            const items = [];
-
-            if (userValue) items.push({ label: user.options[user.selectedIndex].text, inputId: 'slip-user-filter' });
-            if (statusValue) items.push({ label: status.options[status.selectedIndex].text, inputId: 'slip-status-filter' });
-            if (monthValue) items.push({ label: monthValue, inputId: 'slip-month-filter' });
-
-            pills.innerHTML = items.map(item => '<span class="filter-pill">' + item.label +
-                '<button class="filter-pill-remove" type="button" data-input="' + item.inputId + '" title="Remove">&times;</button></span>'
-            ).join('');
-
-            pills.querySelectorAll('.filter-pill-remove').forEach(btn => {
-                btn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    document.getElementById(btn.dataset.input).value = '';
-                    updateFilterBadge();
+        function initFilters(employees) {
+            renderFilterPanel({
+                containerId: 'filter-wrapper',
+                filters: [
+                    {
+                        type: 'select',
+                        label: 'Employee',
+                        id: 'slip-user-filter',
+                        options: [
+                            { value: 'ALL', label: 'All Employees' },
+                            ...employees.map(e => ({ value: e.id, label: e.name || e.email }))
+                        ]
+                    },
+                    {
+                        type: 'select',
+                        label: 'Status',
+                        id: 'slip-status-filter',
+                        options: [
+                            { value: 'ALL', label: 'All Statuses' },
+                            { value: 'DRAFT', label: 'Draft' },
+                            { value: 'CONFIRMED', label: 'Paid' }
+                        ]
+                    },
+                    {
+                        type: 'month',
+                        label: 'Month',
+                        id: 'slip-month-filter'
+                    }
+                ],
+                onApply: (data) => {
+                    currentFilters = data;
                     loadSlips();
-                });
+                },
+                onReset: () => {
+                    currentFilters = {};
+                    loadSlips();
+                }
             });
         }
 
@@ -344,7 +335,9 @@
             emps.forEach(e => { window.userNameMap[e.id] = e.name || e.email; });
             const opts = emps.map(e => `<option value="${e.id}">${e.name || e.email}</option>`).join('');
             document.getElementById('s-user').innerHTML = '<option value="">-- Select Employee --</option>' + opts;
-            document.getElementById('slip-user-filter').innerHTML = '<option value="">All Employees</option>' + opts;
+            if (canViewAllSalary) {
+                initFilters(emps);
+            }
         }).catch(() => { });
 
         // Preview on employee/month change
@@ -418,7 +411,7 @@
             try {
                 let slips;
                 if (canViewAllSalary) {
-                    const userId = document.getElementById('slip-user-filter').value;
+                    const userId = currentFilters['slip-user-filter'] === 'ALL' ? '' : (currentFilters['slip-user-filter'] || '');
                     slips = userId
                         ? await ApiClient.getSalaryRecords(userId)
                         : await ApiClient.getAllSalarySlips();
@@ -427,14 +420,15 @@
                 }
 
                 // Status filter
-                const statusFilter = canViewAllSalary ? document.getElementById('slip-status-filter').value : '';
+                const statusFilter = currentFilters['slip-status-filter'] === 'ALL' ? '' : (currentFilters['slip-status-filter'] || '');
                 if (statusFilter) slips = slips.filter(s => s.status === statusFilter);
 
                 // Month filter
-                const monthFilter = canViewAllSalary ? document.getElementById('slip-month-filter').value : '';
+                const monthFilter = currentFilters['slip-month-filter'] || '';
                 if (monthFilter) slips = slips.filter(s => s.month === monthFilter);
 
-                document.getElementById('slip-count').textContent = slips.length + ' record(s)';
+                const countBadge = document.getElementById('slip-count');
+                if (countBadge) countBadge.textContent = slips.length + ' record(s)';
 
                 // SORTING LOGIC:
                 // 1. Remarks at top (Priority 1)
@@ -462,7 +456,7 @@
                 }
 
                 tbody.innerHTML = slips.map(s => {
-                    const canManageSalary = hasFeatureAccess('salary_manage_roles');
+                    const canManageSalary = window.hasFeatureAccess ? window.hasFeatureAccess('salary_manage_roles') : isAdmin;
                     const statusCls = s.status === 'CONFIRMED' ? 'badge-green-light' : 'badge-yellow-light';
                     const statusIcon = s.status === 'CONFIRMED' ? 'bi-check-circle' : 'bi-hourglass-split';
                     const statusLabel = s.status === 'CONFIRMED' ? 'PAID' : 'DRAFT';
@@ -729,15 +723,6 @@
             window.open(`salary_slip_view.html?id=${slipId}`, '_blank');
         }
 
-        function clearFilters() {
-            document.getElementById('slip-user-filter').value = '';
-            document.getElementById('slip-status-filter').value = '';
-            document.getElementById('slip-month-filter').value = '';
-            updateFilterBadge();
-            loadSlips();
-        }
-
-        updateFilterBadge();
         loadSlips();
     </script>
     <!-- Remarks Modal -->
@@ -771,6 +756,22 @@
         </div>
     </div>
 
+    <script>
+        console.log('Final inline script running');
+        // Final fallback to ensure visibility
+        setTimeout(() => {
+            console.log('Final visibility check (instant)');
+            document.body.style.visibility = 'visible';
+            document.body.style.opacity = '1';
+            const mw = document.querySelector('.main-wrapper');
+            if (mw) {
+                mw.style.visibility = 'visible';
+                mw.style.display = 'block';
+                mw.style.opacity = '1';
+            }
+            console.log('Body visibility forced to visible');
+        }, 0);
+    </script>
 </body>
 
 </html>

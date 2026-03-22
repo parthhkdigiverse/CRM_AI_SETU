@@ -18,6 +18,8 @@ class SyntheticUser:
     name = "Demo Admin"
     role = UserRole.ADMIN
     is_active = True
+    preferences = {}
+    hashed_password = "hashed_password_placeholder"
     
     def __getitem__(self, key):
         return getattr(self, key)

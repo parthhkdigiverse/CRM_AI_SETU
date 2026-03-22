@@ -50,13 +50,16 @@ function buildMapNow() {
     });
 
     // Initialize Radius Circle
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const circleColor = isDark ? '#60a5fa' : '#4f46e5';
+
     window.radiusCircle = new google.maps.Circle({
         map: window.map,
         center: { lat: 21.1702, lng: 72.8311 },
         radius: parseInt(document.getElementById('a-radius')?.value || 500),
-        fillColor: '#4f46e5',
-        fillOpacity: 0.15,
-        strokeColor: '#4f46e5',
+        fillColor: circleColor,
+        fillOpacity: isDark ? 0.2 : 0.15,
+        strokeColor: circleColor,
         strokeOpacity: 0.8,
         strokeWeight: 2,
         clickable: false
@@ -222,7 +225,7 @@ window.handleModalSave = async function () {
     }
 
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Synchronizing...';
 
     try {
         let savedArea;
@@ -280,7 +283,7 @@ window._discoverShops = async function (areaId, locationParams, radiusMeters = 5
     const tableBody = document.getElementById('discovered-shops-table');
 
     // Show a loading indicator while fetching
-    tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Discovering nearby shops within ${radiusMeters}m...</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm text-primary me-2"></span>Scanning for businesses within ${radiusMeters}m...</td></tr>`;
 
     try {
         const request = {

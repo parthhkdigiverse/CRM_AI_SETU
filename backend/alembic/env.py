@@ -8,6 +8,27 @@ from alembic import context
 from app.core.config import settings
 from app.core.database import Base
 
+# Import all models for Alembic to detect them
+import app.modules.users.models
+import app.modules.clients.models
+import app.modules.billing.models
+import app.modules.payments.models
+import app.modules.salary.models
+import app.modules.shops.models
+import app.modules.visits.models
+import app.modules.areas.models
+import app.modules.issues.models
+import app.modules.projects.models
+import app.modules.meetings.models
+import app.modules.feedback.models
+import app.modules.timetable.models
+import app.modules.todos.models
+import app.modules.notifications.models
+import app.modules.incentives.models
+import app.modules.attendance.models
+import app.modules.activity_logs.models
+import app.modules.settings.models
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

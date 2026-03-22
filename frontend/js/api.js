@@ -111,8 +111,10 @@ class ApiClient {
         } catch (error) {
             // Check if it's a network error (server down)
             if (error instanceof TypeError && error.message === 'Failed to fetch') {
-                console.warn("Server appears to be offline:", error);
+                console.warn("Server appears to be offline or connection was reset:", error);
                 if (window.showOfflineBanner) window.showOfflineBanner(true);
+                // Wrap error to make it more descriptive
+                throw new Error("Network error: Could not connect to server. It might be down or your connection was reset.");
             }
             console.error("Network or parsing error:", error);
             throw error;
@@ -212,12 +214,20 @@ class ApiClient {
         return this.request('/attendance/punch', { method: 'POST' });
     }
     static async getAttendanceSummary(params = {}) {
-        const query = new URLSearchParams(params).toString();
-        return this.request(`/attendance/summary?${query}`);
+        const query = new URLSearchParams();
+        Object.entries(params || {}).forEach(([k, v]) => {
+            if (v === undefined || v === null || v === '') return;
+            query.set(k, String(v));
+        });
+        const qs = query.toString();
+        return this.request(`/attendance/summary${qs ? `?${qs}` : ''}`);
     }
 
     static async getAttendanceLogs(userId, date) {
-        const query = new URLSearchParams({ user_id: userId || '', date }).toString();
+        const params = {};
+        if (userId) params.user_id = userId;
+        if (date) params.date = date;
+        const query = new URLSearchParams(params).toString();
         return this.request(`/attendance/logs?${query}`);
     }
 

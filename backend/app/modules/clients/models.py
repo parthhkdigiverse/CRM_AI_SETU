@@ -20,6 +20,7 @@ class Client(Base):
     referred_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True) # For assignment
     pm_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Automatically assigned Project Manager
+    pm_assigned_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     is_active = Column(Boolean, default=True, index=True)
     is_deleted = Column(Boolean, default=False, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
@@ -28,6 +29,13 @@ class Client(Base):
     referred_by = relationship("app.modules.users.models.User", foreign_keys=[referred_by_id], backref="referred_clients")
     owner = relationship("app.modules.users.models.User", foreign_keys=[owner_id], backref="owned_clients")
     pm = relationship("app.modules.users.models.User", foreign_keys=[pm_id], backref="managed_clients")
+    pm_assigner = relationship("app.modules.users.models.User", foreign_keys=[pm_assigned_by_id])
+
+    @property
+    def pm_assigned_by_name(self):
+        if self.pm_assigner:
+            return self.pm_assigner.name or self.pm_assigner.email
+        return None
 
 class ClientPMHistory(Base):
     __tablename__ = "client_pm_history"

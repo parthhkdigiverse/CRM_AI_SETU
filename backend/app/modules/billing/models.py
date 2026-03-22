@@ -63,3 +63,9 @@ class Bill(Base):
     @property
     def client_name(self) -> str:
         return self.client.name if self.client else self.invoice_client_name
+
+    @property
+    def creator_name(self) -> str:
+        if self.created_by:
+            return self.created_by.name or self.created_by.email or "System"
+        return "System"

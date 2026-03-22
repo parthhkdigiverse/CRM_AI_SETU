@@ -88,9 +88,10 @@ def read_shops(
     limit: int = 100,
     pipeline_stage: Optional[MasterPipelineStage] = None,
     owner_id: Optional[int] = None,
+    exclude_leads: bool = Query(False),
     current_user: User = Depends(staff_checker)
 ) -> Any:
-    return ShopService.list_shops(db, current_user, skip, limit, pipeline_stage, owner_id)
+    return ShopService.list_shops(db, current_user, skip, limit, pipeline_stage, owner_id, exclude_leads)
 
 @router.get("/suggest-pm")
 def suggest_pm(
@@ -155,7 +156,7 @@ def assign_pm(
     """
     Assign a Project Manager to a CONTACTED lead.
     """
-    return ShopService.assign_pm(db, shop_id, body.pm_id, current_user)
+    return ShopService.assign_pm(db, shop_id, body, current_user)
 
 @router.post("/{shop_id}/auto-assign", response_model=ShopRead)
 def auto_assign_shop(

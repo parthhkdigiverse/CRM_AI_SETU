@@ -80,7 +80,7 @@ def read_clients(
             scoped_mode = "mixed"
     elif current_user and current_user.role in [UserRole.SALES, UserRole.TELESALES]:
         scoped_user_id = current_user.id
-        scoped_mode = "owner"
+        scoped_mode = "mixed"
     elif pm_id and pm_id not in {"ALL", "all"}:
         try:
             pm_filter_id = int(pm_id)
@@ -97,6 +97,7 @@ def read_clients(
         pm_id=pm_filter_id,
         scoped_user_id=scoped_user_id,
         scoped_mode=scoped_mode,
+        current_user=current_user,
     )
 
 

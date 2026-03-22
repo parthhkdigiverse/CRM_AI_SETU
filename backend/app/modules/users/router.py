@@ -34,11 +34,11 @@ class RoleIncentiveEligibilityUpdate(BaseModel):
 DEFAULT_ACCESS_POLICY = {
     "page_access": {
         "ADMIN": ["*"],
-        "SALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "areas.html", "clients.html", "billing.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "issues.html", "incentives.html", "employees.html"],
-        "TELESALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "clients.html", "billing.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "issues.html", "incentives.html", "employees.html"],
-        "PROJECT_MANAGER": ["dashboard.html", "timetable.html", "todo.html", "projects.html", "projects_demo.html", "meetings.html", "issues.html", "clients.html", "billing.html", "feedback.html", "reports.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "incentives.html", "employees.html"],
-        "PROJECT_MANAGER_AND_SALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "areas.html", "projects.html", "projects_demo.html", "meetings.html", "issues.html", "clients.html", "billing.html", "feedback.html", "reports.html", "leaves.html", "salary.html", "search.html", "notifications.html", "profile.html", "settings.html", "incentives.html", "employees.html"],
-        "CLIENT": ["dashboard.html"]
+        "SALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "areas.html", "clients.html", "billing.html", "leaves.html", "salary.html", "salary_slip_view.html", "search.html", "notifications.html", "profile.html", "settings.html", "issues.html", "incentives.html", "employees.html", "projects.html", "projects_demo.html"],
+        "TELESALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "clients.html", "billing.html", "leaves.html", "salary.html", "salary_slip_view.html", "search.html", "notifications.html", "profile.html", "settings.html", "issues.html", "incentives.html", "employees.html", "projects.html", "projects_demo.html"],
+        "PROJECT_MANAGER": ["dashboard.html", "timetable.html", "todo.html", "projects.html", "projects_demo.html", "meetings.html", "issues.html", "clients.html", "billing.html", "feedback.html", "reports.html", "leaves.html", "salary.html", "salary_slip_view.html", "search.html", "notifications.html", "profile.html", "settings.html", "incentives.html", "employees.html"],
+        "PROJECT_MANAGER_AND_SALES": ["dashboard.html", "timetable.html", "todo.html", "leads.html", "visits.html", "areas.html", "projects.html", "projects_demo.html", "meetings.html", "issues.html", "clients.html", "billing.html", "feedback.html", "reports.html", "leaves.html", "salary.html", "salary_slip_view.html", "search.html", "notifications.html", "profile.html", "settings.html", "incentives.html", "employees.html"],
+        "CLIENT": ["dashboard.html", "projects.html", "billing.html", "feedback.html", "profile.html"]
     },
     "feature_access": {
         "issue_create_roles": ["ADMIN", "SALES", "TELESALES", "PROJECT_MANAGER", "PROJECT_MANAGER_AND_SALES"],
@@ -85,7 +85,15 @@ def _load_access_policy(db: Session) -> dict:
         for role, pages in DEFAULT_ACCESS_POLICY["page_access"].items():
             custom_pages = page_access.get(role)
             if isinstance(custom_pages, list) and custom_pages:
-                merged_page_access[role] = [str(p).strip() for p in custom_pages if str(p).strip()]
+                merged = [str(p).strip() for p in custom_pages if str(p).strip()]
+                # Proactive Injection: if they have salary access, they MUST have slip view access
+                if ("salary.html" in merged or "salary" in merged) and "salary_slip_view.html" not in merged:
+                    merged.append("salary_slip_view.html")
+                # Also ensure search, profile, and notifications are usually allowed if not explicitly denied
+                for base_page in ["profile.html", "notifications.html", "search.html"]:
+                    if base_page not in merged and role != "CLIENT":
+                        merged.append(base_page)
+                merged_page_access[role] = merged
             else:
                 merged_page_access[role] = pages
 
@@ -518,11 +526,18 @@ def get_referral_code(
         raise HTTPException(status_code=404, detail="Referral code not set for this user")
     return {"user_id": user.id, "code": user.referral_code}
 
-# ── PM Availability endpoint (moved from employees router) ────────────────────
+# ── PM Workload and Availability endpoints (Demo Scheduling) ────────────────────
 
-from sqlalchemy import cast, Date
-from app.modules.meetings.models import MeetingSummary
-from app.modules.clients.models import Client
+@router.get("/suggest-pm")
+def suggest_pm(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+) -> Any:
+    from app.modules.users.service import UserService
+    result = UserService(db).suggest_pm()
+    if not result:
+        raise HTTPException(status_code=404, detail="No Project Managers found")
+    return result
 
 @router.get("/{pm_id}/availability")
 def get_pm_availability(
@@ -531,20 +546,8 @@ def get_pm_availability(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ) -> Any:
-    pm = db.query(User).filter(
-        User.id == pm_id,
-        User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES])
-    ).first()
-    if not pm:
+    from app.modules.users.service import UserService
+    result = UserService(db).get_pm_availability(pm_id, date)
+    if not result:
         raise HTTPException(status_code=404, detail="Project Manager not found")
-
-    meetings = db.query(MeetingSummary).join(Client).filter(
-        Client.pm_id == pm_id,
-        cast(MeetingSummary.date, Date) == date,
-        MeetingSummary.status != "CANCELLED"
-    ).all()
-
-    booked_hours = [m.date.hour for m in meetings]
-    free_slots = [f"{h:02d}:00" for h in range(9, 18) if h not in booked_hours]
-
-    return {"pm_id": pm_id, "date": date, "free_slots": free_slots}
+    return result

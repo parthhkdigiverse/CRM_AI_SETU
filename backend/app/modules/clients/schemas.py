@@ -39,6 +39,7 @@ class ClientUpdate(ClientBase):
     project_type: Optional[str] = None
     requirements: Optional[str] = None
     owner_id: Optional[int] = None
+    pm_id: Optional[int] = None
 
 
 class ClientPMAssign(BaseModel):
@@ -52,6 +53,7 @@ class ClientRead(BaseModel):
     organization: Optional[str] = None
     pm_id: Optional[int] = None
     pm_name: Optional[str] = None
+    pm_assigned_by_name: Optional[str] = None
     owner_id: Optional[int] = None
     address: Optional[str] = None
     project_type: Optional[str] = None

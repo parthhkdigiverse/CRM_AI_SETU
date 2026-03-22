@@ -18,6 +18,7 @@ const FEATURE_ACCESS_FALLBACK = {
     incentive_manage_roles: ['ADMIN'],
     incentive_view_all_roles: ['ADMIN'],
     employee_manage_roles: ['ADMIN'],
+    project_demo_roles: ['ADMIN', 'PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES', 'SALES', 'TELESALES'],
 };
 
 window.hasFeatureAccess = function(featureKey, roleInput) {
@@ -37,27 +38,27 @@ if (!isLoginPage) {
     document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="../css/global.css?v=2.6">');
 }
 
-function getToken() {
+window.getToken = function() {
     const t = sessionStorage.getItem('access_token');
     if (!t || t === 'null' || t === 'undefined' || t === '') return null;
     return t;
 }
-function setTokens(a, r) {
+window.setTokens = function(a, r) {
     sessionStorage.setItem('access_token', a);
     if (r) sessionStorage.setItem('refresh_token', r);
 }
-function clearTokens() {
+window.clearTokens = function() {
     sessionStorage.removeItem('access_token');
     sessionStorage.removeItem('refresh_token');
     sessionStorage.removeItem('srm_user');
     sessionStorage.removeItem('current_user'); // Added based on snippet
 }
-function getUser() {
+window.getUser = function() {
     try { return JSON.parse(sessionStorage.getItem('srm_user')); } catch { return null; }
 }
 
-function showAccessDeniedState(role, path) {
-    const target = document.getElementById('main-content') || document.querySelector('.page-content');
+window.showAccessDeniedState = function(role, path) {
+    const target = document.getElementById('main-content') || document.querySelector('.page-content-standard');
     if (!target || document.getElementById('access-denied-state')) return;
 
     const roleLabel = (role || 'USER').replace(/_/g, ' ');
@@ -90,16 +91,33 @@ function showAccessDeniedState(role, path) {
     window.__accessDenied = true;
 }
 
+window.hideAccessDeniedState = function() {
+    const card = document.getElementById('access-denied-state');
+    if (card) card.remove();
+    
+    const target = document.getElementById('main-content') || document.querySelector('.page-content-standard');
+    if (target) {
+        Array.from(target.children).forEach(child => {
+            child.style.opacity = '';
+            child.style.pointerEvents = '';
+            child.removeAttribute('aria-hidden');
+        });
+    }
+    window.__accessDenied = false;
+}
+
 // Guard: call on every protected page
-function requireAuth() {
+window.requireAuth = function() {
+    console.log('requireAuth called, location:', window.location.href);
     window.__accessDenied = false;
     const params = new URLSearchParams(window.location.search);
     const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname) || window.location.protocol === 'file:';
     const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
 
     if (params.get('dev') === 'true' && isLocal) {
+        console.log('requireAuth: Dev mode detected');
         // Mock an ADMIN user for testing dev mode features if no session exists or if explicitly requested via dev=admin
-        if (!sessionStorage.getItem('srm_user') || params.get('dev_role') === 'ADMIN') {
+        if (!window.getUser() || params.get('dev_role') === 'ADMIN') {
             sessionStorage.setItem('access_token', 'dev-token');
             sessionStorage.setItem('srm_user', JSON.stringify({
                 id: 1, 
@@ -109,14 +127,16 @@ function requireAuth() {
             }));
         }
         document.body.style.visibility = 'visible';
+        document.body.style.opacity = '1';
         let pageName = document.title.split('—')[0].trim();
         if (!pageName || pageName === 'SRM AI SETU') pageName = 'Dashboard';
-        if (typeof injectTopHeader === 'function') injectTopHeader(pageName);
+        if (typeof window.injectTopHeader === 'function') window.injectTopHeader(pageName);
+        console.log('requireAuth: Dev mode setup complete, returning early');
         return;
     }
 
     const token = getToken();
-    const user = getUser();
+    let user = getUser();
 
     if (!token) {
         if (!isLoginPage) window.location.replace('index.html');
@@ -126,10 +146,10 @@ function requireAuth() {
     // --- ROLE BASED ROUTING GUARD ---
     const ROLE_PERMISSIONS_FALLBACK = {
         'ADMIN': ['*'],
-        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
-        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html'],
-        'PROJECT_MANAGER': ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
-        'PROJECT_MANAGER_AND_SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'leaves.html', 'salary.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        'SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html', 'projects.html', 'projects_demo.html'],
+        'TELESALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'clients.html', 'billing.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'issues.html', 'incentives.html', 'employees.html', 'projects.html', 'projects_demo.html'],
+        'PROJECT_MANAGER': ['dashboard.html', 'timetable.html', 'todo.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
+        'PROJECT_MANAGER_AND_SALES': ['dashboard.html', 'timetable.html', 'todo.html', 'leads.html', 'visits.html', 'areas.html', 'projects.html', 'projects_demo.html', 'meetings.html', 'issues.html', 'clients.html', 'billing.html', 'feedback.html', 'reports.html', 'leaves.html', 'salary.html', 'salary_slip_view.html', 'search.html', 'notifications.html', 'profile.html', 'settings.html', 'incentives.html', 'employees.html'],
         'CLIENT': ['dashboard.html', 'projects.html', 'billing.html', 'feedback.html', 'profile.html']
     };
 
@@ -152,21 +172,35 @@ function requireAuth() {
 
     // Exported to window for use in syncAccessControl
     window.enforceRoleAccess = function(role) {
-        if (!role || role === 'ADMIN') return true;
+        if (!role || role === 'ADMIN') {
+            hideAccessDeniedState();
+            return true;
+        }
         const path = window.location.pathname.split('/').pop() || 'index.html';
-        if (path === 'index.html' || path === 'login.html') return true;
+        if (path === 'index.html' || path === 'login.html') {
+            hideAccessDeniedState();
+            return true;
+        }
 
         const allowed = getAllowedPagesForRole(role);
         if (!allowed.includes(path) && !allowed.includes('*')) {
+            // Explicitly allow common utility pages and sub-pages
+            if (['salary_slip_view.html'].includes(path)) {
+                hideAccessDeniedState();
+                return true;
+            }
             showAccessDeniedState(role, path);
             return false;
         }
+        
+        hideAccessDeniedState();
         return true;
     };
 
     // --- OPTIMISTIC UI ---
     // If we have a user in session, show the page IMMEDIATELY.
     // Ensure background matches theme to avoid flash
+    user = window.getUser();
     const storedTheme = localStorage.getItem('srm-theme') || 'light';
     if (storedTheme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
@@ -222,8 +256,11 @@ function requireAuth() {
             }
 
             enforceRoleAccess(userData.role);
-            document.body.style.visibility = 'visible';
-            document.body.style.opacity = '1';
+            if (document.body) {
+                document.body.style.visibility = 'visible';
+                document.body.style.opacity = '1';
+            }
+            console.log('Background auth check successful');
             const el = document.getElementById('username-display');
             if (el) el.textContent = profile.name || 'User';
 
@@ -235,7 +272,10 @@ function requireAuth() {
         })
         .catch((err) => {
             console.warn('Background auth check failed:', err);
-            document.body.style.visibility = 'visible';
+            if (document.body) {
+                document.body.style.visibility = 'visible';
+                document.body.style.opacity = '1';
+            }
         });
 }
 
@@ -341,19 +381,17 @@ window.addEventListener('pageshow', (event) => {
 });
 
 // Logout
-function logout() {
+window.logout = function() {
     if (window.ApiClient && typeof window.ApiClient.clearTokens === 'function') {
         window.ApiClient.clearTokens();
     } else {
-        sessionStorage.removeItem('access_token');
-        sessionStorage.removeItem('refresh_token');
-        sessionStorage.removeItem('srm_user');
+        window.clearTokens();
     }
     window.location.href = 'index.html?msg=logged_out';
 }
 
 // Global Critical Issue Check
-async function checkCriticalIssues() {
+window.checkCriticalIssues = async function() {
     // Only check if we are on a valid inner page
     const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/');
     if (isLoginPage) return;

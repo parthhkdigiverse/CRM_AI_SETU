@@ -652,14 +652,23 @@ input[type="password"]::-ms-clear { display: none; }
 }
 .bulk-action-btn-group { display: flex; align-items: center; gap: 10px; }
 
-.bulk-action-bar .btn-link {
-    color: #94a3b8;
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition: color 0.18s;
-}
 .bulk-action-bar .btn-link:hover { color: #f8fafc; }
+
+@media (max-width: 575.98px) {
+    .bulk-action-bar {
+        width: 92% !important;
+        min-width: 0 !important;
+        gap: 12px !important;
+        padding: 8px 16px !important;
+    }
+    .bulk-select-badge {
+        padding: 2px 8px !important;
+        font-size: 0.7rem !important;
+    }
+    .bulk-action-bar .btn-link {
+        font-size: 0.7rem !important;
+    }
+}
 
 .bulk-delete-confirm-btn {
     background: var(--danger);
@@ -679,10 +688,36 @@ input[type="password"]::-ms-clear { display: none; }
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
     margin-bottom: 1rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+}
+
+.table-responsive::-webkit-scrollbar {
+    height: 4px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 10px;
 }
 
 .table-responsive .table {
     margin-bottom: 0;
+}
+
+@media (max-width: 991px) {
+    .table-responsive .table {
+        font-size: 0.75rem !important;
+    }
+    .table-responsive .table th,
+    .table-responsive .table td {
+        padding: 8px 6px !important;
+        white-space: nowrap;
+    }
+    .table-responsive .table thead th {
+        background: var(--bg-app) !important;
+        color: var(--text-main) !important;
+        font-weight: 700 !important;
+    }
 }
 
 /* ── Global Dashboard/Employee Header ────────────────────────── */
