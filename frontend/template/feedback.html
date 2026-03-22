@@ -397,24 +397,26 @@
             }
 
             tbody.innerHTML = filteredData.map(f => {
-                const initials = (f.agent_name || '?').split(' ').map(n => n[0]).join('').toUpperCase();
+                const agentDisplayName = f.agent_name || f.client_name || 'Guest';
+                const initials = agentDisplayName.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
                 const createdDate = new Date(f.created_at);
                 const dateStr = createdDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                 const timeStr = createdDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                const shopProduct = [f.shop_name, f.product].filter(Boolean).join(' • ');
 
                 return `
                 <tr>
                     <td>
                         <div class="fw-bold">${f.client_name || 'Guest'}</div>
-                        <div class="text-muted small">${f.shop_name || 'N/A'} • ${f.product || 'N/A'}</div>
+                        ${shopProduct ? `<div class="text-muted small">${shopProduct}</div>` : ''}
                         <div class="text-muted" style="font-size: 0.7rem;">${f.mobile || ''}</div>
                     </td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
                             <div class="agent-avatar bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">${initials}</div>
                             <div>
-                                <div class="fw-medium">${f.agent_name || 'System'}</div>
-                                <div class="text-muted" style="font-size: 0.75rem;">${f.agent_role || 'Sales Executive'}</div>
+                                <div class="fw-medium">${f.agent_name || 'Direct Submission'}</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">${f.agent_role || (f.agent_name ? 'Sales Executive' : 'Via QR / Link')}</div>
                             </div>
                         </div>
                     </td>

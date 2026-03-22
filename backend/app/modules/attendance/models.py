@@ -1,18 +1,14 @@
-# backend/app/modules/attendance/models.py
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Date, Float, Boolean
-from sqlalchemy.orm import relationship
-from app.core.database import Base
-from datetime import datetime
+from beanie import Document
+from typing import Optional
+from datetime import datetime, date
 
-class Attendance(Base):
-    __tablename__ = "attendance"
+class Attendance(Document):
+    user_id: str
+    date: Optional[date] = None
+    punch_in: Optional[datetime] = None
+    punch_out: Optional[datetime] = None
+    total_hours: float = 0.0
+    is_deleted: bool = False
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    date = Column(Date, nullable=False, default=lambda: datetime.now().date())
-    punch_in = Column(DateTime, nullable=True)
-    punch_out = Column(DateTime, nullable=True)
-    total_hours = Column(Float, default=0.0)
-    is_deleted = Column(Boolean, default=False, index=True)
-
-    user = relationship("User", backref="attendance_records")
+    class Settings:
+        name = "attendance"

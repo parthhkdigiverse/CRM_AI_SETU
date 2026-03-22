@@ -1,21 +1,30 @@
-# backend/app/modules/timetable/models.py
-from sqlalchemy import Column, Integer, String, Date, Time, ForeignKey, Boolean
-from sqlalchemy.orm import relationship
-from app.core.database import Base
+from typing import Optional, Annotated
+from datetime import date, time
+from beanie import Document, Indexed
+from pydantic import Field
 
-class TimetableEvent(Base):
-    __tablename__ = "timetable_events"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+class TimetableEvent(Document):
+    user_id: str  # MongoDB ma User ni ID string/ObjectId tarike
     
-    title = Column(String, nullable=False)
-    assignee_name = Column(String, nullable=True)
-    date = Column(Date, nullable=False)
-    start_time = Column(Time, nullable=False)
-    end_time = Column(Time, nullable=False)
-    location = Column(String, nullable=True)
-    is_deleted = Column(Boolean, default=False, index=True)
+    title: str
+    assignee_name: Optional[str] = None
+    date: date
+    start_time: time
+    end_time: time
+    location: Optional[str] = None
+    is_deleted: Annotated[bool, Indexed()] = False
 
-    # Relationship to user
-    user = relationship("app.modules.users.models.User", backref="timetable_events")
+    class Settings:
+        name = "timetable_events"  # MongoDB collection nu naam
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user_id": "60d5ecb8b39d880015f5a123",
+                "title": "Client Visit",
+                "date": "2026-03-20",
+                "start_time": "10:00:00",
+                "end_time": "11:00:00",
+                "location": "Surat"
+            }
+        }

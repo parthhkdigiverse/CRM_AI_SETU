@@ -1,49 +1,38 @@
-# backend/app/modules/incentives/models.py
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Boolean, Text
-from sqlalchemy.orm import relationship
-from datetime import datetime
-from app.core.database import Base
+from beanie import Document
+from typing import Optional
+from datetime import datetime, timezone
 
-class IncentiveSlab(Base):
-    __tablename__ = "incentive_slabs"
+class IncentiveSlab(Document):
+    min_units: int = 1
+    max_units: int = 10
+    incentive_per_unit: float = 0.0
+    slab_bonus: float = 0.0
 
-    id = Column(Integer, primary_key=True, index=True)
-    min_units = Column(Integer, nullable=False, default=1)
-    max_units = Column(Integer, nullable=False, default=10)
-    incentive_per_unit = Column(Float, nullable=False, default=0.0)
-    slab_bonus = Column(Float, nullable=False, default=0.0)
+    class Settings:
+        name = "incentive_slabs"
 
-class EmployeePerformance(Base):
-    __tablename__ = "employee_performances"
+class EmployeePerformance(Document):
+    user_id: str
+    period: str
+    closed_units: int = 0
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    period = Column(String, nullable=False)  # YYYY-MM
-    closed_units = Column(Integer, default=0)
+    class Settings:
+        name = "employee_performances"
 
-    user = relationship("User", backref="performances")
+class IncentiveSlip(Document):
+    user_id: str
+    period: str
+    target: int
+    achieved: int
+    percentage: float
+    applied_slab: Optional[str] = None
+    amount_per_unit: float = 0.0
+    total_incentive: float
+    slab_bonus_amount: float = 0.0
+    is_visible_to_employee: bool = False
+    employee_remarks: Optional[str] = None
+    manager_remarks: Optional[str] = None
+    generated_at: datetime = datetime.now(timezone.utc)
 
-class IncentiveSlip(Base):
-    __tablename__ = "incentive_slips"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    period = Column(String, nullable=False)  # YYYY-MM
-
-    target = Column(Integer, nullable=False)
-    achieved = Column(Integer, nullable=False)
-    percentage = Column(Float, nullable=False)
-    applied_slab = Column(String, nullable=True)
-    amount_per_unit = Column(Float, default=0.0)
-    total_incentive = Column(Float, nullable=False)
-
-    slab_bonus_amount = Column(Float, default=0.0)
-    is_visible_to_employee = Column(Boolean, nullable=False, default=False, server_default="false")
-    employee_remarks = Column(Text, nullable=True)
-    manager_remarks = Column(Text, nullable=True)
-    generated_at = Column(DateTime, default=datetime.utcnow)
-
-    user = relationship("User", backref="incentive_slips")
-
-from app.modules.users.models import User
-
+    class Settings:
+        name = "incentive_slips"

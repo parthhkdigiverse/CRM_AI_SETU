@@ -1,3 +1,4 @@
+from beanie import PydanticObjectId
 # backend/app/modules/users/schemas.py
 from typing import Optional, Any
 from datetime import date
@@ -90,7 +91,7 @@ class EmployeeUpdate(UserProfileUpdate):
     is_active: Optional[bool] = None
 
 class UserRead(UserBase):
-    id: int
+    id: Optional[PydanticObjectId] = None
     employee_code: Optional[str] = None
     joining_date: Optional[date] = None
     base_salary: Optional[float] = None
@@ -101,4 +102,5 @@ class UserRead(UserBase):
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 

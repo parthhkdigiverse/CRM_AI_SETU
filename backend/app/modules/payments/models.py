@@ -1,29 +1,23 @@
-# backend/app/modules/payments/models.py
+from beanie import Document
+from typing import Optional
+from datetime import datetime, timezone
 import enum
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum, Float, Boolean
-from sqlalchemy.orm import relationship
-from datetime import datetime
-from app.core.database import Base
 
 class PaymentStatus(str, enum.Enum):
     PENDING = "PENDING"
     VERIFIED = "VERIFIED"
     FAILED = "FAILED"
 
-class Payment(Base):
-    __tablename__ = "payments"
+class Payment(Document):
+    client_id: str
+    amount: float
+    qr_code_data: Optional[str] = None
+    status: PaymentStatus = PaymentStatus.PENDING
+    generated_by_id: str
+    verified_by_id: Optional[str] = None
+    created_at: datetime = datetime.now(timezone.utc)
+    is_deleted: bool = False
+    verified_at: Optional[datetime] = None
 
-    id = Column(Integer, primary_key=True, index=True)
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
-    amount = Column(Float, nullable=False)
-    qr_code_data = Column(String, nullable=True) # Could store URL or text
-    status = Column(Enum(PaymentStatus), default=PaymentStatus.PENDING)
-    generated_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    verified_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    is_deleted = Column(Boolean, default=False, index=True)
-    verified_at = Column(DateTime, nullable=True)
-
-    client = relationship("app.modules.clients.models.Client", backref="payments")
-    generated_by = relationship("app.modules.users.models.User", foreign_keys=[generated_by_id])
-    verified_by = relationship("app.modules.users.models.User", foreign_keys=[verified_by_id])
+    class Settings:
+        name = "payments"

@@ -1,13 +1,11 @@
 # backend/app/modules/salary/service.py
 import calendar
 import os
-from sqlalchemy.orm import Session
-from sqlalchemy import extract
 from fastapi import HTTPException
-from datetime import datetime, UTC
+from datetime import datetime, UTC, timedelta
 from typing import List, Optional
 
-from app.modules.salary.models import LeaveRecord, SalarySlip, LeaveStatus
+from app.modules.salary.models import LeaveRecord, SalarySlip, LeaveStatus, AppSetting
 from app.modules.salary.schemas import SalarySlipGenerate
 from app.modules.users.models import User
 
@@ -15,32 +13,22 @@ PAID_LEAVE_LIMIT = 1  # 1 free paid leave per month
 
 
 class SalaryService:
-    def __init__(self, db: Session):
-        self.db = db
-        self._ensure_salary_columns()
-
-    def _ensure_salary_columns(self) -> None:
-        """Self-heal environments where salary visibility/remarks migration is not applied yet."""
-        from sqlalchemy import text
-        try:
-            self.db.execute(text("ALTER TABLE salary_slips ADD COLUMN IF NOT EXISTS is_visible_to_employee BOOLEAN DEFAULT false"))
-            self.db.execute(text("ALTER TABLE salary_slips ADD COLUMN IF NOT EXISTS employee_remarks TEXT"))
-            self.db.execute(text("ALTER TABLE salary_slips ADD COLUMN IF NOT EXISTS manager_remarks TEXT"))
-            self.db.commit()
-        except Exception:
-            self.db.rollback()
 
     # ── Internal helpers ────────────────────────────────────────
 
-    def _get_leave_data(self, user_id: int, year: int, month_num: int):
+    async def _get_leave_data(self, user_id: str, year: int, month_num: int):
         """Fetch approved leaves for a user in given year/month."""
-        approved_leaves = self.db.query(LeaveRecord).filter(
+        all_leaves = await LeaveRecord.find(
             LeaveRecord.user_id == user_id,
             LeaveRecord.status == LeaveStatus.APPROVED,
-            LeaveRecord.is_deleted == False,
-            extract('year', LeaveRecord.start_date) == year,
-            extract('month', LeaveRecord.start_date) == month_num
-        ).all()
+            LeaveRecord.is_deleted == False
+        ).to_list()
+
+        # Filter by year/month in Python (MongoDB doesn't have extract())
+        approved_leaves = [
+            l for l in all_leaves
+            if l.start_date.year == year and l.start_date.month == month_num
+        ]
 
         def _count_days(leave) -> float:
             """Calendar days, halved for HALF day_type."""
@@ -62,18 +50,17 @@ class SalaryService:
         unpaid_leaves = unpaid_from_other + unpaid_forced
         return approved_leaves, total_leave_days, paid_leaves, unpaid_leaves
 
-    def _get_incentive_data(self, user_id: int, month_str: str):
+    async def _get_incentive_data(self, user_id: str, month_str: str):
         """Fetch incentive and slab bonus from IncentiveSlip for the month.
         
         Incentive is only included if the slip was generated at least 10 days ago.
         This ensures the 7-day client refund window has passed before paying incentive.
         """
         from app.modules.incentives.models import IncentiveSlip
-        from datetime import timedelta, date as date_type
-        slip = self.db.query(IncentiveSlip).filter(
-            IncentiveSlip.user_id == user_id,
+        slip = await IncentiveSlip.find_one(
+            IncentiveSlip.user_id == int(user_id) if user_id.isdigit() else None,
             IncentiveSlip.period == month_str
-        ).first()
+        )
 
         if not slip:
             return 0.0, 0.0
@@ -108,10 +95,13 @@ class SalaryService:
             'final_salary': final_salary,
         }
 
-    def _format_slip(self, s: SalarySlip) -> dict:
-        """Serialize a SalarySlip ORM object to a dict."""
+    async def _format_slip(self, s: SalarySlip) -> dict:
+        """Serialize a SalarySlip Beanie document to a dict."""
+        user = await User.find_one(User.id == int(s.user_id)) if s.user_id else None
+        confirmer = await User.find_one(User.id == int(s.confirmed_by)) if s.confirmed_by else None
+
         return {
-            'id': s.id,
+            'id': str(s.id),
             'user_id': s.user_id,
             'month': s.month,
             'base_salary': s.base_salary,
@@ -129,35 +119,35 @@ class SalaryService:
             'employee_remarks': getattr(s, 'employee_remarks', None),
             'manager_remarks': getattr(s, 'manager_remarks', None),
             'generated_at': s.generated_at,
-            'user_name': (s.user.name or s.user.email) if s.user else f"User #{s.user_id}",
-            'confirmer_name': (s.confirmer.name or s.confirmer.email) if s.confirmer else None,
+            'user_name': (user.name or user.email) if user else f"User #{s.user_id}",
+            'confirmer_name': (confirmer.name or confirmer.email) if confirmer else None,
         }
 
     # ── Public methods ───────────────────────────────────────────
 
-    def preview_salary(self, user_id: int, month: str, extra_deduction: float = 0.0,
+    async def preview_salary(self, user_id: str, month: str, extra_deduction: float = 0.0,
                         base_salary: Optional[float] = None) -> dict:
         """Return salary preview without saving to DB."""
-        user = self.db.query(User).filter(User.id == user_id).first()
+        user = await User.find_one(User.id == int(user_id)) if str(user_id).isdigit() else None
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
         year, month_num = map(int, month.split('-'))
         approved_leaves, total_leave_days, paid_leaves, unpaid_leaves = \
-            self._get_leave_data(user_id, year, month_num)
+            await self._get_leave_data(str(user_id), year, month_num)
 
-        incentive_amount, slab_bonus = self._get_incentive_data(user_id, month)
+        incentive_amount, slab_bonus = await self._get_incentive_data(str(user_id), month)
         base = base_salary if base_salary is not None else (user.base_salary or 0.0)
         calc = self._compute_salary(base, unpaid_leaves, incentive_amount, slab_bonus, extra_deduction)
 
-        existing = self.db.query(SalarySlip).filter(
-            SalarySlip.user_id == user_id,
+        existing = await SalarySlip.find_one(
+            SalarySlip.user_id == str(user_id),
             SalarySlip.month == month,
             SalarySlip.is_deleted == False
-        ).first()
+        )
 
         return {
-            "user_id": user_id,
+            "user_id": str(user_id),
             "user_name": user.name or user.email,
             "month": month,
             "base_salary": base,
@@ -173,7 +163,7 @@ class SalaryService:
             "final_salary": calc['final_salary'],
             "approved_leaves": [
                 {
-                    "id": l.id,
+                    "id": str(l.id),
                     "start_date": str(l.start_date),
                     "end_date": str(l.end_date),
                     "leave_type": l.leave_type or "CASUAL",
@@ -182,21 +172,22 @@ class SalaryService:
                 for l in approved_leaves
             ],
             "has_existing_slip": existing is not None,
-            "existing_slip_id": existing.id if existing else None,
+            "existing_slip_id": str(existing.id) if existing else None,
             "existing_slip_status": existing.status if existing else None,
         }
 
-    def generate_salary_slip(self, salary_in: SalarySlipGenerate) -> dict:
+    async def generate_salary_slip(self, salary_in: SalarySlipGenerate) -> dict:
         """Generate a new DRAFT salary slip (auto-calculates leaves from DB)."""
-        user = self.db.query(User).filter(User.id == salary_in.user_id).first()
+        uid = str(salary_in.user_id)
+        user = await User.find_one(User.id == int(uid)) if uid.isdigit() else None
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
         # Prevent duplicates
-        existing = self.db.query(SalarySlip).filter(
-            SalarySlip.user_id == salary_in.user_id,
+        existing = await SalarySlip.find_one(
+            SalarySlip.user_id == uid,
             SalarySlip.month == salary_in.month
-        ).first()
+        )
         if existing:
             raise HTTPException(
                 status_code=400,
@@ -205,15 +196,15 @@ class SalaryService:
 
         year, month_num = map(int, salary_in.month.split('-'))
         approved_leaves, total_leave_days, paid_leaves, unpaid_leaves = \
-            self._get_leave_data(salary_in.user_id, year, month_num)
+            await self._get_leave_data(uid, year, month_num)
 
-        incentive_amount, slab_bonus = self._get_incentive_data(salary_in.user_id, salary_in.month)
+        incentive_amount, slab_bonus = await self._get_incentive_data(uid, salary_in.month)
         base = salary_in.base_salary if salary_in.base_salary is not None else (user.base_salary or 0.0)
         extra_deduction = salary_in.extra_deduction
         calc = self._compute_salary(base, unpaid_leaves, incentive_amount, slab_bonus, extra_deduction)
 
         db_salary = SalarySlip(
-            user_id=salary_in.user_id,
+            user_id=uid,
             month=salary_in.month,
             base_salary=base,
             paid_leaves=paid_leaves,
@@ -225,41 +216,39 @@ class SalaryService:
             final_salary=calc['final_salary'],
             status="DRAFT",
             is_visible_to_employee=False,
-            generated_at=datetime.now(UTC).date(),
+            generated_at=datetime.now(UTC),
         )
-        self.db.add(db_salary)
-        self.db.commit()
-        self.db.refresh(db_salary)
-        return self._format_slip(db_salary)
+        await db_salary.insert()
+        return await self._format_slip(db_salary)
 
-    def regenerate_salary_slip(self, salary_in: SalarySlipGenerate) -> dict:
+    async def regenerate_salary_slip(self, salary_in: SalarySlipGenerate) -> dict:
         """Delete any existing slip (DRAFT or CONFIRMED) and create a fresh DRAFT."""
-        existing = self.db.query(SalarySlip).filter(
-            SalarySlip.user_id == salary_in.user_id,
+        uid = str(salary_in.user_id)
+        existing = await SalarySlip.find_one(
+            SalarySlip.user_id == uid,
             SalarySlip.month == salary_in.month
-        ).first()
+        )
         if existing:
-            self.db.delete(existing)
-            self.db.commit()
-        return self.generate_salary_slip(salary_in)
+            await existing.delete()
+        return await self.generate_salary_slip(salary_in)
 
-    def update_draft_slip(self, slip_id: int, salary_in: SalarySlipGenerate) -> dict:
+    async def update_draft_slip(self, slip_id: str, salary_in: SalarySlipGenerate) -> dict:
         """Recalculate and update an existing DRAFT salary slip."""
-        slip = self.db.query(SalarySlip).filter(SalarySlip.id == slip_id).first()
+        slip = await SalarySlip.get(slip_id)
         if not slip:
             raise HTTPException(status_code=404, detail="Salary slip not found")
         if slip.status != "DRAFT":
             raise HTTPException(status_code=400, detail="Only DRAFT slips can be updated")
 
-        user = self.db.query(User).filter(User.id == slip.user_id).first()
+        user = await User.find_one(User.id == int(slip.user_id)) if slip.user_id and str(slip.user_id).isdigit() else None
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
         year, month_num = map(int, slip.month.split('-'))
         approved_leaves, total_leave_days, paid_leaves, unpaid_leaves = \
-            self._get_leave_data(slip.user_id, year, month_num)
+            await self._get_leave_data(slip.user_id, year, month_num)
 
-        incentive_amount, slab_bonus = self._get_incentive_data(slip.user_id, slip.month)
+        incentive_amount, slab_bonus = await self._get_incentive_data(slip.user_id, slip.month)
         base = salary_in.base_salary if salary_in.base_salary is not None else (user.base_salary or 0.0)
         extra_deduction = salary_in.extra_deduction
         calc = self._compute_salary(base, unpaid_leaves, incentive_amount, slab_bonus, extra_deduction)
@@ -272,50 +261,50 @@ class SalaryService:
         slip.slab_bonus = slab_bonus
         slip.total_earnings = calc['total_earnings']
         slip.final_salary = calc['final_salary']
-        slip.generated_at = datetime.now(UTC).date()
-        self.db.commit()
-        self.db.refresh(slip)
-        return self._format_slip(slip)
+        slip.generated_at = datetime.now(UTC)
+        await slip.save()
+        return await self._format_slip(slip)
 
-    def confirm_salary_slip(self, slip_id: int, confirmed_by_id: int) -> dict:
+    async def confirm_salary_slip(self, slip_id: str, confirmed_by_id: str) -> dict:
         """Confirm a DRAFT slip, making it visible to the employee."""
-        slip = self.db.query(SalarySlip).filter(SalarySlip.id == slip_id).first()
+        slip = await SalarySlip.get(slip_id)
         if not slip:
             raise HTTPException(status_code=404, detail="Salary slip not found")
         if slip.status != "DRAFT":
             raise HTTPException(status_code=400, detail="Only DRAFT slips can be confirmed")
 
         slip.status = "CONFIRMED"
-        slip.confirmed_by = confirmed_by_id
-        slip.confirmed_at = datetime.now(UTC).date()
-        self.db.commit()
-        self.db.refresh(slip)
-        return self._format_slip(slip)
+        slip.confirmed_by = str(confirmed_by_id)
+        slip.confirmed_at = datetime.now(UTC)
+        await slip.save()
+        return await self._format_slip(slip)
 
-    def get_user_salary_slips(self, user_id: int, show_drafts: bool = True, only_visible: bool = False) -> List[dict]:
+    async def get_user_salary_slips(self, user_id: str, show_drafts: bool = True, only_visible: bool = False) -> List[dict]:
         """Get salary slips for a specific user."""
-        query = self.db.query(SalarySlip).filter(SalarySlip.user_id == user_id, SalarySlip.is_deleted == False)
+        filters = [SalarySlip.user_id == str(user_id), SalarySlip.is_deleted == False]
         if not show_drafts:
-            query = query.filter(SalarySlip.status == "CONFIRMED")
+            filters.append(SalarySlip.status == "CONFIRMED")
         if only_visible:
-            query = query.filter(SalarySlip.is_visible_to_employee == True)
-        slips = query.order_by(SalarySlip.month.desc()).all()
-        return [self._format_slip(s) for s in slips]
+            filters.append(SalarySlip.is_visible_to_employee == True)
+        
+        slips = await SalarySlip.find(*filters).sort(-SalarySlip.month).to_list()
+        return [await self._format_slip(s) for s in slips]
 
-    def get_all_salary_slips(self) -> List[dict]:
+    async def get_all_salary_slips(self) -> List[dict]:
         """Get all salary slips (admin use)."""
-        slips = self.db.query(SalarySlip).filter(SalarySlip.is_deleted == False).order_by(SalarySlip.month.desc()).all()
-        return [self._format_slip(s) for s in slips]
+        slips = await SalarySlip.find(SalarySlip.is_deleted == False).sort(-SalarySlip.month).to_list()
+        return [await self._format_slip(s) for s in slips]
 
-    def generate_invoice_html(self, slip_id: int) -> str:
+    async def generate_invoice_html(self, slip_id: str) -> str:
         """Generate a professional printable HTML salary slip (payslip)."""
         import base64
-        slip = self.db.query(SalarySlip).filter(SalarySlip.id == slip_id).first()
+        slip = await SalarySlip.get(slip_id)
         if not slip:
             raise HTTPException(status_code=404, detail="Salary slip not found")
 
+        user = await User.find_one(User.id == int(slip.user_id)) if slip.user_id and str(slip.user_id).isdigit() else None
+
         # Embed company logo as base64 so it works in print/new-window context
-        # Prefer logo_white.png for the dark header; fall back to logo.png
         logo_data_uri = ""
         try:
             _here = os.path.abspath(__file__)
@@ -330,14 +319,11 @@ class SalaryService:
         except Exception:
             pass
 
-        user = slip.user
         slab_bonus = slip.slab_bonus or 0.0
         incentive_amount = slip.incentive_amount or 0.0
         daily_wage = round(slip.base_salary / 30, 2)
         extra_deduction = slip.deduction_amount or 0.0
-        # Gross Earnings = full base + all bonuses BEFORE any deductions
         gross_earnings = round(slip.base_salary + incentive_amount + slab_bonus, 2)
-        # Derive totals from stored DB values to guarantee displayed math always matches net pay
         total_deductions = round(gross_earnings - slip.final_salary, 2)
         leave_deduction = round(total_deductions - extra_deduction, 2)
         working_days = max(0, 30 - int(slip.unpaid_leaves))
@@ -351,8 +337,8 @@ class SalaryService:
         except Exception:
             issue_date_str = str(raw_date)
 
-        emp_name = user.name or user.email
-        designation = str(user.role).replace('_', ' ').title()
+        emp_name = (user.name or user.email) if user else f"User #{slip.user_id}"
+        designation = str(user.role).replace('_', ' ').title() if user else "Employee"
 
         def amount_in_words(amount: float) -> str:
             ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven",
@@ -390,20 +376,24 @@ class SalaryService:
 
         net_in_words = amount_in_words(slip.final_salary)
         status_str = slip.status if isinstance(slip.status, str) else slip.status.value
-        slip_no = f"PS-{year}-{month_num:02d}-{user.id:04d}"
+        user_id_num = user.id if user else 0
+        slip_no = f"PS-{year}-{month_num:02d}-{user_id_num:04d}"
 
         # Read configurable company contact from DB (fall back to defaults)
-        from app.modules.salary.models import AppSetting as _AppSetting
         _DEFAULT_EMAIL = "hrmangukiya3494@gmail.com"
         _DEFAULT_PHONE = "8866005029"
         try:
-            _email_row = self.db.query(_AppSetting).filter(_AppSetting.key == "payslip_email").first()
-            _phone_row = self.db.query(_AppSetting).filter(_AppSetting.key == "payslip_phone").first()
+            _email_row = await AppSetting.find_one(AppSetting.key == "payslip_email")
+            _phone_row = await AppSetting.find_one(AppSetting.key == "payslip_phone")
             company_email = _email_row.value if _email_row else _DEFAULT_EMAIL
             company_phone = _phone_row.value if _phone_row else _DEFAULT_PHONE
         except Exception:
             company_email = _DEFAULT_EMAIL
             company_phone = _DEFAULT_PHONE
+
+        user_email = user.email if user else "N/A"
+        user_department = (user.department or '<span style="font-weight:normal;color:#94a3b8;font-size:11px;">n/a</span>') if user else "N/A"
+        user_phone = (user.phone or '<span style="font-weight:normal;color:#94a3b8;font-size:11px;">n/a</span>') if user else "N/A"
 
         html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -430,7 +420,6 @@ class SalaryService:
             padding: 12mm 14mm 10mm;
             box-shadow: 0 6px 32px rgba(0,0,0,0.28);
         }}
-        /* ── Top banner ── */
         .top-banner {{
             background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
             margin: -12mm -14mm 0;
@@ -455,7 +444,6 @@ class SalaryService:
             opacity: 0.92;
         }}
         .payslip-period {{ font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 3px; text-align: right; }}
-        /* ── Slip meta strip ── */
         .meta-strip {{
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -470,16 +458,13 @@ class SalaryService:
         .meta-val {{ font-size: 13px; font-weight: 800; color: #1e293b; word-break: break-word; }}
         .s-confirmed {{ color: #059669; }}
         .s-draft {{ color: #D97706; }}
-        /* ── Section boxes ── */
         .section-box {{ border: 1.5px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 14px; }}
         .section-hdr {{
             background: #1e3a5f; color: #fff;
             padding: 8px 14px; font-size: 10.5px;
             font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
         }}
-        /* ── Employee grid ── */
         .emp-grid {{ display: grid; grid-template-columns: 1fr 1fr; }}
-        .emp-col {{ }}
         .emp-col:first-child {{ border-right: 1px solid #e2e8f0; }}
         .emp-row {{
             display: flex; justify-content: space-between; align-items: flex-start;
@@ -488,7 +473,6 @@ class SalaryService:
         .emp-row:last-child {{ border-bottom: none; }}
         .e-lbl {{ color: #64748b; font-weight: 500; white-space: nowrap; margin-right: 8px; }}
         .e-val {{ font-weight: 700; color: #1e293b; text-align: right; word-break: break-word; max-width: 58%; }}
-        /* ── Attendance strip ── */
         .att-strip {{
             display: grid; grid-template-columns: repeat(4, 1fr);
             background: #f0f7ff; border: 1.5px solid #bfdbfe;
@@ -503,9 +487,7 @@ class SalaryService:
         .att-num.green {{ color: #059669; }}
         .att-num.red {{ color: #dc2626; }}
         .att-lbl {{ font-size: 9.5px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; font-weight: 600; }}
-        /* ── Pay table ── */
         .pay-table-wrap {{ display: grid; grid-template-columns: 1fr 1fr; }}
-        .pay-col {{ }}
         .pay-col:first-child {{ border-right: 1px solid #e2e8f0; }}
         .pay-col-hdr {{
             background: #f8fafc; padding: 8px 14px;
@@ -524,7 +506,6 @@ class SalaryService:
         .pay-amt {{ font-weight: 700; color: #1e293b; white-space: nowrap; }}
         .pay-amt.earn {{ color: #059669; }}
         .pay-amt.ded {{ color: #dc2626; }}
-        /* ── Totals row ── */
         .totals-row {{
             display: grid; grid-template-columns: 1fr 1fr;
             border-top: 2px solid #e2e8f0; background: #f8fafc;
@@ -535,10 +516,8 @@ class SalaryService:
         }}
         .tot-cell:first-child {{ border-right: 1px solid #e2e8f0; }}
         .tot-lbl {{ color: #374151; }}
-        .tot-val {{ }}
         .tot-val.earn {{ color: #059669; }}
         .tot-val.ded {{ color: #dc2626; }}
-        /* ── Net pay ── */
         .net-bar {{
             background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
             color: #fff; border-radius: 8px; padding: 14px 18px;
@@ -549,7 +528,6 @@ class SalaryService:
         .net-words {{ font-size: 11.5px; font-style: italic; max-width: 310px; line-height: 1.4; }}
         .net-amt-lbl {{ font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.75; margin-bottom: 2px; text-align: right; }}
         .net-amt {{ font-size: 28px; font-weight: 900; text-align: right; letter-spacing: -0.5px; }}
-        /* ── Signatures ── */
         .sig-section {{
             display: grid; grid-template-columns: repeat(3, 1fr);
             gap: 20px; margin-bottom: 14px;
@@ -560,13 +538,11 @@ class SalaryService:
             margin-top: 36px; padding-top: 5px;
             font-size: 10.5px; color: #64748b; font-weight: 600;
         }}
-        /* ── Footer ── */
         .slip-footer {{
             text-align: center; font-size: 9.5px; color: #94a3b8;
             border-top: 1px solid #e2e8f0; padding-top: 10px;
             line-height: 1.6;
         }}
-        /* ── Print bar ── */
         .print-bar {{
             width: 210mm; margin: 14px auto;
             display: flex; gap: 10px; justify-content: center;
@@ -641,21 +617,21 @@ class SalaryService:
                 </div>
                 <div class="emp-row">
                     <span class="e-lbl">Email</span>
-                    <span class="e-val">{user.email}</span>
+                    <span class="e-val">{user_email}</span>
                 </div>
             </div>
             <div class="emp-col">
                 <div class="emp-row">
                     <span class="e-lbl">Employee ID</span>
-                    <span class="e-val">EMP-{user.id:04d}</span>
+                    <span class="e-val">EMP-{user_id_num:04d}</span>
                 </div>
                 <div class="emp-row">
                     <span class="e-lbl">Department</span>
-                    <span class="e-val">{user.department or '<span style="font-weight:normal;color:#94a3b8;font-size:11px;">n/a</span>'}</span>
+                    <span class="e-val">{user_department}</span>
                 </div>
                 <div class="emp-row">
                     <span class="e-lbl">Phone</span>
-                    <span class="e-val">{user.phone or '<span style="font-weight:normal;color:#94a3b8;font-size:11px;">n/a</span>'}</span>
+                    <span class="e-val">{user_phone}</span>
                 </div>
             </div>
         </div>
@@ -681,11 +657,10 @@ class SalaryService:
         </div>
     </div>
 
-    <!-- EARNINGS & DEDUCTIONS (Two-column payslip) -->
+    <!-- EARNINGS & DEDUCTIONS -->
     <div class="section-box">
         <div class="section-hdr">Earnings &amp; Deductions</div>
         <div class="pay-table-wrap">
-            <!-- Earnings column -->
             <div class="pay-col">
                 <div class="pay-col-hdr">
                     <span>Earnings</span><span>Amount (&#8377;)</span>
@@ -703,7 +678,6 @@ class SalaryService:
                     <div class="pay-amt earn">&#8377;&nbsp;{slab_bonus:,.2f}</div>
                 </div>
             </div>
-            <!-- Deductions column -->
             <div class="pay-col">
                 <div class="pay-col-hdr">
                     <span>Deductions</span><span>Amount (&#8377;)</span>
@@ -721,7 +695,6 @@ class SalaryService:
                 </div>
             </div>
         </div>
-        <!-- Totals row -->
         <div class="totals-row">
             <div class="tot-cell">
                 <span class="tot-lbl">Total Earnings</span>
@@ -774,5 +747,3 @@ class SalaryService:
 </body>
 </html>"""
         return html
-
-

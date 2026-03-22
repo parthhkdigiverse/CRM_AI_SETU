@@ -1,3 +1,4 @@
+from beanie import PydanticObjectId
 # backend/app/modules/reports/schemas.py
 from datetime import datetime
 from typing import Optional
@@ -24,10 +25,11 @@ class DashboardStats(BaseModel):
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class EmployeePerformance(BaseModel):
-    user_id: int
-    id: int # For alignment with frontend usage
+    user_id: Optional[str] = None
+    id: Optional[str] = None  # MongoDB ObjectId string
     name: Optional[str]
     email: str
     role: str
@@ -52,7 +54,7 @@ class BusinessSummary(BaseModel):
     total_issues_raised: int
 
 class ProjectPortfolio(BaseModel):
-    id: int
+    id: Optional[PydanticObjectId] = None
     fullName: Optional[str]
     name: str # Client name
     org: Optional[str] # Organization
@@ -67,6 +69,7 @@ class ProjectPortfolio(BaseModel):
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class EmployeeActivity(BaseModel):
     date: Optional[datetime] = None
@@ -77,14 +80,16 @@ class EmployeeActivity(BaseModel):
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class PerformanceNoteRead(BaseModel):
-    id: int
-    employee_id: int
-    user_id: Optional[int] = None
+    id: Optional[PydanticObjectId] = None
+    employee_id: str
+    user_id: Optional[str] = None
     note: str
     created_at: Optional[datetime] = None
     created_by: Optional[str] = None
 
     class Config:
         from_attributes = True
+        populate_by_name = True

@@ -1,9 +1,20 @@
-# backend/app/modules/settings/models.py
-from sqlalchemy import Column, Integer, JSON
-from app.core.database import Base
+from typing import Dict, Any
+from beanie import Document
+from pydantic import Field
 
-class SystemSettings(Base):
-    __tablename__ = "system_settings"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    feature_flags = Column(JSON, nullable=False, default=dict)
+class SystemSettings(Document):
+    # MongoDB ma JSON mate sidhu dict vapri shakay
+    feature_flags: Dict[str, Any] = Field(default_factory=dict)
+
+    class Settings:
+        name = "system_settings"  # MongoDB collection nu naam
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "feature_flags": {
+                    "enable_new_ui": True,
+                    "maintenance_mode": False
+                }
+            }
+        }

@@ -1,19 +1,18 @@
-# backend/app/core/dependencies.py
 import jwt
-from typing import Generator
+from typing import Optional, Any, List
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+
 from app.core.config import settings
-from app.core.database import get_db
 from app.modules.users.models import User, UserRole
 from app.modules.auth.schemas import TokenData
 
+# Beanie/MongoDB ma get_db ni jarur nathi, etle tya thi kashu import nahi karvanu
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
-def get_current_user(
-    db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
-) -> User:
+async def get_current_user(
+    token: str = Depends(oauth2_scheme)
+) -> Optional[User]:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -27,53 +26,55 @@ def get_current_user(
         token_data = TokenData(sub=user_id)
     except jwt.PyJWTError:
         raise credentials_exception
-    # Demo mode: synthetic admin — skip DB lookup
-    user_id_int = int(token_data.sub)
-    if user_id_int == 0:
-        return None  # Caller (/me, /profile) handles None as demo admin
 
-    from sqlalchemy.exc import OperationalError
+    # Demo mode check
+    if token_data.sub == "0":
+        return None
+
     try:
-        user = db.query(User).filter(User.id == user_id_int).first()
-    except OperationalError as db_err:
-        import traceback
-        print(f"DATABASE ERROR in get_current_user: {db_err}")
-        traceback.print_exc()
+        # Beanie (MongoDB) ma sidhu Model.get() vapray che
+        user = await User.get(token_data.sub)
+    except Exception as e:
+        print(f"DATABASE ERROR in get_current_user: {e}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Database not available. Please configure your .env and run migrations.",
+            detail="Database connection error. Check your MongoDB Atlas config.",
         )
+        
     if user is None:
         raise credentials_exception
     return user
 
-def get_current_active_user(
-    current_user: User = Depends(get_current_user),
-) -> User:
-    if current_user is None:  # Demo Mode: synthetic admin is always active
+async def get_current_active_user(
+    current_user: Optional[User] = Depends(get_current_user),
+) -> Optional[User]:
+    if current_user is None:  # Demo Mode (Synthetic User)
         return None
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
 class RoleChecker:
-    def __init__(self, allowed_roles: list[UserRole]):
+    def __init__(self, allowed_roles: List[UserRole]):
         self.allowed_roles = allowed_roles
 
-    def __call__(self, user: User = Depends(get_current_active_user)):
-        if user is None:  # Demo Mode: synthetic admin has all privileges
-            # Return a synthetic user object instead of None to avoid AttributeError in routes
+    async def __call__(self, user: Optional[User] = Depends(get_current_active_user)):
+        # Synthetic User handling for Demo Admin
+        if user is None:
             class SyntheticUser:
-                id = 0
+                id = "0"
                 email = "admin@example.com"
                 name = "Demo Admin"
                 role = UserRole.ADMIN
                 is_active = True
-                
                 def __getitem__(self, key):
                     return getattr(self, key)
             
-            return SyntheticUser()
+            # Jo ADMIN allowed hoy to j SyntheticUser return karvo
+            if UserRole.ADMIN in self.allowed_roles:
+                return SyntheticUser()
+            else:
+                raise HTTPException(status_code=403, detail="Not enough privileges")
 
         if user.role not in self.allowed_roles:
             raise HTTPException(

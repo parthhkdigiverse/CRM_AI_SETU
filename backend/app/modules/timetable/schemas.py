@@ -1,27 +1,26 @@
-# backend/app/modules/timetable/schemas.py
 from typing import Optional, List, Union
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime, date, time
+import datetime as dt
+from beanie import PydanticObjectId
 
 class TimelineEvent(BaseModel):
-    id: Union[int, str]
+    id: Union[PydanticObjectId, str] = Field(alias="_id")
     title: str
-    date: Optional[str] = None # YYYY-MM-DD or full ISO
-    user: Optional[str] = None # Assignee/User name
+    date: Optional[str] = None 
+    user: Optional[str] = None 
     sh: Optional[int] = None
     sm: Optional[int] = None
     eh: Optional[int] = None
     em: Optional[int] = None
     loc: Optional[str] = None
     
-    # Original fields for reference
-    event_type: str # VISIT, MEETING, TODO, TIMETABLE, DEMO
+    event_type: str 
     status: Optional[str] = None
-    reference_id: Optional[int] = None
+    reference_id: Optional[str] = None # String karyu MongoDB mate
     description: Optional[str] = None
     meet_url: Optional[str] = None
 
-    # New fields for generic calendar events
     start: Optional[str] = None
     end: Optional[str] = None
     backgroundColor: Optional[str] = None
@@ -29,10 +28,10 @@ class TimelineEvent(BaseModel):
     textColor: Optional[str] = None
     allDay: Optional[bool] = None
 
+    model_config = ConfigDict(populate_by_name=True)
+
 class TimetableResponse(BaseModel):
     events: List[TimelineEvent]
-
-import datetime as dt
 
 class TimetableEventBase(BaseModel):
     title: str
@@ -54,7 +53,10 @@ class TimetableEventUpdate(BaseModel):
     location: Optional[str] = None
 
 class TimetableEventRead(TimetableEventBase):
-    id: int
-    user_id: int
+    id: PydanticObjectId = Field(alias="_id")
+    user_id: str # String karyu MongoDB mate
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True
+    )

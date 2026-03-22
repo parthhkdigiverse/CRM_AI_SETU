@@ -1,279 +1,159 @@
-# backend/app/modules/issues/service.py
 from typing import Optional, List
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, status, Request
+from fastapi import HTTPException, status, Request, BackgroundTasks
 from app.modules.issues.models import Issue
 from app.modules.issues.schemas import IssueCreate, IssueUpdate
 from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
 from app.modules.users.models import User
 from app.modules.clients.models import Client
-from app.modules.notifications.service import EmailService
-from fastapi import BackgroundTasks
-from sqlalchemy import or_
 
 class IssueService:
-    def __init__(self, db: Session):
-        self.db = db
-        self.activity_logger = ActivityLogger(db)
+    def __init__(self):
+        self.activity_logger = ActivityLogger()
 
-    def get_issue(self, issue_id: int):
-        query = self.db.query(Issue).filter(Issue.id == issue_id, Issue.is_deleted == False)
-        return query.first()
+    async def get_issue(self, issue_id: str):
+        return await Issue.find_one(Issue.id == issue_id, Issue.is_deleted != True)
 
-    def get_issues(self, skip: int = 0, limit: int = 100):
-        query = self.db.query(Issue).filter(Issue.is_deleted == False)
-        return query.offset(skip).limit(limit).all()
-
-    def get_all_issues(self, skip: int = 0, limit: int = 100, status: Optional[str] = None, severity: Optional[str] = None, client_id: Optional[int] = None, assigned_to_id: Optional[int] = None, pm_id: Optional[int] = None):
+    async def get_all_issues(self, skip=0, limit=100, status=None, severity=None, client_id=None, assigned_to_id=None, pm_id=None):
         try:
-            query = self.db.query(Issue).filter(Issue.is_deleted == False)
-            if pm_id: 
-                query = query.join(Client).filter(Client.pm_id == pm_id)
-            if status:
-                if ',' in status:
-                    status_list = [s.strip() for s in status.split(',')]
-                    query = query.filter(Issue.status.in_(status_list))
-                else:
-                    query = query.filter(Issue.status == status)
-            if severity:
-                query = query.filter(Issue.severity == severity)
+            query_filter = [Issue.is_deleted != True]
             if client_id:
-                query = query.filter(Issue.client_id == client_id)
+                query_filter.append(Issue.client_id == client_id)
             if assigned_to_id:
-                query = query.filter(Issue.assigned_to_id == assigned_to_id)
-                
-            issues = query.order_by(Issue.id.desc()).offset(skip).limit(limit).all()
-            
-            # Populate logical properties manually
-            for issue in issues:
-                if issue.assigned_to:
-                    issue.pm_name = issue.assigned_to.name or issue.assigned_to.email or issue.assigned_to.employee_code or f"PM #{issue.assigned_to_id}"
-                if issue.project:
-                    issue.project_name = issue.project.name
-                elif issue.client:
-                    issue.project_name = issue.client.name
-                if issue.reporter:
-                    issue.reporter_name = issue.reporter.name or issue.reporter.email or issue.reporter.employee_code or f"User #{issue.reporter_id}"
-                
+                query_filter.append(Issue.assigned_to_id == assigned_to_id)
+            if severity:
+                query_filter.append(Issue.severity == severity)
+            issues = await Issue.find(*query_filter).sort(-Issue.id).skip(skip).limit(limit).to_list()
+            if status:
+                status_list = [s.strip() for s in status.split(',')]
+                issues = [i for i in issues if str(i.status.value if hasattr(i.status, 'value') else i.status) in status_list]
+            if pm_id:
+                filtered = []
+                for issue in issues:
+                    client = await Client.find_one(Client.id == issue.client_id)
+                    if client and client.pm_id == pm_id:
+                        filtered.append(issue)
+                issues = filtered
+            await self._enrich_issues(issues)
             return issues
         except Exception as e:
             print(f"Error fetching issues: {e}")
             return []
 
-    def get_all_issues_for_user(
-        self,
-        current_user: User,
-        skip: int = 0,
-        limit: int = 100,
-        status: Optional[str] = None,
-        severity: Optional[str] = None,
-        client_id: Optional[int] = None,
-        assigned_to_id: Optional[int] = None,
-    ):
-        """
-        Admin sees all issues.
-        Non-admin staff sees only issues that are:
-        - assigned to them, OR
-        - reported by them, OR
-        - related to clients they own/manage/referred.
-        """
+    async def get_all_issues_for_user(self, current_user: User, skip=0, limit=100, status=None, severity=None, client_id=None, assigned_to_id=None):
         try:
-            query = self.db.query(Issue).join(Client, Client.id == Issue.client_id).filter(Issue.is_deleted == False)
-
-            if current_user.role.value != "ADMIN":
-                query = query.filter(or_(
-                    Issue.assigned_to_id == current_user.id,
-                    Issue.reporter_id == current_user.id,
-                    Client.owner_id == current_user.id,
-                    Client.pm_id == current_user.id,
-                    Client.referred_by_id == current_user.id,
-                ))
-
-            if status:
-                if ',' in status:
-                    status_list = [s.strip() for s in status.split(',')]
-                    query = query.filter(Issue.status.in_(status_list))
-                else:
-                    query = query.filter(Issue.status == status)
-            if severity:
-                query = query.filter(Issue.severity == severity)
+            query_filter = [Issue.is_deleted != True]
             if client_id:
-                query = query.filter(Issue.client_id == client_id)
+                query_filter.append(Issue.client_id == client_id)
             if assigned_to_id:
-                query = query.filter(Issue.assigned_to_id == assigned_to_id)
-
-            issues = query.order_by(Issue.id.desc()).offset(skip).limit(limit).all()
-
-            for issue in issues:
-                if issue.assigned_to:
-                    issue.pm_name = issue.assigned_to.name or issue.assigned_to.email or issue.assigned_to.employee_code or f"PM #{issue.assigned_to_id}"
-                if issue.project:
-                    issue.project_name = issue.project.name
-                elif issue.client:
-                    issue.project_name = issue.client.name
-                if issue.reporter:
-                    issue.reporter_name = issue.reporter.name or issue.reporter.email or issue.reporter.employee_code or f"User #{issue.reporter_id}"
-
+                query_filter.append(Issue.assigned_to_id == assigned_to_id)
+            if severity:
+                query_filter.append(Issue.severity == severity)
+            issues = await Issue.find(*query_filter).sort(-Issue.id).skip(skip).limit(limit).to_list()
+            if status:
+                status_list = [s.strip() for s in status.split(',')]
+                issues = [i for i in issues if str(i.status.value if hasattr(i.status, 'value') else i.status) in status_list]
+            role_val = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+            if role_val != "ADMIN":
+                filtered = []
+                for issue in issues:
+                    client = await Client.find_one(Client.id == issue.client_id)
+                    has_access = (issue.assigned_to_id == current_user.id or issue.reporter_id == current_user.id or (client and (client.owner_id == current_user.id or client.pm_id == current_user.id or client.referred_by_id == current_user.id)))
+                    if has_access:
+                        filtered.append(issue)
+                issues = filtered
+            await self._enrich_issues(issues)
             return issues
         except Exception as e:
             print(f"Error fetching scoped issues: {e}")
             return []
 
-    def can_access_issue(self, issue: Issue, current_user: User) -> bool:
-        if current_user.role.value == "ADMIN":
+    async def _enrich_issues(self, issues: list):
+        for issue in issues:
+            if issue.assigned_to_id:
+                assigned_user = await User.find_one(User.id == issue.assigned_to_id)
+                if assigned_user:
+                    issue.pm_name = assigned_user.name or assigned_user.email or f"PM #{issue.assigned_to_id}"
+            if issue.project_id:
+                from app.modules.projects.models import Project
+                project = await Project.find_one(Project.id == issue.project_id)
+                if project:
+                    issue.project_name = project.name
+            if not getattr(issue, 'project_name', None) and issue.client_id:
+                client = await Client.find_one(Client.id == issue.client_id)
+                if client:
+                    issue.project_name = client.name
+            if issue.reporter_id:
+                reporter = await User.find_one(User.id == issue.reporter_id)
+                if reporter:
+                    issue.reporter_name = reporter.name or reporter.email or f"User #{issue.reporter_id}"
+
+    async def can_access_issue(self, issue: Issue, current_user: User) -> bool:
+        role_val = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+        if role_val == "ADMIN":
             return True
-        client = issue.client or self.db.query(Client).filter(Client.id == issue.client_id).first()
+        client = await Client.find_one(Client.id == issue.client_id)
         if not client:
             return issue.reporter_id == current_user.id or issue.assigned_to_id == current_user.id
-        return (
-            issue.assigned_to_id == current_user.id
-            or issue.reporter_id == current_user.id
-            or client.owner_id == current_user.id
-            or client.pm_id == current_user.id
-            or client.referred_by_id == current_user.id
-        )
+        return (issue.assigned_to_id == current_user.id or issue.reporter_id == current_user.id or client.owner_id == current_user.id or client.pm_id == current_user.id or client.referred_by_id == current_user.id)
 
-    def can_update_issue(self, issue: Issue, current_user: User) -> bool:
-        if current_user.role.value == "ADMIN":
+    async def can_update_issue(self, issue: Issue, current_user: User) -> bool:
+        role_val = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+        if role_val == "ADMIN":
             return True
         return issue.assigned_to_id == current_user.id or issue.reporter_id == current_user.id
 
-    async def create_issue(self, issue: IssueCreate, client_id: int, current_user: User, request: Request, background_tasks: BackgroundTasks = None):
-        client = self.db.query(Client).filter(Client.id == client_id).first()
-        
-        # Priority for assignment: 
-        # 1. Explicitly requested handler
-        # 2. Client's PM
-        # 3. None
+    async def create_issue(self, issue: IssueCreate, client_id: str, current_user: User, request: Request, background_tasks: BackgroundTasks = None):
+        client = await Client.find_one(Client.id == client_id)
         issue_data = issue.model_dump(exclude_none=True)
-        # Ensure assigned_to_id is not in issue_data even if for some reason pop failed previously
-        issue_data_clean = {k: v for k, v in issue_data.items() if k != "assigned_to_id"}
-        
         pm_id = issue_data.pop("assigned_to_id", None) or (client.pm_id if client else None)
-
+        issue_data_clean = {k: v for k, v in issue_data.items() if k != "assigned_to_id"}
         db_issue = Issue(**issue_data_clean, client_id=client_id, reporter_id=current_user.id, assigned_to_id=pm_id)
-
-        self.db.add(db_issue)
-        self.db.commit()
-        self.db.refresh(db_issue)
-
-        await self.activity_logger.log_activity(
-            user_id=current_user.id,
-            user_role=current_user.role,
-            action=ActionType.CREATE,
-            entity_type=EntityType.ISSUE,
-            entity_id=db_issue.id,
-            old_data=None,
-            new_data=issue.model_dump(),
-
-            request=request
-        )
-
-        # Trigger Email Notification
+        await db_issue.insert()
+        await self.activity_logger.log_activity(user_id=current_user.id, user_role=current_user.role, action=ActionType.CREATE, entity_type=EntityType.ISSUE, entity_id=db_issue.id, old_data=None, new_data=issue.model_dump(), request=request)
         try:
+            from app.modules.notifications.service import EmailService
             email_service = EmailService()
-            client = self.db.query(Client).filter(Client.id == db_issue.client_id).first()
-            if client and client.pm and background_tasks:
-                background_tasks.add_task(
-                    email_service.send_issue_notification,
-                    pm_email=client.pm.email,
-                    pm_name=client.pm.name,
-                    project_name=client.name, # Using client name as context
-                    issue_title=db_issue.title,
-                    issue_description=db_issue.description,
-                    reporter_role=current_user.role
-                )
-            elif client and client.pm:
-                # Fallback if no background_tasks provided (e.g. tests)
-                email_service.send_issue_notification(
-                    pm_email=client.pm.email,
-                    pm_name=client.pm.name,
-                    project_name=client.name, # Using client name as context
-                    issue_title=db_issue.title,
-                    issue_description=db_issue.description,
-                    reporter_role=current_user.role
-                )
+            if client and client.pm_id:
+                pm = await User.find_one(User.id == client.pm_id)
+                if pm and background_tasks:
+                    background_tasks.add_task(email_service.send_issue_notification, pm_email=pm.email, pm_name=pm.name, project_name=client.name, issue_title=db_issue.title, issue_description=db_issue.description, reporter_role=current_user.role)
         except Exception as e:
             print(f"Error scheduling email: {e}")
-
         return db_issue
 
-    async def update_issue(self, issue_id: int, issue_update: IssueUpdate, current_user: User, request: Request):
-        db_issue = self.get_issue(issue_id)
+    async def update_issue(self, issue_id: str, issue_update: IssueUpdate, current_user: User, request: Request):
+        db_issue = await self.get_issue(issue_id)
         if not db_issue:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Issue not found")
-
-        if not self.can_update_issue(db_issue, current_user):
+        if not await self.can_update_issue(db_issue, current_user):
             raise HTTPException(status_code=403, detail="You can update only issues assigned to you or reported by you")
-
-        old_data = {
-            "title": db_issue.title,
-            "description": db_issue.description,
-            "status": db_issue.status.value if hasattr(db_issue.status, 'value') else str(db_issue.status),
-            "assigned_to_id": db_issue.assigned_to_id
-        }
-
+        old_data = {"title": db_issue.title, "description": db_issue.description, "status": db_issue.status.value if hasattr(db_issue.status, 'value') else str(db_issue.status), "assigned_to_id": db_issue.assigned_to_id}
         update_data = issue_update.model_dump(exclude_unset=True)
-
         if "status" in update_data:
             if "remarks" not in update_data or not update_data["remarks"] or not update_data["remarks"].strip():
                 raise HTTPException(status_code=400, detail="Remarks are compulsory when updating an issue")
-
         for key, value in update_data.items():
             setattr(db_issue, key, value)
-
-        self.db.commit()
-        self.db.refresh(db_issue)
-
+        db_issue.updated_at = __import__('datetime').datetime.now(__import__('datetime').timezone.utc)
+        await db_issue.save()
         new_data = {k: getattr(db_issue, k) for k in old_data.keys()}
-        # Handle enum serialization
         new_data["status"] = new_data["status"].value if hasattr(new_data["status"], 'value') else str(new_data["status"])
-
-        await self.activity_logger.log_activity(
-            user_id=current_user.id,
-            user_role=current_user.role,
-            action=ActionType.UPDATE,
-            entity_type=EntityType.ISSUE,
-            entity_id=issue_id,
-            old_data=old_data,
-            new_data=new_data,
-            request=request
-        )
-
+        await self.activity_logger.log_activity(user_id=current_user.id, user_role=current_user.role, action=ActionType.UPDATE, entity_type=EntityType.ISSUE, entity_id=issue_id, old_data=old_data, new_data=new_data, request=request)
         return db_issue
 
-    async def delete_issue(self, issue_id: int, current_user: User, request: Request):
-        db_issue = self.db.query(Issue).filter(Issue.id == issue_id).first()
+    async def delete_issue(self, issue_id: str, current_user: User, request: Request):
+        db_issue = await Issue.find_one(Issue.id == issue_id)
         if not db_issue:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Issue not found")
-
         from app.modules.salary.models import AppSetting
-        policy = self.db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        policy = await AppSetting.find_one(AppSetting.key == "delete_policy")
         is_hard = policy and policy.value == "HARD"
-
-        old_data = {
-            "title": db_issue.title,
-            "description": db_issue.description,
-            "policy": "HARD" if is_hard else "SOFT"
-        }
-
+        old_data = {"title": db_issue.title, "description": db_issue.description, "policy": "HARD" if is_hard else "SOFT"}
         if is_hard:
-            self.db.delete(db_issue)
+            await db_issue.delete()
         else:
             db_issue.is_deleted = True
-            
-        self.db.commit()
-
-        await self.activity_logger.log_activity(
-            user_id=current_user.id,
-            user_role=current_user.role,
-            action=ActionType.DELETE,
-            entity_type=EntityType.ISSUE,
-            entity_id=issue_id,
-            old_data=old_data,
-            new_data=None,
-            request=request
-        )
-
-        return {"detail": f"Issue {'permanently ' if is_hard else ''}deleted"}
+            await db_issue.save()
+        await self.activity_logger.log_activity(user_id=current_user.id, user_role=current_user.role, action=ActionType.DELETE, entity_type=EntityType.ISSUE, entity_id=issue_id, old_data=old_data, new_data=None, request=request)
+        return {"detail": f"Issue deleted"}

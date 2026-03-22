@@ -36,7 +36,7 @@ class FeedbackService:
             
         return feedbacks
 
-    def get_client_feedbacks(self, client_id: int):
+    def get_client_feedbacks(self, client_id: str):
         feedbacks = self.db.query(Feedback).filter(Feedback.client_id == client_id).all()
         return self._attach_roles(feedbacks)
 
@@ -44,7 +44,7 @@ class FeedbackService:
         feedbacks = self.db.query(Feedback).order_by(Feedback.id.desc()).all()
         return self._attach_roles(feedbacks)
 
-    def create_user_feedback(self, user_id: int, feedback_in: UserFeedbackCreate):
+    def create_user_feedback(self, user_id: str, feedback_in: UserFeedbackCreate):
         db_feedback = UserFeedback(
             **feedback_in.model_dump(),
             user_id=user_id

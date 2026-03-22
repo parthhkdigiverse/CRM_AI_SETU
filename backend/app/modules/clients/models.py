@@ -1,41 +1,30 @@
-# backend/app/modules/clients/models.py
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text
-from sqlalchemy.orm import relationship
-from datetime import datetime, UTC
+from beanie import Document
+from typing import Optional
+from datetime import datetime, timezone
 
-from app.core.database import Base
+class Client(Document):
+    name: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    organization: Optional[str] = None
+    address: Optional[str] = None
+    project_type: Optional[str] = None
+    requirements: Optional[str] = None
+    referral_code: Optional[str] = None
+    referred_by_id: Optional[str] = None
+    owner_id: Optional[str] = None
+    pm_id: Optional[str] = None
+    is_active: bool = True
+    is_deleted: bool = False
+    created_at: datetime = datetime.now(timezone.utc)
 
-class Client(Base):
-    __tablename__ = "clients"
+    class Settings:
+        name = "clients"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=True)
-    phone = Column(String, unique=True, index=True)
-    organization = Column(String)
-    address = Column(String, nullable=True)
-    project_type = Column(String, nullable=True)
-    requirements = Column(Text, nullable=True)
-    referral_code = Column(String, nullable=True)
-    referred_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=True) # For assignment
-    pm_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Automatically assigned Project Manager
-    is_active = Column(Boolean, default=True, index=True)
-    is_deleted = Column(Boolean, default=False, index=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+class ClientPMHistory(Document):
+    client_id: str
+    pm_id: str
+    assigned_at: datetime = datetime.now(timezone.utc)
 
-    
-    referred_by = relationship("app.modules.users.models.User", foreign_keys=[referred_by_id], backref="referred_clients")
-    owner = relationship("app.modules.users.models.User", foreign_keys=[owner_id], backref="owned_clients")
-    pm = relationship("app.modules.users.models.User", foreign_keys=[pm_id], backref="managed_clients")
-
-class ClientPMHistory(Base):
-    __tablename__ = "client_pm_history"
-
-    id = Column(Integer, primary_key=True, index=True)
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False, index=True)
-    pm_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    assigned_at = Column(DateTime, default=lambda: datetime.now(UTC))
-
-
-    # Note: relationships can be added here if needed, but not strictly necessary for simple auditing.
+    class Settings:
+        name = "client_pm_history"

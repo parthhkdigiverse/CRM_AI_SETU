@@ -1,3 +1,4 @@
+from beanie import PydanticObjectId
 # backend/app/modules/salary/schemas.py
 from typing import Optional, List, Any
 from pydantic import BaseModel, field_validator
@@ -42,8 +43,8 @@ class LeaveApproval(BaseModel):
 
 
 class LeaveRecordRead(BaseModel):
-    id: int
-    user_id: int
+    id: Optional[PydanticObjectId] = None
+    user_id: str
     start_date: date
     end_date: date
     leave_type: str = "CASUAL"
@@ -57,18 +58,19 @@ class LeaveRecordRead(BaseModel):
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 # Salary Schemas
 class SalarySlipGenerate(BaseModel):
-    user_id: int
+    user_id: str
     month: str  # YYYY-MM
     extra_deduction: float = 0.0  # Admin-applied manual deduction
     base_salary: Optional[float] = None  # Override employee profile base salary for this slip
 
 
 class SalaryPreviewResponse(BaseModel):
-    user_id: int
+    user_id: str
     user_name: str
     month: str
     base_salary: float
@@ -87,8 +89,8 @@ class SalaryPreviewResponse(BaseModel):
 
 
 class SalarySlipRead(BaseModel):
-    id: int
-    user_id: int
+    id: Optional[PydanticObjectId] = None
+    user_id: str
     month: str
     base_salary: float
     paid_leaves: int
@@ -109,4 +111,4 @@ class SalarySlipRead(BaseModel):
 
     class Config:
         from_attributes = True
-
+        populate_by_name = True

@@ -1,43 +1,55 @@
-# backend/app/modules/issues/models.py
-from datetime import datetime, UTC
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum, Text, DateTime, Boolean
-from sqlalchemy.orm import relationship
-from app.core.database import Base
+from beanie import Document
+from typing import Optional, Any
+from datetime import datetime, timezone
+from pydantic import field_validator
 from app.core.enums import GlobalTaskStatus
 import enum
 
-
 class IssueSeverity(str, enum.Enum):
-    HIGH   = "HIGH"
+    HIGH = "HIGH"
     MEDIUM = "MEDIUM"
-    LOW    = "LOW"
+    LOW = "LOW"
 
+_STATUS_MAP = {
+    'PENDING': 'OPEN', 'NEW': 'OPEN', 'PLANNING': 'OPEN', 'SCHEDULED': 'OPEN',
+    'ONGOING': 'IN_PROGRESS', 'CONTACTED': 'IN_PROGRESS',
+    'ON_HOLD': 'BLOCKED',
+    'COMPLETED': 'RESOLVED', 'SOLVED': 'RESOLVED', 'DONE': 'RESOLVED',
+}
 
-class Issue(Base):
-    __tablename__ = "issues"
+class Issue(Document):
+    title: str
+    description: Optional[str] = None
+    status: GlobalTaskStatus = GlobalTaskStatus.OPEN
+    severity: str = IssueSeverity.MEDIUM
+    remarks: Optional[str] = None
+    is_deleted: bool = False
+    opened_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    client_id: str
+    project_id: Optional[str] = None
+    reporter_id: str
+    assigned_to_id: Optional[str] = None
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True, nullable=False)
-    description = Column(Text)
-    status = Column(Enum(GlobalTaskStatus), default=GlobalTaskStatus.OPEN, nullable=False)
-    severity = Column(String, default=IssueSeverity.MEDIUM, nullable=False)
-    remarks = Column(Text, nullable=True)
-    is_deleted = Column(Boolean, default=False, index=True)
-    opened_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
-    reporter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    @field_validator("status", mode="before")
+    @classmethod
+    def normalize_status(cls, v: Any) -> Any:
+        if isinstance(v, str) and v in _STATUS_MAP:
+            return _STATUS_MAP[v]
+        return v
 
-    client = relationship("Client", backref="issues")
-    project = relationship("Project", backref="issues")
-    reporter = relationship("User", foreign_keys=[reporter_id], backref="reported_issues")
-    assigned_to = relationship("User", foreign_keys=[assigned_to_id], backref="assigned_issues")
+    @field_validator("created_at", "updated_at", "opened_at", mode="before")
+    @classmethod
+    def parse_datetime(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            for fmt in ["%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%S"]:
+                try:
+                    return datetime.strptime(v, fmt)
+                except ValueError:
+                    continue
+        return v
 
+    class Settings:
+        name = "issues"
 
-# Import models at the end to ensure they are registered without circular dependency issues
-from app.modules.clients.models import Client
-from app.modules.projects.models import Project
-from app.modules.users.models import User

@@ -1,8 +1,5 @@
-# backend/app/modules/settings/router.py
 from typing import Any
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from app.core.database import get_db
 from app.core.dependencies import RoleChecker, get_current_user
 from app.modules.users.models import User, UserRole
 from app.modules.settings.models import SystemSettings
@@ -12,40 +9,36 @@ router = APIRouter()
 admin_access = RoleChecker([UserRole.ADMIN])
 
 @router.get("/", response_model=SystemSettingsRead)
-def get_settings(
-    db: Session = Depends(get_db),
-    # Require authentication using get_current_user
+async def get_settings(
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    # Get or create the single settings row
-    settings_obj = db.query(SystemSettings).first()
+    # MongoDB ma pela settings object shodho
+    settings_obj = await SystemSettings.find_one()
+    
     if not settings_obj:
+        # Jo na hoy to navu create karo
         settings_obj = SystemSettings(feature_flags={"enable_soft_delete": True})
-        db.add(settings_obj)
-        db.commit()
-        db.refresh(settings_obj)
+        await settings_obj.insert()
+        
     return settings_obj
 
 @router.patch("/", response_model=SystemSettingsRead)
-def update_settings(
+async def update_settings(
     settings_in: SystemSettingsUpdate,
-    db: Session = Depends(get_db),
     current_user: User = Depends(admin_access)
 ) -> Any:
     """Update global system settings (Admin only)."""
-    settings_obj = db.query(SystemSettings).first()
+    settings_obj = await SystemSettings.find_one()
+    
     if not settings_obj:
         settings_obj = SystemSettings(feature_flags={"enable_soft_delete": True})
-        db.add(settings_obj)
+        await settings_obj.insert()
     
-    # Merge existing feature flags with new ones
+    # Merge feature flags
     current_flags = settings_obj.feature_flags or {}
     new_flags = {**current_flags, **settings_in.feature_flags}
-    settings_obj.feature_flags = new_flags
     
-    from sqlalchemy.orm.attributes import flag_modified
-    flag_modified(settings_obj, "feature_flags")
+    # MongoDB update logic
+    await settings_obj.set({"feature_flags": new_flags})
     
-    db.commit()
-    db.refresh(settings_obj)
     return settings_obj

@@ -1,23 +1,27 @@
-# backend/app/modules/notifications/models.py
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from beanie import Document
+from typing import Optional, Any
 from datetime import datetime, timezone
-from app.core.database import Base
+from pydantic import field_validator
 
-class Notification(Base):
-    __tablename__ = "notifications"
+class Notification(Document):
+    user_id: str
+    title: str
+    message: str
+    is_read: bool = False
+    is_deleted: bool = False
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    
-    title = Column(String, nullable=False)
-    message = Column(Text, nullable=False)
-    
-    is_read = Column(Boolean, default=False)
-    is_deleted = Column(Boolean, default=False, index=True)
-    
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def parse_datetime(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            for fmt in ["%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%S"]:
+                try:
+                    return datetime.strptime(v, fmt)
+                except ValueError:
+                    continue
+        return v
 
-    # Relationship
-    user = relationship("app.modules.users.models.User", backref="notifications")
+    class Settings:
+        name = "notifications"

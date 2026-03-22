@@ -1,3 +1,4 @@
+from beanie import PydanticObjectId
 # backend/app/modules/billing/schemas.py
 from typing import Optional, Literal
 from pydantic import BaseModel, field_validator
@@ -13,7 +14,7 @@ class BillCreate(BaseModel):
     invoice_client_org: Optional[str] = None
 
     # Optional shop/lead linkage
-    shop_id: Optional[int] = None
+    shop_id: Optional[str] = None
 
     # Financial
     amount: Optional[float] = None
@@ -37,9 +38,9 @@ class BillCreate(BaseModel):
 
 
 class BillRead(BaseModel):
-    id: int
-    shop_id: Optional[int] = None
-    client_id: Optional[int] = None
+    id: Optional[PydanticObjectId] = None
+    shop_id: Optional[str] = None
+    client_id: Optional[str] = None
 
     invoice_client_name: Optional[str] = None
     invoice_client_phone: Optional[str] = None
@@ -64,13 +65,14 @@ class BillRead(BaseModel):
     shop_name: Optional[str] = None
     client_name: Optional[str] = None
 
-    created_by_id: Optional[int] = None
-    verified_by_id: Optional[int] = None
+    created_by_id: Optional[str] = None
+    verified_by_id: Optional[str] = None
     verified_at: Optional[datetime] = None
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 class BillingWorkflowResolveRequest(BaseModel):

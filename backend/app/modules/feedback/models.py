@@ -1,38 +1,30 @@
-# backend/app/modules/feedback/models.py
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Boolean
-from sqlalchemy.orm import relationship
-from datetime import datetime
-from app.core.database import Base
+from beanie import Document
+from typing import Optional
+from datetime import datetime, timezone
 
-class Feedback(Base):
-    __tablename__ = "feedbacks"
+class Feedback(Document):
+    client_id: Optional[str] = None
+    client_name: Optional[str] = None
+    mobile: Optional[str] = None
+    shop_name: Optional[str] = None
+    product: Optional[str] = None
+    rating: int
+    comments: Optional[str] = None
+    agent_name: Optional[str] = None
+    referral_code: Optional[str] = None
+    created_at: datetime = datetime.now(timezone.utc)
+    is_deleted: bool = False
 
-    id = Column(Integer, primary_key=True, index=True)
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=True)
-    client_name = Column(String, nullable=True) # Full Name
-    mobile = Column(String, nullable=True)
-    shop_name = Column(String, nullable=True)
-    product = Column(String, nullable=True)
-    rating = Column(Integer, nullable=False) # Sales Person Rating
-    comments = Column(Text, nullable=True)
-    agent_name = Column(String, nullable=True)
-    referral_code = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    is_deleted = Column(Boolean, default=False, index=True)
+    class Settings:
+        name = "feedbacks"
 
-    client = relationship("app.modules.clients.models.Client", backref="feedbacks")
+class UserFeedback(Document):
+    user_id: str
+    subject: str
+    message: str
+    status: str = "PENDING"
+    created_at: datetime = datetime.now(timezone.utc)
+    is_deleted: bool = False
 
-
-class UserFeedback(Base):
-    __tablename__ = "user_feedbacks"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    subject = Column(String, nullable=False)
-    message = Column(Text, nullable=False)
-    status = Column(String, default="PENDING")
-    created_at = Column(DateTime, default=datetime.utcnow)
-    is_deleted = Column(Boolean, default=False, index=True)
-
-    # Relationships
-    user = relationship("app.modules.users.models.User", backref="system_feedbacks")
+    class Settings:
+        name = "user_feedbacks"

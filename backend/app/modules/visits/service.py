@@ -1,203 +1,133 @@
-# backend/app/modules/visits/service.py
 import os
 import shutil
 from pathlib import Path
-from sqlalchemy.orm import Session, joinedload
+from typing import List, Optional
+from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException, UploadFile, Request
-from datetime import date as dt_date, datetime, UTC, time, timedelta
+from beanie.operators import In
 
 from app.modules.visits.models import Visit, VisitStatus
 from app.modules.visits.schemas import VisitCreate, VisitUpdate
-from app.modules.users.models import User
+from app.modules.users.models import User, UserRole
 from app.modules.shops.models import Shop
 from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
 
-BASE_DIR = Path(__file__).parent.parent.parent.parent # points to backend/
+BASE_DIR = Path(__file__).parent.parent.parent.parent
 UPLOAD_DIR = BASE_DIR / "static" / "uploads" / "visits"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 class VisitService:
-    def __init__(self, db: Session):
-        self.db = db
-        self.activity_logger = ActivityLogger(db)
+    def __init__(self):
+        self.activity_logger = ActivityLogger()
 
-    def get_visit(self, visit_id: int):
-        return self.db.query(Visit).filter(Visit.id == visit_id, Visit.is_deleted == False).first()
+    async def _enrich_visit(self, visit: Visit):
+        if not visit: return
+        shop = await Shop.find_one(Shop.id == visit.shop_id)
+        user = await User.find_one(User.id == visit.user_id)
+        if shop:
+            visit.shop_name = shop.name
+            visit.shop_status = str(shop.status.value if hasattr(shop.status, 'value') else shop.status)
+            visit.shop_demo_stage = getattr(shop, 'demo_stage', 0)
+            from app.modules.areas.models import Area
+            area = await Area.find_one(Area.id == shop.area_id)
+            if area: visit.area_name = area.name
+            if shop.pm_id:
+                pm = await User.find_one(User.id == shop.pm_id)
+                if pm: visit.project_manager_name = pm.name or pm.email
+        if user:
+            visit.user_name = user.name or user.email
 
-    def get_visits(self, skip: int = 0, limit: int = 100, current_user: User = None, shop_id: int = None, user_id: int | None = None):
-        try:
-            from app.modules.shops.models import Shop as ShopModel
-            from sqlalchemy import or_
-            from app.modules.users.models import UserRole
+    async def get_visit(self, visit_id: str):
+        visit = await Visit.find_one(Visit.id == visit_id, Visit.is_deleted != True)
+        if visit: await self._enrich_visit(visit)
+        return visit
 
-            query = self.db.query(Visit).outerjoin(ShopModel, ShopModel.id == Visit.shop_id).options(
-                joinedload(Visit.shop).joinedload(ShopModel.area),
-                joinedload(Visit.shop).joinedload(ShopModel.project_manager),
-                joinedload(Visit.user)
-            ).filter(Visit.is_deleted == False)
-            if shop_id:
-                query = query.filter(Visit.shop_id == shop_id)
-            
-            if user_id is not None:
-                query = query.filter(Visit.user_id == user_id)
+    async def get_visits(self, skip: int = 0, limit: int = 100, current_user: User = None, shop_id: str = None, user_id: str | None = None):
+        query_filter = [Visit.is_deleted != True]
+        if shop_id: query_filter.append(Visit.shop_id == shop_id)
+        if user_id is not None: query_filter.append(Visit.user_id == user_id)
 
-            # Admins see everything; staff see visits they authored OR
-            # visits logged on any shop they own (directly or via assignment)
-            if current_user and current_user.role not in [UserRole.ADMIN]:
-                try:
-                    query = (
-                        query
-                        .filter(
-                            or_(
-                                Visit.user_id == current_user.id,
-                                ShopModel.owner_id == current_user.id,
-                                ShopModel.assigned_owners_list.any(id=current_user.id)
-                            )
-                        )
-                    )
-                except Exception as scope_err:
-                    # Fallback: if the assigned_owners_list relationship fails,
-                    # at least scope to visits the user authored or owns
-                    print(f"[visits] scope filter warning: {scope_err}")
-                    query = query.filter(
-                        or_(
-                            Visit.user_id == current_user.id,
-                            ShopModel.owner_id == current_user.id
-                        )
-                    )
+        if current_user and current_user.role != UserRole.ADMIN:
+            owned_shops = await Shop.find(Shop.owner_id == current_user.id).to_list()
+            assigned_shops = await Shop.find(In(Shop.assigned_owners_ids, [current_user.id])).to_list()
+            relevant_shop_ids = list(set([s.id for s in owned_shops] + [s.id for s in assigned_shops]))
+            query_filter.append({"$or": [
+                {"user_id": current_user.id},
+                {"shop_id": {"$in": relevant_shop_ids}}
+            ]})
 
-            return query.order_by(Visit.visit_date.desc()).offset(skip).limit(limit).all()
-        except Exception as e:
-            print(f"Error fetching visits: {e}")
-            import traceback; traceback.print_exc()
-            return []
+        visits = await Visit.find(*query_filter).sort(-Visit.visit_date).skip(skip).limit(limit).to_list()
+        for v in visits:
+            await self._enrich_visit(v)
+        return visits
 
     async def create_visit(self, visit_in: VisitCreate, current_user: User, request: Request, photo: UploadFile = None):
-        # Validation: Check Shop Exists
-        shop = self.db.query(Shop).filter(Shop.id == visit_in.shop_id).first()
+        shop = await Shop.find_one(Shop.id == visit_in.shop_id)
         if not shop:
             raise HTTPException(status_code=404, detail="Shop not found")
             
         visit_data = visit_in.model_dump()
-        
-        # Validation: Duplicate Visit Protection (One per user, per lead, per day)
-        target_date = visit_data.get('visit_date') or datetime.now(UTC)
-
+        target_date = visit_data.get('visit_date') or datetime.now(timezone.utc)
         start_of_day = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
         end_of_day = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
         
-        existing_visit = self.db.query(Visit).filter(
+        existing = await Visit.find_one(
             Visit.shop_id == visit_in.shop_id,
             Visit.user_id == current_user.id,
             Visit.visit_date >= start_of_day,
-            Visit.visit_date <= end_of_day
-        ).first()
-        
-        if existing_visit:
+            Visit.visit_date <= end_of_day,
+            Visit.is_deleted != True
+        )
+        if existing:
             raise HTTPException(status_code=400, detail="A visit has already been logged for this shop today by the current user.")
 
         visit = Visit(**visit_data, user_id=current_user.id)
-
-        # Handle Photo Upload
         if photo:
             try:
-                # Validate file extension if needed, for now accept images
-                file_ext = photo.filename.split(".")[-1]
-                filename = f"visit_{visit_in.shop_id}_{current_user.id}_{int(datetime.now(UTC).timestamp())}.{file_ext}"
-
-                file_path = UPLOAD_DIR / filename
-                
-                with file_path.open("wb") as buffer:
-                    shutil.copyfileobj(photo.file, buffer)
-                
-                # Store relative path or URL
-                visit.photo_url = f"/static/uploads/visits/{filename}"
+                ext = photo.filename.split(".")[-1]
+                fname = f"visit_{visit_in.shop_id}_{current_user.id}_{int(datetime.now(timezone.utc).timestamp())}.{ext}"
+                fpath = UPLOAD_DIR / fname
+                with fpath.open("wb") as buf:
+                    shutil.copyfileobj(photo.file, buf)
+                visit.photo_url = f"/static/uploads/visits/{fname}"
             except Exception as e:
-                # Log error but maybe don't fail the visit creation? 
-                # Requirement: "file is actually written... invalid/missing rejected"
-                # If upload fails, we should probably fail the request or mark it.
                 raise HTTPException(status_code=500, detail=f"Failed to upload photo: {str(e)}")
 
-        self.db.add(visit)
-        self.db.commit()
+        await visit.insert()
+        await self._enrich_visit(visit)
 
-        # Re-fetch with eager-loaded relationships so @property fields
-        # (shop_name, area_name, user_name) resolve during response serialization
-        from app.modules.shops.models import Shop as ShopModel
-        visit = (
-            self.db.query(Visit)
-            .options(
-                joinedload(Visit.shop).joinedload(ShopModel.area),
-                joinedload(Visit.user)
-            )
-            .filter(Visit.id == visit.id)
-            .first()
-        )
-
-        # --- Auto-transition Shop pipeline_stage based on visit outcome ---
+        # Pipeline transition
         from app.core.enums import MasterPipelineStage
-        shop = self.db.query(Shop).filter(Shop.id == visit_in.shop_id).first()
-        if shop:
-            current = shop.pipeline_stage
-            new_stage = None
-
-            # Any visit: move LEAD → PITCHING
-            if current == MasterPipelineStage.LEAD:
-                new_stage = MasterPipelineStage.PITCHING
-
-            # Visit outcome: ACCEPT → PITCHING (if still LEAD somehow)
-            if visit.status == VisitStatus.ACCEPT and current == MasterPipelineStage.LEAD:
-                new_stage = MasterPipelineStage.PITCHING
-
-            # Visit outcome: SATISFIED → DELIVERY (only from PITCHING)
-            if visit.status == VisitStatus.SATISFIED and current == MasterPipelineStage.PITCHING:
-                new_stage = MasterPipelineStage.DELIVERY
-
-            if new_stage and new_stage != current:
-                shop.pipeline_stage = new_stage
-                self.db.commit()
-        # ----------------------------------------------------------
-
-        # Helper for activity logging
+        current_stage = shop.pipeline_stage
+        new_stage = None
+        if current_stage == MasterPipelineStage.LEAD: new_stage = MasterPipelineStage.PITCHING
+        if visit.status == VisitStatus.SATISFIED and current_stage == MasterPipelineStage.PITCHING:
+            new_stage = MasterPipelineStage.DELIVERY
         
+        if new_stage and new_stage != current_stage:
+            shop.pipeline_stage = new_stage
+            await shop.save()
+
         await self.activity_logger.log_activity(
-            user_id=current_user.id,
-            user_role=current_user.role,
-            action=ActionType.CREATE,
-            entity_type=EntityType.VISIT,
-            entity_id=visit.id,
-            new_data=visit_in.model_dump(mode='json'), # mode='json' for dates
-            request=request
+            user_id=current_user.id, user_role=current_user.role, action=ActionType.CREATE,
+            entity_type=EntityType.VISIT, entity_id=visit.id, new_data=visit_in.model_dump(mode='json'), request=request
         )
-        
         return visit
 
-    async def update_visit(self, visit_id: int, visit_in: VisitUpdate, current_user: User, request: Request):
-        visit = self.get_visit(visit_id)
+    async def update_visit(self, visit_id: str, visit_in: VisitUpdate, current_user: User, request: Request):
+        visit = await self.get_visit(visit_id)
         if not visit:
             raise HTTPException(status_code=404, detail="Visit not found")
 
-        old_data = {
-            "status": visit.status.value,
-            "remarks": visit.remarks
-        }
-        
+        old_data = {"status": str(visit.status), "remarks": visit.remarks}
         update_data = visit_in.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(visit, field, value)
-
-        self.db.commit()
-        self.db.refresh(visit)
+        await visit.save()
 
         await self.activity_logger.log_activity(
-            user_id=current_user.id,
-            user_role=current_user.role,
-            action=ActionType.UPDATE,
-            entity_type=EntityType.VISIT,
-            entity_id=visit.id,
-            old_data=old_data,
-            new_data=update_data,
-            request=request
+            user_id=current_user.id, user_role=current_user.role, action=ActionType.UPDATE,
+            entity_type=EntityType.VISIT, entity_id=visit.id, old_data=old_data, new_data=update_data, request=request
         )
         return visit

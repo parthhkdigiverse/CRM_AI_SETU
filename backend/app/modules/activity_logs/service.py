@@ -1,13 +1,10 @@
-# backend/app/modules/activity_logs/service.py
-from sqlalchemy.orm import Session
 from app.modules.activity_logs.models import ActivityLog, ActionType, EntityType
 from app.modules.users.models import UserRole
-from app.modules.activity_logs.schemas import ActivityLogCreate
 from fastapi import Request
+from datetime import datetime
 
 class ActivityLogger:
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self):
         self.sensitive_fields = {"password", "hashed_password", "token", "access_token", "refresh_token", "secret", "otp"}
 
     def _filter_sensitive_data(self, data: dict):
@@ -17,41 +14,40 @@ class ActivityLogger:
 
     async def log_activity(
         self,
-        user_id: int,
-        user_role: UserRole, # Expecting enum here, but model stores string
+        user_id,
+        user_role: UserRole,
         action: ActionType,
         entity_type: EntityType,
-        entity_id: int,
+        entity_id,
         old_data: dict = None,
         new_data: dict = None,
         request: Request = None
     ):
         ip_address = request.client.host if request else None
-        
-        # Ensure user_role is string
-        role_str = user_role.value if hasattr(user_role, 'value') else str(user_role)
+        role_str = user_role.value if hasattr(user_role, "value") else str(user_role)
 
         activity_log = ActivityLog(
-            user_id=user_id,
+            user_id=str(user_id),
             user_role=role_str,
             action=action,
             entity_type=entity_type,
-            entity_id=entity_id,
+            entity_id=str(entity_id),
             old_data=self._filter_sensitive_data(old_data),
             new_data=self._filter_sensitive_data(new_data),
-            ip_address=ip_address
+            ip_address=ip_address,
+            created_at=datetime.utcnow()
         )
-        self.db.add(activity_log)
-        self.db.commit()
-        self.db.refresh(activity_log)
+        await activity_log.insert()
         return activity_log
 
-    def get_logs(self, skip: int = 0, limit: int = 100):
+    async def get_logs(self, skip: int = 0, limit: int = 100):
         try:
-            logs = self.db.query(ActivityLog).order_by(ActivityLog.created_at.desc()).offset(skip).limit(limit).all()
+            from app.modules.users.models import User
+            logs = await ActivityLog.find_all().sort(-ActivityLog.created_at).skip(skip).limit(limit).to_list()
             for log in logs:
-                if log.user:
-                    log.user_name = log.user.name or log.user.email or log.user.employee_code or f"User #{log.user_id}"
+                user = await User.find_one(User.id == log.user_id)
+                if user:
+                    log.user_name = user.name or user.email or f"User #{log.user_id}"
                 else:
                     log.user_name = "System"
             return logs

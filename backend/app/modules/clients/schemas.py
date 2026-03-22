@@ -1,3 +1,4 @@
+from beanie import PydanticObjectId
 # backend/app/modules/clients/schemas.py
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr, field_validator
@@ -28,7 +29,7 @@ class ClientBase(BaseModel):
 
 class ClientCreate(ClientBase):
     referral_code: Optional[str] = None
-    owner_id: Optional[int] = None
+    owner_id: Optional[str] = None
 
 class ClientUpdate(ClientBase):
     name: Optional[str] = None
@@ -38,31 +39,32 @@ class ClientUpdate(ClientBase):
     address: Optional[str] = None
     project_type: Optional[str] = None
     requirements: Optional[str] = None
-    owner_id: Optional[int] = None
+    owner_id: Optional[str] = None
 
 
 class ClientPMAssign(BaseModel):
-    pm_id: int
+    pm_id: str
 
 class ClientRead(BaseModel):
-    id: int
+    id: Optional[PydanticObjectId] = None
     name: str
     phone: Optional[str] = None
     email: Optional[str] = None
     organization: Optional[str] = None
-    pm_id: Optional[int] = None
+    pm_id: Optional[str] = None
     pm_name: Optional[str] = None
-    owner_id: Optional[int] = None
+    owner_id: Optional[str] = None
     address: Optional[str] = None
     project_type: Optional[str] = None
     requirements: Optional[str] = None
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 class PMWorkloadRead(BaseModel):
-    pm_id: int
+    pm_id: str
     pm_name: str
     pm_email: str
     role: str
@@ -70,13 +72,15 @@ class PMWorkloadRead(BaseModel):
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 class ClientPMHistoryRead(BaseModel):
-    id: int
-    client_id: int
-    pm_id: int
+    id: Optional[PydanticObjectId] = None
+    client_id: str
+    pm_id: str
     assigned_at: datetime
 
     class Config:
         from_attributes = True
+        populate_by_name = True

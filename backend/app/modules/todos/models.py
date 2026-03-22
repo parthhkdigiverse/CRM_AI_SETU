@@ -1,10 +1,8 @@
-# backend/app/modules/todos/models.py
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum, Boolean, Time
-from sqlalchemy.orm import relationship
-from datetime import datetime, UTC
-
+from typing import Optional
+from datetime import datetime, time, timezone
 import enum
-from app.core.database import Base
+from beanie import Document, Indexed
+from pydantic import Field
 
 class TodoStatus(str, enum.Enum):
     PENDING = "PENDING"
@@ -16,30 +14,36 @@ class TodoPriority(str, enum.Enum):
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
 
-class Todo(Base):
-    __tablename__ = "todos"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+class Todo(Document):
+    user_id: str  # MongoDB ma ID hamesha string/ObjectId hoy chhe
+    title: str = Indexed()
+    description: Optional[str] = None
     
-    title = Column(String, index=True, nullable=False)
-    description = Column(Text, nullable=True)
+    due_date: Optional[datetime] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
     
-    due_date = Column(DateTime, nullable=True)
-    start_time = Column(Time, nullable=True)
-    end_time = Column(Time, nullable=True)
-    status = Column(Enum(TodoStatus), default=TodoStatus.PENDING)
-    priority = Column(Enum(TodoPriority), default=TodoPriority.MEDIUM)
-    assigned_to = Column(String, nullable=True)
-    related_entity = Column(String, nullable=True)
-    evidence_url = Column(String, nullable=True)
-    is_deleted = Column(Boolean, default=False, index=True)
+    status: TodoStatus = TodoStatus.PENDING
+    priority: TodoPriority = TodoPriority.MEDIUM
     
-    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=True)
+    assigned_to: Optional[str] = None
+    related_entity: Optional[str] = None
+    evidence_url: Optional[str] = None
+    is_deleted: bool = Indexed(default=False)
+    
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    client_id: Optional[str] = None
 
+    class Settings:
+        name = "todos"  # Aa MongoDB na collection nu naam chhe
 
-    # Relationship
-    user = relationship("app.modules.users.models.User", backref="todos")
-    client = relationship("app.modules.clients.models.Client", backref="todos")
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user_id": "60d5ecb8b39d880015f5a123",
+                "title": "Meeting with Client",
+                "status": "PENDING",
+                "priority": "HIGH"
+            }
+        }

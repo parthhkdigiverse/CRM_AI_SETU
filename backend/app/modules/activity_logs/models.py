@@ -1,9 +1,7 @@
-# backend/app/modules/activity_logs/models.py
-import enum
-from sqlalchemy import Column, Integer, String, Enum, DateTime, JSON, ForeignKey
-from sqlalchemy.orm import relationship
+from beanie import Document
+from typing import Optional, Any, Dict
 from datetime import datetime
-from app.core.database import Base
+import enum
 
 class ActionType(str, enum.Enum):
     CREATE = "CREATE"
@@ -28,20 +26,16 @@ class EntityType(str, enum.Enum):
     FEEDBACK = "FEEDBACK"
     USER = "USER"
 
-class ActivityLog(Base):
-    __tablename__ = "activity_logs"
+class ActivityLog(Document):
+    user_id: str
+    user_role: str
+    action: str
+    entity_type: str
+    entity_id: str
+    old_data: Optional[Dict[str, Any]] = None
+    new_data: Optional[Dict[str, Any]] = None
+    ip_address: Optional[str] = None
+    created_at: datetime = datetime.utcnow()
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    user_role = Column(String, nullable=False) # Store current role as string for audit stability
-    action = Column(String, nullable=False)
-    entity_type = Column(String, nullable=False)
-    entity_id = Column(Integer, nullable=False)
-    
-    old_data = Column(JSON, nullable=True)
-    new_data = Column(JSON, nullable=True)
-    
-    ip_address = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    user = relationship("app.modules.users.models.User", backref="activity_logs")
+    class Settings:
+        name = "activity_logs"

@@ -1,18 +1,12 @@
-# backend/app/modules/reports/models.py
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
-from datetime import datetime
-from app.core.database import Base
+from beanie import Document
+from typing import Optional
+from datetime import datetime, timezone
 
-class PerformanceNote(Base):
-    __tablename__ = "performance_notes"
+class PerformanceNote(Document):
+    employee_id: str
+    created_by_id: str
+    note: str
+    created_at: datetime = datetime.now(timezone.utc)
 
-    id = Column(Integer, primary_key=True, index=True)
-    employee_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    note = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    # Relationships
-    employee = relationship("User", foreign_keys=[employee_id])
-    creator = relationship("User", foreign_keys=[created_by_id])
+    class Settings:
+        name = "performance_notes"

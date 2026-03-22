@@ -1,18 +1,14 @@
 # backend/app/modules/idcards/service.py
-from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.modules.users.models import User
 from app.modules.idcards.schemas import IDCardData
 
 class IDCardService:
-    def __init__(self, db: Session):
-        self.db = db
-
-    def get_id_card_data(self, user_id: int) -> IDCardData:
-        user = self.db.query(User).filter(User.id == user_id).first()
+    async def get_id_card_data(self, user_id: str) -> IDCardData:
+        from app.modules.users.models import User
+        user = await User.find_one(User.id == user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-
         return IDCardData(
             employee_name=user.name or "Employee",
             employee_code=user.employee_code or f"USR-{user.id}",
@@ -22,8 +18,8 @@ class IDCardService:
             qr_data=f"USR:{user.employee_code or user.id}|NAME:{user.name}"
         )
 
-    def generate_id_card_html(self, user_id: int) -> str:
-        data = self.get_id_card_data(user_id)
+    async def generate_id_card_html(self, user_id: str) -> str:
+        data = await self.get_id_card_data(user_id)
 
         html = f"""
         <html>

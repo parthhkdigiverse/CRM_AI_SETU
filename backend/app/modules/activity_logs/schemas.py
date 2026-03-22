@@ -1,11 +1,12 @@
+from beanie import PydanticObjectId
 # backend/app/modules/activity_logs/schemas.py
 from pydantic import BaseModel
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 from datetime import datetime
 from app.modules.activity_logs.models import ActionType, EntityType
 
 class ActivityLogBase(BaseModel):
-    user_id: int
+    user_id: str
     user_role: str
     action: ActionType
     entity_type: EntityType
@@ -18,9 +19,11 @@ class ActivityLogCreate(ActivityLogBase):
     pass
 
 class ActivityLogResponse(ActivityLogBase):
-    id: int
+    id: Optional[PydanticObjectId] = None
     created_at: datetime
     user_name: Optional[str] = None
 
     class Config:
         from_attributes = True
+        populate_by_name = True
+

@@ -1,3 +1,4 @@
+from beanie import PydanticObjectId
 # backend/app/modules/meetings/schemas.py
 from typing import Optional
 from pydantic import BaseModel
@@ -11,7 +12,7 @@ class MeetingSummaryBase(BaseModel):
     title: str
     content: str
     date: Optional[datetime] = None
-    client_id: int
+    client_id: str
     meeting_type: Optional[MeetingType] = MeetingType.IN_PERSON
 
 
@@ -45,11 +46,12 @@ class MeetingReschedule(BaseModel):
 
 
 class MeetingSummaryRead(MeetingSummaryBase):
-    id: int
+    id: Optional[PydanticObjectId] = None
     status: GlobalTaskStatus
     meet_link: Optional[str] = None
     cancellation_reason: Optional[str] = None
-    todo_id: Optional[int] = None
+    todo_id: Optional[str] = None
 
     class Config:
         from_attributes = True
+        populate_by_name = True

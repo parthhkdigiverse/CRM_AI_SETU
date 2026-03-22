@@ -10,9 +10,7 @@ env_file_path = os.path.join(backend_dir, ".env")
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "SRM AI SETU"
-    DATABASE_URL: str = "postgresql://postgres:Nency%404030@localhost:5432/crm_ai_setu"
-    SECRET_KEY: str = "your-secret-key-for-development"  # Change in production!
-    DATABASE_URL: str = "postgresql://postgres:0412@localhost:5432/AI%20SETU"
+    MONGODB_URI: str = "mongodb+srv://Nency_HKDigiverse:Nency%40001@cluster0.v1ndfhh.mongodb.net/crm_ai_setu_mongo?appName=Cluster0"
     SECRET_KEY: str = "your-secret-key-for-development!"  # Change in production!
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days

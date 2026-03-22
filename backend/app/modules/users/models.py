@@ -1,7 +1,8 @@
-# backend/app/modules/users/models.py
+from beanie import Document, Indexed
+from pydantic import EmailStr
+from typing import Optional, Dict, Any
+from datetime import date
 import enum
-from sqlalchemy import Column, Integer, String, Enum, Boolean, Date, Float, JSON
-from app.core.database import Base
 
 class UserRole(str, enum.Enum):
     ADMIN = "ADMIN"
@@ -11,25 +12,22 @@ class UserRole(str, enum.Enum):
     PROJECT_MANAGER_AND_SALES = "PROJECT_MANAGER_AND_SALES"
     CLIENT = "CLIENT"
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    name = Column(String, nullable=True)
-    phone = Column(String, nullable=True)
-    role = Column(Enum(UserRole), default=UserRole.TELESALES, nullable=False)
-    referral_code = Column(String, unique=True, index=True, nullable=True)
-    is_active = Column(Boolean, default=True)
-    is_deleted = Column(Boolean, default=False)
-    preferences = Column(JSON, nullable=True, default=dict)
+class User(Document):
+    email: Indexed(str, unique=True)
+    hashed_password: str
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    role: UserRole = UserRole.TELESALES
+    referral_code: Optional[str] = None
+    is_active: bool = True
+    is_deleted: bool = False
+    preferences: Optional[Dict[str, Any]] = {}
+    employee_code: Optional[str] = None
+    joining_date: Optional[date] = None
+    base_salary: float = 0.0
+    target: int = 0
     incentive_enabled: bool = True
+    department: Optional[str] = None
 
-    # --- Employee / HR Profile (merged from Employee table) ---
-    employee_code = Column(String, unique=True, index=True, nullable=True)
-    joining_date = Column(Date, nullable=True)
-    base_salary = Column(Float, default=0.0, nullable=True)
-    target = Column(Integer, default=0, nullable=True)
-    incentive_enabled = Column(Boolean, default=True, nullable=False)
-    department = Column(String, nullable=True)
+    class Settings:
+        name = "users"

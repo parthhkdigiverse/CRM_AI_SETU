@@ -1,10 +1,11 @@
+from beanie import PydanticObjectId
 # backend/app/modules/attendance/schemas.py
 from pydantic import BaseModel
 from datetime import datetime, date
 from typing import Optional, List
 
 class AttendanceBase(BaseModel):
-    user_id: int
+    user_id: str
     date: date
     punch_in: Optional[datetime] = None
     punch_out: Optional[datetime] = None
@@ -14,10 +15,11 @@ class AttendanceCreate(AttendanceBase):
     pass
 
 class AttendanceResponse(AttendanceBase):
-    id: int
+    id: Optional[PydanticObjectId] = None
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class PunchStatus(BaseModel):
     is_punched_in: bool
@@ -29,7 +31,7 @@ class PunchStatus(BaseModel):
 
 class AttendanceDaySummary(BaseModel):
     date: date
-    user_id: Optional[int] = None
+    user_id: Optional[str] = None
     user_name: Optional[str] = None
     first_punch_in: Optional[datetime] = None
     last_punch_out: Optional[datetime] = None

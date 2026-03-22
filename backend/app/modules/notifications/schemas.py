@@ -1,17 +1,18 @@
+from beanie import PydanticObjectId
 # backend/app/modules/notifications/schemas.py
 from pydantic import BaseModel, ConfigDict, field_serializer
 from datetime import datetime, timezone
 from typing import Optional
 
 class NotificationRead(BaseModel):
-    id: int
-    user_id: int
+    id: Optional[PydanticObjectId] = None
+    user_id: str
     title: str
     message: str
     is_read: bool
     created_at: Optional[datetime] = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     @field_serializer('created_at')
     def serialize_created_at(self, v: Optional[datetime]) -> Optional[str]:

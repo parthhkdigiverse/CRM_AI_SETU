@@ -1,3 +1,4 @@
+from beanie import PydanticObjectId
 # backend/app/modules/feedback/schemas.py
 from typing import Optional
 from pydantic import BaseModel
@@ -13,17 +14,18 @@ class FeedbackBase(BaseModel):
     agent_name: Optional[str] = None
     agent_role: Optional[str] = None
     referral_code: Optional[str] = None
-    client_id: Optional[int] = None
+    client_id: Optional[str] = None
 
 class FeedbackCreate(FeedbackBase):
     pass
 
 class FeedbackRead(FeedbackBase):
-    id: int
+    id: Optional[PydanticObjectId] = None
     created_at: datetime
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class UserFeedbackBase(BaseModel):
     subject: str
@@ -36,10 +38,11 @@ class UserFeedbackUpdate(BaseModel):
     status: str
 
 class UserFeedbackRead(UserFeedbackBase):
-    id: int
-    user_id: int
+    id: Optional[PydanticObjectId] = None
+    user_id: str
     status: str
     created_at: datetime
 
     class Config:
         from_attributes = True
+        populate_by_name = True

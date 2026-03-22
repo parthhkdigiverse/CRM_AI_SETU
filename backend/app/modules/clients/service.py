@@ -1,400 +1,167 @@
-# backend/app/modules/clients/service.py
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status, Request
 from app.modules.clients.models import Client, ClientPMHistory
 from app.modules.clients.schemas import ClientCreate, ClientUpdate
 from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
 from app.modules.users.models import User, UserRole
-from app.modules.notifications.service import EmailService
-from sqlalchemy import func, or_
 from typing import List, Dict
+import random
 
 class ClientService:
-    def __init__(self, db: Session):
-        self.db = db
-        self.activity_logger = ActivityLogger(db)
+    def __init__(self):
+        self.activity_logger = ActivityLogger()
 
-    def get_client(self, client_id: int):
-        query = self.db.query(Client).filter(Client.id == client_id, Client.is_deleted == False)
-        return query.first()
+    async def get_client(self, client_id: str):
+        return await Client.find_one(Client.id == client_id, Client.is_deleted != True)
 
-    def get_clients(
-        self,
-        skip: int = 0,
-        limit: int = 100,
-        search: str = None,
-        sort_by: str = "created_at",
-        sort_order: str = "desc",
-        include_inactive: bool = False,
-        pm_id: int = None,
-        is_active: bool | None = True,
-        owner_id: int | None = None,
-        referred_by_id: int | None = None,
-        scoped_user_id: int | None = None,
-        scoped_mode: str | None = None,
-    ):
+    async def get_clients(self, skip=0, limit=100, search=None, sort_by="created_at", sort_order="desc", include_inactive=False, pm_id=None, is_active=True, owner_id=None, referred_by_id=None, scoped_user_id=None, scoped_mode=None):
         try:
-            query = self.db.query(Client).filter(Client.is_deleted == False)
+            query_filter = [Client.is_deleted != True]
             if is_active is True:
-                query = query.filter(Client.is_active == True)
+                query_filter.append(Client.is_active == True)
             elif is_active is False:
-                query = query.filter(Client.is_active == False)
+                query_filter.append(Client.is_active == False)
             elif not include_inactive:
-                query = query.filter(Client.is_active == True)
-            
-            # RBAC: Filter by PM or Owner assignment
-            if pm_id and owner_id:
-                from sqlalchemy import or_
-                query = query.filter(or_(Client.pm_id == pm_id, Client.owner_id == owner_id))
-            elif pm_id:
-                query = query.filter(Client.pm_id == pm_id)
-            if owner_id:
-                query = query.filter(Client.owner_id == owner_id)
-            if referred_by_id:
-                query = query.filter(Client.referred_by_id == referred_by_id)
+                query_filter.append(Client.is_active == True)
             if scoped_user_id and scoped_mode:
                 mode = str(scoped_mode).lower()
                 if mode == "owner":
-                    query = query.filter(Client.owner_id == scoped_user_id)
+                    query_filter.append(Client.owner_id == scoped_user_id)
                 elif mode == "pm":
-                    query = query.filter(Client.pm_id == scoped_user_id)
-                elif mode == "mixed":
-                    query = query.filter(or_(
-                        Client.owner_id == scoped_user_id,
-                        Client.pm_id == scoped_user_id,
-                        Client.referred_by_id == scoped_user_id,
-                    ))
+                    query_filter.append(Client.pm_id == scoped_user_id)
+            elif pm_id:
+                query_filter.append(Client.pm_id == pm_id)
+            if owner_id:
+                query_filter.append(Client.owner_id == owner_id)
+            if referred_by_id:
+                query_filter.append(Client.referred_by_id == referred_by_id)
+            clients = await Client.find(*query_filter).skip(skip).limit(limit).to_list()
             if search:
-                search_pattern = f"%{search}%"
-                query = query.filter(
-                    (Client.name.ilike(search_pattern)) | 
-                    (Client.phone.ilike(search_pattern)) |
-                    (Client.email.ilike(search_pattern)) |
-                    (Client.organization.ilike(search_pattern))
-                )
-            
-            # Sorting Whitelist Hardening
-            allowed_sort_fields = {"name", "phone", "created_at"}
-            
-            if sort_by not in allowed_sort_fields:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid sort column. Allowed: {', '.join(allowed_sort_fields)}")
-
-            if hasattr(Client, sort_by):
-                column = getattr(Client, sort_by)
-                if sort_order.lower() == "desc":
-                    query = query.order_by(column.desc())
-                else:
-                    query = query.order_by(column.asc())
-
-            clients = query.offset(skip).limit(limit).all()
+                token = search.strip().lower()
+                clients = [c for c in clients if token in (c.name or "").lower() or token in (c.phone or "").lower() or token in (c.email or "").lower() or token in (c.organization or "").lower()]
             for c in clients:
-                if c.pm:
-                    c.pm_name = c.pm.name or c.pm.email or c.pm.employee_code or f"PM #{c.pm_id}"
+                if c.pm_id:
+                    pm = await User.find_one(User.id == c.pm_id)
+                    if pm:
+                        c.pm_name = pm.name or pm.email or f"PM #{c.pm_id}"
             return clients
         except Exception as e:
             print(f"Error fetching clients: {e}")
             return []
 
+    async def _get_least_loaded_pm(self) -> User:
+        active_pms = await User.find(User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]), User.is_active == True).to_list()
+        if not active_pms:
+            return None
+        pm_ids = [pm.id for pm in active_pms]
+        count_map = {}
+        for pm_id in pm_ids:
+            count = await Client.find(Client.pm_id == pm_id, Client.is_active == True).count()
+            count_map[pm_id] = count
+        pm_workloads = [(pm, count_map.get(pm.id, 0)) for pm in active_pms]
+        min_load = min(w[1] for w in pm_workloads)
+        least_loaded_pms = [w[0] for w in pm_workloads if w[1] == min_load]
+        return random.choice(least_loaded_pms)
+
     async def create_client(self, client: ClientCreate, current_user: User, request: Request):
         db_client = Client(**client.model_dump())
-
-        # --- Workload-balanced PM Auto-Assignment ---
-        active_pms = self.db.query(User).filter(
-            User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]),
-            User.is_active == True
-        ).all()
-
-        assigned_pm: User = None
-
-        if active_pms:
-            pm_ids = [pm.id for pm in active_pms]
-
-            # Count active clients per PM
-            client_counts = self.db.query(
-                Client.pm_id,
-                func.count(Client.id).label("client_count")
-            ).filter(
-                Client.pm_id.in_(pm_ids),
-                Client.is_active == True
-            ).group_by(Client.pm_id).all()
-
-            count_map = {row.pm_id: row.client_count for row in client_counts}
-
-            # Build list of (pm, workload)
-            pm_workloads = [(pm, count_map.get(pm.id, 0)) for pm in active_pms]
-            
-            # Find the minimum workload
-            min_load = min(w[1] for w in pm_workloads)
-            
-            # Filter all PMs who have this minimum load
-            least_loaded_pms = [w[0] for w in pm_workloads if w[1] == min_load]
-            
-            # Randomly pick one among the least loaded to distribute fairly
-            import random
-            assigned_pm = random.choice(least_loaded_pms)
-
+        assigned_pm = await self._get_least_loaded_pm()
+        if assigned_pm:
             db_client.pm_id = assigned_pm.id
         else:
-            print("[PM Auto-Assign] WARNING: No active Project Managers found. Client will remain unassigned.")
-        # -------------------------------------------
-
+            print("[PM Auto-Assign] WARNING: No active Project Managers found.")
         try:
-            self.db.add(db_client)
-            self.db.commit()
-            self.db.refresh(db_client)
-
+            await db_client.insert()
             if assigned_pm:
-                # Ensure the pm_id is securely saved and refreshed
-                db_client.pm_id = assigned_pm.id
-                self.db.commit()
-                self.db.refresh(db_client)
-
-                # Record PM assignment history
                 history = ClientPMHistory(client_id=db_client.id, pm_id=assigned_pm.id)
-                self.db.add(history)
-                self.db.commit()
-
-                # Notify the assigned PM by email (non-blocking; errors are swallowed)
+                await history.insert()
                 try:
+                    from app.modules.notifications.service import EmailService
                     email_svc = EmailService()
-                    email_svc.send_pm_assignment_notification(
-                        pm_email=assigned_pm.email,
-                        pm_name=assigned_pm.name or assigned_pm.email,
-                        client_name=db_client.name,
-                        client_org=db_client.organization or "-",
-                        client_phone=db_client.phone or "-",
-                    )
+                    email_svc.send_pm_assignment_notification(pm_email=assigned_pm.email, pm_name=assigned_pm.name or assigned_pm.email, client_name=db_client.name, client_org=db_client.organization or "-", client_phone=db_client.phone or "-")
                 except Exception as e:
                     print(f"[PM Notify] Email failed (non-fatal): {e}")
-                    
-        except IntegrityError:
-            self.db.rollback()
+        except Exception:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Client with this phone number or email already exists.")
-
-        await self.activity_logger.log_activity(
-            user_id=current_user.id,
-            user_role=current_user.role,
-            action=ActionType.CREATE,
-            entity_type=EntityType.CLIENT,
-            entity_id=db_client.id,
-            old_data=None,
-            new_data={**client.model_dump(), "auto_assigned_pm_id": assigned_pm.id if assigned_pm else None},
-            request=request
-        )
-
+        await self.activity_logger.log_activity(user_id=current_user.id, user_role=current_user.role, action=ActionType.CREATE, entity_type=EntityType.CLIENT, entity_id=db_client.id, old_data=None, new_data={**client.model_dump(), "auto_assigned_pm_id": assigned_pm.id if assigned_pm else None}, request=request)
         return db_client
 
-    # ------------------------------------------------------------------
-    # PM Workload helpers
-    # ------------------------------------------------------------------
-
-    def get_pm_workload(self) -> List[Dict]:
-        """Return a list of all active PMs with their current active-client counts."""
-        active_pms = self.db.query(User).filter(
-            User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]),
-            User.is_active == True
-        ).all()
-
+    async def get_pm_workload(self) -> List[Dict]:
+        active_pms = await User.find(User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]), User.is_active == True).to_list()
         if not active_pms:
             return []
+        result = []
+        for pm in active_pms:
+            count = await Client.find(Client.pm_id == pm.id, Client.is_active == True).count()
+            result.append({"pm_id": pm.id, "pm_name": pm.name or pm.email, "pm_email": pm.email, "role": pm.role, "active_client_count": count})
+        return sorted(result, key=lambda x: x["active_client_count"])
 
-        pm_ids = [pm.id for pm in active_pms]
-        client_counts = self.db.query(
-            Client.pm_id,
-            func.count(Client.id).label("client_count")
-        ).filter(
-            Client.pm_id.in_(pm_ids),
-            Client.is_active == True
-        ).group_by(Client.pm_id).all()
-
-        count_map = {row.pm_id: row.client_count for row in client_counts}
-
-        return [
-            {
-                "pm_id": pm.id,
-                "pm_name": pm.name or pm.email,
-                "pm_email": pm.email,
-                "role": pm.role,
-                "active_client_count": count_map.get(pm.id, 0),
-            }
-            for pm in sorted(active_pms, key=lambda p: count_map.get(p.id, 0))
-        ]
-
-    def retroactive_pm_balance(self):
-        """Finds all unassigned clients and retroactively balances them across active PMs."""
-        # Find all unassigned active clients
-        stuck_clients = self.db.query(Client).filter(
-            Client.pm_id.is_(None),
-            Client.is_active == True
-        ).all()
-
+    async def retroactive_pm_balance(self):
+        stuck_clients = await Client.find(Client.pm_id == None, Client.is_active == True).to_list()
         if not stuck_clients:
             return {"detail": "No unassigned clients found.", "count": 0}
-
-        active_pms = self.db.query(User).filter(
-            User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]),
-            User.is_active == True
-        ).all()
-
+        active_pms = await User.find(User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]), User.is_active == True).to_list()
         if not active_pms:
-            raise HTTPException(status_code=400, detail="Cannot balance: No active Project Managers available in the system.")
-
-        pm_ids = [pm.id for pm in active_pms]
-        import random
-
+            raise HTTPException(status_code=400, detail="Cannot balance: No active Project Managers available.")
         processed_count = 0
         for client in stuck_clients:
-            # Re-calculate workloads dynamically in the loop so assignments balance out correctly
-            client_counts = self.db.query(
-                Client.pm_id,
-                func.count(Client.id).label("client_count")
-            ).filter(
-                Client.pm_id.in_(pm_ids),
-                Client.is_active == True
-            ).group_by(Client.pm_id).all()
-
-            count_map = {row.pm_id: row.client_count for row in client_counts}
-            pm_workloads = [(pm, count_map.get(pm.id, 0)) for pm in active_pms]
-            min_load = min(w[1] for w in pm_workloads)
-            least_loaded_pms = [w[0] for w in pm_workloads if w[1] == min_load]
-            
-            assigned_pm = random.choice(least_loaded_pms)
-
-            # Assign and commit
+            assigned_pm = await self._get_least_loaded_pm()
             client.pm_id = assigned_pm.id
-            self.db.commit()
-            self.db.refresh(client)
-
-            # Keep history
+            await client.save()
             history = ClientPMHistory(client_id=client.id, pm_id=assigned_pm.id)
-            self.db.add(history)
-            self.db.commit()
+            await history.insert()
             processed_count += 1
-
         return {"detail": f"Successfully balanced {processed_count} unassigned clients.", "count": processed_count}
 
-    def get_pm_history(self, client_id: int) -> List[ClientPMHistory]:
-        """Return the full PM assignment history for a given client."""
-        return (
-            self.db.query(ClientPMHistory)
-            .filter(ClientPMHistory.client_id == client_id)
-            .order_by(ClientPMHistory.assigned_at.asc())
-            .all()
-        )
+    async def get_pm_history(self, client_id: str):
+        return await ClientPMHistory.find(ClientPMHistory.client_id == client_id).sort(+ClientPMHistory.assigned_at).to_list()
 
-    async def update_client(self, client_id: int, client_update: ClientUpdate, current_user: User, request: Request):
-        db_client = self.get_client(client_id)
+    async def update_client(self, client_id: str, client_update: ClientUpdate, current_user: User, request: Request):
+        db_client = await self.get_client(client_id)
         if not db_client:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
-
-        old_data = {
-            "name": db_client.name,
-            "email": db_client.email,
-            "phone": db_client.phone,
-            "organization": db_client.organization
-        }
-
+        old_data = {"name": db_client.name, "email": db_client.email, "phone": db_client.phone, "organization": db_client.organization}
         update_data = client_update.model_dump(exclude_unset=True)
-
         for key, value in update_data.items():
             setattr(db_client, key, value)
-
         try:
-            self.db.commit()
-            self.db.refresh(db_client)
-        except IntegrityError:
-            self.db.rollback()
+            await db_client.save()
+        except Exception:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Client with this phone number or email already exists.")
-
         new_data = {k: getattr(db_client, k) for k in old_data.keys()}
-
-        await self.activity_logger.log_activity(
-            user_id=current_user.id,
-            user_role=current_user.role,
-            action=ActionType.UPDATE,
-            entity_type=EntityType.CLIENT,
-            entity_id=client_id,
-            old_data=old_data,
-            new_data=new_data,
-            request=request
-        )
-
+        await self.activity_logger.log_activity(user_id=current_user.id, user_role=current_user.role, action=ActionType.UPDATE, entity_type=EntityType.CLIENT, entity_id=client_id, old_data=old_data, new_data=new_data, request=request)
         return db_client
 
-    async def delete_client(self, client_id: int, current_user: User, request: Request):
-        db_client = self.db.query(Client).filter(Client.id == client_id).first()
+    async def delete_client(self, client_id: str, current_user: User, request: Request):
+        db_client = await Client.find_one(Client.id == client_id)
         if not db_client:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
-
         from app.modules.salary.models import AppSetting
-        policy = self.db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        policy = await AppSetting.find_one(AppSetting.key == "delete_policy")
         is_hard = policy and policy.value == "HARD"
-
-        old_data = {
-            "name": db_client.name,
-            "email": db_client.email,
-            "phone": db_client.phone,
-            "organization": db_client.organization,
-            "policy": "HARD" if is_hard else "SOFT"
-        }
-
+        old_data = {"name": db_client.name, "email": db_client.email, "phone": db_client.phone, "organization": db_client.organization, "policy": "HARD" if is_hard else "SOFT"}
         if is_hard:
-            self.db.delete(db_client)
+            await db_client.delete()
         else:
             db_client.is_deleted = True
             db_client.is_active = False
-
-        self.db.commit()
-
-        await self.activity_logger.log_activity(
-            user_id=current_user.id,
-            user_role=current_user.role,
-            action=ActionType.DELETE,
-            entity_type=EntityType.CLIENT,
-            entity_id=client_id,
-            old_data=old_data,
-            new_data=None,
-            request=request
-        )
-
+            await db_client.save()
+        await self.activity_logger.log_activity(user_id=current_user.id, user_role=current_user.role, action=ActionType.DELETE, entity_type=EntityType.CLIENT, entity_id=client_id, old_data=old_data, new_data=None, request=request)
         return {"detail": f"Client {'permanently ' if is_hard else ''}deleted"}
 
-    async def assign_pm(self, client_id: int, pm_id: int, current_user: User, request: Request):
-        db_client = self.get_client(client_id)
+    async def assign_pm(self, client_id: str, pm_id: str, current_user: User, request: Request):
+        db_client = await self.get_client(client_id)
         if not db_client:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
-
-        # Verify PM exists and has correct role
-        from app.modules.users.models import UserRole
-        pm = self.db.query(User).filter(User.id == pm_id).first()
+        pm = await User.find_one(User.id == pm_id)
         if not pm or pm.role not in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES] or not pm.is_active:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or inactive Project Manager ID")
-
         old_pm_id = db_client.pm_id
         if old_pm_id == pm_id:
-            return db_client # Unchanged
-
+            return db_client
         db_client.pm_id = pm_id
-        
-        # Keep minimal PM history table
-        from app.modules.clients.models import ClientPMHistory
         history = ClientPMHistory(client_id=db_client.id, pm_id=pm.id)
-        self.db.add(history)
-        
-        self.db.commit()
-        self.db.refresh(db_client)
-
-        await self.activity_logger.log_activity(
-            user_id=current_user.id,
-            user_role=current_user.role,
-            action=ActionType.UPDATE,
-            entity_type=EntityType.CLIENT,
-            entity_id=client_id,
-            old_data={"pm_id": old_pm_id},
-            new_data={"pm_id": pm_id},
-            request=request
-        )
-
+        await history.insert()
+        await db_client.save()
+        await self.activity_logger.log_activity(user_id=current_user.id, user_role=current_user.role, action=ActionType.UPDATE, entity_type=EntityType.CLIENT, entity_id=client_id, old_data={"pm_id": old_pm_id}, new_data={"pm_id": pm_id}, request=request)
         return db_client

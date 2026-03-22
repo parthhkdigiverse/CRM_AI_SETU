@@ -1,7 +1,7 @@
-# backend/app/modules/todos/schemas.py
 from typing import Optional
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime, time
+from beanie import PydanticObjectId
 from app.modules.todos.models import TodoStatus, TodoPriority
 
 class TodoBase(BaseModel):
@@ -15,7 +15,7 @@ class TodoBase(BaseModel):
     assigned_to: Optional[str] = None
     related_entity: Optional[str] = None
     evidence_url: Optional[str] = None
-    client_id: Optional[int] = None
+    client_id: Optional[str] = None  # Integer ne badle String karyu
 
 class TodoCreate(TodoBase):
     pass
@@ -31,12 +31,15 @@ class TodoUpdate(BaseModel):
     assigned_to: Optional[str] = None
     related_entity: Optional[str] = None
     evidence_url: Optional[str] = None
-    client_id: Optional[int] = None
+    client_id: Optional[str] = None
 
 class TodoRead(TodoBase):
-    id: int
-    user_id: int
+    id: PydanticObjectId = Field(alias="_id") # MongoDB ni internal ID mate
+    user_id: str | int
     created_at: datetime
     updated_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True # PydanticObjectId mate jaruri che
+    )

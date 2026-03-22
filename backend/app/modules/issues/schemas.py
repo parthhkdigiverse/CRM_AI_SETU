@@ -1,3 +1,4 @@
+from beanie import PydanticObjectId
 # backend/app/modules/issues/schemas.py
 from typing import Optional
 from datetime import datetime
@@ -11,9 +12,9 @@ class IssueBase(BaseModel):
     description: Optional[str] = None
     status: GlobalTaskStatus = GlobalTaskStatus.OPEN
     severity: IssueSeverity = IssueSeverity.MEDIUM
-    client_id: int
-    project_id: Optional[int] = None
-    reporter_id: Optional[int] = None
+    client_id: str
+    project_id: Optional[str] = None
+    reporter_id: Optional[str] = None
     remarks: Optional[str] = None
     opened_at: Optional[datetime] = None
 
@@ -23,8 +24,8 @@ class IssueCreate(BaseModel):
     description: Optional[str] = None
     status: GlobalTaskStatus = GlobalTaskStatus.OPEN
     severity: IssueSeverity = IssueSeverity.MEDIUM
-    project_id: Optional[int] = None
-    assigned_to_id: Optional[int] = None
+    project_id: Optional[str] = None
+    assigned_to_id: Optional[str] = None
     remarks: Optional[str] = None
 
 
@@ -37,12 +38,12 @@ class IssueUpdate(BaseModel):
 
 
 class IssueAssign(BaseModel):
-    assigned_to_id: int
+    assigned_to_id: str
 
 
 class IssueRead(IssueBase):
-    id: int
-    assigned_to_id: Optional[int] = None
+    id: Optional[PydanticObjectId] = None
+    assigned_to_id: Optional[str] = None
     pm_name: Optional[str] = None
     project_name: Optional[str] = None
     created_at: Optional[datetime] = None
@@ -50,3 +51,4 @@ class IssueRead(IssueBase):
 
     class Config:
         from_attributes = True
+        populate_by_name = True

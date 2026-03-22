@@ -1,7 +1,4 @@
-# backend/app/modules/search/router.py
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
-from app.core.database import get_db
 from app.modules.search.service import SearchService
 from app.core.dependencies import RoleChecker
 from app.modules.users.models import UserRole
@@ -18,10 +15,10 @@ staff_checker = RoleChecker([
 ])
 
 @router.get("/")
-def global_search(
+async def global_search(
     q: str = Query(..., min_length=2),
-    db: Session = Depends(get_db),
     current_user = Depends(staff_checker)
 ):
-    service = SearchService(db)
-    return service.global_search(q)
+    # Beanie ma session pass karvani jarur nathi
+    service = SearchService()
+    return await service.global_search(q)

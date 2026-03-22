@@ -1,3 +1,4 @@
+from beanie import PydanticObjectId
 # backend/app/modules/visits/schemas.py
 from typing import Optional
 from pydantic import BaseModel, ConfigDict
@@ -5,7 +6,7 @@ from datetime import datetime
 from app.modules.visits.models import VisitStatus
 
 class VisitBase(BaseModel):
-    shop_id: int
+    shop_id: str
     status: Optional[VisitStatus] = VisitStatus.SATISFIED
     remarks: Optional[str] = None
     decline_remarks: Optional[str] = None
@@ -21,9 +22,8 @@ class VisitUpdate(BaseModel):
     visit_date: Optional[datetime] = None
 
 class VisitRead(VisitBase):
-
-    id: int
-    user_id: int
+    id: Optional[PydanticObjectId] = None
+    user_id: str
     shop_name: Optional[str] = None
     area_name: Optional[str] = None
     user_name: Optional[str] = None
@@ -34,5 +34,5 @@ class VisitRead(VisitBase):
     created_at: datetime
     updated_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(populate_by_name=True)
 

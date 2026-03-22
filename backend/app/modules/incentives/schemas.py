@@ -1,3 +1,4 @@
+from beanie import PydanticObjectId
 # backend/app/modules/incentives/schemas.py
 from typing import Optional
 from pydantic import BaseModel
@@ -20,13 +21,14 @@ class IncentiveSlabUpdate(BaseModel):
     slab_bonus: Optional[float] = None
 
 class IncentiveSlabRead(IncentiveSlabBase):
-    id: int
+    id: Optional[PydanticObjectId] = None
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 # Calculation & Slips
 class IncentiveCalculationRequest(BaseModel):
-    user_id: int
+    user_id: str
     period: str  # YYYY-MM
     closed_units: Optional[int] = None
     force_recalculate: bool = False
@@ -46,8 +48,8 @@ class IncentiveBulkCalculationResponse(BaseModel):
     failures: list[dict]
 
 class IncentiveSlipRead(BaseModel):
-    id: int
-    user_id: int
+    id: Optional[PydanticObjectId] = None
+    user_id: str
     period: str
     target: int
     achieved: int
@@ -64,10 +66,11 @@ class IncentiveSlipRead(BaseModel):
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 class IncentivePreviewResponse(BaseModel):
-    user_id: int
+    user_id: str
     user_name: str
     period: str
     target: int

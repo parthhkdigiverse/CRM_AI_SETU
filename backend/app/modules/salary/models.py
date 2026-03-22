@@ -1,11 +1,9 @@
 # backend/app/modules/salary/models.py
 import enum
 from datetime import datetime, UTC
-
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Enum, Text, Float, Boolean
-from sqlalchemy.orm import relationship
-from app.core.database import Base
-
+from typing import Optional, Annotated, List
+from beanie import Document, Indexed, Link
+from pydantic import Field
 
 class LeaveType(str, enum.Enum):
     ANNUAL = "ANNUAL"
@@ -14,83 +12,65 @@ class LeaveType(str, enum.Enum):
     UNPAID = "UNPAID"
     OTHER = "OTHER"
 
-
 class DayType(str, enum.Enum):
     FULL = "FULL"
     HALF = "HALF"
-
 
 class LeaveStatus(str, enum.Enum):
     PENDING = "PENDING"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
 
-
 class SalaryStatus(str, enum.Enum):
     DRAFT = "DRAFT"
     CONFIRMED = "CONFIRMED"
 
+class LeaveRecord(Document):
+    # MongoDB ma user_id string (ObjectId) hoy chhe
+    user_id: str 
+    start_date: datetime
+    end_date: datetime
+    leave_type: str = "CASUAL"
+    day_type: str = "FULL"  # FULL or HALF
+    reason: Optional[str] = None
+    status: LeaveStatus = LeaveStatus.PENDING
+    approved_by: Optional[str] = None
+    remarks: Optional[str] = None
+    is_deleted: bool = False
 
-class LeaveRecord(Base):
-    __tablename__ = "leave_records"
+    class Settings:
+        name = "leave_records" # Table name na badle Collection name
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=False)
-    leave_type = Column(String, nullable=False, server_default="CASUAL")
-    day_type = Column(String, nullable=False, server_default="FULL")  # FULL or HALF
-    reason = Column(Text, nullable=True)
-    status = Column(Enum(LeaveStatus), default=LeaveStatus.PENDING, nullable=False)
-    approved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    remarks = Column(Text, nullable=True)  # Admin remarks on rejection/approval
-    is_deleted = Column(Boolean, default=False, index=True)
+class SalarySlip(Document):
+    user_id: str
+    month: str  # YYYY-MM
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    user = relationship("User", foreign_keys=[user_id], backref="leave_records")
-    approver = relationship("User", foreign_keys=[approved_by])
+    base_salary: float
+    paid_leaves: int = 0
+    unpaid_leaves: int = 0
+    deduction_amount: float = 0.0
+    incentive_amount: float = 0.0
+    slab_bonus: float = 0.0
+    total_earnings: float = 0.0
+    final_salary: float
 
+    status: str = "CONFIRMED"
+    confirmed_by: Optional[str] = None
+    confirmed_at: Optional[datetime] = None
+    is_visible_to_employee: bool = False
+    employee_remarks: Optional[str] = None
+    manager_remarks: Optional[str] = None
 
-class SalarySlip(Base):
-    __tablename__ = "salary_slips"
+    file_url: Optional[str] = None
+    is_deleted: bool = False
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    month = Column(String, nullable=False)  # YYYY-MM
-    generated_at = Column(Date, default=lambda: datetime.now(UTC).date())
+    class Settings:
+        name = "salary_slips"
 
-    base_salary = Column(Float, nullable=False)
-    paid_leaves = Column(Integer, default=0)
-    unpaid_leaves = Column(Integer, default=0)
-    deduction_amount = Column(Float, default=0.0)
-    incentive_amount = Column(Float, default=0.0)
-    slab_bonus = Column(Float, default=0.0)
-    total_earnings = Column(Float, nullable=False, default=0.0)
-    final_salary = Column(Float, nullable=False)
+class AppSetting(Document):
+    key: Annotated[str, Indexed(unique=True)]
+    value: Optional[str] = None
 
-    # Workflow: DRAFT → CONFIRMED
-    status = Column(String, nullable=False, server_default="CONFIRMED")
-    confirmed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    confirmed_at = Column(Date, nullable=True)
-    is_visible_to_employee = Column(Boolean, nullable=False, default=False, server_default="false")
-    employee_remarks = Column(Text, nullable=True)
-    manager_remarks = Column(Text, nullable=True)
-
-    file_url = Column(String, nullable=True)
-    is_deleted = Column(Boolean, default=False, index=True)
-
-    user = relationship("User", foreign_keys=[user_id], backref="salary_slips")
-    confirmer = relationship("User", foreign_keys=[confirmed_by])
-
-
-class AppSetting(Base):
-    """Application-wide key-value settings store."""
-    __tablename__ = "app_settings"
-
-    key = Column(String, primary_key=True, index=True)
-    value = Column(Text, nullable=True)
-
-
-# Import models at the end to ensure they are registered without circular dependency issues
-from app.modules.users.models import User
-
-
+    class Settings:
+        name = "app_settings"

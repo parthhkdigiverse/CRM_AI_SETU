@@ -1,6 +1,4 @@
-# backend/app/modules/projects/service.py
 from typing import Optional
-from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Request
 from app.modules.projects.models import Project
 from app.core.enums import GlobalTaskStatus
@@ -10,185 +8,98 @@ from app.modules.activity_logs.service import ActivityLogger
 from app.modules.activity_logs.models import ActionType, EntityType
 
 class ProjectService:
-    def __init__(self, db: Session):
-        self.db = db
-        self.activity_logger = ActivityLogger(db)
+    def __init__(self):
+        self.activity_logger = ActivityLogger()
 
-    def get_projects(self, skip: int = 0, limit: int = 100, pm_id: Optional[int] = None):
-        query = self.db.query(Project).filter(Project.is_deleted == False)
-            
-        if pm_id:
-            query = query.filter(Project.pm_id == pm_id)
-        
-        projects = query.order_by(Project.created_at.desc()).offset(skip).limit(limit).all()
-        
-        # Calculate progress for each project
+    async def _enrich_project(self, p: Project):
         from app.modules.issues.models import Issue
-        from app.core.enums import GlobalTaskStatus
-        made_changes = False
-        
-        for p in projects:
-            p.total_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.is_deleted == False).count()
-            p.resolved_issues = self.db.query(Issue).filter(Issue.project_id == p.id, Issue.status == GlobalTaskStatus.RESOLVED, Issue.is_deleted == False).count()
-            p.progress_percentage = (p.resolved_issues / p.total_issues * 100) if p.total_issues > 0 else 0.0
-            
-            # --- Silent Self-Healing: Sync Project PM with Client PM ---
-            if p.client and p.client.pm_id and p.pm_id != p.client.pm_id:
-                p.pm_id = p.client.pm_id
-                made_changes = True
+        from app.modules.clients.models import Client
+        issues = await Issue.find(Issue.project_id == str(p.id), Issue.is_deleted != True).to_list()
+        p.total_issues = len(issues)
+        p.resolved_issues = len([i for i in issues if i.status == GlobalTaskStatus.RESOLVED])
+        p.progress_percentage = (p.resolved_issues / p.total_issues * 100) if p.total_issues > 0 else 0.0
+        if p.client_id:
+            client = await Client.find_one(Client.id == p.client_id)
+            if client:
+                p.client_name = client.name
+                p.contact_person = client.name
+                p.phone = client.phone
+                p.email = client.email
+                p.project_type = client.project_type
+        if p.pm_id:
+            pm = await User.find_one(User.id == p.pm_id)
+            if pm:
+                p.pm_name = pm.name or pm.email
 
-            # Populate names and contact info
-            if p.client:
-                p.client_name = p.client.name
-                p.contact_person = p.client.name
-                p.phone = p.client.phone
-                p.email = p.client.email
-                p.project_type = p.client.project_type
-            if p.project_manager:
-                p.pm_name = p.project_manager.name or p.project_manager.email
-                
-        if made_changes:
-            self.db.commit()
-            
+    async def get_projects(self, skip: int = 0, limit: int = 100, pm_id: Optional[str] = None):
+        query_filter = [Project.is_deleted != True]
+        if pm_id:
+            query_filter.append(Project.pm_id == pm_id)
+        projects = await Project.find(*query_filter).sort(-Project.created_at).skip(skip).limit(limit).to_list()
+        for p in projects:
+            await self._enrich_project(p)
         return projects
 
-    def get_project(self, project_id: int):
-        query = self.db.query(Project).filter(Project.id == project_id, Project.is_deleted == False)
-        project = query.first()
+    async def get_project(self, project_id: str):
+        project = await Project.find_one(Project.id == project_id, Project.is_deleted != True)
         if project:
-            from app.modules.issues.models import Issue
-            from app.core.enums import GlobalTaskStatus
-            project.total_issues = self.db.query(Issue).filter(Issue.project_id == project_id, Issue.is_deleted == False).count()
-            project.resolved_issues = self.db.query(Issue).filter(Issue.project_id == project_id, Issue.status == GlobalTaskStatus.RESOLVED, Issue.is_deleted == False).count()
-            project.progress_percentage = (project.resolved_issues / project.total_issues * 100) if project.total_issues > 0 else 0.0
-            
-            # Populate names and contact info
-            if project.client:
-                project.client_name = project.client.name
-                project.contact_person = project.client.name
-                project.phone = project.client.phone
-                project.email = project.client.email
-                project.project_type = project.client.project_type
-            if project.project_manager:
-                project.pm_name = project.project_manager.name or project.project_manager.email
+            await self._enrich_project(project)
         return project
 
-
-    def get_least_busy_pm(self) -> Optional[int]:
-        """Find the PM with the lowest number of active projects (PLANNING or IN_PROGRESS)."""
-        pm_users = self.db.query(User).filter(
-            User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]),
-            User.is_active == True,
-            User.is_deleted == False
-        ).all()
-
+    async def get_least_busy_pm(self) -> Optional[int]:
+        pm_users = await User.find(User.role.in_([UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]), User.is_active == True, User.is_deleted != True).to_list()
         if not pm_users:
             return None
-
         pm_workloads = []
         for pm in pm_users:
-            workload = self.db.query(Project).filter(
-                Project.pm_id == pm.id,
-                Project.status.in_([GlobalTaskStatus.OPEN, GlobalTaskStatus.IN_PROGRESS])
-            ).count()
+            workload = await Project.find(Project.pm_id == pm.id, Project.status.in_([GlobalTaskStatus.OPEN, GlobalTaskStatus.IN_PROGRESS])).count()
             pm_workloads.append((pm.id, workload))
-
-        # Sort by workload and return ID of PM with least projects
         pm_workloads.sort(key=lambda x: x[1])
         return pm_workloads[0][0]
 
     async def create_project(self, project_in: ProjectCreate, current_user: User, request: Request):
         project_data = project_in.model_dump()
-        
-        # Automatic PM assignment if not provided
         if not project_data.get("pm_id"):
-            pm_id = self.get_least_busy_pm()
+            pm_id = await self.get_least_busy_pm()
             if pm_id:
                 project_data["pm_id"] = pm_id
+            elif current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
+                project_data["pm_id"] = current_user.id
             else:
-                # Fallback if no PM found - could either throw error or use current user if they are a PM
-                if current_user.role in [UserRole.PROJECT_MANAGER, UserRole.PROJECT_MANAGER_AND_SALES]:
-                    project_data["pm_id"] = current_user.id
+                admin_user = await User.find_one(User.role == UserRole.ADMIN)
+                if admin_user:
+                    project_data["pm_id"] = admin_user.id
                 else:
-                    # Search for any ADMIN as ultra-fallback or raise error
-                    admin_user = self.db.query(User).filter(User.role == UserRole.ADMIN).first()
-                    if admin_user:
-                        project_data["pm_id"] = admin_user.id
-                    else:
-                        raise HTTPException(
-                            status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="No available Project Manager found for assignment."
-                        )
-
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No available Project Manager found for assignment.")
         project = Project(**project_data)
-        
-        self.db.add(project)
-        self.db.commit()
-        self.db.refresh(project)
-
-        await self.activity_logger.log_activity(
-            user_id=current_user.id,
-            user_role=current_user.role,
-            action=ActionType.CREATE,
-            entity_type=EntityType.PROJECT,
-            entity_id=project.id,
-            new_data=project_data,
-            request=request
-        )
+        await project.insert()
+        await self.activity_logger.log_activity(user_id=current_user.id, user_role=current_user.role, action=ActionType.CREATE, entity_type=EntityType.PROJECT, entity_id=project.id, new_data=project_data, request=request)
         return project
 
-    async def update_project(self, project_id: int, project_in: ProjectUpdate, current_user: User, request: Request):
-        project = self.get_project(project_id)
+    async def update_project(self, project_id: str, project_in: ProjectUpdate, current_user: User, request: Request):
+        project = await self.get_project(project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
-        old_data = {"status": project.status.value, "name": project.name}
-        
+        old_data = {"status": project.status.value if hasattr(project.status, 'value') else str(project.status), "name": project.name}
         update_data = project_in.model_dump(exclude_unset=True)
         for field, value in update_data.items():
             setattr(project, field, value)
-
-        self.db.commit()
-        self.db.refresh(project)
-
-        await self.activity_logger.log_activity(
-            user_id=current_user.id,
-            user_role=current_user.role,
-            action=ActionType.UPDATE,
-            entity_type=EntityType.PROJECT,
-            entity_id=project.id,
-            old_data=old_data,
-            new_data=update_data,
-            request=request
-        )
+        await project.save()
+        await self.activity_logger.log_activity(user_id=current_user.id, user_role=current_user.role, action=ActionType.UPDATE, entity_type=EntityType.PROJECT, entity_id=project.id, old_data=old_data, new_data=update_data, request=request)
         return project
 
-    async def delete_project(self, project_id: int, current_user: User, request: Request):
-        project = self.db.query(Project).filter(Project.id == project_id).first()
+    async def delete_project(self, project_id: str, current_user: User, request: Request):
+        project = await Project.find_one(Project.id == project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-
         from app.modules.salary.models import AppSetting
-        policy = self.db.query(AppSetting).filter(AppSetting.key == "delete_policy").first()
+        policy = await AppSetting.find_one(AppSetting.key == "delete_policy")
         is_hard = policy and policy.value == "HARD"
-
         old_data = {"name": project.name, "policy": "HARD" if is_hard else "SOFT"}
-        
         if is_hard:
-            self.db.delete(project)
+            await project.delete()
         else:
             project.is_deleted = True
-            
-        self.db.commit()
-
-        await self.activity_logger.log_activity(
-            user_id=current_user.id,
-            user_role=current_user.role,
-            action=ActionType.DELETE,
-            entity_type=EntityType.PROJECT,
-            entity_id=project_id,
-            old_data=old_data,
-            new_data=None,
-            request=request
-        )
-        return {"detail": f"Project {'permanently ' if is_hard else ''}deleted"}
+            await project.save()
+        await self.activity_logger.log_activity(user_id=current_user.id, user_role=current_user.role, action=ActionType.DELETE, entity_type=EntityType.PROJECT, entity_id=project_id, old_data=old_data, new_data=None, request=request)
+        return {"detail": f"Project deleted"}
