@@ -16,6 +16,14 @@ class DashboardStats(BaseModel):
     revenue_mom_pct: float
     
     open_issues: int
+    employees_present: int
+    presence_mom_pct: float
+    
+    # New Role-Specific Fields
+    total_incentive: float = 0.0
+    pending_todos: int = 0
+    meetings_today: int = 0
+    
     visits_chart_title: str
     visits_chart_data: dict
     revenue_by_month: dict

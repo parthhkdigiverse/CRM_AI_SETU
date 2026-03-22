@@ -16,30 +16,30 @@
             border-radius: 100px; font-size: 11px; font-weight: 700;
             letter-spacing: 0.3px; padding: 3px 10px;
         }
-        .pill-draft      { background:#f1f5f9; color:#64748b; }
-        .pill-pending    { background:#FFF7ED; color:#C2410C; border:1px solid #fed7aa; }
-        .pill-verified   { background:#F0FDF4; color:#15803D; border:1px solid #bbf7d0; }
-        .pill-sent       { background:#EFF6FF; color:#1D4ED8; border:1px solid #bfdbfe; }
-        .pill-cancelled  { background:#FEF2F2; color:#B91C1C; border:1px solid #fecaca; }
+        .pill-draft      { background: var(--bg-app); color: var(--text-muted); }
+        .pill-pending    { background: var(--warning-light); color: var(--warning-text); border: 1px solid var(--warning-ring); }
+        .pill-verified   { background: var(--success-light); color: var(--success-text); border: 1px solid var(--success-ring); }
+        .pill-sent       { background: var(--primary-light); color: var(--primary); border: 1px solid var(--primary-ring); }
+        .pill-cancelled  { background: var(--danger-light); color: var(--danger-text); border: 1px solid var(--danger-ring); }
 
         /* ── Filter tabs ──────────────────────────────────────── */
         .filter-tabs { display:flex; gap:6px; flex-wrap:wrap; }
         .filter-tab {
-            border: 1.5px solid #e2e8f0; border-radius: 100px;
+            border: 1.5px solid var(--border); border-radius: 100px;
             padding: 5px 14px; font-size: 12.5px; font-weight: 600;
-            color: #64748b; cursor: pointer; background: #fff;
+            color: var(--text-muted); cursor: pointer; background: var(--surface);
             transition: all 0.15s;
         }
-        .filter-tab:hover { border-color: #475569; color: #2e5b82; }
-        .filter-tab.active { background: #2e5b82; color: #fff; border-color: #2e5b82; }
+        .filter-tab:hover { border-color: var(--primary); color: var(--primary); }
+        .filter-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
         /* ── Action menu ──────────────────────────────────────── */
         .action-menu-btn {
-            background: none; border: 1.5px solid #e2e8f0;
+            background: none; border: 1.5px solid var(--border);
             border-radius: 8px; padding: 4px 7px; cursor: pointer;
-            font-size: 13px; color: #64748b; transition: all 0.15s;
+            font-size: 13px; color: var(--text-muted); transition: all 0.15s;
         }
-        .action-menu-btn:hover { background: #f8fafc; border-color: #475569; color: #2e5b82; }
+        .action-menu-btn:hover { background: var(--bg-app); border-color: var(--primary); color: var(--primary); }
 
         /* ── Create modal ─────────────────────────────────────── */
         .modal-overlay {
@@ -57,38 +57,39 @@
             display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 22px;
         }
-        .modal-title-text { font-size: 1.15rem; font-weight: 700; color: #0f172a; }
+        .modal-title-text { font-size: 1.15rem; font-weight: 700; color: var(--text-main); }
         .modal-close-x {
-            background: #f1f5f9; border: none; border-radius: 8px;
-            width: 34px; height: 34px; cursor: pointer; color: #64748b;
+            background: var(--bg-app); border: none; border-radius: 8px;
+            width: 34px; height: 34px; cursor: pointer; color: var(--text-muted);
             font-size: 16px; display: flex; align-items: center; justify-content: center;
         }
-        .modal-close-x:hover { background: #e2e8f0; color: #0f172a; }
+        .modal-close-x:hover { background: var(--border); color: var(--text-main); }
 
         /* ── Form field ───────────────────────────────────────── */
-        .field-label { font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 5px; }
+        .field-label { font-size: 0.8rem; font-weight: 700; color: var(--text-body); margin-bottom: 5px; }
         .field-input {
-            width: 100%; border: 1.5px solid #e2e8f0; border-radius: 10px;
-            padding: 9px 13px; font-size: 0.875rem; color: #0f172a; outline: none;
+            width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
+            padding: 9px 13px; font-size: 0.875rem; color: var(--text-main); outline: none;
+            background: var(--surface);
             transition: border-color 0.2s;
         }
-        .field-input:focus { border-color: #475569; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+        .field-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-ring); }
         .field-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .required-star { color: #ef4444; }
 
         /* ── Autofill source dropdown ─────────────────────────── */
         .autofill-strip {
-            background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px;
-            padding: 12px 14px; margin-bottom: 18px; font-size: 0.82rem;
+            background: var(--bg-app); border: 1.5px solid var(--border); border-radius: 10px;
+            padding: 12px 14px; margin-bottom: 18px; font-size: 0.82rem; color: var(--text-main);
         }
         .autofill-btn {
             display: inline-flex; align-items: center; gap: 5px;
-            border: 1.5px solid #e2e8f0; border-radius: 8px;
+            border: 1.5px solid var(--border); border-radius: 8px;
             padding: 5px 11px; font-size: 12px; font-weight: 600;
-            color: #2e5b82; background: #fff; cursor: pointer;
+            color: var(--primary); background: var(--surface); cursor: pointer;
             transition: all 0.15s;
         }
-        .autofill-btn:hover { background: #eef2ff; border-color: #475569; }
+        .autofill-btn:hover { background: var(--primary-light); border-color: var(--primary); }
 
         /* ── Amount strip ─────────────────────────────────────── */
         .amount-strip {
@@ -105,9 +106,9 @@
         }
 
         /* ── Table tweaks ─────────────────────────────────────── */
-        .tbl-client-name { font-weight: 700; color: #0f172a; }
-        .tbl-phone { font-size: 12px; color: #64748b; }
-        .amt-cell { font-weight: 800; color: #2e5b82; font-size: 1rem; }
+        .tbl-client-name { font-weight: 700; color: var(--text-main); }
+        .tbl-phone { font-size: 12px; color: var(--text-muted); }
+        .amt-cell { font-weight: 800; color: var(--primary); font-size: 1rem; }
 
         /* ── Toast Container ──────────────────────────────────── */
         #toast-container {
@@ -119,14 +120,11 @@
 <body>
 <div class="d-flex">
     <div id="sidebar"></div>
-    <div class="flex-grow-1 bg-light" style="height:100vh;overflow-y:auto;display:flex;flex-direction:column;">
-
-        <!-- Top Header injected by auth.js -->
-
-        <div class="page-content">
+    <div class="main-wrapper flex-grow-1">
+        <div class="page-content mx-auto" style="max-width: 1300px;">
 
             <!-- ── Page Header ──────────────────────────────────── -->
-            <div class="page-header d-flex justify-content-between align-items-center mb-4">
+            <div class="page-header-glass d-flex justify-content-between align-items-center">
                 <div>
                     <h2 class="page-section-title">Billing &amp; Invoices</h2>
                     <p class="text-muted mb-0 small">Create client payment invoices with payment mode, GST type, verification and WhatsApp dispatch workflow.</p>
@@ -179,9 +177,8 @@
             </div>
 
             <!-- ── Invoice Table ─────────────────────────────────── -->
-            <div class="grid-card">
                 <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-                    <h6 class="fw-bold mb-0" style="color:#2e5b82;">Invoice Registry</h6>
+                    <h6 class="fw-bold mb-0" style="color:var(--primary);">Invoice Registry</h6>
                     <span class="text-muted small" id="billing-filter-summary">All invoices</span>
                 </div>
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 px-3 py-2 border-bottom">
@@ -215,7 +212,7 @@
                             <option value="WITHOUT_GST">Without GST (0%)</option>
                         </select>
                         <div class="position-relative" style="min-width:200px;max-width:260px;">
-                            <i class="bi bi-search position-absolute" style="left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;"></i>
+                            <i class="bi bi-search position-absolute" style="left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px;"></i>
                             <input type="text" id="inv-search" placeholder="Search invoice..." class="field-input"
                                 style="padding-left:30px;width:100%;height:36px;">
                         </div>
@@ -260,8 +257,8 @@
         </div>
 
         <!-- Step indicator bar -->
-        <div id="wizard-steps-bar" style="display:flex;gap:0;margin-bottom:24px;border-radius:10px;overflow:hidden;background:#f1f5f9;">
-            <div class="wz-step active" id="wz-step-1" style="flex:1;padding:9px 8px;text-align:center;font-size:12px;font-weight:700;color:#2e5b82;background:#dbeafe;transition:all .2s;">
+        <div id="wizard-steps-bar" style="display:flex;gap:0;margin-bottom:24px;border-radius:10px;overflow:hidden;background:var(--bg-app);border:1px solid var(--border);">
+            <div class="wz-step active" id="wz-step-1" style="flex:1;padding:9px 8px;text-align:center;font-size:12px;font-weight:700;color:var(--primary);background:var(--primary-light);transition:all .2s;">
                 <i class="bi bi-person-lines-fill me-1"></i>1. Client Details
             </div>
             <div class="wz-step" id="wz-step-2" style="flex:1;padding:9px 8px;text-align:center;font-size:12px;font-weight:700;color:#94a3b8;background:transparent;transition:all .2s;">
@@ -313,7 +310,7 @@
             <div class="fw-bold mb-2 mt-1" style="font-size:0.75rem;letter-spacing:0.06em;text-transform:uppercase;color:#94a3b8;">Service & Payment</div>
             <div class="mb-3">
                 <div class="field-label">Service Description</div>
-                <input type="text" id="c-desc" class="field-input" placeholder="e.g. CRM AI SETU – Annual Subscription" value="CRM AI SETU Software – Annual Subscription">
+                <input type="text" id="c-desc" class="field-input" placeholder="e.g. SRM AI SETU – Annual Subscription" value="SRM AI SETU Software – Annual Subscription">
             </div>
             <div class="field-row2 mb-3">
                 <div>
@@ -369,7 +366,7 @@
             </div>
 
             <!-- QR zone -->
-            <div id="p2-qr-zone" style="border:1.5px solid #e2e8f0;border-radius:12px;padding:20px;background:#f8fafc;text-align:center;min-height:160px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+            <div id="p2-qr-zone" style="border:1.5px solid var(--border);border-radius:12px;padding:20px;background:var(--bg-app);text-align:center;min-height:160px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
                 <div class="text-muted small"><span class="spinner-border spinner-border-sm me-2"></span>Loading payment QR...</div>
             </div>
 
@@ -781,7 +778,7 @@ function openCreateModal() {
     ['c-name','c-phone','c-email','c-org','c-address'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
     });
-    document.getElementById('c-desc').value = 'CRM AI SETU Software – Annual Subscription';
+    document.getElementById('c-desc').value = 'SRM AI SETU Software – Annual Subscription';
     document.getElementById('c-payment-type').value = '';
     document.getElementById('c-gst-type').value = '';
     const amtEl = document.getElementById('c-amount');

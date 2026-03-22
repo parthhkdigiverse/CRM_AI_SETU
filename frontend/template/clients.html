@@ -17,9 +17,9 @@
 <body>
     <div class="d-flex">
         <div id="sidebar"></div>
-        <div class="flex-grow-1">
-            <div class="page-content">
-                <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="main-wrapper flex-grow-1">
+            <div class="page-content mx-auto" style="max-width: 1200px; width: 100%;">
+                <div class="page-header-glass d-flex justify-content-between align-items-center">
                     <div>
                         <h2 class="page-section-title">Clients</h2>
                         <div class="d-flex align-items-center gap-3">
@@ -36,27 +36,29 @@
                 <div id="filter-wrapper"></div>
                 <div class="card shadow-sm">
                     <div class="card-body p-0">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th>Client Name</th>
-                                    <th>Contact Info</th>
-                                    <th>Organization</th>
-                                    <th>Assigned Project Manager</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="clients-table">
-                                <tr>
-                                    <td colspan="6" class="text-center py-5 text-muted">
-                                        <i
-                                            class="bi bi-arrow-clockwise spinner-border spinner-border-sm text-muted"></i>
-                                        <p class="mt-2">Loading active client database...</p>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Client Name</th>
+                                        <th>Contact Info</th>
+                                        <th>Organization</th>
+                                        <th>Assigned Project Manager</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="clients-table">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5 text-muted">
+                                            <i
+                                                class="bi bi-arrow-clockwise spinner-border spinner-border-sm text-muted"></i>
+                                            <p class="mt-2">Loading active client database...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div><!-- /page-content -->
@@ -178,6 +180,25 @@
             let activeClientIdForPayment = null;
 
             async function loadClients(filters = {}) {
+                const tbody = document.getElementById('clients-table');
+                tbody.innerHTML = `
+                    <tr class="stagger-fade-in">
+                        <td colspan="6" class="py-4">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="skeleton-box skeleton-avatar" style="width: 32px; height: 32px;"></div>
+                                <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium mb-1"></div></div>
+                                <div class="flex-grow-1"><div class="skeleton-box skeleton-text short mb-1"></div></div>
+                                <div class="flex-grow-1"><div class="skeleton-box skeleton-text short mb-1"></div></div>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="skeleton-box skeleton-avatar" style="width: 32px; height: 32px;"></div>
+                                <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium mb-1"></div></div>
+                                <div class="flex-grow-1"><div class="skeleton-box skeleton-text short mb-1"></div></div>
+                                <div class="flex-grow-1"><div class="skeleton-box skeleton-text short mb-1"></div></div>
+                            </div>
+                        </td>
+                    </tr>`;
+
                 let clients = [];
                 try {
                     const params = new URLSearchParams();
@@ -215,7 +236,6 @@
                 }
 
                 document.getElementById('client-count').textContent = `${clients.length} active clients registered`;
-                const tbody = document.getElementById('clients-table');
 
                 if (!clients.length) {
                     tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">No clients found matching "${searchQuery || 'your criteria'}".</td></tr>`;

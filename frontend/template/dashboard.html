@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- frontend/template/dashboard.html -->
 <html lang="en">
 
 <head>
@@ -7,311 +8,1485 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Overview — SRM AI SETU</title>
+    <script>
+        console.log('Diagnostic: Dashboard HTML started loading');
+        window.onerror = function(msg, url, line, col, error) {
+            console.error('DIAGNOSTIC GLOBAL ERROR:', msg, 'at', url, 'line', line);
+        };
+    </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="/frontend/css/theme.css">
-    <link rel="stylesheet" href="/frontend/css/components.css">
+    <link rel="stylesheet" href="../css/theme.css?v=1772780187">
+    <link rel="stylesheet" href="../css/components.css?v=1772780187">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap"
+        rel="stylesheet">
     <style>
-        :root {
-            --srm-primary: #4f46e5;
-            --srm-primary-soft: #eef2ff;
-            --srm-secondary: #64748b;
-            --srm-bg: #f8fafc;
-            --srm-card-border: #f1f5f9;
-            --srm-success: #10b981;
-            --srm-success-soft: #ecfdf5;
-            --srm-warning: #f59e0b;
-            --srm-danger: #ef4444;
+
+        /* ── Dashboard header ── */
+        .dash-header {
+            display: flex;
+            align-items: center;
+            flex-direction: row;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 12px;
         }
 
-        body {
-            background-color: var(--srm-bg);
-            font-family: 'Inter', -apple-system, system-ui, sans-serif;
-            color: #1e293b;
+        .dash-header::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 1;
         }
 
-        .kpi-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid var(--srm-card-border) !important;
-            border-radius: 20px !important;
-            overflow: hidden;
+        .dash-header::after {
+            content: '';
+            position: absolute;
+            bottom: -50px;
+            left: 5%;
+            width: 220px;
+            height: 220px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .dash-header-left {
             position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
         }
 
-        .kpi-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px -10px rgba(79, 70, 229, 0.12) !important;
-            border-color: rgba(79, 70, 229, 0.2) !important;
+        .dash-date-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.02em;
+            margin-bottom: 4px;
+        }
+
+        .dash-greeting {
+            font-family: 'Outfit', sans-serif;
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            color: #ffffff;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            letter-spacing: -0.02em;
+        }
+
+        .dash-live-dot {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.15);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 100px;
+            padding: 5px 14px;
+            font-size: 11px;
+            color: #4ade80;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .dash-live-dot::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 12px #4ade80;
+            animation: pulseRing 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseRing {
+            0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+            70% { transform: scale(1.1); opacity: 0.8; box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); }
+            100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+        }
+
+        /* ── KPI Cards ── */
+        .kpi-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .kpi-label {
+            font-size: 9.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-bottom: 4px;
+        }
+
+        .kpi-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--title-color); /* Theme-aware blue */
+            font-family: 'Inter', sans-serif;
         }
 
         .kpi-icon-wrapper {
-            transition: all 0.3s ease;
-            width: 44px;
-            height: 44px;
-            border-radius: 12px !important;
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
         }
 
-        .kpi-card:hover .kpi-icon-wrapper {
-            transform: scale(1.1) rotate(-5deg);
+        /* ── Professional Attendance Widget (Dashboard) ── */
+        .pro-att-widget {
+            background: linear-gradient(135deg, rgba(13, 31, 92, 0.8) 0%, rgba(16, 34, 114, 0.7) 40%, rgba(15, 30, 106, 0.7) 70%, rgba(10, 21, 80, 0.8) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+            padding: 24px 28px;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .card-header-clean {
-            background: transparent;
-            border-bottom: 1px solid #f1f5f9;
-            padding: 1.25rem 1.5rem;
+        .pro-att-widget::before {
+            content: '';
+            position: absolute;
+            top: -40px; left: -40px;
+            width: 180px; height: 180px;
+            background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .pro-att-widget::after {
+            content: '';
+            position: absolute;
+            bottom: -40px; right: -40px;
+            width: 160px; height: 160px;
+            background: radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%);
+            pointer-events: none;
         }
 
-        .table thead th {
-            background-color: #f8fafc;
-            color: #64748b;
+        .pro-att-left { flex: 1; padding-right: 24px; min-width: 0; }
+        .pro-att-date { font-size: 10.5px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255,255,255,0.32); margin-bottom: 6px; }
+        .pro-att-greeting-line { font-size: 13px; font-weight: 400; color: rgba(255,255,255,0.70); line-height: 1; margin-bottom: 2px; }
+        .pro-att-name { font-size: 22px; font-weight: 800; line-height: 1.15; margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pro-att-name.punched-in { background: linear-gradient(90deg, #c7d7ff, #a5b8ff, #e0e7ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .pro-att-name.punched-out { color: rgba(255,255,255,0.42); -webkit-text-fill-color: rgba(255,255,255,0.42); }
+
+        .pro-att-live-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+        .pro-att-live-badge.live { background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.22); color: #4ade80; }
+        .pro-att-live-badge.offline { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); color: rgba(255,255,255,0.35); }
+
+        .pro-att-pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 0 rgba(74,222,128,0.5); animation: attPulse 2s ease-in-out infinite; flex-shrink: 0; }
+        @keyframes attPulse { 0% { box-shadow: 0 0 0 0 rgba(74,222,128,0.5); } 60% { box-shadow: 0 0 0 5px rgba(74,222,128,0); } 100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); } }
+
+        .pro-att-sep { width: 1px; align-self: stretch; background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.10) 20%, rgba(255,255,255,0.10) 80%, transparent); flex-shrink: 0; margin: 0 4px; }
+
+        .pro-att-right { padding-left: 24px; display: flex; flex-direction: column; gap: 12px; min-width: 260px; max-width: 300px; }
+        .pro-att-user-row { display: flex; align-items: center; gap: 10px; }
+        .pro-att-avatar-wrap { position: relative; flex-shrink: 0; }
+        .pro-att-avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #3b5bdb, #6366f1); border: 2px solid rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: white; overflow: hidden; }
+        .pro-att-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .pro-att-status-dot { position: absolute; bottom: 1px; right: 1px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #102272; }
+        .pro-att-status-dot.online { background: #4ade80; }
+        .pro-att-status-dot.offline { background: rgba(255,255,255,0.25); }
+        .pro-att-user-info { flex: 1; min-width: 0; }
+        .pro-att-user-name { font-size: 13.5px; font-weight: 700; color: white; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pro-att-punch-badge { display: inline-flex; align-items: center; gap: 4px; margin-top: 3px; padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+        .pro-att-punch-badge.in { background: rgba(74,222,128,0.10); border: 1px solid rgba(74,222,128,0.20); color: #4ade80; }
+        .pro-att-punch-badge.out { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); color: rgba(255,255,255,0.40); }
+
+        .pro-att-bottom-row { display: flex; align-items: stretch; gap: 8px; }
+        .pro-att-info-cells { display: flex; flex: 1; background: rgba(0,0,0,0.25); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); overflow: hidden; }
+        .pro-att-info-cell { flex: 1; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+        .pro-att-info-cell + .pro-att-info-cell { border-left: 1px solid rgba(255,255,255,0.07); }
+        .pro-att-info-label { font-size: 8.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(255,255,255,0.30); }
+        .pro-att-info-val { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.80); letter-spacing: 0.01em; white-space: nowrap; }
+
+        .pro-att-timer-val { font-family: 'JetBrains Mono', monospace; font-weight: 400; font-size: 17px; color: #fff; letter-spacing: 0; display: flex; align-items: center; }
+        .pro-att-timer-val .att-sep { animation: timerColonBlink 1s step-start infinite; }
+        @keyframes timerColonBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.18; } }
+
+        .pro-att-btn { width: 72px; flex-shrink: 0; border: none; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: white; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; display: flex; align-items: center; justify-content: center; line-height: 1.25; text-align: center; padding: 0; }
+        .pro-att-btn.punch-in { background: linear-gradient(150deg, #15803d, #22c55e); box-shadow: 0 4px 14px rgba(34,197,94,0.35); }
+        .pro-att-btn.punch-out { background: linear-gradient(150deg, #b91c1c, #ef4444); box-shadow: 0 4px 14px rgba(239,68,68,0.35); }
+        .pro-att-btn:hover { transform: translateY(-1px); }
+        .pro-att-btn.punch-in:hover { box-shadow: 0 6px 18px rgba(34,197,94,0.50); }
+        .pro-att-btn.punch-out:hover { box-shadow: 0 6px 18px rgba(239,68,68,0.50); }
+        .pro-att-btn:active { transform: scale(0.97); }
+        .pro-att-btn.loading { opacity: 0.50; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* ── Filter panel ── */
+        .filter-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            margin-bottom: 22px;
+            box-shadow: var(--shadow-xs);
+            overflow: visible;
+        }
+
+        .filter-panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 11px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--bg-app);
+            cursor: pointer;
+            user-select: none;
+            flex-wrap: wrap;
+        }
+
+        .filter-panel-head-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
             font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.65rem;
-            letter-spacing: 0.05em;
-            padding: 1rem 1.25rem;
-            border-bottom-width: 1px;
+            color: var(--text-body);
         }
 
-        .table tbody td {
-            padding: 1rem 1.25rem;
-            vertical-align: middle;
+        .filter-panel-head-left i {
+            color: var(--primary);
+            font-size: 0.85rem;
         }
 
-        .badge-srm {
+        .filter-active-pills {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .filter-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 100px;
+            padding: 2px 10px 2px 8px;
+            font-size: 0.72rem;
             font-weight: 600;
-            font-size: 0.7rem;
-            padding: 0.4em 0.8em;
+        }
+
+        .filter-pill-remove {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            padding: 0;
+            font-size: 0.75rem;
+            line-height: 1;
+            opacity: 0.7;
+        }
+
+        .filter-pill-remove:hover {
+            opacity: 1;
+        }
+
+        .filter-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 8px;
             border-radius: 6px;
+            transition: background 0.15s, color 0.15s;
         }
 
-        .activity-item {
-            transition: background 0.2s ease;
+        .filter-toggle-btn:hover {
+            background: var(--border-subtle);
+            color: var(--text-body);
+        }
+
+        .filter-toggle-btn i {
+            font-size: 0.75rem;
+            transition: transform 0.22s;
+        }
+
+        .filter-toggle-btn.open i {
+            transform: rotate(180deg);
+        }
+
+        .filter-panel-body {
+            padding: 14px 16px 16px;
+            display: none;
+            overflow: visible;
+        }
+
+        .filter-panel-body.open {
+            display: block;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .filter-field .dropdown-menu {
+            z-index: 1060;
+            /* Ensure it stays above all other dashboard elements */
+            margin-top: 5px !important;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-md);
+        }
+
+        .filter-field label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 5px;
+        }
+
+        .filter-field .form-control,
+        .filter-field .form-select {
+            height: 34px;
+            font-size: 0.845rem;
+            padding-top: 0;
+            padding-bottom: 0;
+            width: 100%;
+        }
+
+        .filter-date-range {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-date-range .form-control {
+            flex: 1;
+        }
+
+        .filter-date-range span {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .filter-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: flex-end;
+            padding-top: 4px;
+            border-top: 1px solid var(--border-subtle);
+            margin-top: 4px;
+        }
+
+        .btn-filter-apply {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            height: 32px;
+            padding: 0 16px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: background 0.18s;
+        }
+
+        .btn-filter-apply:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-filter-reset {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            height: 32px;
+            padding: 0 13px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s;
+        }
+
+        .btn-filter-reset:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: var(--danger-light);
+        }
+
+        /* ── KPI Cards ── */
+        .kpi-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            margin: 0 -0.5rem;
-            padding: 0.75rem 0.5rem !important;
+            padding: 18px 20px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .kpi-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .kpi-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1e40af; /* Blue value */
+            margin-bottom: 2px;
+        }
+
+        .kpi-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .kpi-trend {
+            font-size: 0.68rem;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* ── Section card ── */
+        .section-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .section-card-header {
+            padding: 16px 18px 13px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e40af;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-card-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-card-title .title-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+
+        .section-card-body {
+            padding: 14px 18px;
+        }
+
+        .view-all-btn {
+            font-size: 0.76rem;
+            font-weight: 600;
+            color: var(--primary);
+            background: var(--primary-light);
+            border: none;
+            border-radius: 7px;
+            padding: 4px 11px;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+
+        .view-all-btn:hover {
+            background: #e0e7ff;
+            color: var(--primary-hover);
+        }
+
+        /* ── Charts ── */
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 18px 20px;
+            height: 100%;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .page-section-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--title-color); /* Theme-aware Blue */
+            margin-bottom: 2px;
+            letter-spacing: -0.02em;
+        }
+
+        .chart-card-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 2px;
+        }
+
+        .chart-card-sub {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+
+        /* ── Activity Feed ── */
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            transition: background 0.14s;
+            border-radius: 8px;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
         }
 
         .activity-item:hover {
-            background-color: #f8fafc;
+            background: var(--bg-app);
+            padding-left: 4px;
         }
 
-        .avatar-initials {
-            width: 36px;
-            height: 36px;
+        .act-icon {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.82rem;
+        }
+
+        .act-time-group {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            padding: 8px 0 3px;
+        }
+
+        /* ── Issues list ── */
+        .issue-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .issue-row:last-child {
+            border-bottom: none;
+        }
+
+        .sev-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .sev-HIGH {
+            background: var(--danger);
+        }
+
+        .sev-MEDIUM {
+            background: var(--warning);
+        }
+
+        .sev-LOW {
+            background: var(--success);
+        }
+
+        /* ── Clients table ── */
+        .clients-table th {
+            background: var(--bg-app);
+            font-size: 0.64rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-muted);
+            padding: 9px 14px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .clients-table td {
+            padding: 10px 14px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.845rem;
+        }
+
+        .clients-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .clients-table tr:hover td {
+            background: var(--bg-app);
+        }
+
+        /* ── Team Members ── */
+        .emp-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .emp-row:last-child {
+            border-bottom: none;
+        }
+
+        /* ── Avatar ── */
+        .avatar-sq {
+            width: 34px;
+            height: 34px;
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
+            flex-shrink: 0;
         }
+
+        .avatar-sq-sm {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.62rem;
+            flex-shrink: 0;
+        }
+
+        /* ── Status / Severity badges ── */
+        .badge-pill {
+            font-size: 0.64rem;
+            font-weight: 700;
+            border-radius: 100px;
+            padding: 3px 9px;
+            letter-spacing: 0.01em;
+        }
+
+        .badge-active {
+            background: var(--success-light);
+            color: var(--success-text);
+        }
+
+        .badge-inactive {
+            background: #F1F5F9;
+            color: #475569;
+        }
+
+        .badge-new {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .badge-pending {
+            background: var(--warning-light);
+            color: var(--warning-text);
+        }
+
+        .badge-solved {
+            background: var(--success-light);
+            color: var(--success-text);
+        }
+
+        .badge-cancel {
+            background: var(--danger-light);
+            color: var(--danger-text);
+        }
+
+        .badge-high {
+            background: var(--danger-light);
+            color: var(--danger-text);
+        }
+
+        .badge-medium {
+            background: var(--warning-light);
+            color: var(--warning-text);
+        }
+
+        .badge-low {
+            background: var(--success-light);
+            color: var(--success-text);
+        }
+
+        /* ── Period Picker ── */
+        .period-picker-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .period-picker-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .period-picker-group {
+            display: flex;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow-xs);
+        }
+
+        .period-btn {
+            background: transparent;
+            border: none;
+            border-right: 1px solid var(--border);
+            padding: 6px 15px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
+            line-height: 1.4;
+        }
+
+        .period-btn:last-child {
+            border-right: none;
+        }
+
+        .period-btn:hover {
+            background: var(--bg-app);
+            color: var(--text-body);
+        }
+
+        .period-btn.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .period-btn.active:hover {
+            background: var(--primary-hover);
+        }
+
+        .period-context-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: var(--bg-app);
+            border: 1px solid var(--border-subtle);
+            border-radius: 100px;
+            padding: 3px 10px;
+        }
+
+        /* ── Empty state (compact) ── */
+        .empty-state {
+            text-align: center;
+            padding: 28px 16px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 1.75rem;
+            margin-bottom: 8px;
+            display: block;
+            opacity: 0.35;
+        }
+
+        .empty-state p {
+            font-size: 0.8rem;
+            margin: 0;
+        }
+
+        /* ── Drag & Drop Widgets ── */
+        .dashboard-widget-row>[data-widget-id] {
+            position: relative;
+            cursor: default;
+            transition: box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .dashboard-widget-row>[data-widget-id] .section-card-header::before,
+        .dashboard-widget-row>[data-widget-id] .card-header::before {
+            content: '\F58F';
+            /* bi-grip-vertical unicode */
+            font-family: "bootstrap-icons";
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            color: #cbd5e1;
+            font-size: 1rem;
+            cursor: grab;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .dashboard-widget-row>[data-widget-id]:hover .section-card-header::before,
+        .dashboard-widget-row>[data-widget-id]:hover .card-header::before {
+            opacity: 1;
+        }
+
+        .sortable-ghost {
+            opacity: 0.35;
+            background: var(--primary-light);
+            border-radius: 16px;
+        }
+
+        .sortable-drag {
+            opacity: 1;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+            cursor: grabbing !important;
+        }
+
+        /* ── Responsive adjustments (Dashboard specific) ── */
+        @media (max-width: 767.98px) {
+            .page-content {
+                padding: 16px 12px !important;
+            }
+
+            .dash-header {
+                padding: 32px 20px;
+                border-radius: 20px;
+                margin-bottom: 24px;
+                min-height: auto;
+            }
+
+            .dash-greeting {
+                font-size: 1.8rem;
+                margin-bottom: 8px;
+            }
+
+            .dash-date-text {
+                font-size: 12px;
+            }
+
+            .dash-header-actions {
+                width: 100%;
+                align-items: center;
+                justify-content: center;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .dash-date-chip,
+            .dash-live-dot {
+                font-size: 0.75rem;
+                padding: 4px 10px;
+            }
+
+            .kpi-card {
+                padding: 12px 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                justify-content: center;
+                min-height: 110px;
+            }
+
+            .kpi-label {
+                font-size: 0.6rem;
+                margin-bottom: 2px;
+            }
+
+            .kpi-value {
+                font-size: 1.1rem;
+                margin-bottom: 0;
+            }
+
+            .kpi-icon-wrapper {
+                width: 32px;
+                height: 32px;
+                font-size: 1rem;
+                margin-bottom: 4px;
+                order: -1; /* Move icon to top */
+            }
+
+            .kpi-trend {
+                font-size: 0.6rem;
+                margin-top: 2px;
+            }
+        }
+        /* Standard alignment for Dashboard Overview */
+        .main-wrapper { padding-top: 0 !important; }
+
+        /* PREMIUM HEADER REDESIGN - ENHANCED PROPORTIONS */
+        .header-outer { 
+            border-radius: 20px; 
+            padding: 1px; 
+            background: var(--header-outer-bg); 
+            margin-bottom: 2rem;
+            margin-top: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .header-inner { 
+            border-radius: 19px; 
+            background: var(--header-inner-bg); 
+            padding: 2.2rem 3rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            position: relative; 
+            overflow: hidden; 
+            min-height: 180px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+        }
+        .header-inner::before {
+            content: '';
+            position: absolute;
+            top: -60px; right: -40px;
+            width: 260px; height: 260px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .header-inner::after {
+            content: '';
+            position: absolute;
+            bottom: -80px; left: 30%;
+            width: 200px; height: 200px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        .header-left { flex: 1; }
+        .header-date { 
+            font-size: 16px; 
+            font-weight: 600; 
+            color: rgba(255,255,255,0.5); 
+            letter-spacing: 0.12em; 
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        .header-greeting { 
+            font-size: 22px; 
+            color: #fff; 
+            line-height: 1.2; 
+            font-weight: 400; 
+        }
+        .header-name { 
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: var(--header-name-gradient); 
+            background-clip: text;
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            display: inline-block;
+            margin-top: 4px;
+            letter-spacing: -0.02em;
+        }
+        
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulse-green 2s infinite;
+        }
+        @keyframes pulse-green {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .header-divider {
+            width: 1px;
+            height: 80px;
+            background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.2), transparent);
+            margin: 0 40px;
+        }
+
+        .header-right { 
+            flex-shrink: 0;
+            min-width: 380px; 
+        }
+        
+        .punch-user-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .punch-avatar-wrapper { position: relative; }
+        .punch-avatar {
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .online-dot {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border: 2px solid #0d1f5c;
+            border-radius: 50%;
+        }
+        .punch-name { font-size: 18px; font-weight: 600; color: #fff; }
+        .punch-status-badge {
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .punch-in-time {
+            margin-left: auto;
+            text-align: right;
+        }
+        .punch-in-label { font-size: 12px; color: rgba(255,255,255,0.5); }
+        .punch-in-val { font-size: 16px; font-weight: 600; color: #fff; }
+
+        .punch-bottom-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.05);
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .duration-label { font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 2px; }
+        .duration-timer { 
+            font-family: 'JetBrains Mono', 'DM Mono', monospace; 
+            font-size: 32px; 
+            font-weight: 300; 
+            color: #fff; 
+            letter-spacing: .06em; 
+        }
+        .colon { animation: colon 1s step-start infinite; }
+        @keyframes colon { 0%,49%{opacity:1} 50%,99%{opacity:.15} }
+
+        .pro-att-btn {
+            background: #fff;
+            color: #0d1f5c !important;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            line-height: 1.2;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .pro-att-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,255,255,0.2); }
+        .pro-att-btn.punch-in { background: #10b981 !important; color: #fff !important; }
+        .pro-att-btn.punch-out { background: linear-gradient(150deg, #b91c1c, #ef4444) !important; color: #fff !important; box-shadow: 0 4px 14px rgba(239,68,68,0.35); }
     </style>
+
+
 </head>
 
 <body class="bg-light">
     <div class="d-flex">
         <div id="sidebar"></div>
-
-        <div class="flex-grow-1">
-            <!-- Top header injected by auth.js?v=2.3 -->
-
-            <div class="page-content">
-
-                <!-- Page Title & Filters -->
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
-                    <div>
-                        <h2 class="page-section-title">Dashboard</h2>
-                        <p class="text-muted mb-0" style="font-size:0.93rem;">
-                            Welcome back! Here's what's happening today — <span id="today-date"></span>
-                        </p>
-                    </div>
-
-                    <div class="d-flex flex-wrap align-items-center gap-2">
-                        <!-- Area Filter -->
-                        <select id="filter-area" class="form-select form-select-sm shadow-sm border-0"
-                            style="width: 140px; border-radius: 8px; height: 38px;">
-                            <option value="">All Areas</option>
-                        </select>
-
-                        <!-- User Filter -->
-                        <select id="filter-user" class="form-select form-select-sm shadow-sm border-0"
-                            style="width: 140px; border-radius: 8px; height: 38px;">
-                            <option value="">All Users</option>
-                        </select>
-
-                        <!-- Date Filter -->
-                        <div class="input-group input-group-sm shadow-sm" style="width: 280px;">
-                            <input type="date" id="filter-start" class="form-control border-0"
-                                style="border-radius: 8px 0 0 8px; height: 38px;">
-                            <span class="input-group-text border-0 bg-white">to</span>
-                            <input type="date" id="filter-end" class="form-control border-0"
-                                style="border-radius: 0 8px 8px 0; height: 38px;">
+        <div class="flex-grow-1 main-wrapper">
+            <div class="page-content mx-auto">
+                <!-- Header Section -->
+                <!-- Premium Header Section -->
+                <div class="header-outer" id="employee-header-widget">
+                  <div class="header-inner">
+                
+                    <!-- LEFT: Greeting & Motivation -->
+                    <div class="header-left d-flex flex-column align-items-start flex-grow-1" style="position:relative; z-index:1;">
+                      <div class="header-greeting mb-0" id="att-v2-greeting-line" style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; color: rgba(255,255,255,0.85);">
+                        Good Afternoon, <span class="header-name" id="att-v2-left-name" style="background: var(--header-name-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 2.2rem;">User</span>
+                      </div>
+                      <div id="att-v2-motivational-msg" class="header-sub-greeting" style="font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.7); margin-top: 8px; max-width: 500px; line-height: 1.5;">
+                        Manage your efficiency and daily goals here.
+                      </div>
+                      
+                      <!-- Employee Status Zone (Shown only when NOT an admin) -->
+                      <div id="employee-status-zone" class="mt-4">
+                        <div class="header-date" id="att-v2-date" style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; opacity: 0.5; text-transform: uppercase;">--</div>
+                        <div class="live-badge mt-2" id="att-v2-live-badge">
+                          <span class="live-dot" id="att-v2-pulse"></span> <span id="att-v2-live-text">LIVE</span>
                         </div>
+                      </div>
+                    </div>
+                
+                    <div class="header-divider" id="header-divider"></div>
+                
+                    <!-- RIGHT: Status (for Admin) or Punch Card (for Employee) -->
+                    <div class="header-right" id="punch-card-container">
+                      <!-- Admin Status Zone (Shown only for Admins) -->
+                      <div id="admin-status-zone" class="d-none text-end d-flex flex-column align-items-end gap-3">
+                         <div class="header-date mb-0" id="att-v2-date-admin" style="font-size: 10px; opacity: 0.4; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">--</div>
+                         <div class="live-badge d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); color: #ffffff; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">
+                             <span class="live-dot" style="width: 7px; height: 7px; background: #4ade80; border-radius: 50%; box-shadow: 0 0 10px #4ade80;"></span>
+                             <span>LIVE</span>
+                          </div>
+                      </div>
+                      <div class="punch-user-row">
+                        <div class="punch-avatar-wrapper">
+                            <div class="punch-avatar" id="att-v2-avatar">--</div>
+                            <span class="online-dot" id="att-v2-status-dot"></span>
+                        </div>
+                        <div class="punch-name-col">
+                          <div class="punch-name" id="att-v2-name">User Name</div>
+                          <div class="punch-status-badge" id="att-v2-badge">Not Punched</div>
+                        </div>
+                        <div class="punch-in-time">
+                          <div class="punch-in-label">In at</div>
+                          <div class="punch-in-val" id="att-v2-first-in">--:--</div>
+                        </div>
+                      </div>
+                      <div class="punch-bottom-row">
+                        <div class="duration-box">
+                          <div class="duration-label">Duration</div>
+                          <div class="duration-timer" id="att-v2-timer">
+                            <span id="att-v2-hh">00</span><span class="colon">:</span><span id="att-v2-mm">00</span><span class="colon">:</span><span id="att-v2-ss">00</span>
+                          </div>
+                        </div>
+                        <button class="pro-att-btn" id="header-punch-btn-new">Punch<br>Out</button>
+                      </div>
+                    </div>
+                
+                  </div>
+                </div>
 
-                        <button class="btn btn-primary shadow-sm" id="apply-filters"
-                            style="height: 38px; border-radius: 8px; width: 40px;">
-                            <i class="bi bi-search"></i>
+
+
+
+                <!-- Filter Panel (period picker integrated in header) -->
+                <div class="filter-panel">
+                    <div class="filter-panel-head" id="filter-panel-toggle">
+                        <div class="filter-panel-head-left">
+                            <i class="bi bi-sliders2"></i>
+                            Filters
+                            <div class="filter-active-pills" id="filter-pills"></div>
+                        </div>
+                        <div class="period-picker-group" onclick="event.stopPropagation()">
+                            <button class="period-btn" data-period="today">Today</button>
+                            <button class="period-btn" data-period="week">This Week</button>
+                            <button class="period-btn" data-period="month">This Month</button>
+                            <button class="period-btn" data-period="last_3_months">Last 3M</button>
+                            <button class="period-btn" data-period="last_6_months">Last 6M</button>
+                            <button class="period-btn" data-period="this_year">This Year</button>
+                            <button class="period-btn" data-period="last_year">Last Year</button>
+                            <button class="period-btn" data-period="all">All Time</button>
+                        </div>
+                        <span class="period-context-badge" id="period-context-badge">All Records</span>
+                        <button class="filter-toggle-btn" id="filter-toggle-btn" type="button">
+                            <span id="filter-toggle-label">Show</span>
+                            <i class="bi bi-chevron-down"></i>
                         </button>
+                    </div>
+                    <div class="filter-panel-body" id="filter-panel-body">
+                        <div class="filter-grid">
+                            <div class="filter-field">
+                                <label>Area</label>
+                                <select id="filter-area" class="form-select">
+                                    <option value="">All Areas</option>
+                                </select>
+                            </div>
+                            <div class="filter-field">
+                                <label>User</label>
+                                <select id="filter-user" class="form-select">
+                                    <option value="">All Users</option>
+                                </select>
+                            </div>
+                            <div class="filter-field" style="grid-column: span 2;">
+                                <label>Date Range</label>
+                                <div class="filter-date-range">
+                                    <input type="date" id="filter-start" class="form-control" placeholder="Start date">
+                                    <span><i class="bi bi-arrow-right"></i></span>
+                                    <input type="date" id="filter-end" class="form-control" placeholder="End date">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="filter-actions">
+                            <button class="btn-filter-reset" id="reset-filters"><i class="bi bi-x-circle"></i>
+                                Clear</button>
+                            <button class="btn-filter-apply" id="apply-filters"><i class="bi bi-check2"></i> Apply
+                                Filters</button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- KPI Cards -->
-                <div class="row g-4 mb-5">
-                    <div class="col-12 col-sm-6 col-md-3">
-                        <a href="visits.html" class="text-decoration-none h-100">
-                            <div class="card border-0 shadow-sm kpi-card h-100 p-4"
-                                style="background: linear-gradient(135deg, #ffffff 0%, #f9faff 100%);">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div>
-                                        <div class="text-uppercase text-secondary fw-bold mb-1"
-                                            style="letter-spacing:1px; font-size: 0.65rem;">Total Visits</div>
-                                        <h3 class="fw-extrabold text-dark mb-0" id="kpi-leads"
-                                            style="letter-spacing: -1px; font-size: 1.75rem;">
-                                            <span class="spinner-border spinner-border-sm text-muted"></span>
-                                        </h3>
+                <div class="row g-2 g-md-3 mb-4" id="admin-kpis">
+                    <div class="col-6 col-sm-6 col-xl-3" data-widget-id="kpi-visits">
+                        <a href="visits.html" class="text-decoration-none d-block h-100">
+                            <div class="kpi-card kpi-visits h-100">
+                                <div class="d-flex justify-content-between align-items-start w-100 kpi-inner-mobile">
+                                    <div class="flex-grow-1 me-2 kpi-text-container">
+                                        <div class="kpi-label" id="kpi-visits-label">Total Visits</div>
+                                        <div class="kpi-value" id="kpi-leads">
+                                            <span class="spinner-border spinner-border-sm text-secondary"></span>
+                                        </div>
                                     </div>
-                                    <div class="kpi-icon-wrapper d-flex align-items-center justify-content-center shadow-sm"
-                                        style="background: #eef2ff; color: #4f46e5;">
-                                        <i class="bi bi-calendar-check fs-5"></i>
+                                    <div class="kpi-icon-wrapper kpi-icon-bg-1">
+                                        <i class="bi bi-calendar-check"></i>
                                     </div>
                                 </div>
-                                <div class="mt-auto pt-2 border-top border-light-subtle d-flex align-items-center"
-                                    id="kpi-leads-trend" style="font-size: 0.75rem;">—</div>
+                                <div class="kpi-trend" id="kpi-leads-trend">—</div>
                             </div>
                         </a>
                     </div>
-                    <div class="col-12 col-sm-6 col-md-3">
-                        <a href="clients.html" class="text-decoration-none h-100">
-                            <div class="card border-0 shadow-sm kpi-card h-100 p-4"
-                                style="background: linear-gradient(135deg, #ffffff 0%, #f5fffb 100%);">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div>
-                                        <div class="text-uppercase text-secondary fw-bold mb-1"
-                                            style="letter-spacing:1px; font-size: 0.65rem;">Active Clients</div>
-                                        <h3 class="fw-extrabold text-dark mb-0" id="kpi-clients"
-                                            style="letter-spacing: -1px; font-size: 1.75rem;">
-                                            <span class="spinner-border spinner-border-sm text-muted"></span>
-                                        </h3>
+                    <div class="col-6 col-sm-6 col-xl-3" data-widget-id="kpi-clients">
+                        <a href="clients.html" class="text-decoration-none d-block h-100">
+                            <div class="kpi-card kpi-clients h-100">
+                                <div class="d-flex justify-content-between align-items-start w-100 kpi-inner-mobile">
+                                    <div class="flex-grow-1 me-2 kpi-text-container">
+                                        <div class="kpi-label" id="kpi-clients-label">Active Clients</div>
+                                        <div class="kpi-value" id="kpi-clients">
+                                            <span class="spinner-border spinner-border-sm text-secondary"></span>
+                                        </div>
                                     </div>
-                                    <div class="kpi-icon-wrapper d-flex align-items-center justify-content-center shadow-sm"
-                                        style="background: #ecfdf5; color: #059669;">
-                                        <i class="bi bi-people fs-5"></i>
+                                    <div class="kpi-icon-wrapper kpi-icon-bg-2">
+                                        <i class="bi bi-people"></i>
                                     </div>
                                 </div>
-                                <div class="mt-auto pt-2 border-top border-light-subtle d-flex align-items-center"
-                                    id="kpi-clients-trend" style="font-size: 0.75rem;">—</div>
+                                <div class="kpi-trend" id="kpi-clients-trend">—</div>
                             </div>
                         </a>
                     </div>
-                    <div class="col-12 col-sm-6 col-md-3">
-                        <a href="projects.html" class="text-decoration-none h-100">
-                            <div class="card border-0 shadow-sm kpi-card h-100 p-4"
-                                style="background: linear-gradient(135deg, #ffffff 0%, #fffcf5 100%);">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <div>
-                                        <div class="text-uppercase text-secondary fw-bold mb-1"
-                                            style="letter-spacing:1px; font-size: 0.65rem;">Ongoing Projects</div>
-                                        <h3 class="fw-extrabold text-dark mb-0" id="kpi-projects"
-                                            style="letter-spacing: -1px; font-size: 1.75rem;">
-                                            <span class="spinner-border spinner-border-sm text-muted"></span>
-                                        </h3>
+                    <div class="col-6 col-sm-6 col-xl-3" data-widget-id="kpi-employees">
+                        <a href="employees.html" class="text-decoration-none d-block h-100">
+                            <div class="kpi-card kpi-employees h-100">
+                                <div class="d-flex justify-content-between align-items-start w-100 kpi-inner-mobile">
+                                    <div class="flex-grow-1 me-2 kpi-text-container">
+                                        <div class="kpi-label" id="kpi-employees-label">Present Employees</div>
+                                        <div class="kpi-value" id="kpi-employees">
+                                            <span class="spinner-border spinner-border-sm text-secondary"></span>
+                                        </div>
                                     </div>
-                                    <div class="kpi-icon-wrapper d-flex align-items-center justify-content-center shadow-sm"
-                                        style="background: #fffbeb; color: #d97706;">
-                                        <i class="bi bi-briefcase fs-5"></i>
+                                    <div class="kpi-icon-wrapper" style="background:#f0fdf4;color:#16a34a;">
+                                        <i class="bi bi-person-check-fill"></i>
                                     </div>
                                 </div>
-                                <div class="mt-auto pt-2 border-top border-light-subtle d-flex align-items-center"
-                                    id="kpi-projects-trend" style="font-size: 0.75rem;">—</div>
+                                <div class="kpi-trend" id="kpi-employees-trend">—</div>
                             </div>
                         </a>
                     </div>
-                    <div class="col-12 col-sm-6 col-md-3">
-                        <div class="card border-0 shadow-sm kpi-card h-100 p-4"
-                            style="background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);">
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div>
-                                    <div class="text-uppercase text-secondary fw-bold mb-1"
-                                        style="letter-spacing:1px; font-size: 0.65rem;">Revenue (MTD)</div>
-                                    <h3 class="fw-extrabold mb-0" id="kpi-revenue"
-                                        style="letter-spacing: -1px; font-size: 1.75rem; color: #4f46e5;">
-                                        <span class="spinner-border spinner-border-sm text-muted"></span>
-                                    </h3>
+                    <div class="col-6 col-sm-6 col-xl-3" data-widget-id="kpi-revenue">
+                        <a href="billing.html" class="text-decoration-none d-block h-100">
+                            <div class="kpi-card kpi-revenue h-100">
+                                <div class="d-flex justify-content-between align-items-start w-100 kpi-inner-mobile">
+                                    <div class="flex-grow-1 me-2 kpi-text-container">
+                                        <div class="kpi-label" id="kpi-revenue-label">Total Revenue</div>
+                                        <div class="kpi-value" id="kpi-revenue">
+                                            <span class="spinner-border spinner-border-sm text-secondary"></span>
+                                        </div>
+                                    </div>
+                                    <div class="kpi-icon-wrapper kpi-icon-bg-4">
+                                        <i class="bi bi-currency-rupee"></i>
+                                    </div>
                                 </div>
-                                <div class="kpi-icon-wrapper d-flex align-items-center justify-content-center shadow-sm"
-                                    style="background: #eff6ff; color: #2563eb;">
-                                    <i class="bi bi-currency-rupee fs-5"></i>
-                                </div>
+                                <div class="kpi-trend" id="kpi-revenue-trend">—</div>
                             </div>
-                            <div class="mt-auto pt-2 border-top border-light-subtle d-flex align-items-center"
-                                id="kpi-revenue-trend" style="font-size: 0.75rem;">—</div>
-                        </div>
+                        </a>
                     </div>
                 </div>
 
+
                 <!-- Charts Row -->
                 <div class="row g-3 mb-4">
-                    <!-- Visits by Month -->
                     <div class="col-md-4">
-                        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius:12px;">
-                            <h6 class="fw-bold mb-3">Visits by Month</h6>
-                            <div style="position: relative; height: 230px;">
+                        <div class="chart-card">
+                            <div class="chart-card-title" id="dynamic-visits-title">Visits by Month</div>
+                            <div class="chart-card-sub" id="dynamic-visits-sub">Field visit activity</div>
+                            <div style="position:relative;height:220px;">
                                 <canvas id="leadsChart"></canvas>
                             </div>
                         </div>
                     </div>
-                    <!-- Revenue Trend -->
                     <div class="col-md-4">
-                        <div class="card border-0 shadow-sm h-100 p-4" style="border-radius:12px;">
-                            <h6 class="fw-bold mb-3">Revenue Trend</h6>
-                            <div style="position: relative; height: 230px;">
+                        <div class="chart-card">
+                            <div class="chart-card-title">Revenue Trend</div>
+                            <div class="chart-card-sub">Monthly revenue movement</div>
+                            <div style="position:relative;height:220px;">
                                 <canvas id="revenueChart"></canvas>
                             </div>
                         </div>
                     </div>
-                    <!-- Shop Sources -->
                     <div class="col-md-4">
-                        <div class="card border-0 shadow-sm h-100 p-4 d-flex flex-column" style="border-radius:12px;">
-                            <h6 class="fw-bold mb-3">Shop Sources</h6>
-                            <div class="d-flex justify-content-center mb-3 flex-grow-1"
-                                style="position: relative; height: 200px;">
-                                <canvas id="sourcesChart"></canvas>
+                        <div class="chart-card d-flex flex-column">
+                            <div class="chart-card-title">Visit Outcomes</div>
+                            <div class="chart-card-sub">Distribution of interaction results</div>
+                            <div class="d-flex justify-content-center flex-grow-1"
+                                style="position:relative;height:200px;">
+                                <canvas id="outcomesChart"></canvas>
                             </div>
-                            <div id="sources-legend" class="d-flex flex-wrap justify-content-center gap-3 mt-auto"
-                                style="font-size:0.75rem;"></div>
+                            <div id="outcomes-legend" class="d-flex flex-wrap justify-content-center gap-3 mt-3"
+                                style="font-size:0.72rem;"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Activity + Tasks Row -->
-                <div class="row g-3">
-                    <!-- Recent Activity (from activity logs API) -->
-                    <div class="col-md-7">
-                        <div class="card border-0 shadow-sm h-100 p-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold mb-0">Recent Activity</h6>
+                <!-- Activity + Issues Row -->
+                <div class="row g-3 mb-4 dashboard-widget-row" id="widget-row-1">
+                    <div class="col-md-7" data-widget-id="activity">
+                        <div class="section-card h-100">
+                            <div class="section-card-header">
+                                <div class="section-card-title">
+                                    <div class="title-icon" style="background:#eef2ff;color:#2563eb;"><i
+                                            class="bi bi-activity"></i></div>
+                                    Recent Activity
+                                </div>
+                                <span class="view-all-btn" style="cursor:default;opacity:0.5;">Last 10 actions</span>
                             </div>
-                            <div id="activity-feed">
-                                <div class="text-center text-muted py-4">
-                                    <div class="spinner-border spinner-border-sm"></div>
-                                    <p class="mt-2 small">Loading activity...</p>
+                            <div class="section-card-body" id="activity-feed">
+                                <div class="py-3 px-3">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="skeleton-box skeleton-circle flex-shrink-0"></div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="skeleton-box skeleton-circle flex-shrink-0"></div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3 mb-2">
+                                        <div class="skeleton-box skeleton-circle flex-shrink-0"></div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Open Issues Table -->
-                    <div class="col-md-5">
-                        <div class="card border-0 shadow-sm h-100 p-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold mb-0">Open Issues</h6>
-                                <a href="issues.html" class="btn btn-sm text-primary fw-semibold"
-                                    style="background:#eef2ff;font-size:0.8rem;">View All</a>
+                    <div class="col-md-5" data-widget-id="issues">
+                        <div class="section-card h-100">
+                            <div class="section-card-header">
+                                <div class="section-card-title">
+                                    <div class="title-icon" style="background:#fef2f2;color:#dc2626;"><i
+                                            class="bi bi-exclamation-circle"></i></div>
+                                    Issues
+                                </div>
+                                <a href="issues.html" class="view-all-btn">View All</a>
                             </div>
-                            <div id="open-issues-list">
-                                <div class="text-center text-muted py-4">
-                                    <div class="spinner-border spinner-border-sm"></div>
+                            <div class="section-card-body" id="issues-list">
+                                <div class="py-3 px-3">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="skeleton-box skeleton-circle flex-shrink-0"></div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -319,85 +1494,214 @@
                 </div>
 
                 <!-- Clients + Employees Row -->
-                <div class="row g-3 mt-1">
-                    <!-- Recent Clients -->
-                    <div class="col-md-7">
-                        <div class="card border-0 shadow-sm">
-                            <div
-                                class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                                <span class="fw-bold"><i class="bi bi-people me-2 text-primary"></i>Recent
-                                    Clients</span>
-                                <a href="clients.html" class="btn btn-sm text-primary fw-semibold"
-                                    style="background:#eef2ff;">View All</a>
+                <div class="row g-3 dashboard-widget-row" id="widget-row-2">
+                    <div class="col-md-7" data-widget-id="clients">
+                        <div class="section-card">
+                            <div class="section-card-header">
+                                <div class="section-card-title">
+                                    <div class="title-icon" style="background:#ecfdf5;color:#059669;"><i
+                                            class="bi bi-people"></i></div>
+                                    Recent Clients
+                                </div>
+                                <a href="clients.html" class="view-all-btn">View All</a>
                             </div>
-                            <div class="card-body p-0">
-                                <table class="table mb-0" style="font-size:0.875rem;">
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Organisation</th>
-                                            <th>Status</th>
-                                            <th>PM</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="clients-table">
-                                        <tr>
-                                            <td colspan="4" class="text-center text-muted py-4">
-                                                <div class="spinner-border spinner-border-sm"></div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <div class="section-card-body" id="clients-table">
+                                <div class="py-3 px-3 stagger-fade-in">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="skeleton-box skeleton-avatar" style="width: 36px; height: 36px;"></div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium mb-1"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="skeleton-box skeleton-avatar" style="width: 36px; height: 36px;"></div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium mb-1"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Employees quick view -->
-                    <div class="col-md-5">
-                        <div class="card border-0 shadow-sm">
-                            <div
-                                class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
-                                <span class="fw-bold"><i class="bi bi-person-badge me-2 text-primary"></i>Team
-                                    Members</span>
-                                <a href="employees.html" class="btn btn-sm text-primary fw-semibold"
-                                    style="background:#eef2ff;">Employees</a>
+                    <div class="col-md-5" data-widget-id="employees">
+                        <div class="section-card">
+                            <div class="section-card-header">
+                                <div class="section-card-title">
+                                    <div class="title-icon" style="background:#eef2ff;color:#2563eb;"><i
+                                            class="bi bi-person-badge"></i></div>
+                                    Team Members
+                                </div>
+                                <a href="employees.html" class="view-all-btn">View All</a>
                             </div>
-                            <div class="card-body p-0">
-                                <div id="employees-list" class="px-3 pb-3">
-                                    <div class="text-center text-muted py-4">
-                                        <div class="spinner-border spinner-border-sm"></div>
+                            <div class="section-card-body" id="employees-list">
+                                <div class="px-3 py-3">
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="skeleton-box skeleton-avatar" style="width: 36px; height: 36px;">
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium mb-1"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3 mb-3">
+                                        <div class="skeleton-box skeleton-avatar" style="width: 36px; height: 36px;">
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium mb-1"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="skeleton-box skeleton-avatar" style="width: 36px; height: 36px;">
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="skeleton-box skeleton-text medium mb-1"></div>
+                                            <div class="skeleton-box skeleton-text short"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
+                <!-- PM Chart -->
+                <div class="row mt-4">
+                    <div class="col-12 col-lg-8">
+                        <div class="card border-0 shadow-sm rounded-4 mb-4">
+                            <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+                                <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>PM
+                                    Pipeline Health</h6>
+                            </div>
+                            <div class="card-body p-4">
+                                <canvas id="dashboardPmPipelineChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div><!-- /page-content -->
         </div>
     </div>
 
     <script src="../js/utils.js?v=1772780187"></script>
+    <script src="../js/api.js?v=2.3"></script>
     <script src="../js/ui_components.js?v=1772780187"></script>
     <script src="../js/auth.js?v=2.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         requireAuth();
+        const currentUser = typeof getUser === 'function' ? getUser() : (window.ApiClient ? window.ApiClient.getCurrentUser() : null);
+        const isAdmin = currentUser?.role === 'ADMIN';
+
         document.getElementById('sidebar').innerHTML = renderSidebar('dashboard');
         injectTopHeader('Overview');
-        document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-IN', {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-        });
 
-        // ── Utility ─────────────────────────────────────────────────────
-        function getInitials(name) {
-            if (!name) return '??';
-            const parts = name.trim().split(' ').filter(part => part.length > 0);
-            if (parts.length === 1) {
-                return parts[0].substring(0, 2).toUpperCase();
+        // ── Adjust Header based on Role (Greeting Redesign) ──
+        if (isAdmin) {
+            const employeeStatus = document.getElementById('employee-status-zone');
+            if (employeeStatus) employeeStatus.classList.add('d-none');
+            
+            const divider = document.getElementById('header-divider');
+            if (divider) divider.style.setProperty('display', 'none', 'important');
+            
+            const adminStatus = document.getElementById('admin-status-zone');
+            if (adminStatus) adminStatus.classList.remove('d-none');
+            
+            // Hide ALL punch block contents for a clean Admin view
+            const punchContainer = document.getElementById('punch-card-container');
+            if (punchContainer) {
+                // Hide children that are NOT the admin-status-zone
+                Array.from(punchContainer.children).forEach(child => {
+                    if (child.id !== 'admin-status-zone') {
+                        child.classList.add('d-none');
+                    }
+                });
+                // Remove background/border from the container for admins to make it transparent
+                punchContainer.style.background = 'none';
+                punchContainer.style.border = 'none';
+                punchContainer.style.boxShadow = 'none';
             }
-            return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+        } else {
+            // Ensure employee status is shown
+            const employeeStatus = document.getElementById('employee-status-zone');
+            if (employeeStatus) employeeStatus.classList.remove('d-none');
+            
+            // Ensure admin status is hidden
+            const adminStatus = document.getElementById('admin-status-zone');
+            if (adminStatus) adminStatus.classList.add('d-none');
         }
+
+        async function refreshDashboardKPIs() {
+            try {
+                const status = await ApiClient.getPunchStatus();
+                const hoursToday = document.getElementById('kpi-hours-today');
+                const hoursWeek = document.getElementById('kpi-hours-week');
+                const hoursMonth = document.getElementById('kpi-hours-month');
+                if (hoursToday) hoursToday.textContent = (status.today_hours || 0).toFixed(2);
+                if (hoursWeek) hoursWeek.textContent = (status.week_hours || 0).toFixed(2);
+                if (hoursMonth) hoursMonth.textContent = (status.month_hours || 0).toFixed(2);
+            } catch (e) { console.error(e); }
+        }
+
+        updateHeaderContext();
+        
+        // ── Role-Specific KPI Setup ──────────────────────────────────
+        function setupRoleKPIs() {
+            const flags = getRoleFlags(currentUser?.role);
+            
+            if (flags.isSales || flags.isTelesales) {
+                // Sales / Telesales View
+                document.getElementById('kpi-visits-label').textContent = 'My Visits';
+                document.getElementById('kpi-clients-label').textContent = 'My Leads';
+                document.getElementById('kpi-employees-label').textContent = 'My Incentive';
+                document.getElementById('kpi-revenue-label').textContent = 'Pending Tasks';
+
+                // Update Icons & Colors
+                document.querySelector('[data-widget-id="kpi-employees"] .kpi-icon-wrapper').innerHTML = '<i class="bi bi-award"></i>';
+                document.querySelector('[data-widget-id="kpi-employees"] .kpi-icon-wrapper').style.background = '#fef3c7';
+                document.querySelector('[data-widget-id="kpi-employees"] .kpi-icon-wrapper').style.color = '#d97706';
+                
+                document.querySelector('[data-widget-id="kpi-revenue"] .kpi-icon-wrapper').innerHTML = '<i class="bi bi-check2-square"></i>';
+                
+                // Update Links
+                document.querySelector('[data-widget-id="kpi-visits"] a').href = 'visits.html';
+                document.querySelector('[data-widget-id="kpi-clients"] a').href = 'clients.html';
+                document.querySelector('[data-widget-id="kpi-employees"] a').href = 'incentives.html';
+                document.querySelector('[data-widget-id="kpi-revenue"] a').href = 'todo.html';
+            } 
+            else if (flags.isPM) {
+                // Project Manager View
+                document.getElementById('kpi-visits-label').textContent = 'Active Projects';
+                document.getElementById('kpi-clients-label').textContent = 'My Clients';
+                document.getElementById('kpi-employees-label').textContent = 'Today\'s Meetings';
+                document.getElementById('kpi-revenue-label').textContent = 'Open Issues';
+
+                // Update Icons
+                document.querySelector('[data-widget-id="kpi-visits"] .kpi-icon-wrapper').innerHTML = '<i class="bi bi-kanban"></i>';
+                document.querySelector('[data-widget-id="kpi-employees"] .kpi-icon-wrapper').innerHTML = '<i class="bi bi-calendar-event"></i>';
+                document.querySelector('[data-widget-id="kpi-employees"] .kpi-icon-wrapper').style.background = '#f0f9ff';
+                document.querySelector('[data-widget-id="kpi-employees"] .kpi-icon-wrapper').style.color = '#0369a1';
+                
+                document.querySelector('[data-widget-id="kpi-revenue"] .kpi-icon-wrapper').innerHTML = '<i class="bi bi-exclamation-triangle"></i>';
+                document.querySelector('[data-widget-id="kpi-revenue"] .kpi-icon-wrapper').style.background = '#fef2f2';
+                document.querySelector('[data-widget-id="kpi-revenue"] .kpi-icon-wrapper').style.color = '#dc2626';
+
+                // Update Links
+                document.querySelector('[data-widget-id="kpi-visits"] a').href = 'projects.html';
+                document.querySelector('[data-widget-id="kpi-clients"] a').href = 'clients.html';
+                document.querySelector('[data-widget-id="kpi-employees"] a').href = 'meetings.html';
+                document.querySelector('[data-widget-id="kpi-revenue"] a').href = 'issues.html';
+            }
+            // Admin is the default from HTML
+        }
+
+        setupRoleKPIs();
+
+        if (!isAdmin) {
+            initAttendance().then(refreshDashboardKPIs);
+        }
+        // ── Utility ─────────────────────────────────────────────────────
 
         function timeAgo(dateStr) {
             if (!dateStr) return '—';
@@ -423,34 +1727,129 @@
         }
 
         // ── Charts (now using backend-aggregated data) ──────────────────
-        let leadsChartObj, revenueChartObj, sourcesChartObj;
+        const getOrCreateTooltip = (chart) => {
+            let tooltipEl = chart.canvas.parentNode.querySelector('div.custom-tooltip');
+            if (!tooltipEl) {
+                tooltipEl = document.createElement('div');
+                tooltipEl.className = 'custom-tooltip shadow-sm';
+                tooltipEl.style.background = 'rgba(255, 255, 255, 0.95)';
+                tooltipEl.style.backdropFilter = 'blur(10px)';
+                tooltipEl.style.borderRadius = '12px';
+                tooltipEl.style.color = '#0f172a';
+                tooltipEl.style.opacity = 1;
+                tooltipEl.style.pointerEvents = 'none';
+                tooltipEl.style.position = 'absolute';
+                tooltipEl.style.transform = 'translate(-50%, 0)';
+                tooltipEl.style.transition = 'all .2s ease';
+                tooltipEl.style.zIndex = 100;
+                tooltipEl.style.padding = '10px 14px';
+                tooltipEl.style.border = '1px solid rgba(226, 232, 240, 0.8)';
+                tooltipEl.style.minWidth = '120px';
+
+                chart.canvas.parentNode.appendChild(tooltipEl);
+            }
+            return tooltipEl;
+        };
+
+        const externalTooltipHandler = (context) => {
+            const { chart, tooltip } = context;
+            const tooltipEl = getOrCreateTooltip(chart);
+
+            if (tooltip.opacity === 0) {
+                tooltipEl.style.opacity = 0;
+                return;
+            }
+
+            if (tooltip.body) {
+                const titleLines = tooltip.title || [];
+                const bodyLines = tooltip.body.map(b => b.lines);
+
+                let innerHtml = '<div>';
+                titleLines.forEach(title => {
+                    innerHtml += '<div style="font-size: 0.75rem; color: #64748b; margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">' + title + '</div>';
+                });
+
+                bodyLines.forEach((body, i) => {
+                    const colors = tooltip.labelColors[i];
+                    let style = 'background:' + colors.backgroundColor;
+                    style += '; border-color:' + colors.borderColor;
+                    style += '; border-width: 2px';
+                    style += '; width: 10px; height: 10px; display: inline-block; border-radius: 50%; margin-right: 8px;';
+                    const span = '<span style="' + style + '"></span>';
+                    innerHtml += '<div style="font-size: 0.9rem; font-weight: 700; color: #1e293b; display:flex; align-items:center;">' + span + body + '</div>';
+                });
+                innerHtml += '</div>';
+
+                tooltipEl.innerHTML = innerHtml;
+            }
+
+            const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
+            tooltipEl.style.opacity = 1;
+            tooltipEl.style.left = positionX + tooltip.caretX + 'px';
+            tooltipEl.style.top = positionY + tooltip.caretY - 10 + 'px';
+        };
+
+        let leadsChartObj, revenueChartObj, outcomesChartObj;
 
         function initCharts(stats) {
             Chart.defaults.font.family = "'Inter', 'Segoe UI', sans-serif";
 
             // 1. Visits by Month (bar)
             try {
-                let labels = Object.keys(stats.visits_by_month || {});
-                let data = Object.values(stats.visits_by_month || {});
+                let labels = Object.keys(stats.visits_chart_data || {});
+                let data = Object.values(stats.visits_chart_data || {});
                 if (labels.length === 0) { labels = ['No Data']; data = [0]; }
 
                 if (leadsChartObj) leadsChartObj.destroy();
-                leadsChartObj = new Chart(document.getElementById('leadsChart'), {
+                const ctx = document.getElementById('leadsChart').getContext('2d');
+                const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+                gradient.addColorStop(0, '#6366f1');
+                gradient.addColorStop(1, '#a5b4fc');
+
+                leadsChartObj = new Chart(ctx, {
                     type: 'bar',
                     data: {
                         labels,
                         datasets: [{
-                            label: 'Visits', data,
-                            backgroundColor: '#4f46e5', borderRadius: 4, barPercentage: 0.6
+                            label: 'Visits', 
+                            data,
+                            backgroundColor: gradient,
+                            borderRadius: 6,
+                            barPercentage: 0.5,
+                            categoryPercentage: 0.8
                         }]
                     },
                     options: {
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: true, border: { display: false }, grid: { color: '#f1f5f9', drawTicks: false }, ticks: { font: { size: 10 }, padding: 10, stepSize: 35 } },
-                            x: { border: { display: false }, grid: { display: false }, ticks: { font: { size: 10 } } }
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#1e293b',
+                                padding: 12,
+                                titleFont: { size: 14, weight: '600' },
+                                bodyFont: { size: 13 },
+                                cornerRadius: 8,
+                                displayColors: false
+                            }
                         },
-                        maintainAspectRatio: false
+                        scales: {
+                            y: { 
+                                beginAtZero: true, 
+                                border: { display: false }, 
+                                grid: { color: 'rgba(241, 245, 249, 0.6)', drawTicks: false }, 
+                                ticks: { 
+                                    font: { size: 11, weight: '500' }, 
+                                    padding: 10,
+                                    callback: (v) => v >= 1000 ? (v/1000).toFixed(1) + 'k' : v
+                                } 
+                            },
+                            x: { 
+                                border: { display: false }, 
+                                grid: { display: false }, 
+                                ticks: { font: { size: 11, weight: '500' }, color: '#64748b' } 
+                            }
+                        },
+                        maintainAspectRatio: false,
+                        interaction: { intersect: false, mode: 'index' }
                     }
                 });
             } catch (e) { console.error("Visits Chart Error:", e); }
@@ -462,213 +1861,316 @@
                 if (rLabels.length === 0) { rLabels = ['No Data']; rData = [0]; }
 
                 if (revenueChartObj) revenueChartObj.destroy();
-                revenueChartObj = new Chart(document.getElementById('revenueChart'), {
+                const rCtx = document.getElementById('revenueChart').getContext('2d');
+                const rGradient = rCtx.createLinearGradient(0, 0, 0, 200);
+                rGradient.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+                rGradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+                revenueChartObj = new Chart(rCtx, {
                     type: 'line',
                     data: {
                         labels: rLabels,
                         datasets: [{
-                            label: 'Revenue', data: rData,
-                            borderColor: '#10b981', backgroundColor: '#10b981',
-                            tension: 0.4, borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#10b981'
+                            label: 'Revenue', 
+                            data: rData,
+                            borderColor: '#10b981', 
+                            backgroundColor: rGradient,
+                            fill: true,
+                            tension: 0.4, 
+                            borderWidth: 3, 
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: '#10b981',
+                            pointHoverBorderColor: '#fff',
+                            pointHoverBorderWidth: 2
                         }]
                     },
                     options: {
-                        plugins: { legend: { display: false } },
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#1e293b',
+                                padding: 12,
+                                cornerRadius: 8,
+                                displayColors: false,
+                                callbacks: {
+                                    label: (context) => ' ₹' + context.parsed.y.toLocaleString('en-IN')
+                                }
+                            }
+                        },
                         scales: {
                             y: {
-                                beginAtZero: true, border: { display: false }, grid: { color: '#f1f5f9' },
-                                ticks: { font: { size: 10 }, callback: (value) => '₹' + (value >= 1000 ? (value / 1000) + 'K' : value) }
+                                beginAtZero: true, 
+                                border: { display: false }, 
+                                grid: { color: 'rgba(241, 245, 249, 0.6)' },
+                                ticks: { 
+                                    font: { size: 11, weight: '500' }, 
+                                    padding: 8,
+                                    callback: (value) => '₹' + (value >= 100000 ? (value / 100000).toFixed(1) + 'L' : (value >= 1000 ? (value / 1000) + 'K' : value)) 
+                                }
                             },
-                            x: { border: { display: false }, grid: { display: false }, ticks: { font: { size: 10 } } }
+                            x: { 
+                                border: { display: false }, 
+                                grid: { display: false }, 
+                                ticks: { font: { size: 11, weight: '500' }, color: '#64748b' } 
+                            }
                         },
-                        maintainAspectRatio: false
+                        maintainAspectRatio: false,
+                        interaction: { intersect: false, mode: 'index' }
                     }
                 });
             } catch (e) { console.error("Revenue Chart Error:", e); }
 
-            // 3. Shop Sources (Donut)
+            // 3. Visit Outcomes (Donut)
             try {
-                let sData = stats.shop_sources_breakdown || {};
+                let sData = stats.visit_outcomes_breakdown || {};
                 if (Object.keys(sData).length === 0) { sData = { 'No Data': 1 }; }
 
                 const sLabels = Object.keys(sData);
                 const sValues = Object.values(sData);
-                const sColors = ['#6366f1', '#06b6d4', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6'];
 
-                if (sourcesChartObj) sourcesChartObj.destroy();
-                sourcesChartObj = new Chart(document.getElementById('sourcesChart'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: sLabels,
-                        datasets: [{
-                            data: sValues,
-                            backgroundColor: sColors.slice(0, sLabels.length),
-                            borderWidth: 0,
-                            hoverOffset: 10
+                // Map statuses to specific semantic colors
+                const colorMap = {
+                    'COMPLETED': '#10b981',          // Emerald Green
+                    'ACCEPTED': '#10b981',           // Emerald Green
+                    'SATISFIED': '#38bdf8',          // Light Blue
+                    'SCHEDULED': '#8b5cf6',          // Purple
+                    'TAKE_TIME_TO_THINK': '#f59e0b', // Amber/Orange
+                    'THINKING': '#f59e0b',           // Amber/Orange
+                    'CANCELLED': '#ef4444',          // Red
+                    'DECLINED': '#ef4444',           // Red
+                    'MISSED': '#64748b'              // Slate Gray
+                };
+
+                // Generate the colors array by looking up each label
+                const dynamicColors = sLabels.map(label => colorMap[label.toUpperCase()] || '#cbd5e1');
+
+                const outcomesCanvas = document.getElementById('outcomesChart');
+                if (outcomesCanvas) {
+                    if (outcomesChartObj) outcomesChartObj.destroy();
+                    outcomesChartObj = new Chart(outcomesCanvas, {
+                        type: 'doughnut',
+                        data: {
+                            labels: sLabels,
+                            datasets: [{
+                                data: sValues,
+                                backgroundColor: dynamicColors,
+                                borderWidth: 2,
+                                borderColor: '#ffffff',
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: {
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: false, external: externalTooltipHandler }
+                            },
+                            cutout: '75%',
+                            maintainAspectRatio: false
+                        },
+                        plugins: [{
+                            id: 'centerText',
+                            beforeDraw: function(chart) {
+                                if (chart.config.type !== 'doughnut') return;
+                                const width = chart.width, height = chart.height, ctx = chart.ctx;
+                                ctx.restore();
+                                const fontSize = (height / 114).toFixed(2);
+                                ctx.font = `600 ${fontSize}em 'Inter'`;
+                                ctx.textBaseline = "middle";
+                                const text = sValues.reduce((a, b) => a + b, 0),
+                                      textX = Math.round((width - ctx.measureText(text).width) / 2),
+                                      textY = height / 2;
+                                ctx.fillStyle = '#1e293b';
+                                ctx.fillText(text, textX, textY);
+                                
+                                ctx.font = `500 0.75em 'Inter'`;
+                                const label = "TOTAL",
+                                      labelX = Math.round((width - ctx.measureText(label).width) / 2),
+                                      labelY = (height / 2) + 20;
+                                ctx.fillStyle = '#64748b';
+                                ctx.fillText(label, labelX, labelY);
+                                ctx.save();
+                            }
                         }]
-                    },
-                    options: {
-                        plugins: { legend: { display: false } },
-                        cutout: '75%',
-                        maintainAspectRatio: false
-                    }
-                });
+                    });
 
-                document.getElementById('sources-legend').innerHTML = sLabels.map((s, i) =>
-                    `<div class="d-flex align-items-center gap-2 fw-medium text-secondary" style="font-size: 0.7rem;">
-                        <span style="width:8px;height:8px;background:${sColors[i % sColors.length]};border-radius:2px;display:inline-block;"></span> 
-                        <span>${s}</span>
-                    </div>`
-                ).join('');
-            } catch (e) { console.error("Sources Chart Error:", e); }
+                    document.getElementById('outcomes-legend').innerHTML = sLabels.map((s, i) =>
+                        `<div class="d-flex align-items-center gap-2 fw-medium text-secondary" style="font-size: 0.7rem;">
+                            <span style="width:8px;height:8px;background:${dynamicColors[i]};border-radius:2px;display:inline-block;"></span> 
+                            <span>${s.replace(/_/g, ' ')}</span>
+                        </div>`
+                    ).join('');
+                }
+            } catch (e) { console.error("Outcomes Chart Error:", e); }
         }
 
         // ── Activity Feed ─────────────────────────────────────────────────
         const ACTION_META = {
-            CREATE: { icon: 'bi-plus-lg', bg: '#e0e7ff', color: '#4f46e5', label: 'Created' },
+            CREATE: { icon: 'bi-plus-lg', bg: '#e0e7ff', color: '#2563eb', label: 'Created' },
             UPDATE: { icon: 'bi-pencil-fill', bg: '#e0f2fe', color: '#0ea5e9', label: 'Updated' },
             DELETE: { icon: 'bi-trash-fill', bg: '#ffe4e6', color: '#e11d48', label: 'Deleted' },
             LOGIN: { icon: 'bi-box-arrow-in-right', bg: '#dcfce7', color: '#16a34a', label: 'Logged in' },
             LOGOUT: { icon: 'bi-box-arrow-right', bg: '#f1f5f9', color: '#64748b', label: 'Logged out' },
         };
 
+
         async function loadActivity() {
             const feed = document.getElementById('activity-feed');
-            feed.innerHTML = `<div class="text-center py-3"><div class="spinner-border spinner-border-sm"></div></div>`;
+            feed.innerHTML = `
+                <div class="py-3 px-3 stagger-fade-in">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="skeleton-box skeleton-circle flex-shrink-0"></div>
+                        <div class="flex-grow-1">
+                            <div class="skeleton-box skeleton-text medium"></div>
+                            <div class="skeleton-box skeleton-text short"></div>
+                        </div>
+                    </div>
+                </div>`;
             try {
                 const logs = await apiGet('/activity-logs/?limit=10');
                 if (!logs.length) {
-                    feed.innerHTML = `<p class="text-muted small text-center py-4">No recent activity.</p>`;
+                    feed.innerHTML = `<div class="empty-state"><i class="bi bi-clock-history"></i><p>No recent activity to show.</p></div>`;
                     return;
                 }
+                const entityStyles = {
+                    CLIENT: { bg: '#ecfdf5', color: '#059669' },
+                    ISSUE: { bg: '#fff1f2', color: '#e11d48' },
+                    VISIT: { bg: '#fffbeb', color: '#d97706' },
+                    PROJECT: { bg: '#eef2ff', color: '#2563eb' },
+                    LEAD: { bg: '#f0f9ff', color: '#0369a1' },
+                };
                 feed.innerHTML = logs.map(log => {
                     const m = ACTION_META[log.action] || { icon: 'bi-activity', bg: '#f1f5f9', color: '#64748b', label: log.action };
-                    const entityColor = log.entity_type === 'CLIENT' ? 'text-emerald-600' :
-                        log.entity_type === 'ISSUE' ? 'text-amber-600' : 'text-indigo-600';
+                    const es = entityStyles[log.entity_type] || { bg: '#f1f5f9', color: '#64748b' };
                     const initials = getInitials(log.user_name || 'System');
 
                     return `
-                    <div class="activity-item d-flex gap-3 px-2 mb-1">
-                        <div class="avatar-initials flex-shrink-0" style="background: var(--srm-primary-soft); color: var(--srm-primary);">
-                            ${initials}
+                    <div class="activity-item">
+                        <div class="act-icon" style="background:${m.bg};color:${m.color};">
+                            <i class="bi ${m.icon}"></i>
                         </div>
                         <div class="flex-grow-1 overflow-hidden">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="fw-semibold text-dark text-truncate" style="font-size: 0.85rem;">
-                                    ${m.label} <span class="${entityColor} bg-light px-1 rounded ms-1" style="font-size: 0.75rem;">${log.entity_type}</span>
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-1" style="margin-bottom:2px;">
+                                <span class="fw-semibold" style="font-size:0.84rem;color:#0f172a;">
+                                    ${m.label}
+                                    <span class="ms-1 px-2 py-0" style="font-size:0.68rem;font-weight:600;border-radius:6px;background:${es.bg};color:${es.color};">
+                                        ${log.entity_type || ''}
+                                    </span>
                                 </span>
-                                <span class="text-secondary small flex-shrink-0" style="font-size: 0.7rem;">
-                                    <i class="bi bi-clock me-1"></i>${timeAgo(log.created_at)}
+                                <span style="font-size:0.68rem;color:#94a3b8;white-space:nowrap;">
+                                    ${timeAgo(log.created_at)}
                                 </span>
                             </div>
-                            <div class="text-muted d-flex align-items-center gap-2" style="font-size: 0.75rem;">
-                                <span class="fw-medium text-dark-emphasis">${log.user_name || 'System'}</span>
-                                <span class="opacity-50">&middot;</span>
-                                <span class="text-secondary text-truncate">${log.user_role ? log.user_role.replace(/_/g, ' ') : 'User'}</span>
+                            <div style="font-size:0.75rem;color:#64748b;">
+                                <span style="font-weight:600;color:#334155;">${log.user_name || 'System'}</span>
+                                ${log.user_role ? `<span class="mx-1 opacity-50">&middot;</span><span>${log.user_role.replace(/_/g, ' ')}</span>` : ''}
                             </div>
                         </div>
                     </div>`;
                 }).join('');
             } catch (e) {
-                feed.innerHTML = `<p class="text-muted small text-center py-4">
-                        <i class="bi bi-wifi-off me-1"></i>Activity logs unavailable.</p>`;
+                feed.innerHTML = `<div class="empty-state"><i class="bi bi-wifi-off"></i><p>Activity logs unavailable.</p></div>`;
             }
         }
 
-        // ── Open Issues ───────────────────────────────────────────────────
-        function stBadge(status) {
-            const stStyle = {
-                PENDING: 'color: #d39e00; background-color: #fff8e1;',
-                SOLVED: 'color: #0ea5e9; background-color: #e0f2fe;',
-                COMPLETED: 'color: #198754; background-color: #e8f5e9;',
-                CANCEL: 'color: #dc3545; background-color: #ffeef0;'
-            };
-            const stLabel = (status || 'PENDING').replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
-            return `<span class="badge rounded-pill fw-medium px-2 py-1" style="${stStyle[status] || stStyle.PENDING} font-size: 0.65rem;">${stLabel}</span>`;
-        }
-
-        async function loadOpenIssues() {
-            const el = document.getElementById('open-issues-list');
+        async function loadIssuesOverview() {
+            const el = document.getElementById('issues-list');
+            if (!el) return;
+            el.innerHTML = `
+                <div class="py-3 px-3 stagger-fade-in">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="skeleton-box skeleton-circle flex-shrink-0"></div>
+                        <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium"></div><div class="skeleton-box skeleton-text short"></div></div>
+                    </div>
+                </div>`;
             try {
-                const issues = await apiGet('/issues/?status=PENDING,SOLVED,RESOLVED&limit=20');
-                el.innerHTML = issues.filter(i => ['PENDING', 'SOLVED', 'RESOLVED'].includes(i.status)).slice(0, 5).map(i => {
-                    const reporterInitials = getInitials(i.reporter_name || 'Unknown');
-                    return `
-                    <div class="task-item d-flex justify-content-between align-items-center py-3 border-bottom activity-item px-2">
-                        <div class="d-flex align-items-center gap-3 overflow-hidden">
-                            <div class="avatar-initials bg-light text-secondary" style="width: 32px; height: 32px; font-size: 0.65rem;">
-                                ${reporterInitials}
-                            </div>
-                            <div class="overflow-hidden">
-                                <div class="fw-semibold text-dark mb-0 text-truncate" style="font-size: 0.85rem;" title="${i.title}">
-                                    ${i.title}
-                                </div>
-                                <div class="d-flex align-items-center gap-2 small text-muted" style="font-size: 0.7rem;">
-                                    <span class="badge ${sevBadge(i.severity)} px-1" style="font-size: 0.6rem;">${i.severity}</span>
-                                    <span class="text-truncate">by ${i.reporter_name || 'Unknown'}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex-shrink-0 ms-2">
-                            ${stBadge(i.status)}
-                        </div>
-                    </div>`;
-                }).join('');
-                if (!el.innerHTML) {
-                    el.innerHTML = `<div class="text-center py-4 text-success">
-                        <i class="bi bi-check-circle" style="font-size:2rem;"></i>
-                        <p class="mt-2 small mb-0 fw-semibold">No open issues! Great job.</p></div>`;
+                const issues = await apiGet('/issues/?limit=5');
+                
+                if (!issues.length) {
+                    el.innerHTML = `<div class="empty-state py-4"><i class="bi bi-check2-circle opacity-25" style="font-size: 2rem;"></i><p class="mt-2 text-muted small">No active issues found.</p></div>`;
+                    return;
                 }
+                const sevStyle = {
+                    HIGH: 'color: #dc3545; background-color: #ffeef0;',
+                    MEDIUM: 'color: #d39e00; background-color: #fff8e1;',
+                    LOW: 'color: #0d6efd; background-color: #e6f0ff;'
+                };
+                el.innerHTML = issues.map(i => `
+                    <div class="emp-row d-flex align-items-center gap-3 py-2 px-3 border-bottom border-light hover-bg" onclick="location.href='issues.html?id=${i.id}'" style="cursor:pointer;">
+                        <div class="avatar-sq-sm" style="${sevStyle[i.severity] || sevStyle.LOW}width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:0.75rem;">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="fw-semibold text-truncate" style="font-size:0.84rem;color:#0f172a;">${i.title}</div>
+                            <div style="font-size:0.72rem;color:#94a3b8;">${i.project_name || 'N/A'} <span class="mx-1">&middot;</span> ${timeAgo(i.created_at)}</div>
+                        </div>
+                        <span class="badge rounded-pill" style="font-size:0.6rem; ${sevStyle[i.severity] || sevStyle.LOW}">${i.severity}</span>
+                    </div>`).join('');
             } catch (e) {
-                el.innerHTML = `<p class="text-muted small text-center py-4">Could not load issues.</p>`;
+                el.innerHTML = `<div class="empty-state py-4"><i class="bi bi-exclamation-triangle"></i><p class="small text-muted">Could not load issues.</p></div>`;
             }
         }
 
-        // ── Clients table ─────────────────────────────────────────────────
+        // ── Clients list ──────────────────────────────────────────────────
         async function loadClients() {
-            const tbody = document.getElementById('clients-table');
+            const el = document.getElementById('clients-table');
+            el.innerHTML = `
+                <div class="py-3 px-3 stagger-fade-in">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="skeleton-box skeleton-avatar" style="width: 36px; height: 36px;"></div>
+                        <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium mb-1"></div><div class="skeleton-box skeleton-text short"></div></div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="skeleton-box skeleton-avatar" style="width: 36px; height: 36px;"></div>
+                        <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium mb-1"></div><div class="skeleton-box skeleton-text short"></div></div>
+                    </div>
+                </div>`;
+
+            const pastelPairs = [
+                { bg: '#eef2ff', fg: '#2563eb' },
+                { bg: '#ecfdf5', fg: '#059669' },
+                { bg: '#fffbeb', fg: '#d97706' },
+                { bg: '#fef2f2', fg: '#dc2626' },
+                { bg: '#f0f9ff', fg: '#0ea5e9' },
+                { bg: '#fdf4ff', fg: '#9333ea' },
+            ];
+
             try {
                 const clients = await apiGet('/clients/?limit=6&sort_by=created_at&sort_order=desc');
                 if (!clients.length) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">No clients yet.</td></tr>`;
+                    el.innerHTML = `<div class="empty-state py-4"><i class="bi bi-people opacity-25" style="font-size:2rem;"></i><p class="mt-2 text-muted small">No clients yet.</p></div>`;
                     return;
                 }
-                tbody.innerHTML = clients.map(c => {
+                el.innerHTML = clients.map((c, idx) => {
                     const initials = getInitials(c.name || 'Client');
+                    const { bg, fg } = pastelPairs[idx % pastelPairs.length];
+                    const org = c.organization || '';
+                    const pm = c.pm_name || '';
                     return `
-                    <tr class="align-middle transition-all">
-                        <td>
-                           <div class="d-flex align-items-center gap-3">
-                              <div class="avatar-initials bg-primary-subtle text-primary" style="width:32px;height:32px;font-size:10px;">
-                                  ${initials}
-                              </div>
-                              <div>
-                                  <div class="fw-semibold text-dark" style="font-size: 0.85rem;">${c.name}</div>
-                                  <div class="text-muted" style="font-size: 0.75rem;">${c.email || 'No email'}</div>
-                              </div>
-                           </div>
-                        </td>
-                        <td><span class="text-secondary small fw-medium">${c.organization || '—'}</span></td>
-                        <td>
-                            <span class="badge-srm" style="${c.status === 'ACTIVE' ? 'color: #0d9488; background-color: #ccfbf1;' : 'color: #64748b; background-color: #f1f5f9;'}">
-                                ${(c.status || 'NEW').replace('_', ' ')}
-                            </span>
-                        </td>
-                        <td>
-                            ${c.pm_id ? `<div class="d-flex align-items-center gap-2 text-dark fw-medium" style="font-size: 0.75rem;">
-                                <div class="rounded-circle bg-primary" style="width: 6px; height: 6px;"></div>
-                                ${c.pm_name || 'Assigned'}
-                            </div>` : '<span class="text-muted small">Unassigned</span>'}
-                        </td>
-                    </tr>`;
+                    <div class="emp-row d-flex align-items-center gap-3 py-2 px-3 border-bottom border-light hover-bg" onclick="location.href='clients.html?id=${c.id}'" style="cursor:pointer;">
+                        <div class="avatar-sq" style="background:${bg};color:${fg};flex-shrink:0;">${initials}</div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="fw-semibold text-truncate" style="font-size:0.84rem;color:#0f172a;">
+                                ${c.name}${org ? ` <span style="font-weight:400;color:#94a3b8;font-size:0.75rem;">&middot; ${org}</span>` : ''}
+                            </div>
+                            <div style="font-size:0.72rem;color:#94a3b8;">${pm ? `PM: <span style="color:#2563eb;font-weight:600;">${pm}</span>` : '<span style="color:#cbd5e1;">Unassigned</span>'}</div>
+                        </div>
+                    </div>`;
                 }).join('');
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Could not load clients.</td></tr>`;
+                el.innerHTML = `<div class="empty-state py-4"><i class="bi bi-wifi-off"></i><p class="small text-muted">Could not load clients.</p></div>`;
             }
         }
 
         async function loadEmployees() {
             const el = document.getElementById('employees-list');
+            el.innerHTML = `
+                <div class="py-3 px-3 stagger-fade-in">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="skeleton-box skeleton-avatar" style="width: 40px; height: 40px; border-radius: 8px;"></div>
+                        <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium"></div><div class="skeleton-box skeleton-text short"></div></div>
+                    </div>
+                </div>`;
             try {
                 const emps = await apiGet('/employees/?limit=5');
                 if (!emps.length) {
@@ -676,7 +2178,7 @@
                     return;
                 }
                 const pastelColors = ['#eef2ff', '#ecfdf5', '#fffbeb', '#fef2f2', '#f0f9ff'];
-                const textColors = ['#4f46e5', '#059669', '#d97706', '#dc2626', '#0ea5e9'];
+                const textColors = ['#2563eb', '#059669', '#d97706', '#dc2626', '#0ea5e9'];
                 el.innerHTML = emps.map((e, idx) => {
                     const initials = getInitials(e.name || 'Employee');
                     const name = e.name || `Employee #${e.id}`;
@@ -684,17 +2186,11 @@
                     const bg = pastelColors[idx % pastelColors.length];
                     const fg = textColors[idx % textColors.length];
                     return `
-                    <div class="d-flex align-items-center gap-3 py-2 border-bottom activity-item mx-0">
-                        <div class="avatar-initials" style="background-color: ${bg}; color: ${fg}; width: 34px; height: 34px;">
-                            ${initials}
-                        </div>
+                    <div class="emp-row">
+                        <div class="avatar-sq" style="background:${bg};color:${fg};">${initials}</div>
                         <div class="flex-grow-1 overflow-hidden">
-                            <div class="fw-semibold text-dark text-truncate" style="font-size: 0.85rem;">${name}</div>
-                            <div class="text-muted d-flex align-items-center gap-2" style="font-size: 0.7rem;">
-                                <span>${role}</span>
-                                <span class="opacity-50">&middot;</span>
-                                <span>ID: ${e.id}</span>
-                            </div>
+                            <div class="fw-semibold text-truncate" style="font-size:0.84rem;color:#0f172a;">${name}</div>
+                            <div style="font-size:0.72rem;color:#94a3b8;">${role || 'Team Member'}</div>
                         </div>
                     </div>`;
                 }).join('');
@@ -712,63 +2208,173 @@
             return `<span class="${color} fw-bold me-1" style="font-size: 0.7rem;"><i class="bi ${icon}"></i> ${prefix}${pct}%</span><span class="text-secondary opacity-75" style="font-size: 0.65rem;">vs last month</span>`;
         }
 
-        async function loadDashboard() {
-            const areaId = document.getElementById('filter-area').value;
-            const userId = document.getElementById('filter-user').value;
-            const start = document.getElementById('filter-start').value;
-            const end = document.getElementById('filter-end').value;
-
-            let query = '';
-            if (areaId) query += `&area_id=${areaId}`;
-            if (userId) query += `&user_id=${userId}`;
-            if (start) query += `&start_date=${start}`;
-            if (end) query += `&end_date=${end}`;
-
-            if (query) query = '?' + query.substring(1);
-
+        async function loadDashboardPipelineChart() {
             try {
-                // Load pre-aggregated stats from backend
-                const stats = await apiGet('/reports/dashboard' + query);
+                const data = await apiGet('/shops/analytics/pm-pipeline');
+                if (!data || !data.length) return;
 
-                // Update KPIs
-                document.getElementById('kpi-leads').textContent = (stats.total_visits || 0).toLocaleString('en-IN');
-                document.getElementById('kpi-leads-trend').innerHTML = formatTrend(stats.visits_mom_pct || 0);
+                const labels = data.map(item => item.pm_name);
+                const inDemoData = data.map(item => item.in_demo);
+                const meetingSetData = data.map(item => item.meeting_set);
+                const convertedData = data.map(item => item.converted);
 
-                document.getElementById('kpi-clients').textContent = (stats.active_clients || 0).toLocaleString('en-IN');
-                document.getElementById('kpi-clients-trend').innerHTML = formatTrend(stats.clients_mom_pct || 0);
+                const ctx = document.getElementById('dashboardPmPipelineChart').getContext('2d');
 
-                document.getElementById('kpi-projects').textContent = (stats.ongoing_projects || 0).toLocaleString('en-IN');
-                document.getElementById('kpi-projects-trend').innerHTML = formatTrend(stats.projects_mom_pct || 0);
+                if (window._dashPmChart) window._dashPmChart.destroy();
 
-                // Format Revenue (e.g. 24.5L, 300K, etc.)
-                const rev = stats.revenue_mtd || 0;
-                let revText = '₹' + rev.toLocaleString('en-IN');
-                if (rev >= 100000) {
-                    revText = '₹' + (rev / 100000).toFixed(1) + 'L';
-                } else if (rev >= 1000) {
-                    revText = '₹' + (rev / 1000).toFixed(1) + 'K';
-                }
-                document.getElementById('kpi-revenue').textContent = revText;
-                document.getElementById('kpi-revenue-trend').innerHTML = formatTrend(stats.revenue_mom_pct || 0);
-
-                // Charts
-                initCharts(stats);
-
-            } catch (e) {
-                console.error("Dashboard Stats Error:", e);
-                ['leads', 'clients', 'projects', 'revenue'].forEach(id => {
-                    const el = document.getElementById('kpi-' + id);
-                    if (el) el.textContent = '—';
+                window._dashPmChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'In Demo',
+                                data: inDemoData,
+                                backgroundColor: '#2563eb',
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Meeting Set',
+                                data: meetingSetData,
+                                backgroundColor: '#eab308',
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Converted',
+                                data: convertedData,
+                                backgroundColor: '#10b981',
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true,
+                                grid: { display: false }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 },
+                                grid: { borderDash: [5, 5] }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { usePointStyle: true, padding: 20 }
+                            }
+                        }
+                    }
                 });
+            } catch (e) {
+                console.error("Error loading dashboard pipeline chart:", e);
             }
+        }
 
-            // Panels (Individual lists still fetch their own data for detailed view)
-            await Promise.allSettled([
-                loadActivity(),
-                loadOpenIssues(),
-                loadClients(),
-                loadEmployees()
-            ]);
+        async function loadDashboard() {
+            try {
+                // Show/hide Punch In card based on role
+                const currentUser = getUser();
+                if (currentUser && currentUser.role !== 'ADMIN') {
+                    initAttendance();
+                }
+
+                // ... existing data fetching ...
+                const areaEl = document.getElementById('filter-area');
+                const userEl = document.getElementById('filter-user');
+                const startEl = document.getElementById('filter-start');
+                const endEl = document.getElementById('filter-end');
+                const areaId = areaEl ? areaEl.value : '';
+                const userId = userEl ? userEl.value : '';
+                const start = startEl ? startEl.value : '';
+                const end = endEl ? endEl.value : '';
+
+                let query = '';
+                if (areaId) query += `&area_id=${areaId}`;
+                if (userId) query += `&user_id=${userId}`;
+                if (start) query += `&start_date=${start}`;
+                if (end) query += `&end_date=${end}`;
+                if (query) query = '?' + query.substring(1);
+
+                try {
+                    // Load pre-aggregated stats from backend
+                    const stats = await apiGet('/reports/dashboard' + query);
+
+                    // Update KPIs (with null guards since non-admin dashboard may differ)
+                    // Update KPIs (with null guards since non-admin dashboard may differ)
+                    const flags = getRoleFlags(currentUser?.role);
+                    
+                    // Card 1: Visits / Active Projects
+                    const kpiLeads = document.getElementById('kpi-leads');
+                    const val1 = flags.isPM ? stats.ongoing_projects : stats.total_visits;
+                    if (kpiLeads) kpiLeads.textContent = (val1 || 0).toLocaleString('en-IN');
+                    const kpiLeadsTrend = document.getElementById('kpi-leads-trend');
+                    if (kpiLeadsTrend) kpiLeadsTrend.innerHTML = formatTrend(flags.isPM ? stats.projects_mom_pct : stats.visits_mom_pct || 0);
+
+                    // Card 2: Clients / Leads
+                    const kpiClients = document.getElementById('kpi-clients');
+                    if (kpiClients) kpiClients.textContent = (stats.active_clients || 0).toLocaleString('en-IN');
+                    const kpiClientsTrend = document.getElementById('kpi-clients-trend');
+                    if (kpiClientsTrend) kpiClientsTrend.innerHTML = formatTrend(stats.clients_mom_pct || 0);
+
+                    // Card 3: Employees / Incentive / Meetings
+                    const kpiEmployees = document.getElementById('kpi-employees');
+                    let val3 = stats.employees_present;
+                    let val3Suffix = '';
+                    if (flags.isSales || flags.isTelesales) {
+                        val3 = stats.total_incentive;
+                        val3Suffix = '₹';
+                    } else if (flags.isPM) {
+                        val3 = stats.meetings_today;
+                    }
+                    if (kpiEmployees) kpiEmployees.textContent = val3Suffix + (val3 || 0).toLocaleString('en-IN');
+                    const kpiEmployeesTrend = document.getElementById('kpi-employees-trend');
+                    if (kpiEmployeesTrend) kpiEmployeesTrend.innerHTML = formatTrend(stats.presence_mom_pct || 0);
+
+                    // Card 4: Revenue / Todos / Issues
+                    const kpiRevenue = document.getElementById('kpi-revenue');
+                    const kpiRevenueTrend = document.getElementById('kpi-revenue-trend');
+                    if (flags.isAdmin) {
+                        const rev = stats.revenue_mtd || 0;
+                        let revText = '₹' + rev.toLocaleString('en-IN');
+                        if (rev >= 100000) revText = '₹' + (rev / 100000).toFixed(1) + 'L';
+                        else if (rev >= 1000) revText = '₹' + (rev / 1000).toFixed(1) + 'K';
+                        if (kpiRevenue) kpiRevenue.textContent = revText;
+                        if (kpiRevenueTrend) kpiRevenueTrend.innerHTML = formatTrend(stats.revenue_mom_pct || 0);
+                    } else {
+                        const val4 = flags.isPM ? stats.open_issues : stats.pending_todos;
+                        if (kpiRevenue) kpiRevenue.textContent = (val4 || 0).toLocaleString('en-IN');
+                        if (kpiRevenueTrend) kpiRevenueTrend.innerHTML = '—';
+                    }
+
+                    // Charts
+                    initCharts(stats);
+
+                    // PM Pipeline
+                    loadDashboardPipelineChart();
+
+                } catch (e) {
+                    console.error("Dashboard Stats Error:", e);
+                    ['leads', 'clients', 'employees', 'revenue'].forEach(id => {
+                        const el = document.getElementById('kpi-' + id);
+                        if (el) el.textContent = '—';
+                    });
+                }
+
+                // Panels (Individual lists still fetch their own data for detailed view)
+                await Promise.allSettled([
+                    loadActivity(),
+                    loadIssuesOverview(),
+                    loadClients(),
+                    loadEmployees()
+                ]);
+            } catch (err) {
+                console.error("Dashboard load failed", err);
+            }
         }
 
         async function populateFilters() {
@@ -781,28 +2387,253 @@
                 const areaSel = document.getElementById('filter-area');
                 const userSel = document.getElementById('filter-user');
 
-                areas.forEach(a => {
-                    const opt = document.createElement('option');
-                    opt.value = a.id;
-                    opt.textContent = a.name;
-                    areaSel.appendChild(opt);
-                });
+                if (areaSel) {
+                    areas.forEach(a => {
+                        const opt = document.createElement('option');
+                        opt.value = a.id;
+                        opt.textContent = a.name;
+                        areaSel.appendChild(opt);
+                    });
+                }
 
-                users.filter(u => u.role !== 'CLIENT').forEach(u => {
-                    const opt = document.createElement('option');
-                    opt.value = u.id;
-                    opt.textContent = u.name || u.email.split('@')[0];
-                    userSel.appendChild(opt);
-                });
+                if (userSel) {
+                    users.filter(u => u.role !== 'CLIENT').forEach(u => {
+                        const opt = document.createElement('option');
+                        opt.value = u.id;
+                        opt.textContent = u.name || u.email.split('@')[0];
+                        userSel.appendChild(opt);
+                    });
+                }
             } catch (e) {
                 console.warn("Failed to populate filters", e);
             }
         }
 
-        document.getElementById('apply-filters').onclick = loadDashboard;
+        // Filter panel wiring (only available for admins — guard against null)
+        const applyFiltersBtn = document.getElementById('apply-filters');
+        const resetFiltersBtn = document.getElementById('reset-filters');
+        const filterPanelToggle = document.getElementById('filter-panel-toggle');
+
+        if (applyFiltersBtn) {
+            applyFiltersBtn.onclick = function () {
+                updateFilterPills();
+                loadDashboard();
+            };
+        }
+        if (resetFiltersBtn) {
+            resetFiltersBtn.onclick = function () {
+                const fa = document.getElementById('filter-area');
+                const fu = document.getElementById('filter-user');
+                const fs = document.getElementById('filter-start');
+                const fe = document.getElementById('filter-end');
+                if (fa) fa.value = '';
+                if (fu) fu.value = '';
+                if (fs) fs.value = '';
+                if (fe) fe.value = '';
+                updateFilterPills();
+                loadDashboard();
+            };
+        }
+
+        // Update pills on change, but do NOT auto-reload — wait for Apply click
+        ['filter-area', 'filter-user', 'filter-start', 'filter-end'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', function () { updateFilterPills(); });
+        });
+
+        // Filter panel toggle
+        var filterPanelBody = document.getElementById('filter-panel-body');
+        var filterToggleBtn = document.getElementById('filter-toggle-btn');
+        var filterToggleLabel = document.getElementById('filter-toggle-label');
+        if (filterPanelToggle && filterPanelBody) {
+            filterPanelToggle.addEventListener('click', function () {
+                var isOpen = filterPanelBody.classList.toggle('open');
+                if (filterToggleBtn) filterToggleBtn.classList.toggle('open', isOpen);
+                if (filterToggleLabel) filterToggleLabel.textContent = isOpen ? 'Hide' : 'Show';
+            });
+        }
+
+        // Active filter pills in header
+        function updateFilterPills() {
+            var pills = document.getElementById('filter-pills');
+            if (!pills) return;
+            var parts = [];
+            var area = document.getElementById('filter-area');
+            var user = document.getElementById('filter-user');
+            var start = document.getElementById('filter-start').value;
+            var end = document.getElementById('filter-end').value;
+            if (area.value) parts.push({ key: 'area', label: area.options[area.selectedIndex].text, inputId: 'filter-area' });
+            if (user.value) parts.push({ key: 'user', label: user.options[user.selectedIndex].text, inputId: 'filter-user' });
+            if (start) parts.push({ key: 'start', label: 'From: ' + start, inputId: 'filter-start' });
+            if (end) parts.push({ key: 'end', label: 'To: ' + end, inputId: 'filter-end' });
+            pills.innerHTML = parts.map(function (p) {
+                return '<span class="filter-pill">' + p.label +
+                    '<button class="filter-pill-remove" data-input="' + p.inputId + '" title="Remove">&times;</button></span>';
+            }).join('');
+            pills.querySelectorAll('.filter-pill-remove').forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    document.getElementById(btn.dataset.input).value = '';
+                    updateFilterPills();
+                    loadDashboard();
+                });
+            });
+        }
+
+        // ── Period Picker ─────────────────────────────────────────────
+        const PERIOD_LABELS = {
+            today: { badge: 'Today Only', labels: ['Visits (Today)', 'Active Clients', 'Present Employees', 'Revenue (Today)'] },
+            week: { badge: 'This Week', labels: ['Visits (This Week)', 'Active Clients', 'Present Employees', 'Revenue (This Week)'] },
+            month: { badge: 'This Month', labels: ['Visits (MTD)', 'Active Clients', 'Present Employees', 'Revenue (MTD)'] },
+            last_3_months: { badge: 'Last 3 Months', labels: ['Visits (3M)', 'Active Clients', 'Present Employees', 'Revenue (3M)'] },
+            last_6_months: { badge: 'Last 6 Months', labels: ['Visits (6M)', 'Active Clients', 'Present Employees', 'Revenue (6M)'] },
+            this_year: { badge: 'This Year', labels: ['Visits (YTD)', 'Active Clients', 'Present Employees', 'Revenue (YTD)'] },
+            last_year: { badge: 'Previous Year', labels: ['Visits (Last Yr)', 'Active Clients', 'Present Employees', 'Revenue (Last Yr)'] },
+            all: { badge: 'All Records', labels: ['Total Visits', 'Active Clients', 'Present Employees', 'Total Revenue'] }
+        };
+
+        function applyPeriod(period, reload) {
+            const today = new Date();
+            const fmt = d => d.toISOString().split('T')[0];
+            let start = '', end = '';
+
+            if (period === 'today') {
+                start = end = fmt(today);
+            } else if (period === 'week') {
+                const day = today.getDay();
+                const monday = new Date(today);
+                monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
+                start = fmt(monday);
+                end = fmt(today);
+            } else if (period === 'month') {
+                start = fmt(new Date(today.getFullYear(), today.getMonth(), 1));
+                end = fmt(today);
+            } else if (period === 'last_3_months') {
+                start = fmt(new Date(today.getFullYear(), today.getMonth() - 3, 1));
+                end = fmt(today);
+            } else if (period === 'last_6_months') {
+                start = fmt(new Date(today.getFullYear(), today.getMonth() - 6, 1));
+                end = fmt(today);
+            } else if (period === 'this_year') {
+                start = fmt(new Date(today.getFullYear(), 0, 1));
+                end = fmt(today);
+            } else if (period === 'last_year') {
+                start = fmt(new Date(today.getFullYear() - 1, 0, 1));
+                end = fmt(new Date(today.getFullYear() - 1, 11, 31));
+            }
+            // 'all' leaves start/end empty
+
+            const fsEl = document.getElementById('filter-start');
+            const feEl = document.getElementById('filter-end');
+            if (fsEl) fsEl.value = start;
+            if (feEl) feEl.value = end;
+
+            // Mark active button
+            document.querySelectorAll('.period-btn').forEach(function (btn) {
+                btn.classList.toggle('active', btn.dataset.period === period);
+            });
+
+            // Update context badge
+            var meta = PERIOD_LABELS[period] || PERIOD_LABELS.all;
+            const periodBadge = document.getElementById('period-context-badge');
+            if (periodBadge) periodBadge.textContent = meta.badge;
+
+            // Update KPI labels (Role-Aware)
+            const rolePrefixes = {
+                SALES: ['My Visits', 'My Leads', 'My Incentive', 'Pending Tasks'],
+                TELESALES: ['My Visits', 'My Leads', 'My Incentive', 'Pending Tasks'],
+                PROJECT_MANAGER: ['Active Projects', 'My Clients', 'Today\'s Meetings', 'Open Issues'],
+                ADMIN: ['Total Visits', 'Active Clients', 'Present Employees', 'Total Revenue']
+            };
+            const role = currentUser?.role || 'ADMIN';
+            const prefixes = rolePrefixes[role] || rolePrefixes.ADMIN;
+            
+            const suffixes = {
+                today: ' (Today)', week: ' (This Week)', month: ' (MTD)',
+                last_3_months: ' (3M)', last_6_months: ' (6M)',
+                this_year: ' (YTD)', last_year: ' (Last Yr)', all: ''
+            };
+            const suffix = suffixes[period] || '';
+
+            var kpiIds = ['kpi-visits-label', 'kpi-clients-label', 'kpi-employees-label', 'kpi-revenue-label'];
+            kpiIds.forEach(function (id, i) {
+                var el = document.getElementById(id);
+                if (el) el.textContent = prefixes[i] + suffix;
+            });
+
+            updateFilterPills();
+            if (reload !== false) loadDashboard();
+        }
+
+        document.querySelectorAll('.period-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () { applyPeriod(btn.dataset.period); });
+        });
+
+
 
         populateFilters();
-        loadDashboard();
+
+        // Always default to 'all' (all data till now) on page load
+        applyPeriod('all');
+    </script>
+
+    <!-- ── Dashboard Widget Drag & Drop ── -->
+    <script>
+        (function initDashboardDnd() {
+            const STORAGE_KEY_PREFIX = 'dash-widget-order-';
+
+            function saveOrder(rowId, order) {
+                try { localStorage.setItem(STORAGE_KEY_PREFIX + rowId, JSON.stringify(order)); } catch (e) { }
+            }
+
+            function getOrder(rowId) {
+                try { return JSON.parse(localStorage.getItem(STORAGE_KEY_PREFIX + rowId)) || null; } catch (e) { return null; }
+            }
+
+            function applyOrder(row, order) {
+                if (!order || !order.length) return;
+                order.forEach(id => {
+                    const el = row.querySelector(`[data-widget-id="${id}"]`);
+                    if (el) row.appendChild(el);
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                ['widget-row-1', 'widget-row-2'].forEach(rowId => {
+                    const row = document.getElementById(rowId);
+                    if (!row || typeof Sortable === 'undefined') return;
+
+                    // Restore saved order
+                    applyOrder(row, getOrder(rowId));
+
+                    Sortable.create(row, {
+                        animation: 250,
+                        easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+                        ghostClass: 'sortable-ghost',
+                        dragClass: 'sortable-drag',
+                        handle: '.section-card-header',
+                         onEnd: function () {
+                            const order = Array.from(row.querySelectorAll('[data-widget-id]'))
+                                .map(el => el.dataset.widgetId);
+                            saveOrder(rowId, order);
+                        }
+                    });
+                });
+                
+                // Refresh order if widget IDs changed
+                ['widget-row-1'].forEach(rowId => {
+                    const row = document.getElementById(rowId);
+                    if (row) {
+                       const order = getOrder(rowId);
+                       if (order && order.includes('open-issues')) {
+                           const newOrder = order.map(id => id === 'open-issues' ? 'present-employees' : id);
+                           saveOrder(rowId, newOrder);
+                           applyOrder(row, newOrder);
+                       }
+                    }
+                });
+            });
+        })();
     </script>
 </body>
 

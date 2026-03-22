@@ -12,8 +12,8 @@ import sys, os
 _script_dir = os.path.dirname(os.path.abspath(__file__))
 _backend_dir = os.path.dirname(_script_dir)
 _root_dir = os.path.dirname(_backend_dir)
-# Insert root first, then backend — so backend/app/ takes priority over root app.py
-for _p in [_root_dir, _backend_dir]:
+# Insert backend first, so backend/app/ takes priority over root app.py
+for _p in [_backend_dir, _root_dir]:
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
@@ -210,7 +210,7 @@ print(f"  + {len(visits_data)} visits added")
 print("\nSeeding projects...")
 
 projects_data = [
-    dict(name="CRM Portal Rollout",    description="Full CRM deployment for TechNova",      client_id=created_clients[0].id, pm_id=pm1.id, status="IN_PROGRESS", budget=250000.0, start_date=now - timedelta(days=30), end_date=now + timedelta(days=60)),
+    dict(name="SRM Portal Rollout",    description="Full SRM deployment for TechNova",      client_id=created_clients[0].id, pm_id=pm1.id, status="IN_PROGRESS", budget=250000.0, start_date=now - timedelta(days=30), end_date=now + timedelta(days=60)),
     dict(name="Infra Monitoring Setup",description="Setup monitoring dashboard for Infra",  client_id=created_clients[1].id, pm_id=pm2.id, status="PLANNING",    budget=150000.0, start_date=now + timedelta(days=5),  end_date=now + timedelta(days=90)),
     dict(name="Retail ERP Integration",description="Integrate ERP with retail POS system",  client_id=created_clients[2].id, pm_id=pm1.id, status="ON_HOLD",    budget=320000.0, start_date=now - timedelta(days=10), end_date=now + timedelta(days=45)),
     dict(name="Finance App Revamp",    description="UI/UX overhaul for finance web app",    client_id=created_clients[3].id, pm_id=pm2.id, status="COMPLETED",  budget=180000.0, start_date=now - timedelta(days=90), end_date=now - timedelta(days=5)),
@@ -283,7 +283,7 @@ print("\nSeeding notifications...")
 
 try:
     notifs_data = [
-        dict(user_id=admin.id,  title="New Issue Raised",    message="A HIGH severity issue was reported on CRM Portal Rollout.", is_read=False),
+        dict(user_id=admin.id,  title="New Issue Raised",    message="A HIGH severity issue was reported on SRM Portal Rollout.", is_read=False),
         dict(user_id=pm1.id,    title="Project Assigned",    message="You have been assigned as PM for Logistics Dashboard.",      is_read=False),
         dict(user_id=sales1.id, title="Visit Follow-up Due", message="Follow up with Central Electronics within 24 hours.",        is_read=True),
         dict(user_id=pm2.id,    title="Budget Alert",        message="Infra Monitoring Setup budget is 80% utilised.",             is_read=False),

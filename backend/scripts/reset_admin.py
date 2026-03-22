@@ -49,7 +49,7 @@ def reset_admin():
                 hashed_password=get_password_hash(password),
                 role=UserRole.ADMIN,
                 is_active=True,
-                name="System Administrator"
+                name="Tisha Admin"
             )
             db.add(user)
         

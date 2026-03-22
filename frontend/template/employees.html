@@ -7,8 +7,10 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Employees — SRM AI SETU</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Employees | SRM AI SETU</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/theme.css?v=1772780188">
@@ -37,33 +39,28 @@
         }
 
         .role-ADMIN {
-            background: #fef08a;
-            color: #854d0e;
+            background: var(--badge-admin-bg);
+            color: var(--badge-admin-text);
         }
-
         .role-SALES {
-            background: #dbeafe;
-            color: #1e40af;
+            background: var(--badge-sales-bg);
+            color: var(--badge-sales-text);
         }
-
         .role-TELESALES {
-            background: #e0e7ff;
-            color: #3730a3;
+            background: var(--badge-telesales-bg);
+            color: var(--badge-telesales-text);
         }
-
         .role-PROJECT_MANAGER {
-            background: #dcfce7;
-            color: #166534;
+            background: var(--badge-pm-bg);
+            color: var(--badge-pm-text);
         }
-
         .role-PROJECT_MANAGER_AND_SALES {
-            background: #fefce8;
-            color: #a16207;
+            background: var(--badge-pm-sales-bg);
+            color: var(--badge-pm-sales-text);
         }
-
         .role-CLIENT {
-            background: #f3f4f6;
-            color: #4b5563;
+            background: var(--badge-client-bg);
+            color: var(--badge-client-text);
         }
 
         .status-badge {
@@ -77,41 +74,473 @@
         }
 
         .status-active {
-            background: #dcfce7;
-            color: #16a34a;
+            background: var(--badge-success-bg);
+            color: var(--badge-success-text);
         }
-
         .status-inactive {
-            background: #fee2e2;
-            color: #dc2626;
+            background: var(--badge-danger-bg);
+            color: var(--badge-danger-text);
+        }
+        
+        @keyframes rotate-ring-emp {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .emp-ring-active {
+            opacity: 1 !important;
+            animation: rotate-ring-emp 3s linear infinite;
+        }
+        @media (min-width: 768px) {
+            .border-md-end { border-right: 1px solid rgba(255,255,255,0.1) !important; }
+            .border-md-start { border-left: 1px solid rgba(255,255,255,0.1) !important; }
         }
 
-    </style>
+        /* ── Professional Attendance Widget ── */
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+        .pro-att-widget {
+            background: linear-gradient(135deg, #0d1f5c 0%, #102272 40%, #0f1e6a 70%, #0a1550 100%);
+            border-radius: 16px;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255,255,255,0.04) inset;
+            padding: 22px 24px;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ambient glow blobs */
+        .pro-att-widget::before {
+            content: '';
+            position: absolute;
+            top: -40px; left: -40px;
+            width: 180px; height: 180px;
+            background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .pro-att-widget::after {
+            content: '';
+            position: absolute;
+            bottom: -40px; right: -40px;
+            width: 160px; height: 160px;
+            background: radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* Left Zone */
+        .pro-att-left {
+            flex: 1;
+            padding-right: 24px;
+            min-width: 0;
+        }
+
+        .pro-att-date {
+            font-size: 10.5px;
+            font-weight: 600;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.32);
+            margin-bottom: 6px;
+        }
+
+        .pro-att-greeting-line {
+            font-size: 13px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.70);
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .pro-att-name {
+            font-size: 22px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pro-att-name.punched-in {
+            background: linear-gradient(90deg, #c7d7ff, #a5b8ff, #e0e7ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .pro-att-name.punched-out {
+            color: rgba(255,255,255,0.42);
+            -webkit-text-fill-color: rgba(255,255,255,0.42);
+        }
+
+        .pro-att-live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .pro-att-live-badge.live {
+            background: rgba(74, 222, 128, 0.08);
+            border: 1px solid rgba(74, 222, 128, 0.22);
+            color: #4ade80;
+        }
+
+        .pro-att-live-badge.offline {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.10);
+            color: rgba(255,255,255,0.35);
+        }
+
+        .pro-att-pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 0 0 rgba(74,222,128,0.5);
+            animation: attPulse 2s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes attPulse {
+            0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.5); }
+            60%  { box-shadow: 0 0 0 5px rgba(74,222,128,0); }
+            100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+        }
+
+        /* Vertical Separator */
+        .pro-att-sep {
+            width: 1px;
+            align-self: stretch;
+            background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.10) 20%, rgba(255,255,255,0.10) 80%, transparent);
+            flex-shrink: 0;
+            margin: 0 4px;
+        }
+
+        /* Right Zone */
+        .pro-att-right {
+            padding-left: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 260px;
+            max-width: 300px;
+        }
+
+        /* Row 1: Avatar + Name + Badge */
+        .pro-att-user-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pro-att-avatar-wrap {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .pro-att-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b5bdb, #6366f1);
+            border: 2px solid rgba(255,255,255,0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 800;
+            color: white;
+            overflow: hidden;
+        }
+
+        .pro-att-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .pro-att-status-dot {
+            position: absolute;
+            bottom: 1px; right: 1px;
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            border: 2px solid #102272;
+        }
+
+        .pro-att-status-dot.online  { background: #4ade80; }
+        .pro-att-status-dot.offline { background: rgba(255,255,255,0.25); }
+
+        .pro-att-user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pro-att-user-name {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: white;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pro-att-punch-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 3px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+
+        .pro-att-punch-badge.in {
+            background: rgba(74,222,128,0.10);
+            border: 1px solid rgba(74,222,128,0.20);
+            color: #4ade80;
+        }
+
+        .pro-att-punch-badge.out {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.10);
+            color: rgba(255,255,255,0.40);
+        }
+
+        /* Row 2: Info cells + Button */
+        .pro-att-bottom-row {
+            display: flex;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        .pro-att-info-cells {
+            display: flex;
+            flex: 1;
+            gap: 0;
+            background: rgba(0,0,0,0.25);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.06);
+            overflow: hidden;
+        }
+
+        .pro-att-info-cell {
+            flex: 1;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .pro-att-info-cell + .pro-att-info-cell {
+            border-left: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .pro-att-info-label {
+            font-size: 8.5px;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.30);
+        }
+
+        .pro-att-info-val {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.80);
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+        }
+
+        /* Timer value uses JetBrains Mono */
+        .pro-att-timer-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 400;
+            font-size: 17px;
+            color: #fff;
+            letter-spacing: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .pro-att-timer-val .att-sep {
+            opacity: 1;
+            animation: timerColonBlink 1s step-start infinite;
+        }
+
+        @keyframes timerColonBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.18; }
+        }
+
+        /* Punch Button */
+        .pro-att-btn {
+            width: 72px;
+            flex-shrink: 0;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.25;
+            text-align: center;
+            padding: 0;
+        }
+
+        .pro-att-btn.punch-in {
+            background: linear-gradient(150deg, #15803d, #22c55e);
+            box-shadow: 0 4px 14px rgba(34,197,94,0.35);
+        }
+
+        .pro-att-btn.punch-out {
+            background: linear-gradient(150deg, #b91c1c, #ef4444);
+            box-shadow: 0 4px 14px rgba(239,68,68,0.35);
+        }
+
+        .pro-att-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .pro-att-btn.punch-in:hover  { box-shadow: 0 6px 18px rgba(34,197,94,0.50); }
+        .pro-att-btn.punch-out:hover { box-shadow: 0 6px 18px rgba(239,68,68,0.50); }
+
+        .pro-att-btn:active { transform: scale(0.97); }
+
+        @media (max-width: 768px) {
+            .pro-att-widget {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 16px;
+                gap: 16px;
+            }
+            .pro-att-left {
+                padding-right: 0;
+                text-align: center;
+            }
+            .pro-att-sep {
+                height: 1px;
+                width: 100%;
+                margin: 4px 0;
+            }
+            .pro-att-right {
+                padding-left: 0;
+                min-width: 0;
+                max-width: 100%;
+            }
+            .pro-att-bottom-row {
+                flex-direction: column;
+            }
+            .pro-att-btn {
+                width: 100%;
+                height: 44px;
+            }
+            
+            /* Responsive Table Columns */
+            .d-mobile-none { display: none !important; }
+        }
+
+</style>
 </head>
 
 <body>
     <div class="d-flex">
         <div id="sidebar"></div>
-        <div class="flex-grow-1">
-            <div class="page-content">
-                <!-- Header -->
-                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <div class="flex-grow-1 main-wrapper">
+            <div class="page-content mx-auto" style="max-width: 1400px;">
+                <!-- Header Section -->
+                <div class="page-header-glass d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
-                        <h2 class="page-section-title" style="font-weight: 700; color: #1e293b; margin-bottom: 4px;">
-                            Employees Directory</h2>
-                        <p class="text-muted mb-0" style="font-size:0.93rem;">Manage your team members, their roles, and
-                            system access profiles.</p>
+                        <h2 class="page-section-title fw-bold mb-1">Employees Directory</h2>
+                        <p class="text-muted mb-0 small">Directory, department management and attendance tracking.</p>
                     </div>
                 </div>
 
-                <!-- Filter Panel Wrapper -->
-                <div id="filter-wrapper"></div>
+                <!-- Global Filter Panel -->
+                <div id="global-filter-panel" class="mb-4">
+                    <div class="filter-panel">
+                        <div class="filter-panel-head" id="emp-filter-panel-toggle">
+                            <div class="filter-panel-head-main">
+                                <div class="filter-panel-head-left">
+                                    <i class="bi bi-sliders2"></i>
+                                    Filters
+                                </div>
+                                <div class="filter-active-pills" id="emp-filter-pills"></div>
+                            </div>
+                            <div class="filter-panel-head-meta">
+                                <div class="text-muted small" id="emp-result-count"></div>
+                                <button class="filter-toggle-btn" id="emp-filter-toggle-btn" type="button">
+                                    <span id="emp-filter-toggle-label">Show</span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="filter-panel-body" id="emp-filter-panel-body">
+                            <div class="filter-grid">
+                                <div class="filter-field">
+                                    <label>Department</label>
+                                    <select id="filter-department" class="form-select">
+                                        <option value="">All Departments</option>
+                                    </select>
+                                </div>
+                                <div class="filter-field">
+                                    <label>Role</label>
+                                    <select id="filter-role" class="form-select">
+                                        <option value="">All Roles</option>
+                                        <option value="ADMIN">Admin</option>
+                                        <option value="SALES">Sales</option>
+                                        <option value="TELESALES">Telesales</option>
+                                        <option value="PROJECT_MANAGER">Project Manager</option>
+                                        <option value="PROJECT_MANAGER_AND_SALES">PM & Sales</option>
+                                    </select>
+                                </div>
+                                <div class="filter-field">
+                                    <label>Status</label>
+                                    <select id="filter-status" class="form-select">
+                                        <option value="">All Status</option>
+                                        <option value="true">Active</option>
+                                        <option value="false">Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="filter-actions">
+                                <button class="btn-filter-reset" type="button" onclick="clearEmpFilters()">
+                                    <i class="bi bi-x-circle"></i>Clear
+                                </button>
+                                <button class="btn-filter-apply" type="button" onclick="loadEmployees()">
+                                    <i class="bi bi-check2"></i>Apply Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Employees Table -->
                 <div class="grid-card">
                     <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center gap-3">
-                            <h6 class="fw-bold mb-0" style="color:#334155;">All Employees</h6>
                             <span class="badge bg-primary rounded-pill px-3 py-2" id="employee-count-badge">0
                                 Employees</span>
                         </div>
@@ -127,12 +556,12 @@
                                         <input type="checkbox" class="form-check-input" id="emp-select-all"
                                             onclick="toggleAllEmployees(this)">
                                     </th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted">Employee</th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted">Department & Code</th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted">Role</th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted">Contact</th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted">Status</th>
-                                    <th class="py-3 px-4 text-end text-uppercase small fw-bold text-muted">Actions</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 200px;">Employee</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted d-mobile-none" style="min-width: 150px;">Department & Code</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 120px;">Role</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted d-mobile-none" style="min-width: 150px;">Contact</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 100px;">Status</th>
+                                    <th class="py-3 px-4 text-end text-uppercase small fw-bold text-muted" style="min-width: 120px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="employees-tbody">
@@ -199,11 +628,12 @@
                                     <tr>
                                         <th style="white-space:nowrap;">Date</th>
                                         <th style="white-space:nowrap;">Employee</th>
-                                        <th style="white-space:nowrap;">Punch In</th>
-                                        <th style="white-space:nowrap;">Punch Out</th>
+                                        <th style="white-space:nowrap;" class="d-mobile-none">Punch In</th>
+                                        <th style="white-space:nowrap;" class="d-mobile-none">Punch Out</th>
                                         <th style="white-space:nowrap;">Hours</th>
                                         <th style="white-space:nowrap;">Status</th>
-                                        <th style="white-space:nowrap;">Leave</th>
+                                        <th style="white-space:nowrap;" class="d-mobile-none">Leave</th>
+                                        <th style="white-space:nowrap; text-align:right;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="attendance-admin-tbody">
@@ -216,62 +646,67 @@
                     </div>
                 </div>
 
-                <div class="grid-card mt-4" id="employee-self-card" style="display:none;">
-                    <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="fw-bold mb-0" style="color:#334155;">My Attendance & Punch</h6>
-                            <div class="text-muted small">Your own punch timing and daily attendance status</div>
-                        </div>
-                    </div>
-                    <div class="p-4" id="employee-self-body">
-                        <div class="row g-3 mb-3">
-                            <div class="col-6 col-md-3">
-                                <div class="border rounded p-3 bg-light">
-                                    <div class="text-muted small">Punch Status</div>
-                                    <div class="fw-bold" id="self-punch-status">--</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <div class="border rounded p-3 bg-light">
-                                    <div class="text-muted small">Last Punch</div>
-                                    <div class="fw-bold" id="self-last-punch">--</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <div class="border rounded p-3 bg-light">
-                                    <div class="text-muted small">Today Hours</div>
-                                    <div class="fw-bold" id="self-today-hours">0.00</div>
-                                </div>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <div class="border rounded p-3 bg-light">
-                                    <div class="text-muted small">This Week</div>
-                                    <div class="fw-bold" id="self-week-hours">0.00</div>
-                                </div>
+
+                    <!-- Attendance History Card -->
+                    <div class="grid-card" id="self-attendance-card" style="display:none;">
+                        <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-bold mb-0" style="color:#334155;">My Attendance History</h6>
+                                <div class="text-muted small">Your punch timing and attendance records</div>
                             </div>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div class="text-muted small" id="self-attendance-count">0 record(s)</div>
-                            <div class="fw-semibold" id="self-attendance-total-hours">Total: 0.00 hrs</div>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle mb-0">
-                                <thead class="bg-light">
-                                    <tr>
-                                        <th style="white-space:nowrap;">Date</th>
-                                        <th style="white-space:nowrap;">Punch In</th>
-                                        <th style="white-space:nowrap;">Punch Out</th>
-                                        <th style="white-space:nowrap;">Hours</th>
-                                        <th style="white-space:nowrap;">Status</th>
-                                        <th style="white-space:nowrap;">Leave</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="self-attendance-tbody">
-                                    <tr>
-                                        <td colspan="6" class="text-center py-4 text-muted">No data loaded.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="p-4" id="employee-self-body">
+                            <div class="row g-3 align-items-end mb-4">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">Quick Filters</label>
+                                    <select id="self-attendance-quick-filter" class="form-select">
+                                        <option value="last_7_days">Last 7 Days</option>
+                                        <option value="today">Today</option>
+                                        <option value="yesterday">Yesterday</option>
+                                        <option value="this_week">This Week</option>
+                                        <option value="last_week">Last Week</option>
+                                        <option value="this_month">This Month</option>
+                                        <option value="last_month">Last Month</option>
+                                        <option value="custom">Custom Range</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">From</label>
+                                    <input type="date" id="self-attendance-start" class="form-control">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold small">To</label>
+                                    <input type="date" id="self-attendance-end" class="form-control">
+                                </div>
+                                <div class="col-md-3 d-flex gap-2">
+                                    <button class="btn btn-primary flex-grow-1" id="self-attendance-apply">Apply</button>
+                                    <button class="btn btn-outline-secondary" id="self-attendance-reset">Reset</button>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="text-muted small" id="self-attendance-count">0 record(s)</div>
+                                <div class="fw-semibold" id="self-attendance-total-hours">Total: 0.00 hrs</div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th style="white-space:nowrap;">Date</th>
+                                            <th style="white-space:nowrap;" class="d-mobile-none">Punch In</th>
+                                            <th style="white-space:nowrap;" class="d-mobile-none">Punch Out</th>
+                                            <th style="white-space:nowrap;">Hours</th>
+                                            <th style="white-space:nowrap;">Status</th>
+                                            <th style="white-space:nowrap;" class="d-mobile-none">Leave</th>
+                                            <th style="white-space:nowrap; text-align:right;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="self-attendance-tbody">
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4 text-muted">No data loaded.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -281,8 +716,8 @@
     </div>
 
     <!-- ─── Edit Employee Modal ─────────────────────────────────── -->
-    <div class="crm-overlay" id="editEmployeeModal">
-        <div class="crm-box" style="max-width: 650px;">
+    <div class="srm-overlay" id="editEmployeeModal">
+        <div class="srm-box" style="max-width: 650px;">
             <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
                 <h5 class="fw-bold mb-0"><i class="bi bi-person-fill-gear text-primary me-2"></i>Edit Employee Profile
                 </h5>
@@ -377,8 +812,8 @@
 
         const currentUser = getUser();
         const isAdmin = currentUser?.role === 'ADMIN';
-        const canManageEmployees = window.hasFeatureAccess ? window.hasFeatureAccess('employee_manage_roles') : isAdmin;
         let employeesData = [];
+        const canManageEmployees = window.hasFeatureAccess ? window.hasFeatureAccess('employee_manage_roles') : isAdmin;
 
         // Modals
         function openEditModal(id) {
@@ -402,20 +837,94 @@
         function closeEditModal() { document.getElementById('editEmployeeModal').classList.remove('show'); }
 
         ['editEmployeeModal'].forEach(id => {
-            document.getElementById(id).addEventListener('click', function (e) {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('click', function (e) {
                 if (e.target === this) this.classList.remove('show');
             });
         });
 
+        // Filter Toggle Logic
+        const empFilterPanelBody = document.getElementById('emp-filter-panel-body');
+        const empFilterToggleBtn = document.getElementById('emp-filter-toggle-btn');
+        const empFilterToggleLabel = document.getElementById('emp-filter-toggle-label');
+
+        if (document.getElementById('emp-filter-panel-toggle')) {
+            document.getElementById('emp-filter-panel-toggle').addEventListener('click', toggleEmpFilters);
+        }
+
+        function toggleEmpFilters() {
+            const isOpen = empFilterPanelBody.classList.toggle('open');
+            empFilterToggleBtn.classList.toggle('open', isOpen);
+            empFilterToggleLabel.textContent = isOpen ? 'Hide' : 'Show';
+        }
+
+        function updateEmpFilterBadge() {
+            const pills = document.getElementById('emp-filter-pills');
+            const dept = document.getElementById('filter-department')?.value;
+            const role = document.getElementById('filter-role');
+            const status = document.getElementById('filter-status');
+            
+            const items = [];
+            if (dept) items.push({ label: 'Dept: ' + dept, inputId: 'filter-department' });
+            if (role?.value) items.push({ label: role.options[role.selectedIndex].text, inputId: 'filter-role' });
+            if (status?.value) items.push({ label: status.options[status.selectedIndex].text, inputId: 'filter-status' });
+
+            if (pills) {
+                pills.innerHTML = items.map(item => `
+                    <span class="filter-pill">${item.label}
+                        <button class="filter-pill-remove" type="button" data-input="${item.inputId}" title="Remove">&times;</button>
+                    </span>`).join('');
+
+                pills.querySelectorAll('.filter-pill-remove').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        document.getElementById(btn.dataset.input).value = '';
+                        updateEmpFilterBadge();
+                        loadEmployees();
+                    });
+                });
+            }
+        }
+
+        function clearEmpFilters() {
+            document.getElementById('filter-department').value = '';
+            document.getElementById('filter-role').value = '';
+            document.getElementById('filter-status').value = '';
+            updateEmpFilterBadge();
+            loadEmployees();
+        }
+
+        ['filter-department', 'filter-role', 'filter-status'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', updateEmpFilterBadge);
+        });
+
         async function loadEmployees() {
             const tbody = document.getElementById('employees-tbody');
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading employees...</td></tr>';
+            if (!tbody) return; // Guard against null if section is hidden
+            tbody.innerHTML = `
+                <tr class="stagger-fade-in">
+                    <td colspan="7" class="py-4">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="skeleton-box skeleton-avatar" style="width: 40px; height: 40px; border-radius: 8px;"></div>
+                            <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium"></div><div class="skeleton-box skeleton-text short"></div></div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="skeleton-box skeleton-avatar" style="width: 40px; height: 40px; border-radius: 8px;"></div>
+                            <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium"></div><div class="skeleton-box skeleton-text short"></div></div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="skeleton-box skeleton-avatar" style="width: 40px; height: 40px; border-radius: 8px;"></div>
+                            <div class="flex-grow-1"><div class="skeleton-box skeleton-text medium"></div><div class="skeleton-box skeleton-text short"></div></div>
+                        </div>
+                    </td>
+                </tr>`;
             
-            const department = document.getElementById('filter-department').value;
-            const role = document.getElementById('filter-role').value;
-            const status = document.getElementById('filter-status').value;
-            const start = document.getElementById('filter-start').value;
-            const end = document.getElementById('filter-end').value;
+            const department = document.getElementById('filter-department')?.value || '';
+            const role = document.getElementById('filter-role')?.value || '';
+            const status = document.getElementById('filter-status')?.value || '';
+            const start = document.getElementById('filter-start')?.value || '';
+            const end = document.getElementById('filter-end')?.value || '';
 
             let query = '';
             if (department) query += `&department=${encodeURIComponent(department)}`;
@@ -449,8 +958,9 @@
                     let actions = `<span class="text-muted small">Viewer</span>`;
                     if (canManageEmployees) {
                         actions = `
+                            <button class="btn btn-sm btn-light border-primary text-primary me-1" onclick="viewEmployeeAttendance(${emp.id}, '${emp.name}')" title="Attendance History"><i class="bi bi-calendar-check"></i></button>
                             <button class="btn btn-sm btn-light border-secondary text-secondary me-1" onclick="openEditModal(${emp.id})" title="Edit"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-light border-danger text-danger" onclick="deleteEmployee(${emp.id})" title="Delete"><i class="bi bi-trash"></i></button>
+                            ${emp.role !== 'admin' ? `<button class="btn btn-sm btn-light border-danger text-danger" onclick="deleteEmployee(${emp.id})" title="Delete"><i class="bi bi-trash"></i></button>` : ''}
                         `;
                     }
 
@@ -468,14 +978,14 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="px-4">
+                        <td class="px-4 d-mobile-none">
                             <div class="fw-semibold text-dark">${emp.department || '—'}</div>
                             <small class="text-muted">${emp.employee_code || 'No Code'}</small>
                         </td>
                         <td class="px-4">
                             <span class="role-badge role-${roleClass}">${(emp.role || 'Unknown').replace(/_/g, ' ')}</span>
                         </td>
-                        <td class="px-4 text-muted">
+                        <td class="px-4 text-muted d-mobile-none">
                             ${emp.phone ? `<i class="bi bi-telephone me-1"></i>${emp.phone}` : '—'}
                         </td>
                         <td class="px-4">
@@ -493,38 +1003,137 @@
             }
         }
 
+        let selfProductionInterval = null;
+        let selfPunchStartTime = null;
+        let selfAccumulatedSeconds = 0;
+
+        function selfFormatHHMMSS(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            return [hrs, mins, secs].map(v => v < 10 ? '0' + v : v).join(':');
+        }
+
+        function selfUpdateLiveTimer() {
+            let totalSec = selfAccumulatedSeconds || 0;
+            if (selfPunchStartTime) {
+                const elapsed = Math.max(0, (Date.now() - selfPunchStartTime) / 1000);
+                totalSec += elapsed;
+            }
+            
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = Math.floor(totalSec % 60);
+
+            const hhEl = document.getElementById('att-v2-self-hh');
+            const mmEl = document.getElementById('att-v2-self-mm');
+            const ssEl = document.getElementById('att-v2-self-ss');
+
+            if (hhEl) hhEl.textContent = h < 10 ? '0' + h : Math.floor(h);
+            if (mmEl) mmEl.textContent = m < 10 ? '0' + m : m;
+            if (ssEl) ssEl.textContent = s < 10 ? '0' + s : s;
+        }
+
+        // NOTE: Punch widget is removed from this page. It belongs on Dashboard.
         async function loadMyEmployeeInsights() {
             if (canManageEmployees) return;
-            const selfCard = document.getElementById('employee-self-card');
-            if (selfCard) selfCard.style.display = 'block';
+            
+            // Hide admin sections for non-admin without management permission
+            const directoryCard = document.querySelector('.grid-card:has(#employees-table-container)');
+            if (directoryCard) directoryCard.style.display = 'none';
+            const adminAttCard = document.getElementById('attendance-admin-card');
+            if (adminAttCard) adminAttCard.style.display = 'none';
+            const filterWrapper = document.getElementById('filter-wrapper');
+            if (filterWrapper) filterWrapper.style.display = 'none';
 
-            try {
-                const status = await ApiClient.getPunchStatus();
-                document.getElementById('self-punch-status').textContent = status.is_punched_in ? 'Punched In' : 'Punched Out';
-                document.getElementById('self-last-punch').textContent = status.last_punch ? formatTimeCell(status.last_punch) : '--';
-                document.getElementById('self-today-hours').textContent = Number(status.today_hours || 0).toFixed(2);
-                document.getElementById('self-week-hours').textContent = Number(status.week_hours || 0).toFixed(2);
-            } catch (err) {
-                console.warn('Punch status load failed', err);
+            const selfAttCard = document.getElementById('self-attendance-card');
+            if (selfAttCard) selfAttCard.style.display = 'block';
+
+            // Setup self-attendance filters
+            const startInput = document.getElementById('self-attendance-start');
+            const endInput = document.getElementById('self-attendance-end');
+            const quickFilter = document.getElementById('self-attendance-quick-filter');
+
+            if (!startInput || !endInput || !quickFilter) {
+                console.warn("Self-attendance filter elements not found.");
+                return;
             }
 
-            const tbody = document.getElementById('self-attendance-tbody');
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
-            try {
+            function setSelfRange(daysBack) {
                 const end = new Date();
                 const start = new Date();
-                start.setDate(end.getDate() - 6);
+                start.setDate(end.getDate() - daysBack);
+                if (startInput) startInput.value = start.toISOString().slice(0, 10);
+                if (endInput) endInput.value = end.toISOString().slice(0, 10);
+            }
+
+            // Default: last 7 days
+            setSelfRange(6);
+
+            quickFilter.addEventListener('change', (e) => {
+                const today = new Date();
+                const val = e.target.value;
+                if (val === 'today') {
+                    startInput.value = today.toISOString().slice(0, 10);
+                    endInput.value = today.toISOString().slice(0, 10);
+                } else if (val === 'yesterday') {
+                    const yest = new Date(today); yest.setDate(yest.getDate() - 1);
+                    startInput.value = yest.toISOString().slice(0, 10);
+                    endInput.value = yest.toISOString().slice(0, 10);
+                } else if (val === 'this_week') {
+                    const first = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1);
+                    const start = new Date(today.getFullYear(), today.getMonth(), first);
+                    startInput.value = start.toISOString().slice(0, 10);
+                    endInput.value = new Date().toISOString().slice(0, 10);
+                } else if (val === 'last_7_days') {
+                    setSelfRange(6);
+                } else if (val === 'this_month') {
+                    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+                    startInput.value = start.toISOString().slice(0, 10);
+                    endInput.value = today.toISOString().slice(0, 10);
+                } else if (val === 'last_month') {
+                    const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    const end = new Date(today.getFullYear(), today.getMonth(), 0);
+                    startInput.value = start.toISOString().slice(0, 10);
+                    endInput.value = end.toISOString().slice(0, 10);
+                }
+                if (val !== 'custom') loadSelfAttendance();
+            });
+
+            startInput.addEventListener('change', () => quickFilter.value = 'custom');
+            endInput.addEventListener('change', () => quickFilter.value = 'custom');
+
+            document.getElementById('self-attendance-apply').onclick = loadSelfAttendance;
+            document.getElementById('self-attendance-reset').onclick = () => {
+                quickFilter.value = 'last_7_days';
+                setSelfRange(6);
+                loadSelfAttendance();
+            };
+
+            await loadSelfAttendance();
+        }
+
+        async function loadSelfAttendance() {
+            const tbody = document.getElementById('self-attendance-tbody');
+            const startInput = document.getElementById('self-attendance-start');
+            const endInput = document.getElementById('self-attendance-end');
+            
+            if (!tbody || !startInput || !endInput) return;
+            
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
+            
+            try {
                 const data = await ApiClient.getAttendanceSummary({
-                    start_date: start.toISOString().slice(0, 10),
-                    end_date: end.toISOString().slice(0, 10),
+                    start_date: startInput.value,
+                    end_date: endInput.value,
                     reconcile: true
                 });
-                const records = data.records || [];
+                const records = (data.records || []).sort((a, b) => new Date(b.date) - new Date(a.date));
                 document.getElementById('self-attendance-count').textContent = `${records.length} record(s)`;
                 document.getElementById('self-attendance-total-hours').textContent = `Total: ${(data.total_hours || 0).toFixed(2)} hrs`;
 
                 if (!records.length) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No attendance records found.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No attendance records found.</td></tr>';
                     return;
                 }
 
@@ -532,16 +1141,21 @@
                     const day = new Date(r.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
                     return `<tr>
                         <td style="white-space:nowrap;">${day}</td>
-                        <td>${formatTimeCell(r.first_punch_in)}</td>
-                        <td>${formatTimeCell(r.last_punch_out)}</td>
+                        <td class="d-mobile-none">${formatTimeCell(r.first_punch_in)}</td>
+                        <td class="d-mobile-none">${formatTimeCell(r.last_punch_out)}</td>
                         <td>${(r.total_hours || 0).toFixed(2)}</td>
                         <td>${statusBadge(r.day_status)}</td>
-                        <td>${leaveBadge(r.leave_status)}</td>
+                        <td class="d-mobile-none">${leaveBadge(r.leave_status)}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-light border p-1 px-2" onclick="viewPunchLogs('${r.date}')" title="View Details">
+                                <i class="bi bi-eye text-primary"></i>
+                            </button>
+                        </td>
                     </tr>`;
                 }).join('');
             } catch (err) {
                 console.error('Self attendance load failed', err);
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Failed to load attendance.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Failed to load attendance.</td></tr>';
             }
         }
 
@@ -583,6 +1197,37 @@
             return `<span class="status-pill ${cls}">${status}</span>`;
         }
 
+        async function viewPunchLogs(dateStr, userId = null) {
+            const modalEl = document.getElementById('punchDetailModal');
+            if (!modalEl) return;
+            const modal = new bootstrap.Modal(modalEl);
+            const tbody = document.getElementById('punch-detail-tbody');
+            const titleDate = document.getElementById('punch-detail-date');
+            
+            titleDate.textContent = new Date(dateStr).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>Loading logs...</td></tr>';
+            modal.show();
+
+            try {
+                const logs = await ApiClient.getAttendanceLogs(userId, dateStr);
+                if (!logs || !logs.length) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No punch logs found for this day.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = logs.map((l, idx) => `
+                    <tr>
+                        <td class="ps-3 fw-medium">${idx + 1}</td>
+                        <td>${formatTimeCell(l.punch_in)}</td>
+                        <td>${formatTimeCell(l.punch_out)}</td>
+                        <td class="pe-3 text-end fw-semibold text-primary">${(l.total_hours || 0).toFixed(2)} hrs</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Failed to load detailed logs.</td></tr>';
+            }
+        }
+
         async function loadAttendanceSummary() {
             if (!isAdmin) return;
             const tbody = document.getElementById('attendance-admin-tbody');
@@ -592,13 +1237,15 @@
             tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
 
             try {
-                const data = await ApiClient.getAttendanceSummary({
+                const params = {
                     start_date: start,
                     end_date: end,
-                    user_id: userId || null,
                     reconcile: true
-                });
-                const records = data.records || [];
+                };
+                if (userId) params.user_id = userId;
+                
+                const data = await ApiClient.getAttendanceSummary(params);
+                const records = (data.records || []).sort((a, b) => new Date(b.date) - new Date(a.date));
                 document.getElementById('attendance-count').textContent = `${records.length} record(s)`;
                 document.getElementById('attendance-total-hours').textContent = `Total: ${(data.total_hours || 0).toFixed(2)} hrs`;
 
@@ -612,11 +1259,16 @@
                     return `<tr>
                         <td style="white-space:nowrap;">${day}</td>
                         <td style="white-space:nowrap;">${r.user_name || 'User #' + r.user_id}</td>
-                        <td>${formatTimeCell(r.first_punch_in)}</td>
-                        <td>${formatTimeCell(r.last_punch_out)}</td>
+                        <td class="d-mobile-none">${formatTimeCell(r.first_punch_in)}</td>
+                        <td class="d-mobile-none">${formatTimeCell(r.last_punch_out)}</td>
                         <td>${(r.total_hours || 0).toFixed(2)}</td>
                         <td>${statusBadge(r.day_status)}</td>
-                        <td>${leaveBadge(r.leave_status)}</td>
+                        <td class="d-mobile-none">${leaveBadge(r.leave_status)}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-light border p-1 px-2" onclick="viewPunchLogs('${r.date}', ${r.user_id})" title="View Details">
+                                <i class="bi bi-eye text-primary"></i>
+                            </button>
+                        </td>
                     </tr>`;
                 }).join('');
             } catch (err) {
@@ -720,45 +1372,30 @@
 
         // Initialize Filters
         function initFilters() {
-            renderFilterPanel({
-                containerId: 'filter-wrapper',
-                filters: [
-                    { type: 'select', label: 'Department', id: 'filter-department', options: [{ value: '', label: 'All Departments' }] },
-                    { type: 'select', label: 'Role', id: 'filter-role', options: [
-                        { value: '', label: 'All Roles' },
-                        { value: 'ADMIN', label: 'Admin' },
-                        { value: 'SALES', label: 'Sales' },
-                        { value: 'TELESALES', label: 'Telesales' },
-                        { value: 'PROJECT_MANAGER', label: 'Project Manager' },
-                        { value: 'PROJECT_MANAGER_AND_SALES', label: 'PM & Sales' }
-                    ]},
-                    { type: 'select', label: 'Status', id: 'filter-status', options: [
-                        { value: '', label: 'All Status' },
-                        { value: 'true', label: 'Active' },
-                        { value: 'false', label: 'Inactive' }
-                    ]},
-                    { type: 'date', label: 'Start Date', id: 'filter-start' },
-                    { type: 'date', label: 'End Date', id: 'filter-end' }
-                ],
-                onApply: (data) => {
-                    loadEmployees();
-                },
-                onReset: () => {
-                    loadEmployees();
-                }
-            });
+            // New global filter panel initialization
+            updateEmpFilterBadge();
         }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            initFilters();
+            updateHeaderContext();
+            if (isAdmin) {
+                initFilters();
+            }
             loadEmployees().then(() => {
-                if (isAdmin) loadAttendanceSummary();
+                if (isAdmin) {
+                    loadAttendanceSummary();
+                } else {
+                    loadMyEmployeeInsights();
+                }
             });
 
             if (!canManageEmployees) {
-                document.getElementById('filter-wrapper').style.display = 'none';
-                loadMyEmployeeInsights();
+                const globalFilterPanel = document.getElementById('global-filter-panel');
+                if (globalFilterPanel) globalFilterPanel.style.display = 'none';
+                
+                const directoryCard = document.querySelector('.grid-card:has(#employees-table-container)');
+                if (directoryCard) directoryCard.style.display = 'none';
             }
 
             const empToggleBtn = document.getElementById('employees-toggle-btn');
@@ -858,6 +1495,7 @@
 
         function populateDepartmentFilter() {
             const deptSel = document.getElementById('filter-department');
+            if (!deptSel) return;
             const currentVal = deptSel.value;
             
             // Collect unique departments from employeesData
@@ -880,6 +1518,78 @@
         }
 
     </script>
+    <!-- Punch Detail Modal -->
+    <div class="modal fade" id="punchDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark">Daily Punch Logs</h5>
+                        <p class="text-muted small mb-0" id="punch-detail-date">--</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover table-sm mb-0 align-middle">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3 py-2">#</th>
+                                    <th class="py-2">Punch In</th>
+                                    <th class="py-2">Punch Out</th>
+                                    <th class="pe-3 py-2 text-end">Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody id="punch-detail-tbody" style="font-size:0.85rem;">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-primary fw-semibold w-100" data-bs-dismiss="modal" style="border-radius:10px;">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance History Modal (Admin Only) -->
+    <div class="modal fade" id="attendanceHistoryModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark">Attendance History</h5>
+                        <p class="text-muted small mb-0" id="att-hist-user-name">Employee Name</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover table-sm mb-0 align-middle">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3 py-2">Date</th>
+                                    <th class="py-2">Punch In</th>
+                                    <th class="py-2">Punch Out</th>
+                                    <th class="py-2">Hours</th>
+                                    <th class="py-2">Status</th>
+                                    <th class="pe-3 py-2 text-end">Leave</th>
+                                </tr>
+                            </thead>
+                            <tbody id="att-hist-tbody" style="font-size:0.85rem;">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-light border fw-semibold" data-bs-dismiss="modal" style="border-radius:10px;">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>

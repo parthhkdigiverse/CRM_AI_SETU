@@ -55,6 +55,8 @@ class LeaveRecordRead(BaseModel):
     user_name: Optional[str] = None
     approver_name: Optional[str] = None
     approved_by: Optional[int] = None
+    created_at: Any
+    updated_at: Any
 
     class Config:
         from_attributes = True

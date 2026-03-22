@@ -1,50 +1,60 @@
-// frontend/js/api.js
-let API_BASE_URL = window.location.origin + '/api'; // Fallback
-// Try to load dynamically from the backend Python config endpoint
-fetch(window.location.origin + '/api/config')
-    .then(r => r.json())
-    .then(data => {
-        if (data.API_BASE_URL && !data.API_BASE_URL.includes('127.0.0.1')) {
-            API_BASE_URL = data.API_BASE_URL;
-            ApiClient.API_BASE_URL = data.API_BASE_URL;
-        }
-    })
-    .catch(e => console.warn('Using default origin-based API_BASE_URL:', e));
+// ApiClient initialization for dynamic configuration
+window.API = window.location.origin + '/api';
 
 class ApiClient {
-    static API_BASE_URL = API_BASE_URL;
+    static API_BASE_URL = window.API;
+    static _configParsed = false;
+
+    static async initConfig() {
+        if (this._configParsed) return;
+        try {
+            const r = await fetch(window.location.origin + '/api/config');
+            const data = await r.json();
+            if (data.API_BASE_URL) {
+                this.API_BASE_URL = data.API_BASE_URL;
+                // Sync with global for legacy compatibility
+                window.API = data.API_BASE_URL;
+            }
+            this._configParsed = true;
+        } catch (e) {
+            console.warn('Using default API_BASE_URL due to config fetch error:', e);
+            this._configParsed = true;
+        }
+    }
 
     static getAccessToken() {
-        return localStorage.getItem('access_token');
+        return sessionStorage.getItem('access_token');
     }
 
     static getRefreshToken() {
-        return localStorage.getItem('refresh_token');
+        return sessionStorage.getItem('refresh_token');
     }
 
     static setTokens(accessToken, refreshToken) {
-        localStorage.setItem('access_token', accessToken);
+        sessionStorage.setItem('access_token', accessToken);
         if (refreshToken) {
-            localStorage.setItem('refresh_token', refreshToken);
+            sessionStorage.setItem('refresh_token', refreshToken);
         }
     }
 
     static clearTokens() {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('current_user');
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('refresh_token');
+        sessionStorage.removeItem('srm_user');
+        sessionStorage.removeItem('current_user');
     }
 
     static setCurrentUser(user) {
-        localStorage.setItem('crm_user', JSON.stringify(user));
+        sessionStorage.setItem('srm_user', JSON.stringify(user));
     }
 
     static getCurrentUser() {
-        try { return JSON.parse(localStorage.getItem('crm_user')); } catch { return null; }
+        try { return JSON.parse(sessionStorage.getItem('srm_user')); } catch { return null; }
     }
 
     static async request(path, options = {}) {
-        const url = `${API_BASE_URL}${path}`;
+        if (!this._configParsed) await this.initConfig();
+        const url = `${this.API_BASE_URL}${path}`;
         const headers = {
             'Content-Type': 'application/json',
             ...(options.headers || {})
@@ -89,10 +99,6 @@ class ApiClient {
             }
 
             const isJson = response.headers.get('content-type')?.includes('application/json');
-
-            // 204 No Content — no body to parse (e.g. successful DELETE)
-            if (response.status === 204) return null;
-
             const data = isJson ? await response.json() : await response.text();
 
             if (!response.ok) {
@@ -113,42 +119,14 @@ class ApiClient {
         }
     }
 
-    static async download(path, filename) {
-        const url = `${this.API_BASE_URL}${path}`;
-        const headers = {};
-        const token = this.getAccessToken();
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
-        try {
-            const response = await fetch(url, { headers });
-            if (!response.ok) throw new Error(`Download failed: ${response.status}`);
-            
-            const blob = await response.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = downloadUrl;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            
-            setTimeout(() => {
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(downloadUrl);
-            }, 100);
-        } catch (error) {
-            console.error("Download error:", error);
-            throw error;
-        }
-    }
-
 
     static async refreshTokens() {
+        if (!this._configParsed) await this.initConfig();
         const refresh_token = this.getRefreshToken();
         if (!refresh_token) return false;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+            const response = await fetch(`${this.API_BASE_URL}/auth/refresh`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${refresh_token}` }
             });
@@ -168,11 +146,12 @@ class ApiClient {
 
     // ─── Auth ────────────────────────────────────────────────
     static async login(username, password) {
+        if (!this._configParsed) await this.initConfig();
         const formData = new URLSearchParams();
         formData.append('username', username);
         formData.append('password', password);
 
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        const response = await fetch(`${this.API_BASE_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: formData.toString()
@@ -233,19 +212,13 @@ class ApiClient {
         return this.request('/attendance/punch', { method: 'POST' });
     }
     static async getAttendanceSummary(params = {}) {
-        let query = '';
-        if (typeof params === 'object') {
-            const queryParams = new URLSearchParams();
-            for (const [key, value] of Object.entries(params)) {
-                if (value !== undefined && value !== null) {
-                    queryParams.append(key, value);
-                }
-            }
-            query = queryParams.toString() ? `?${queryParams.toString()}` : '';
-        } else if (typeof params === 'string' && params) {
-            query = params.startsWith('?') ? params : `?${params}`;
-        }
-        return this.request(`/attendance/summary${query}`);
+        const query = new URLSearchParams(params).toString();
+        return this.request(`/attendance/summary?${query}`);
+    }
+
+    static async getAttendanceLogs(userId, date) {
+        const query = new URLSearchParams({ user_id: userId || '', date }).toString();
+        return this.request(`/attendance/logs?${query}`);
     }
 
     static async getAttendanceSettings() {
@@ -397,9 +370,6 @@ class ApiClient {
     static async createFeedback(clientId, data) {
         return this.request(`/clients/${clientId}/feedback`, { method: 'POST', body: data });
     }
-    static async deleteFeedback(feedbackId) {
-        return this.request(`/feedback/${feedbackId}`, { method: 'DELETE' });
-    }   
     static async createUserFeedback(data) {
         return this.request('/clients/user', { method: 'POST', body: data });
     }

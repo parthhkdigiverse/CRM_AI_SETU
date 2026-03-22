@@ -1,21 +1,5 @@
 // frontend/js/app.js
-// ─── Toast Helper ─────────────────────────────────────
-function showToast(msg, type = 'success') {
-    let container = document.getElementById('toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'toast-container';
-        container.className = 'toast-container';
-        document.body.appendChild(container);
-    }
-    const t = document.createElement('div');
-    t.className = `toast ${type}`;
-    const icon = type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-xmark' : 'fa-circle-info';
-    t.innerHTML = `<i class="fa-solid ${icon}"></i> ${msg}`;
-    container.appendChild(t);
-    setTimeout(() => t.remove(), 3500);
-}
-window.showToast = showToast;
+
 
 // Global DOM references (initialized in DOMContentLoaded)
 let mainContent;
@@ -114,8 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
             const submitBtn = loginForm.querySelector('button');
 
             submitBtn.disabled = true;
@@ -205,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function renderDashboard() {
+        const user = window.ApiClient.getCurrentUser();
         let stats = { total_clients: 0, open_issues: 0, total_visits: 0, total_shops: 0 };
         let shops = [], visits = [], clients = [], todos = [];
         try {
@@ -233,6 +218,28 @@ async function renderDashboard() {
                 </div>`;
         }).join('') : `<div class="text-muted" style="padding:10px;">No pending tasks!</div>`;
 
+        // Dynamic KPI data based on role
+        const role = (user?.role || '').toUpperCase();
+        const isAdmin = role === 'ADMIN';
+        
+        const kpi3 = isAdmin ? {
+            title: 'Open Issues',
+            value: stats.open_issues || 0,
+            trend: '<i class="fa-solid fa-triangle-exclamation"></i> High Priority',
+            trendClass: 'trend-down', // using red for alert
+            icon: 'fa-solid fa-circle-exclamation',
+            iconClass: 'icon-yellow',
+            view: 'issues'
+        } : {
+            title: 'Ongoing Projects',
+            value: '28', // Placeholder or from stats if available
+            trend: '<i class="fa-solid fa-arrow-trend-down"></i> -2.1% <span>vs last month</span>',
+            trendClass: 'trend-down',
+            icon: 'fa-solid fa-briefcase',
+            iconClass: 'icon-yellow',
+            view: 'projects'
+        };
+
         mainContent.innerHTML = `
         <!-- Row 1: Greeting -->
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -244,7 +251,7 @@ async function renderDashboard() {
         
         <!-- Row 2: KPI Grid of 4 (Lovable Style) -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-bottom: 24px;">
-            <div class="stat-card">
+            <div class="stat-card" onclick="loadView('leads')" style="cursor:pointer;">
                 <div class="stat-content-left">
                     <div class="stat-title">Total Leads</div>
                     <div class="stat-value">1,284</div>
@@ -255,7 +262,7 @@ async function renderDashboard() {
                 </div>
             </div>
             
-            <div class="stat-card">
+            <div class="stat-card" onclick="loadView('clients')" style="cursor:pointer;">
                 <div class="stat-content-left">
                     <div class="stat-title">Active Clients</div>
                     <div class="stat-value">342</div>
@@ -266,25 +273,25 @@ async function renderDashboard() {
                 </div>
             </div>
             
-            <div class="stat-card">
+            <div class="stat-card" onclick="loadView('${kpi3.view}')" style="cursor:pointer;">
                 <div class="stat-content-left">
-                    <div class="stat-title">Ongoing Projects</div>
-                    <div class="stat-value">28</div>
-                    <div class="stat-trend trend-down"><i class="fa-solid fa-arrow-trend-down"></i> -2.1% <span>vs last month</span></div>
+                    <div class="stat-title">${kpi3.title}</div>
+                    <div class="stat-value">${kpi3.value}</div>
+                    <div class="stat-trend ${kpi3.trendClass}">${kpi3.trend}</div>
                 </div>
-                <div class="stat-icon-wrapper icon-yellow">
-                    <i class="fa-solid fa-briefcase"></i>
+                <div class="stat-icon-wrapper ${kpi3.iconClass}">
+                    <i class="${kpi3.icon}"></i>
                 </div>
             </div>
             
-            <div class="stat-card">
+            <div class="stat-card" onclick="loadView('billing')" style="cursor:pointer;">
                 <div class="stat-content-left">
                     <div class="stat-title">Revenue (MTD)</div>
                     <div class="stat-value">₹24.5L</div>
                     <div class="stat-trend trend-up"><i class="fa-solid fa-arrow-trend-up"></i> +18.7% <span>vs last month</span></div>
                 </div>
                 <div class="stat-icon-wrapper icon-green">
-                    <i class="fa-solid fa-dollar-sign"></i>
+                    <i class="fa-solid fa-indian-rupee-sign"></i>
                 </div>
             </div>
         </div>
@@ -614,15 +621,15 @@ async function renderDashboard() {
         };
 
         const kbCols = columns.map(col => `
-            <div class="kanban-column" style="flex:1;min-width:300px;background:#f8fafc;border-radius:12px;padding:16px;border:1px solid #f1f5f9;">
+            <div class="kanban-column" style="flex:1;min-width:300px;background:var(--surface);border-radius:12px;padding:16px;border:1px solid var(--border);">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-                    <h3 style="margin:0;font-size:16px;font-weight:700;color:#334155;">${col.label}</h3>
-                    <span class="badge ${col.color}" style="background:rgba(99,102,241,0.1);color:var(--primary);">${grouped[col.key].length}</span>
+                    <h3 style="margin:0;font-size:16px;font-weight:700;color:var(--text-1);">${col.label}</h3>
+                    <span class="badge ${col.color}" style="background:var(--primary-soft);color:var(--primary);">${grouped[col.key].length}</span>
                 </div>
                 <div class="kanban-cards-container" style="min-height:100px;">
                     ${grouped[col.key].length
                 ? grouped[col.key].map(s => makeCard(s, col.border)).join('')
-                : `<div style="text-align:center;padding:32px;border:2px dashed #e2e8f0;border-radius:12px;color:#94a3b8;font-size:13px;">Drop leads here</div>`
+                : `<div style="text-align:center;padding:32px;border:2px dashed var(--border);border-radius:12px;color:var(--text-3);font-size:13px;">Drop leads here</div>`
             }
                 </div>
             </div>`).join('');
@@ -982,10 +989,10 @@ async function renderDashboard() {
                     <td style="font-weight:600; color:var(--text-main); padding: 20px 24px;">${formatBudget(p.budget)}</td>
                     <td style="width: 180px; padding: 20px 24px;">
                         <div style="display:flex; align-items:center; gap:12px;">
-                            <div style="flex-grow:1; height:6px; background:#f1f5f9; border-radius:10px; overflow:hidden;">
+                            <div style="flex-grow:1; height:6px; background:var(--bg-app); border-radius:10px; overflow:hidden;">
                                 <div style="width:${prog}%; height:100%; background:var(--primary); border-radius:10px;"></div>
                             </div>
-                            <span style="font-size:0.8rem; font-weight:600; color:var(--text-muted); min-width:32px;">${prog.toFixed(0)}%</span>
+                            <span style="font-size:0.8rem; font-weight:600; color:var(--text-3); min-width:32px;">${prog.toFixed(0)}%</span>
                         </div>
                     </td>
                 </tr>`;
@@ -1029,7 +1036,7 @@ async function renderDashboard() {
             return `<button class="btn ${active ? 'btn-primary' : 'btn-light'}" 
                                    onclick="window._projectFilter='${f}'; renderProjects();"
                                    style="border-radius:24px; padding: 6px 20px; font-size:0.9rem; font-weight:${active ? '600' : '500'}; 
-                                          ${!active ? 'background:#f8fafc; border:none; color:var(--text-body);' : ''}">${labels[f]}</button>`;
+                                          ${!active ? 'background:var(--bg-app); border:none; color:var(--text-main);' : ''}">${labels[f]}</button>`;
         }).join('')}
                 </div>
             </div>
@@ -1087,18 +1094,18 @@ async function renderDashboard() {
             </div>
         </div>
         
-        <div class="card" style="padding:0; border:1px solid #f1f5f9; border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">
+        <div class="card" style="padding:0; border:1px solid var(--border); border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">
             <div class="table-container">
                 <table class="table" style="margin-bottom:0;">
-                    <thead style="background:#f8fafc;">
+                    <thead style="background:var(--bg-surface);">
                         <tr>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">CODE</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">NAME</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">DEPARTMENT</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">BASE SALARY</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">TARGET</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">JOINED</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">ACTIONS</th>
+                            <th style="color:var(--text-3); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid var(--border);">CODE</th>
+                            <th style="color:var(--text-3); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid var(--border);">NAME</th>
+                            <th style="color:var(--text-3); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid var(--border);">DEPARTMENT</th>
+                            <th style="color:var(--text-3); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid var(--border);">BASE SALARY</th>
+                            <th style="color:var(--text-3); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid var(--border);">TARGET</th>
+                            <th style="color:var(--text-3); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid var(--border);">JOINED</th>
+                            <th style="color:var(--text-3); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid var(--border);">ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
@@ -1120,7 +1127,7 @@ async function renderDashboard() {
                 <div class="modal fade" id="salaryModal" tabindex="-1">
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content" style="border-radius:16px; border:none; box-shadow:0 10px 40px rgba(0,0,0,0.1);">
-                            <div class="modal-header" style="border-bottom:1px solid #f1f5f9; padding:20px 24px;">
+                            <div class="modal-header" style="border-bottom:1px solid var(--border); padding:20px 24px;">
                                 <h5 class="modal-title fw-bold">Generate Salary Slip</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
@@ -1204,7 +1211,7 @@ async function renderDashboard() {
                     </div>
                 </td>
                 <td style="padding: 20px 24px;">
-                    <span class="badge" style="background:#e0e7ff; color:#4f46e5; border-radius:6px; padding:6px 10px;">${e.role.replace(/_/g, ' ')}</span>
+                    <span class="badge" style="background:var(--primary-soft); color:var(--primary); border-radius:6px; padding:6px 10px;">${e.role.replace(/_/g, ' ')}</span>
                 </td>
                 <td style="padding: 20px 24px; font-weight:600;">${formatCurrency(e.base_salary)}</td>
                 <td style="padding: 20px 24px;">
@@ -1232,16 +1239,16 @@ async function renderDashboard() {
             </button>
         </div>
         
-        <div class="card" style="padding:0; border:1px solid #f1f5f9; border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">
+        <div class="card" style="padding:0; border:1px solid var(--border); border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">
             <div class="table-container">
                 <table class="table" style="margin-bottom:0;">
-                    <thead style="background:#f8fafc;">
+                    <thead style="background:var(--bg-surface);">
                         <tr>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">EMPLOYEE</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">ROLE</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">BASE SALARY</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">LEAVES (THIS MONTH)</th>
-                            <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9; text-align:right;">ACTIONS</th>
+                            <th style="color:var(--text-3); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid var(--border);">EMPLOYEE</th>
+                            <th style="color:var(--text-3); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid var(--border);">ROLE</th>
+                            <th style="color:var(--text-3); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid var(--border);">BASE SALARY</th>
+                            <th style="color:var(--text-3); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid var(--border);">LEAVES (THIS MONTH)</th>
+                            <th style="color:var(--text-3); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid var(--border); text-align:right;">ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
@@ -1316,10 +1323,10 @@ async function renderDashboard() {
             </div>
         </div>
 
-        <div class="card" style="padding:0; border:1px solid #f1f5f9; border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">
+        <div class="card" style="padding:0; border:1px solid var(--border); border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.02);">
             <div class="table-container">
                 <table class="table" style="margin-bottom:0;">
-                    <thead style="background:#f8fafc;">
+                    <thead style="background:var(--bg-surface);">
                         <tr>
                             <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">EMPLOYEE</th>
                             <th style="color:var(--text-muted); font-size:0.75rem; padding:16px 24px; border-bottom:1px solid #f1f5f9;">ROLE</th>
@@ -1901,7 +1908,7 @@ async function renderDashboard() {
                         <div style="width:100px; height:100px; border-radius:50%; background:var(--primary-subtle); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:700; margin-bottom:16px;">
                             ${initials}
                         </div>
-                        <h2 style="margin-bottom:4px;">${u.name}</h2>
+                        <h2 style="margin-bottom:4px;color:var(--heading-color);">${u.name}</h2>
                         <span class="badge badge-purple-light">${roleName}</span>
                     </div>
                     
@@ -1934,7 +1941,7 @@ async function renderDashboard() {
                     <h3>Employee Resources</h3>
                     <div style="margin-top:20px; display:flex; flex-direction:column; gap:12px;">
                         ${canViewIdCard ? `
-                            <div class="d-flex align-items-center justify-content-between p-3 border rounded-3 bg-light">
+                            <div class="d-flex align-items-center justify-content-between p-3 border rounded-3 bg-app" style="background:var(--bg-app); border-color:var(--border) !important;">
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="icon-box bg-primary-subtle text-primary" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;">
                                         <i class="bi bi-person-badge"></i>
@@ -2158,7 +2165,7 @@ async function renderDashboard() {
                     <p class="text-muted mb-0">${dateStr}</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-secondary border-0" style="background:#f1f5f9; color:#475569;" onclick="renderTimetable()">Today</button>
+                    <button class="btn btn-secondary border-0" style="background:var(--bg-app); color:var(--text-2);" onclick="renderTimetable()">Today</button>
                     <button class="btn btn-primary" onclick="openNewTimetableModal()"><i class="bi bi-calendar-plus me-1"></i> Schedule Activity</button>
                 </div>
             </div>
@@ -2174,7 +2181,7 @@ async function renderDashboard() {
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
+                        <thead style="background:var(--bg-surface);">
                             <tr>
                                 <th class="px-4">Event Name & Type</th>
                                 <th>Schedule</th>
@@ -2194,11 +2201,11 @@ async function renderDashboard() {
                     <div class="card border-0 shadow-sm p-4 h-100">
                         <h6 class="fw-bold mb-3"><i class="bi bi-bell-fill text-warning me-2"></i>Upcoming Reminders</h6>
                         <div class="d-flex flex-column gap-3">
-                            <div class="p-3 rounded bg-light border-start border-4 border-primary">
+                            <div class="p-3 rounded border-start border-4 border-primary" style="background:var(--bg-app);">
                                 <div class="fw-semibold small">Call Mr. Sharma</div>
                                 <div class="text-muted smaller">In 15 minutes</div>
                             </div>
-                            <div class="p-3 rounded bg-light border-start border-4 border-warning">
+                            <div class="p-3 rounded border-start border-4 border-warning" style="background:var(--bg-app);">
                                 <div class="fw-semibold small">Submit Weekly Report</div>
                                 <div class="text-muted smaller">By 06:00 PM today</div>
                             </div>
@@ -2224,7 +2231,7 @@ async function renderDashboard() {
             { id: 1, title: 'Finalize Proposal - TechCorp', priority: 'HIGH', status: 'OPEN', assigned: 'Nency Savaliya', due: `${tomorrow}T14:30:00`, related: 'Project Alpha' },
             { id: 2, title: 'Follow-up with New Leads', priority: 'MEDIUM', status: 'IN_PROGRESS', assigned: 'Nency Savaliya', due: `${today}T10:00:00`, related: 'Tech Expo' },
             { id: 3, title: 'Internal Security Audit', priority: 'LOW', status: 'OPEN', assigned: 'Admin', due: `${yesterday}T16:00:00`, related: 'System Admin' },
-            { id: 4, title: 'Client Feedback Analysis', priority: 'HIGH', status: 'RESOLVED', assigned: 'Nency Savaliya', due: '2026-02-26T12:00:00', related: 'CRM Feedback' },
+            { id: 4, title: 'Client Feedback Analysis', priority: 'HIGH', status: 'RESOLVED', assigned: 'Nency Savaliya', due: '2026-02-26T12:00:00', related: 'SRM Feedback' },
         ];
 
         const formatRelativeDate = (dateStr) => {
@@ -2321,7 +2328,7 @@ async function renderDashboard() {
             <div class="card border-0 shadow-sm p-0 overflow-hidden">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
+                        <thead style="background:var(--bg-surface);">
                             <tr>
                                 <th class="px-4">Task Title</th>
                                 <th>Priority</th>

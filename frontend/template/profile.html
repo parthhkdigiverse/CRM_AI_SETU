@@ -7,296 +7,65 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>My Profile — CRM AI SETU</title>
+    <title>Profile — SRM AI SETU</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/theme.css">
     <link rel="stylesheet" href="../css/components.css">
-    <style>
-        .profile-hero {
-            background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 32px;
-            display: flex;
-            align-items: center;
-            gap: 28px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 12px rgba(99, 102, 241, 0.06);
-        }
-
-        .profile-avatar-lg {
-            width: 88px;
-            height: 88px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #818cf8, #4f46e5);
-            color: #fff;
-            font-size: 2rem;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
-            letter-spacing: -1px;
-        }
-
-        .role-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: #EEF2FF;
-            color: #4f46e5;
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 5px 14px;
-            border-radius: 100px;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-        }
-
-        .info-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 24px;
-            box-shadow: 0 1px 6px rgba(15, 23, 42, 0.05);
-        }
-
-        .info-card-title {
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            color: #94a3b8;
-            margin-bottom: 18px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.875rem;
-        }
-
-        .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .info-label {
-            color: #64748b;
-            font-weight: 500;
-        }
-
-        .info-value {
-            color: #0f172a;
-            font-weight: 600;
-        }
-
-        .stat-pill {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 14px 20px;
-            text-align: center;
-            flex: 1;
-        }
-
-        .stat-pill .sp-val {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: #0f172a;
-            font-family: 'Outfit', sans-serif;
-            line-height: 1;
-        }
-
-        .stat-pill .sp-lbl {
-            font-size: 0.72rem;
-            color: #94a3b8;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-top: 4px;
-        }
-
-        .section-divider {
-            border: none;
-            border-top: 1px solid #f1f5f9;
-            margin: 20px 0;
-        }
-
-        .form-control-clean {
-            border: 1px solid #e2e8f0;
-            border-radius: 9px;
-            padding: 10px 14px;
-            font-size: 0.875rem;
-            color: #0f172a;
-            background: #fff;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .form-control-clean:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
-            outline: none;
-        }
-
-        .form-label-sm {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #475569;
-            margin-bottom: 6px;
-        }
-
-        .btn-save {
-            background: #4f46e5;
-            color: #fff;
-            border: none;
-            border-radius: 9px;
-            padding: 10px 24px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s, box-shadow 0.2s;
-        }
-
-        .btn-save:hover {
-            background: #4338ca;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
-        }
-
-        .btn-outline-danger-sm {
-            background: transparent;
-            color: #ef4444;
-            border: 1px solid #fca5a5;
-            border-radius: 9px;
-            padding: 10px 24px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-outline-danger-sm:hover {
-            background: #fef2f2;
-            border-color: #ef4444;
-        }
-
-        .password-strength {
-            height: 4px;
-            border-radius: 4px;
-            margin-top: 8px;
-            background: #e2e8f0;
-            overflow: hidden;
-        }
-
-        .password-strength-bar {
-            height: 100%;
-            border-radius: 4px;
-            width: 0%;
-            transition: width 0.3s, background 0.3s;
-        }
-
-        .toast-msg {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: #0f172a;
-            color: #fff;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-            z-index: 9999;
-            display: none;
-            align-items: center;
-            gap: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="../css/profile.css">
 </head>
 
 <body class="bg-light">
     <div class="d-flex">
         <div id="sidebar"></div>
-        <div class="flex-grow-1">
+        <div class="flex-grow-1 main-wrapper">
             <!-- Top header injected by auth.js -->
 
-            <div class="page-content" style="max-width: 980px;">
+            <div class="page-content mx-auto" style="max-width: 1200px;">
 
                 <!-- Profile Hero -->
                 <div class="profile-hero">
-                    <div class="profile-avatar-lg" id="hero-avatar">AD</div>
-                    <div class="flex-grow-1">
-                        <h2 class="mb-1" id="hero-name" style="font-size:1.5rem;">Loading...</h2>
-                        <div class="role-badge mb-2" id="hero-role"><i class="bi bi-shield-check"></i> —</div>
-                        <div class="text-muted" id="hero-email" style="font-size:0.875rem;">—</div>
+                    <div class="profile-avatar-lg position-relative" id="hero-avatar">
+                        <img id="profile-img" src="" alt="Profile image of user" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;top:0;left:0;" />
+                        <span id="profile-initials">--</span>
+                        <label for="avatar-upload" class="position-absolute bottom-0 end-0 bg-white rounded-circle p-1" style="cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 8px rgba(0,0,0,0.1); border: 2px solid #fff;" aria-label="Upload avatar" title="Upload avatar">
+                            <i class="bi bi-camera-fill" style="font-size:0.9rem;color:#6366f1;" aria-hidden="true"></i>
+                            <input type="file" id="avatar-upload" accept="image/*" style="display:none;" aria-label="Choose profile image" />
+                        </label>
+                        <img id="avatar-preview" src="" alt="Avatar preview" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;top:0;left:0;z-index:2; border: 4px solid #6366f1;" />
                     </div>
-                    <div class="d-flex gap-3" id="stats-row">
-                        <!-- Stats loaded via JS -->
+                    <div class="flex-grow-1">
+                        <h2 class="mb-1" id="hero-name" style="font-size:1.75rem; font-weight: 800; color: #0f172a;">Loading...</h2>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <div class="role-badge" id="hero-role"><i class="bi bi-shield-check"></i> —</div>
+                            <div class="text-muted" id="hero-email" style="font-size:0.9rem; font-weight: 500;">—</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="row g-4">
-
-                    <!-- Left Column -->
-                    <div class="col-md-5">
-                        <!-- Account Info -->
-                        <div class="info-card mb-4">
-                            <div class="info-card-title"><i class="bi bi-person-lines-fill text-primary"></i> Account
-                                Info</div>
-                            <div id="account-info-rows">
-                                <div class="text-center py-3">
-                                    <div class="spinner-border spinner-border-sm text-muted"></div>
+                <div id="profile-content" style="display: none;">
+                    <div class="row g-4">
+                        <!-- Left Column -->
+                        <div class="col-md-5">
+                            <!-- Quick Actions -->
+                            <div id="quick-actions-container" style="display: none;">
+                                <div class="info-card mb-4">
+                                    <div class="info-card-title"><i class="bi bi-lightning-charge text-warning"></i> Quick Actions</div>
+                                    <div id="quick-links-list" class="quick-actions-list">
+                                        <!-- Links loaded via JS -->
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Recent Activity Summary -->
-                        <div class="info-card">
-                            <div class="info-card-title"><i class="bi bi-lightning-charge text-warning"></i> Quick Links
-                            </div>
-                            <div class="d-flex flex-column gap-2">
-                                <a href="settings.html"
-                                    class="d-flex align-items-center gap-3 p-2 rounded-3 text-decoration-none"
-                                    style="color:#475569; background:#f8fafc; transition: background 0.18s;"
-                                    onmouseover="this.style.background='#eef2ff'"
-                                    onmouseout="this.style.background='#f8fafc'">
-                                    <i class="bi bi-gear text-primary"></i>
-                                    <span style="font-size:0.875rem; font-weight:500;">Account Settings</span>
-                                    <i class="bi bi-chevron-right ms-auto" style="font-size:0.7rem; color:#94a3b8;"></i>
-                                </a>
-                                <a href="dashboard.html"
-                                    class="d-flex align-items-center gap-3 p-2 rounded-3 text-decoration-none"
-                                    style="color:#475569; background:#f8fafc; transition: background 0.18s;"
-                                    onmouseover="this.style.background='#eef2ff'"
-                                    onmouseout="this.style.background='#f8fafc'">
-                                    <i class="bi bi-bar-chart-line text-success"></i>
-                                    <span style="font-size:0.875rem; font-weight:500;">Go to Dashboard</span>
-                                    <i class="bi bi-chevron-right ms-auto" style="font-size:0.7rem; color:#94a3b8;"></i>
-                                </a>
-                                <a href="notifications.html"
-                                    class="d-flex align-items-center gap-3 p-2 rounded-3 text-decoration-none"
-                                    style="color:#475569; background:#f8fafc; transition: background 0.18s;"
-                                    onmouseover="this.style.background='#eef2ff'"
-                                    onmouseout="this.style.background='#f8fafc'">
-                                    <i class="bi bi-bell text-info"></i>
-                                    <span style="font-size:0.875rem; font-weight:500;">Notifications</span>
-                                    <i class="bi bi-chevron-right ms-auto" style="font-size:0.7rem; color:#94a3b8;"></i>
-                                </a>
-                                <button onclick="logout()"
-                                    class="d-flex align-items-center gap-3 p-2 rounded-3 w-100 border-0 text-start"
-                                    style="color:#ef4444; background:#fef2f2; font-size:0.875rem; font-weight:500; cursor:pointer; transition: background 0.18s;"
-                                    onmouseover="this.style.background='#fee2e2'"
-                                    onmouseout="this.style.background='#fef2f2'">
-                                    <i class="bi bi-box-arrow-right"></i>
-                                    <span>Sign Out</span>
-                                </button>
+                        <!-- Account Info -->
+                        <div class="info-card mb-4">
+                            <div class="info-card-title"><i class="bi bi-person-badge text-primary"></i> Account Details</div>
+                            <div id="account-info-rows">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -304,40 +73,55 @@
                     <!-- Right Column -->
                     <div class="col-md-7">
                         <!-- Edit Profile -->
-                        <div class="info-card mb-4 shadow-sm border-0">
-                            <div class="info-card-title text-primary"><i class="bi bi-pencil-square"></i> Edit Profile
-                            </div>
+                        <div class="info-card mb-4">
+                            <div class="info-card-title text-primary"><i class="bi bi-pencil-square"></i> Edit Profile</div>
                             <form id="edit-profile-form">
                                 <div class="row g-3">
-                                    <div class="col-12">
-                                        <label class="form-label-sm">Full Name</label>
-                                        <input type="text" id="edit-name" class="form-control form-control-clean w-100"
-                                            placeholder="Your full name">
+                                    <div class="col-md-6">
+                                        <label class="form-label-sm" for="edit-name">Full Name</label>
+                                        <input type="text" id="edit-name" class="form-control form-control-clean" placeholder="Your full name" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label-sm" for="edit-phone">Phone Number</label>
+                                        <input type="tel" id="edit-phone" class="form-control form-control-clean" placeholder="+91 98765 43210">
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label-sm">Email Address</label>
-                                        <input type="email" id="edit-email"
-                                            class="form-control form-control-clean w-100" placeholder="your@email.com"
-                                            disabled style="background:#f8fafc; color:#94a3b8; border-style: dashed;">
-                                        <div class="text-muted mt-1" style="font-size:0.75rem;"><i
-                                                class="bi bi-info-circle me-1"></i>Email cannot be changed here. Contact
-                                            admin.</div>
+                                        <label class="form-label-sm" for="edit-email">Email Address</label>
+                                        <input type="email" id="edit-email" class="form-control form-control-clean" disabled style="background:#f8fafc; color:#94a3b8; border-style: dashed;">
+                                        <div class="text-muted mt-1" style="font-size:0.75rem;"><i class="bi bi-info-circle me-1"></i>Email is managed by administrator.</div>
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label-sm">Phone Number</label>
-                                        <input type="tel" id="edit-phone" class="form-control form-control-clean w-100"
-                                            placeholder="+91 98765 43210">
+                                        <label class="form-label-sm" for="edit-dept">Department / Designation</label>
+                                        <input type="text" id="edit-dept" class="form-control form-control-clean" disabled style="background:#f8fafc; color:#94a3b8; border-style: dashed;">
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label-sm">Department / Designation</label>
-                                        <input type="text" id="edit-dept" class="form-control form-control-clean w-100"
-                                            placeholder="e.g. Sales, Operations" disabled
-                                            style="background:#f8fafc; color:#94a3b8; border-style: dashed;">
+                                        <label class="form-label-sm" for="edit-summary">Professional Summary</label>
+                                        <textarea id="edit-summary" class="form-control form-control-clean" placeholder="Tell us about yourself..." style="height: 100px;" maxlength="300"></textarea>
+                                    </div>
+                                    
+                                    <div class="col-12">
+                                        <label class="form-label-sm">Social Profiles</label>
+                                        <div class="social-links-grid">
+                                            <div class="social-input-group">
+                                                <i class="bi bi-linkedin"></i>
+                                                <input type="url" id="edit-linkedin" class="form-control form-control-clean" placeholder="LinkedIn URL">
+                                            </div>
+                                            <div class="social-input-group">
+                                                <i class="bi bi-twitter-x"></i>
+                                                <input type="url" id="edit-twitter" class="form-control form-control-clean" placeholder="Twitter URL">
+                                            </div>
+                                            <div class="social-input-group">
+                                                <i class="bi bi-github"></i>
+                                                <input type="url" id="edit-github" class="form-control form-control-clean" placeholder="GitHub URL">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="d-flex align-items-center gap-3 mt-4">
-                                    <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold" style="border-radius: 10px;">
-                                        <i class="bi bi-check2-circle me-2"></i>Save Profile
+                                <div class="mt-4">
+                                    <button type="submit" class="btn btn-primary d-flex align-items-center gap-2 px-4 fw-semibold" style="border-radius: 10px;" id="btn-save-profile">
+                                        <span class="spinner-border spinner-border-sm d-none" id="spinner-save-profile"></span>
+                                        <i class="bi bi-check2-circle" id="icon-save-profile"></i>
+                                        <span>Save Profile</span>
                                     </button>
                                 </div>
                             </form>
@@ -345,329 +129,63 @@
 
                         <!-- Change Password -->
                         <div class="info-card">
-                            <div class="info-card-title"><i class="bi bi-lock-fill text-danger"></i> Change Password
-                            </div>
+                            <div class="info-card-title text-danger"><i class="bi bi-shield-lock"></i> Security</div>
                             <form id="change-password-form">
-                                <div class="d-flex flex-column gap-3">
-                                    <div>
+                                <div class="row g-3">
+                                    <div class="col-12">
                                         <label class="form-label-sm">Current Password</label>
                                         <div class="position-relative">
-                                            <input type="password" id="old-password"
-                                                class="form-control form-control-clean w-100"
-                                                placeholder="Enter current password" style="padding-right: 40px;">
-                                            <button type="button" class="password-toggle"
-                                                onclick="togglePasswordVisibility('old-password', 'old-pwd-icon')">
+                                            <input type="password" id="old-password" class="form-control form-control-clean w-100" placeholder="Enter current password" style="padding-right: 40px;">
+                                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('old-password', 'old-pwd-icon')">
                                                 <i class="bi bi-eye" id="old-pwd-icon"></i>
                                             </button>
                                         </div>
                                     </div>
-                                    <div>
+                                    <div class="col-12">
                                         <label class="form-label-sm">New Password</label>
                                         <div class="position-relative">
-                                            <input type="password" id="new-password"
-                                                class="form-control form-control-clean w-100"
-                                                placeholder="Minimum 8 characters" oninput="checkStrength(this.value)"
-                                                style="padding-right: 40px;">
-                                            <button type="button" class="password-toggle"
-                                                onclick="togglePasswordVisibility('new-password', 'new-pwd-icon')">
+                                            <input type="password" id="new-password" class="form-control form-control-clean w-100" placeholder="Min 8 characters" oninput="checkStrength(this.value)" style="padding-right: 40px;">
+                                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('new-password', 'new-pwd-icon')">
                                                 <i class="bi bi-eye" id="new-pwd-icon"></i>
                                             </button>
                                         </div>
-                                        <div class="password-strength mt-2">
+                                        <div class="password-strength">
                                             <div class="password-strength-bar" id="pwd-strength-bar"></div>
                                         </div>
-                                        <div class="text-muted mt-1" id="pwd-strength-text" style="font-size:0.73rem;">
-                                        </div>
+                                        <div class="text-muted mt-1" id="pwd-strength-text" style="font-size:0.75rem;"></div>
                                     </div>
-                                    <div>
-                                        <label class="form-label-sm">Confirm New Password</label>
+                                    <div class="col-12">
+                                        <label class="form-label-sm">Confirm Password</label>
                                         <div class="position-relative">
-                                            <input type="password" id="confirm-password"
-                                                class="form-control form-control-clean w-100"
-                                                placeholder="Re-enter new password" style="padding-right: 40px;">
-                                            <button type="button" class="password-toggle"
-                                                onclick="togglePasswordVisibility('confirm-password', 'confirm-pwd-icon')">
+                                            <input type="password" id="confirm-password" class="form-control form-control-clean w-100" placeholder="Confirm new password" style="padding-right: 40px;">
+                                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm-password', 'confirm-pwd-icon')">
                                                 <i class="bi bi-eye" id="confirm-pwd-icon"></i>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="d-flex align-items-center gap-3 mt-4">
-                                    <button type="submit" class="btn-save"><i class="bi bi-shield-lock me-1"></i> Update
-                                        Password</button>
-                                    <span id="pwd-save-msg" class="small d-none"></span>
+                                <div class="mt-4">
+                                    <button type="submit" class="btn btn-outline-danger d-flex align-items-center gap-2 px-4 fw-semibold" style="border-radius: 10px;" id="btn-update-pwd">
+                                        <span class="spinner-border spinner-border-sm d-none" id="spinner-update-pwd"></span>
+                                        <i class="bi bi-key" id="icon-update-pwd"></i>
+                                        <span>Update Password</span>
+                                    </button>
                                 </div>
                             </form>
                         </div>
                     </div>
                 </div>
-            </div><!-- /page-content -->
+            </div>
         </div>
     </div>
-
-    <!-- Toast Container handled by auth.js -->
 
     <script src="../js/utils.js?v=2.3"></script>
     <script src="../js/api.js?v=2.3"></script>
     <script src="../js/auth.js?v=2.3"></script>
-    <script src="../js/ui_components.js?v=20260312"></script>
+    <script src="../js/ui_components.js?v=2.3"></script>
     <script src="../js/app.js?v=2.3"></script>
+    <script src="../js/profile.js?v=1.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        requireAuth();
-        const sidebarElement = document.getElementById('sidebar');
-        if (sidebarElement) {
-            sidebarElement.innerHTML = renderSidebar('profile');
-        }
-        injectTopHeader('Profile');
-
-        // Use global showToast from auth.js
-
-        // ── Load profile data
-        async function loadProfile() {
-            const u = JSON.parse(localStorage.getItem('crm_user') || '{}');
-            let name = u?.name || u?.email || 'User';
-            const role = (u?.role || 'USER').replace(/_/g, ' ');
-            let phone = u?.phone || '';
-            let employeeCode = u?.employee_code || '';
-            let joiningDateRaw = u?.joining_date || null;
-            let department = u?.department || '';
-            let baseSalary = u?.base_salary ?? null;
-            let target = u?.target ?? null;
-
-            // Fetch fresh data from backend to get latest name/phone
-            try {
-                const profile = await apiGet('/auth/profile');
-                if (profile) {
-                    name = profile.name || name;
-                    phone = profile.phone || '';
-                    employeeCode = profile.employee_code || '';
-                    joiningDateRaw = profile.joining_date || null;
-                    department = profile.department || '';
-                    baseSalary = profile.base_salary ?? null;
-                    target = profile.target ?? null;
-                    // Update localStorage with fresh data
-                    const stored = JSON.parse(localStorage.getItem('crm_user') || '{}');
-                    stored.name = name;
-                    stored.phone = phone;
-                    stored.employee_code = employeeCode;
-                    stored.joining_date = joiningDateRaw;
-                    stored.department = department;
-                    stored.base_salary = baseSalary;
-                    stored.target = target;
-                    localStorage.setItem('crm_user', JSON.stringify(stored));
-                }
-            } catch (e) { /* use local data */ }
-
-            const initials = name.slice(0, 2).toUpperCase();
-
-            // Hero section
-            document.getElementById('hero-avatar').textContent = initials;
-            document.getElementById('hero-name').textContent = name;
-            document.getElementById('hero-role').innerHTML = `<i class="bi bi-shield-check"></i> ${role}`;
-            document.getElementById('hero-email').innerHTML = `<i class="bi bi-envelope me-1"></i>${u?.email || '—'}`;
-
-            // Edit form pre-fill
-            document.getElementById('edit-name').value = name;
-            document.getElementById('edit-email').value = u?.email || '';
-            document.getElementById('edit-phone').value = phone;
-            document.getElementById('edit-dept').value = department || role;
-
-            // Account info rows
-            const joinedDate = joiningDateRaw
-                ? new Date(joiningDateRaw).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                : '—';
-            const salaryText = baseSalary !== null && baseSalary !== undefined
-                ? 'Rs ' + Number(baseSalary || 0).toLocaleString('en-IN')
-                : '—';
-
-            const rows = [
-                { label: 'Full Name', value: name, icon: 'bi-person' },
-                { label: 'Email', value: u?.email, icon: 'bi-envelope' },
-                { label: 'Role', value: `<span class="role-badge" style="font-size:0.7rem;">${role}</span>`, icon: 'bi-briefcase' },
-                { label: 'Department', value: department, icon: 'bi-building' },
-                { label: 'Employee Code', value: employeeCode, icon: 'bi-upc-scan' },
-                { label: 'Joined', value: joinedDate, icon: 'bi-calendar3' },
-                { label: 'Target', value: target, icon: 'bi-bullseye' },
-                { label: 'Base Salary', value: salaryText, icon: 'bi-cash-stack' },
-                { label: 'Phone', value: phone, icon: 'bi-telephone' },
-                { label: 'User ID', value: `<span class="text-muted">#${u?.id || '—'}</span>`, icon: 'bi-clock' }
-            ];
-
-            document.getElementById('account-info-rows').innerHTML = rows
-                .filter(row => {
-                    if (!row || !row.value) return false;
-                    let v = String(row.value).replace(/<\/?[^>]+(>|$)/g, "").trim();
-                    
-                    // Fail-safe check for empty/null placeholders
-                    if (!v || v === "" || v.toLowerCase() === "null" || v.toLowerCase() === "undefined" || v === "0") return false;
-                    
-                    // Aggressive placeholder detection (em-dash, en-dash, hyphen-minus)
-                    // Char codes: em-dash(8212), en-dash(8211), hyphen-minus(45)
-                    const isPlaceholder = /^([—\-\–\s]|&mdash;|&ndash;|&#8212;|&#8211;)+$/.test(v) || 
-                                        v.charCodeAt(0) === 8212 || 
-                                        v.charCodeAt(0) === 8211 || 
-                                        v === "—" || v === "-" || v === "–";
-                    
-                    if (isPlaceholder) {
-                        console.log(`[ProfileFilter] Hiding placeholder row: ${row.label} (value: "${v}", charCode: ${v.charCodeAt(0)})`);
-                        return false;
-                    }
-                    return true;
-                })
-                .map(row => `
-                    <div class="info-row">
-                        <span class="info-label"><i class="bi ${row.icon} me-2 text-muted"></i>${row.label}</span>
-                        <span class="info-value">${row.value}</span>
-                    </div>
-                `).join('');
-
-            // Load role-aware stats from API
-            try {
-                const normalizedRole = (u?.role || '').toUpperCase();
-                const isAdmin = normalizedRole === 'ADMIN';
-                const isSales = ['SALES', 'TELESALES', 'PROJECT_MANAGER_AND_SALES'].includes(normalizedRole);
-                const isPM = ['PROJECT_MANAGER', 'PROJECT_MANAGER_AND_SALES'].includes(normalizedRole);
-
-                const [tasksRes, visitsRes, scheduleRes, projectsRes] = await Promise.allSettled([
-                    ApiClient.getTodos(),
-                    ApiClient.getVisits('?limit=200'),
-                    apiGet(`/timetable/?start_date=${new Date().toISOString()}&end_date=${new Date(Date.now() + 7 * 86400000).toISOString()}`),
-                    ApiClient.getProjects('?limit=200')
-                ]);
-
-                const tasks = tasksRes.status === 'fulfilled' ? (tasksRes.value || []) : [];
-                const visits = visitsRes.status === 'fulfilled' ? (visitsRes.value || []) : [];
-                const schedule = scheduleRes.status === 'fulfilled' ? (scheduleRes.value?.events || []) : [];
-                const projects = projectsRes.status === 'fulfilled' ? (projectsRes.value || []) : [];
-
-                let statCards = [];
-                if (isAdmin) {
-                    const stats = await apiGet('/reports/dashboard');
-                    statCards = [
-                        { value: stats.total_leads || 0, label: 'Total Leads' },
-                        { value: stats.active_clients || 0, label: 'Active Clients' },
-                        { value: stats.ongoing_projects || 0, label: 'Projects' }
-                    ];
-                } else if (isPM && isSales) {
-                    statCards = [
-                        { value: tasks.filter(t => t.status !== 'COMPLETED').length, label: 'Open Tasks' },
-                        { value: visits.length, label: 'Visits / Calls' },
-                        { value: projects.length, label: 'Projects' }
-                    ];
-                } else if (isPM) {
-                    statCards = [
-                        { value: tasks.filter(t => t.status !== 'COMPLETED').length, label: 'Open Tasks' },
-                        { value: projects.length, label: 'Projects' },
-                        { value: schedule.filter(item => item.event_type === 'MEETING').length, label: 'Meetings' }
-                    ];
-                } else if (isSales) {
-                    statCards = [
-                        { value: visits.length, label: normalizedRole === 'TELESALES' ? 'Calls Logged' : 'Visits Logged' },
-                        { value: tasks.filter(t => t.status !== 'COMPLETED').length, label: 'Open Tasks' },
-                        { value: schedule.length, label: 'This Week' }
-                    ];
-                } else {
-                    statCards = [
-                        { value: tasks.length, label: 'Tasks' },
-                        { value: schedule.length, label: 'Schedule' },
-                        { value: visits.length, label: 'Activity' }
-                    ];
-                }
-
-                document.getElementById('stats-row').innerHTML = `
-                    ${statCards.map(card => `
-                    <div class="stat-pill">
-                        <div class="sp-val">${card.value}</div>
-                        <div class="sp-lbl">${card.label}</div>
-                    </div>`).join('')}
-                `;
-            } catch (e) {
-                document.getElementById('stats-row').innerHTML = '';
-            }
-        }
-
-        // ── Password strength checker
-        function checkStrength(val) {
-            const bar = document.getElementById('pwd-strength-bar');
-            const txt = document.getElementById('pwd-strength-text');
-            if (!val) { bar.style.width = '0%'; txt.textContent = ''; return; }
-            let score = 0;
-            if (val.length >= 8) score++;
-            if (/[A-Z]/.test(val)) score++;
-            if (/[0-9]/.test(val)) score++;
-            if (/[^A-Za-z0-9]/.test(val)) score++;
-            const levels = [
-                { w: '25%', bg: '#ef4444', label: 'Weak' },
-                { w: '50%', bg: '#f59e0b', label: 'Fair' },
-                { w: '75%', bg: '#3b82f6', label: 'Good' },
-                { w: '100%', bg: '#10b981', label: 'Strong' }
-            ];
-            const l = levels[score - 1] || levels[0];
-            bar.style.width = l.w;
-            bar.style.background = l.bg;
-            txt.textContent = l.label;
-            txt.style.color = l.bg;
-        }
-
-        // ── Edit profile form
-        document.getElementById('edit-profile-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const newName = document.getElementById('edit-name').value.trim();
-            const phone = document.getElementById('edit-phone').value.trim();
-            if (!newName) return;
-
-            try {
-                // Save to backend
-                await apiPatch('/auth/profile', { name: newName, phone: phone });
-
-                // Update local storage optimistically
-                const u = JSON.parse(localStorage.getItem('crm_user') || '{}');
-                u.name = newName;
-                if (phone) u.phone = phone;
-                localStorage.setItem('crm_user', JSON.stringify(u));
-
-                // Global Sync (Top Header)
-                if (window.updateTopHeaderProfile) {
-                    window.updateTopHeaderProfile(newName, u.role);
-                }
-
-                showToast('Profile updated successfully!');
-
-                // Refresh hero & Local UI
-                document.getElementById('hero-name').textContent = newName;
-                document.getElementById('hero-avatar').textContent = window.getInitials(newName);
-                loadProfile(); // Re-load to sync account info card
-            } catch (err) {
-                showToast(err?.message || 'Failed to save changes.', 'error');
-            }
-        });
-
-        // ── Change password form
-        document.getElementById('change-password-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const old = document.getElementById('old-password').value;
-            const nw = document.getElementById('new-password').value;
-            const conf = document.getElementById('confirm-password').value;
-            const msgEl = document.getElementById('pwd-save-msg');
-
-            if (!old || !nw || !conf) { showToast('Please fill all password fields.', true); return; }
-            if (nw !== conf) { showToast('New passwords do not match!', true); return; }
-            if (nw.length < 8) { showToast('Password must be at least 8 characters.', true); return; }
-
-            try {
-                await apiPost('/auth/change-password', { old_password: old, new_password: nw });
-                document.getElementById('change-password-form').reset();
-                document.getElementById('pwd-strength-bar').style.width = '0%';
-                document.getElementById('pwd-strength-text').textContent = '';
-                showToast('Password changed successfully!');
-            } catch (err) {
-                showToast(err?.message || 'Incorrect current password.', 'error');
-            }
-        });
-
-        loadProfile();
-    </script>
 </body>
-
 </html>
+

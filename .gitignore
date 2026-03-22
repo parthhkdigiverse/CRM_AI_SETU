@@ -1,6 +1,7 @@
 # ─── Environment Variables ───────────────────────────────────────────────────
 # NEVER commit .env files — they contain secrets and local DB credentials
 .env
+backend/.env
 *.env
 
 # ─── Python ──────────────────────────────────────────────────────────────────
