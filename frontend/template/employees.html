@@ -478,7 +478,7 @@
                     </div>
                 </div>
 
-                <!-- Standard Filter Wrapper -->
+                <!-- Standard Filter Wrapper (Directory) -->
                 <div id="filter-wrapper" class="mb-4"></div>
 
                 <!-- Employees Table -->
@@ -502,7 +502,7 @@
                                     </th>
                                     <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 200px;">Employee</th>
                                     <th class="py-3 px-4 text-uppercase small fw-bold text-muted d-mobile-none" style="min-width: 150px;">Department & Code</th>
-                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 120px;">Role</th>
+                                    <th class="py-3 px-4 text-uppercase small fw-bold text-muted d-mobile-none" style="min-width: 120px;">Role</th>
                                     <th class="py-3 px-4 text-uppercase small fw-bold text-muted d-mobile-none" style="min-width: 150px;">Contact</th>
                                     <th class="py-3 px-4 text-uppercase small fw-bold text-muted" style="min-width: 100px;">Status</th>
                                     <th class="py-3 px-4 text-end text-uppercase small fw-bold text-muted" style="min-width: 120px;">Actions</th>
@@ -519,6 +519,9 @@
                     </div>
                 </div>
 
+                <!-- Standard Filter Wrapper (Attendance) -->
+                <div id="attendance-filter-wrapper" class="mb-4" style="display:none;"></div>
+
                 <div class="grid-card mt-4" id="attendance-admin-card" style="display:none;">
                     <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
                         <div>
@@ -530,38 +533,7 @@
                         </button>
                     </div>
                     <div class="p-4" id="attendance-admin-body">
-                        <div class="row g-3 align-items-end mb-3">
-                            <div class="col-md-3">
-                                <label class="form-label fw-semibold small">Employee</label>
-                                <select id="attendance-emp-filter" class="form-select">
-                                    <option value="">All Employees</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label fw-semibold small">Quick Filters</label>
-                                <select id="attendance-quick-filter" class="form-select">
-                                    <option value="custom">Custom Range</option>
-                                    <option value="today">Today</option>
-                                    <option value="yesterday">Yesterday</option>
-                                    <option value="this_week">This Week</option>
-                                    <option value="last_week">Last Week</option>
-                                    <option value="this_month">This Month</option>
-                                    <option value="last_month">Last Month</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label fw-semibold small">From</label>
-                                <input type="date" id="attendance-start" class="form-control">
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label fw-semibold small">To</label>
-                                <input type="date" id="attendance-end" class="form-control">
-                            </div>
-                            <div class="col-md-3 d-flex gap-2">
-                                <button class="btn btn-primary flex-grow-1" id="attendance-apply">Apply</button>
-                                <button class="btn btn-outline-secondary" id="attendance-reset">Reset</button>
-                            </div>
-                        </div>
+                        <!-- Unified filter handled by renderFilterPanel in #attendance-filter-wrapper -->
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <div class="text-muted small" id="attendance-count">0 record(s)</div>
                             <div class="fw-semibold" id="attendance-total-hours">Total: 0.00 hrs</div>
@@ -602,33 +574,7 @@
                             </div>
                         </div>
                         <div class="p-4" id="employee-self-body">
-                            <div class="row g-3 align-items-end mb-4">
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold small">Quick Filters</label>
-                                    <select id="self-attendance-quick-filter" class="form-select">
-                                        <option value="last_7_days">Last 7 Days</option>
-                                        <option value="today">Today</option>
-                                        <option value="yesterday">Yesterday</option>
-                                        <option value="this_week">This Week</option>
-                                        <option value="last_week">Last Week</option>
-                                        <option value="this_month">This Month</option>
-                                        <option value="last_month">Last Month</option>
-                                        <option value="custom">Custom Range</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold small">From</label>
-                                    <input type="date" id="self-attendance-start" class="form-control">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold small">To</label>
-                                    <input type="date" id="self-attendance-end" class="form-control">
-                                </div>
-                                <div class="col-md-3 d-flex gap-2">
-                                    <button class="btn btn-primary flex-grow-1" id="self-attendance-apply">Apply</button>
-                                    <button class="btn btn-outline-secondary" id="self-attendance-reset">Reset</button>
-                                </div>
-                            </div>
+                            <!-- Unified filter handled by renderFilterPanel in #attendance-filter-wrapper -->
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <div class="text-muted small" id="self-attendance-count">0 record(s)</div>
                                 <div class="fw-semibold" id="self-attendance-total-hours">Total: 0.00 hrs</div>
@@ -922,7 +868,7 @@
                             <div class="fw-semibold text-dark">${emp.department || '—'}</div>
                             <small class="text-muted">${emp.employee_code || 'No Code'}</small>
                         </td>
-                        <td class="px-4">
+                        <td class="px-4 d-mobile-none">
                             <span class="role-badge role-${roleClass}">${(emp.role || 'Unknown').replace(/_/g, ' ')}</span>
                         </td>
                         <td class="px-4 text-muted d-mobile-none">
@@ -974,11 +920,131 @@
             if (ssEl) ssEl.textContent = s < 10 ? '0' + s : s;
         }
 
-        // NOTE: Punch widget is removed from this page. It belongs on Dashboard.
+        let attendanceFilters = {};
+
+        function initAttendanceFilters(isAdmin, employees = []) {
+            const filters = [];
+            
+            if (isAdmin) {
+                filters.push({ 
+                    type: 'select', 
+                    label: 'Employee', 
+                    id: 'att-user', 
+                    options: [{ value: '', label: 'All Employees' }, ...employees.map(e => ({ value: e.id, label: e.name || e.email }))] 
+                });
+            }
+
+            filters.push({ 
+                type: 'select', 
+                label: 'Quick Range', 
+                id: 'att-quick', 
+                options: [
+                    { value: 'custom', label: 'Custom Range' },
+                    { value: 'today', label: 'Today' },
+                    { value: 'yesterday', label: 'Yesterday' },
+                    { value: 'this_week', label: 'This Week' },
+                    { value: 'last_week', label: 'Last Week' },
+                    { value: 'last_7_days', label: 'Last 7 Days' },
+                    { value: 'this_month', label: 'This Month' },
+                    { value: 'last_month', label: 'Last Month' }
+                ] 
+            });
+
+            filters.push({ type: 'date', label: 'From', id: 'att-from' });
+            filters.push({ type: 'date', label: 'To', id: 'att-to' });
+
+            renderFilterPanel({
+                containerId: 'attendance-filter-wrapper',
+                filters: filters,
+                onApply: (data) => {
+                    attendanceFilters = data;
+                    if (isAdmin) loadAttendanceSummary();
+                    else loadSelfAttendance();
+                },
+                onReset: () => {
+                    attendanceFilters = {};
+                    const fromInp = document.getElementById('att-from');
+                    const toInp = document.getElementById('att-to');
+                    const quickSel = document.getElementById('att-quick');
+                    if (fromInp && toInp && quickSel) {
+                        const end = new Date();
+                        const start = new Date();
+                        start.setDate(end.getDate() - 6);
+                        fromInp.value = start.toISOString().slice(0, 10);
+                        toInp.value = end.toISOString().slice(0, 10);
+                        quickSel.value = 'last_7_days';
+                        attendanceFilters['att-from'] = fromInp.value;
+                        attendanceFilters['att-to'] = toInp.value;
+                        attendanceFilters['att-quick'] = 'last_7_days';
+                    }
+                    if (isAdmin) loadAttendanceSummary();
+                    else loadSelfAttendance();
+                }
+            });
+
+            // Show wrapper
+            document.getElementById('attendance-filter-wrapper').style.display = 'block';
+
+            // Handle quick range changes to update date inputs
+            setTimeout(() => {
+                const quickSel = document.getElementById('att-quick');
+                const fromInp = document.getElementById('att-from');
+                const toInp = document.getElementById('att-to');
+                
+                if (quickSel && fromInp && toInp) {
+                    // Set default range: Last 7 Days
+                    const end = new Date();
+                    const start = new Date();
+                    start.setDate(end.getDate() - 6);
+                    fromInp.value = start.toISOString().slice(0, 10);
+                    toInp.value = end.toISOString().slice(0, 10);
+                    quickSel.value = 'last_7_days';
+                    attendanceFilters['att-from'] = fromInp.value;
+                    attendanceFilters['att-to'] = toInp.value;
+                    attendanceFilters['att-quick'] = 'last_7_days';
+
+                    quickSel.addEventListener('change', (e) => {
+                        const val = e.target.value;
+                        const today = new Date();
+                        if (val === 'today') {
+                            fromInp.value = toInp.value = today.toISOString().slice(0, 10);
+                        } else if (val === 'yesterday') {
+                            const yest = new Date(today); yest.setDate(yest.getDate() - 1);
+                            fromInp.value = toInp.value = yest.toISOString().slice(0, 10);
+                        } else if (val === 'this_week') {
+                            const first = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1);
+                            fromInp.value = new Date(today.getFullYear(), today.getMonth(), first).toISOString().slice(0, 10);
+                            toInp.value = today.toISOString().slice(0, 10);
+                        } else if (val === 'last_week') {
+                            const first = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1) - 7;
+                            const start = new Date(today.getFullYear(), today.getMonth(), first);
+                            const end = new Date(start); end.setDate(start.getDate() + 6);
+                            fromInp.value = start.toISOString().slice(0, 10);
+                            toInp.value = end.toISOString().slice(0, 10);
+                        } else if (val === 'last_7_days') {
+                            const start = new Date(); start.setDate(today.getDate() - 6);
+                            fromInp.value = start.toISOString().slice(0, 10);
+                            toInp.value = today.toISOString().slice(0, 10);
+                        } else if (val === 'this_month') {
+                            fromInp.value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+                            toInp.value = today.toISOString().slice(0, 10);
+                        } else if (val === 'last_month') {
+                            const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                            const end = new Date(today.getFullYear(), today.getMonth(), 0);
+                            fromInp.value = start.toISOString().slice(0, 10);
+                            toInp.value = end.toISOString().slice(0, 10);
+                        }
+                    });
+
+                    [fromInp, toInp].forEach(el => el.addEventListener('change', () => quickSel.value = 'custom'));
+                }
+            }, 100);
+        }
+
         async function loadMyEmployeeInsights() {
             if (canManageEmployees) return;
             
-            // Hide admin sections for non-admin without management permission
+            // Hide admin sections
             const directoryCard = document.querySelector('.grid-card:has(#employees-table-container)');
             if (directoryCard) directoryCard.style.display = 'none';
             const adminAttCard = document.getElementById('attendance-admin-card');
@@ -989,83 +1055,24 @@
             const selfAttCard = document.getElementById('self-attendance-card');
             if (selfAttCard) selfAttCard.style.display = 'block';
 
-            // Setup self-attendance filters
-            const startInput = document.getElementById('self-attendance-start');
-            const endInput = document.getElementById('self-attendance-end');
-            const quickFilter = document.getElementById('self-attendance-quick-filter');
-
-            if (!startInput || !endInput || !quickFilter) {
-                console.warn("Self-attendance filter elements not found.");
-                return;
-            }
-
-            function setSelfRange(daysBack) {
-                const end = new Date();
-                const start = new Date();
-                start.setDate(end.getDate() - daysBack);
-                if (startInput) startInput.value = start.toISOString().slice(0, 10);
-                if (endInput) endInput.value = end.toISOString().slice(0, 10);
-            }
-
-            // Default: last 7 days
-            setSelfRange(6);
-
-            quickFilter.addEventListener('change', (e) => {
-                const today = new Date();
-                const val = e.target.value;
-                if (val === 'today') {
-                    startInput.value = today.toISOString().slice(0, 10);
-                    endInput.value = today.toISOString().slice(0, 10);
-                } else if (val === 'yesterday') {
-                    const yest = new Date(today); yest.setDate(yest.getDate() - 1);
-                    startInput.value = yest.toISOString().slice(0, 10);
-                    endInput.value = yest.toISOString().slice(0, 10);
-                } else if (val === 'this_week') {
-                    const first = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1);
-                    const start = new Date(today.getFullYear(), today.getMonth(), first);
-                    startInput.value = start.toISOString().slice(0, 10);
-                    endInput.value = new Date().toISOString().slice(0, 10);
-                } else if (val === 'last_7_days') {
-                    setSelfRange(6);
-                } else if (val === 'this_month') {
-                    const start = new Date(today.getFullYear(), today.getMonth(), 1);
-                    startInput.value = start.toISOString().slice(0, 10);
-                    endInput.value = today.toISOString().slice(0, 10);
-                } else if (val === 'last_month') {
-                    const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                    const end = new Date(today.getFullYear(), today.getMonth(), 0);
-                    startInput.value = start.toISOString().slice(0, 10);
-                    endInput.value = end.toISOString().slice(0, 10);
-                }
-                if (val !== 'custom') loadSelfAttendance();
-            });
-
-            startInput.addEventListener('change', () => quickFilter.value = 'custom');
-            endInput.addEventListener('change', () => quickFilter.value = 'custom');
-
-            document.getElementById('self-attendance-apply').onclick = loadSelfAttendance;
-            document.getElementById('self-attendance-reset').onclick = () => {
-                quickFilter.value = 'last_7_days';
-                setSelfRange(6);
-                loadSelfAttendance();
-            };
-
+            // Initialize standard filters for self-attendance
+            initAttendanceFilters(false);
             await loadSelfAttendance();
         }
 
         async function loadSelfAttendance() {
+            const start = attendanceFilters['att-from'] || '';
+            const end = attendanceFilters['att-to'] || '';
             const tbody = document.getElementById('self-attendance-tbody');
-            const startInput = document.getElementById('self-attendance-start');
-            const endInput = document.getElementById('self-attendance-end');
-            
-            if (!tbody || !startInput || !endInput) return;
+
+            if (!tbody) return;
             
             tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
             
             try {
                 const data = await ApiClient.getAttendanceSummary({
-                    start_date: startInput.value,
-                    end_date: endInput.value,
+                    start_date: start,
+                    end_date: end,
                     reconcile: true
                 });
                 const records = (data.records || []).sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -1100,12 +1107,7 @@
         }
 
         function populateAttendanceEmployeeFilter() {
-            const sel = document.getElementById('attendance-emp-filter');
-            if (!sel) return;
-            const current = sel.value;
-            const options = employeesData.map(emp => `<option value="${emp.id}">${emp.name || emp.email}</option>`).join('');
-            sel.innerHTML = '<option value="">All Employees</option>' + options;
-            sel.value = current;
+            // Standardized filter init handles this now
         }
 
         function formatTimeCell(value) {
@@ -1171,9 +1173,9 @@
         async function loadAttendanceSummary() {
             if (!isAdmin) return;
             const tbody = document.getElementById('attendance-admin-tbody');
-            const start = document.getElementById('attendance-start').value;
-            const end = document.getElementById('attendance-end').value;
-            const userId = document.getElementById('attendance-emp-filter').value;
+            const start = attendanceFilters['att-from'] || '';
+            const end = attendanceFilters['att-to'] || '';
+            const userId = attendanceFilters['att-user'] || '';
             tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading...</td></tr>';
 
             try {
@@ -1320,6 +1322,7 @@
             }
             loadEmployees().then(() => {
                 if (isAdmin) {
+                    initAttendanceFilters(true, employeesData);
                     loadAttendanceSummary();
                 } else {
                     loadMyEmployeeInsights();
@@ -1346,85 +1349,7 @@
 
             if (isAdmin) {
                 document.getElementById('attendance-admin-card').style.display = 'block';
-                
-                const startInput = document.getElementById('attendance-start');
-                const endInput = document.getElementById('attendance-end');
-                const quickFilter = document.getElementById('attendance-quick-filter');
-                const empFilter = document.getElementById('attendance-emp-filter');
-                
-                function setDateRange(daysBack, daysForward = 0) {
-                    const end = new Date();
-                    end.setDate(end.getDate() + daysForward);
-                    const start = new Date();
-                    start.setDate(end.getDate() - daysBack);
-                    startInput.value = start.toISOString().slice(0, 10);
-                    endInput.value = end.toISOString().slice(0, 10);
-                }
-                
-                // Default to last 7 days
-                setDateRange(6);
-                
-                quickFilter.addEventListener('change', (e) => {
-                    const today = new Date();
-                    const val = e.target.value;
-                    
-                    if (val === 'today') {
-                        startInput.value = today.toISOString().slice(0, 10);
-                        endInput.value = today.toISOString().slice(0, 10);
-                    } else if (val === 'yesterday') {
-                        const yesterday = new Date(today);
-                        yesterday.setDate(yesterday.getDate() - 1);
-                        startInput.value = yesterday.toISOString().slice(0, 10);
-                        endInput.value = yesterday.toISOString().slice(0, 10);
-                    } else if (val === 'this_week') {
-                        const first = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1); // Monday
-                        const start = new Date(today.setDate(first));
-                        const end = new Date(start);
-                        end.setDate(start.getDate() + 6);
-                        startInput.value = start.toISOString().slice(0, 10);
-                        endInput.value = end.toISOString().slice(0, 10);
-                    } else if (val === 'last_week') {
-                        const first = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1) - 7;
-                        const start = new Date(today.setDate(first));
-                        const end = new Date(start);
-                        end.setDate(start.getDate() + 6);
-                        startInput.value = start.toISOString().slice(0, 10);
-                        endInput.value = end.toISOString().slice(0, 10);
-                    } else if (val === 'this_month') {
-                        const start = new Date(today.getFullYear(), today.getMonth(), 1);
-                        const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                        startInput.value = start.toISOString().slice(0, 10);
-                        endInput.value = end.toISOString().slice(0, 10);
-                    } else if (val === 'last_month') {
-                        const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                        const end = new Date(today.getFullYear(), today.getMonth(), 0);
-                        startInput.value = start.toISOString().slice(0, 10);
-                        endInput.value = end.toISOString().slice(0, 10);
-                    }
-                    if (val !== 'custom') {
-                        loadAttendanceSummary();
-                    }
-                });
-
-                // Clear constraints when user manually types
-                startInput.addEventListener('change', () => quickFilter.value = 'custom');
-                endInput.addEventListener('change', () => quickFilter.value = 'custom');
-
-                document.getElementById('attendance-apply').addEventListener('click', loadAttendanceSummary);
-                document.getElementById('attendance-reset').addEventListener('click', () => {
-                    empFilter.value = '';
-                    quickFilter.value = 'custom';
-                    setDateRange(6);
-                    loadAttendanceSummary();
-                });
-
-                const toggleBtn = document.getElementById('attendance-toggle-btn');
-                const body = document.getElementById('attendance-admin-body');
-                toggleBtn.addEventListener('click', () => {
-                    const collapsed = body.style.display === 'none';
-                    body.style.display = collapsed ? 'block' : 'none';
-                    toggleBtn.innerHTML = collapsed ? '<i class="bi bi-chevron-up"></i>' : '<i class="bi bi-chevron-down"></i>';
-                });
+                // initAttendanceFilters will be called in loadEmployees.then
             }
         });
 

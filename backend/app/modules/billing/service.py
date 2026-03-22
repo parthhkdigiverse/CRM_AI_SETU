@@ -433,6 +433,11 @@ class BillingService:
             if c.owner_id == current_user.id or c.pm_id == current_user.id or c.referred_by_id == current_user.id:
                 return True
                 
+        # Relaxed visibility: Authorized staff can view ANY active (non-archived) invoice
+        # to understand blocking constraints during new invoice generation.
+        if not bill.is_archived:
+            return True
+                
         return False
 
     def get_bill(self, bill_id: int, current_user: User = None) -> Bill | None:
@@ -478,7 +483,8 @@ class BillingService:
                 Bill.created_by_id == current_user.id,
                 Client.owner_id == current_user.id,
                 Client.pm_id == current_user.id,
-                Client.referred_by_id == current_user.id
+                Client.referred_by_id == current_user.id,
+                Bill.is_archived == False  # Relaxed scope: Show all ACTIVE invoices to avoid confusion
             ))
             
         archived_mode = (archived or "ACTIVE").upper()

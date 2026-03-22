@@ -136,9 +136,9 @@
                                 <thead>
                                     <tr>
                                         <th>Name</th>
-                                        <th>Email</th>
+                                        <th class="d-none d-sm-table-cell">Email</th>
                                         <th>Role</th>
-                                        <th>Status</th>
+                                        <th class="d-none d-sm-table-cell">Status</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -367,11 +367,11 @@
                                 <div class="fw-bold text-dark">${displayName}</div>
                             </div>
                         </td>
-                        <td class="text-muted small">${u.email}</td>
+                        <td class="text-muted small d-none d-sm-table-cell">${u.email}</td>
                         <td>
                             <span class="role-pill ${role.cls}">${role.label}</span>
                         </td>
-                        <td>
+                        <td class="d-none d-sm-table-cell">
                             <span class="status-pill ${u.is_active ? 'status-active' : 'status-inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span>
                         </td>
                         <td>

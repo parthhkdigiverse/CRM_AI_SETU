@@ -65,10 +65,13 @@
         }
 
         .modal-box {
+            margin: auto;
             max-height: 92vh;
             overflow-y: auto;
             box-shadow: 0 25px 60px rgba(0, 0, 0, 0.18);
             padding: 28px;
+            background: var(--surface);
+            border-radius: 14px;
         }
 
         .modal-box-lg {
@@ -304,8 +307,7 @@
                     <div class="d-flex justify-content-between align-items-center pb-2 border-bottom">
                         <div>
                             <span class="text-muted small me-2">Quick fill from:</span>
-                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill me-1" onclick="openAutofillPicker('visit')"><i class="bi bi-geo-alt me-1"></i>Visits</button>
-                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill me-1" onclick="openAutofillPicker('shop')"><i class="bi bi-shop me-1"></i>Shops</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill me-1" onclick="openAutofillPicker('visit_shop')"><i class="bi bi-geo-alt me-1"></i>Visits & Shops</button>
                             <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" onclick="openAutofillPicker('feedback')"><i class="bi bi-chat-text me-1"></i>Feedback</button>
                         </div>
                         <div class="text-muted small fw-semibold bg-light px-2 py-1 rounded">
@@ -1126,14 +1128,29 @@
         // ── Autofill picker ───────────────────────────────────────────────────────────
         async function openAutofillPicker(source) {
             activeAutofillSource = source;
-            const titles = { visit: 'Fill from Visit / Shop', feedback: 'Fill from Feedback', shop: 'Fill from Shop Database' };
+            const titles = { visit_shop: 'Fill from Visits & Shops', feedback: 'Fill from Feedback' };
             const titleEl = document.getElementById('autofill-title') || document.getElementById('autofillPickerTitle');
-            if (titleEl) titleEl.textContent = titles[source] || 'Select';
+            if (titleEl) titleEl.textContent = titles[source] || 'Select Source';
             document.getElementById('autofill-search').value = '';
             document.getElementById('autofill-list').innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm"></span></div>';
             document.getElementById('autofillModal').classList.remove('d-none');
             try {
-                const rows = await ApiClient.getBillingAutofillSource(source);
+                let rows = [];
+                if (source === 'visit_shop') {
+                    // Fetch both Visits and Shops and combine them
+                    const [visits, shops] = await Promise.all([
+                        ApiClient.getBillingAutofillSource('visit'),
+                        ApiClient.getBillingAutofillSource('shop')
+                    ]);
+                    const merged = [...(visits || []), ...(shops || [])];
+                    // Unique by ID (shops might appear in both lists)
+                    const unique = new Map();
+                    merged.forEach(r => { if (!unique.has(r.id)) unique.set(r.id, r); });
+                    rows = Array.from(unique.values());
+                } else {
+                    rows = await ApiClient.getBillingAutofillSource(source);
+                }
+
                 autofillSourceData = (rows || []).map(r => ({
                     id: r.id,
                     name: r.name || '',

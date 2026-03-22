@@ -214,12 +214,20 @@ class ApiClient {
         return this.request('/attendance/punch', { method: 'POST' });
     }
     static async getAttendanceSummary(params = {}) {
-        const query = new URLSearchParams(params).toString();
-        return this.request(`/attendance/summary?${query}`);
+        const query = new URLSearchParams();
+        Object.entries(params || {}).forEach(([k, v]) => {
+            if (v === undefined || v === null || v === '') return;
+            query.set(k, String(v));
+        });
+        const qs = query.toString();
+        return this.request(`/attendance/summary${qs ? `?${qs}` : ''}`);
     }
 
     static async getAttendanceLogs(userId, date) {
-        const query = new URLSearchParams({ user_id: userId || '', date }).toString();
+        const params = {};
+        if (userId) params.user_id = userId;
+        if (date) params.date = date;
+        const query = new URLSearchParams(params).toString();
         return this.request(`/attendance/logs?${query}`);
     }
 

@@ -220,11 +220,11 @@ window.renderSidebar = function (active) {
         </div>
         
         <div class="sb-bottom">
+            <a href="#" class="sb-bottom-link logout" onclick="logout();return false;" title="Logout">
+                <i class="bi bi-box-arrow-right"></i> <span>Logout</span>
+            </a>
             <a href="settings.html" class="sb-bottom-link ${active === 'settings' ? 'active' : ''}" title="Settings">
                 <i class="bi bi-gear"></i> <span>Settings</span>
-            </a>
-            <a href="#" class="sb-bottom-link logout" onclick="logout();return false;" title="Logout">
-                <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Logout</span>
             </a>
         </div>
 

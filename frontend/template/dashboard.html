@@ -246,6 +246,38 @@
         .pro-att-btn:active { transform: scale(0.97); }
         .pro-att-btn.loading { opacity: 0.50; cursor: not-allowed; transform: none; box-shadow: none; }
 
+        @media (max-width: 991px) {
+            .dash-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+                padding: 20px;
+            }
+            .dash-greeting {
+                font-size: 26px;
+            }
+            .pro-att-widget {
+                flex-direction: column;
+                padding: 20px;
+                gap: 20px;
+                align-items: stretch;
+            }
+            .pro-att-left {
+                padding-right: 0;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+                padding-bottom: 15px;
+                flex: none;
+            }
+            .pro-att-right {
+                padding-left: 0;
+                min-width: 0;
+                max-width: 100%;
+            }
+            .pro-att-sep {
+                display: none;
+            }
+        }
+
         /* ── Filter panel ── */
         .filter-panel {
             background: var(--surface);
